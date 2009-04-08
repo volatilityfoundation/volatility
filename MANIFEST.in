@@ -1,0 +1,6 @@
+include *.txt
+include MANIFEST
+include MANIFEST.in
+include *.py
+include volatility
+include *.win

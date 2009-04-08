@@ -1,0 +1,38 @@
+Contributors (alphabetical)
+------------
+
+We would like to acknowledge individuals that have made significant
+contributions, code and ideas, to the Volatility Framework:
+
+Harlan Carvey
+Michael Cohen
+David Collett
+Brendan Dolan-Gavitt 
+Andreas Schuster
+Matthieu Suiche
+
+We would also like to acknowledge those who have provided valuable
+feedback, bug reports, and testing:
+
+Jide Abu
+Joseph Ayo Akinyele
+Tommaso Assandri
+Richard Austin
+Cameron C Caffee
+Eoghan Casey
+Angelo Cavallini
+Jon Evans
+Robert Guess
+Christian Herndler
+jeremie0
+Jesse Kornblum
+Jamie Levy
+Eugene Libster
+Erik Ligda
+Robert Lowe
+Tony Martin
+Timothy Morgan
+Bryan D. Payne
+Golden G. Richard III
+RB
+Sam F. Stover

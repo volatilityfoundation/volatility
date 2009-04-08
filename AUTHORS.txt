@@ -1,0 +1,14 @@
+Volatility authors:
+
+AAron Walters <awalters@volatilesystems.com>
+Volatile Systems LLC
+
+Brendan Dolan-Gavitt <bdolangavitt@wesleyan.edu>
+
+Volatools Basic authors:
+
+AAron Walters 
+Komoku, Inc.
+
+Nick L. Petroni, Jr.
+Komoku, Inc.
