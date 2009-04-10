@@ -1,6 +1,19 @@
 Changelog
 
 04.8.2009      Volatility-1.3.1  moyix
+    * Update: Introduce BufferAddressSpace and refactor
+    * Files:
+        forensics/addrspace.py
+        forensics/object.py
+    Description:
+      Added a new BufferAddressSpace class that acts like a regular
+      FileAddressSpace, but can be instantiated from a string buffer.
+      This allows any function that expects an address space to work on
+      a buffer instead. Also refactored the *_buf functions in object.py
+      to use this class instead (reduces code duplication). Thanks to
+      Michael Cohen for the idea.
+
+04.8.2009      Volatility-1.3.1  moyix
     * Update: Add support for inactive hiberfiles to hibinfo
     * Files:
         forensics/win32/hiber_addrspace.py
