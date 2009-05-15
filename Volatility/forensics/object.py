@@ -155,7 +155,7 @@ def read_string(addr_space, types, member_list, vaddr, max_length=256):
     
 def read_string_buf(data, types, member_list, vaddr, max_length=256):
     addr_space = BufferAddressSpace(data)
-    return read_string(addr_space, types, member_list, vaddr, max_length=256)
+    return read_string(addr_space, types, member_list, vaddr, max_length)
 
 def read_null_string(addr_space, types, member_list, vaddr, max_length=256):
     string = read_string(addr_space, types, member_list, vaddr, max_length)
