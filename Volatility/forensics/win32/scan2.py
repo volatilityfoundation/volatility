@@ -272,8 +272,8 @@ class PoolScanner(SlidingMemoryScanner):
         
         return BlockSize
         
-    def get_poolsize(self, buff, free):
-        BlockSize = self.get_blocksize(buff, free)
+    def get_poolsize(self, buff, found):
+        BlockSize = self.get_blocksize(buff, found)
         
         if BlockSize == None:
             return None
@@ -315,7 +315,7 @@ class PoolScanner(SlidingMemoryScanner):
         return self.check_pooltype_nonpaged_or_free(buff, found)
         
     def check_pooltype_free(self, buff, found):
-        PoolType = self.get_pooltype(buff, free)
+        PoolType = self.get_pooltype(buff, found)
         
         if PoolType == 0:
             return True
@@ -323,7 +323,7 @@ class PoolScanner(SlidingMemoryScanner):
         return False
         
     def check_pooltype_nonfree(self, buff, found):
-        PoolType = self.get_pooltype(buff, free)
+        PoolType = self.get_pooltype(buff, found)
         
         if PoolType != 0:
             return True

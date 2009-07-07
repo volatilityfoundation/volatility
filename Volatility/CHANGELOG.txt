@@ -1,6 +1,14 @@
 Changelog
 
 05.15.2009     Volatility-1.3.1  moyix
+    * Update: Fix some argument names in scan2.py
+    * Files:
+        forensics/win32/scan2.py
+    Description:
+        Several of the argument names were used inconsistently in scan2.py.
+        Thanks to Andreas Schuster for reporting this and providing a patch.
+
+05.15.2009     Volatility-1.3.1  moyix
     * Update: Back out object collision fix
     * Files:
         forensics/object2.py
