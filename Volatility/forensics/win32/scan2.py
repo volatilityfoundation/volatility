@@ -248,7 +248,10 @@ class PoolScanner(SlidingMemoryScanner):
         self.matches = []
 
     def format_time(self,time):
-        ts=strftime("%a %b %d %H:%M:%S %Y",gmtime(time))
+        try:
+            ts=strftime("%a %b %d %H:%M:%S %Y",gmtime(time))
+        except ValueError:
+            return "[invalid]"
         return ts
 
     def set_limit(self,limit):
@@ -700,7 +703,10 @@ class PoolScanProcessDot(PoolScanProcessFast2):
 
     class Scan(PoolScanProcessFast2.Scan):
         def format_time(self, time):
-            ts=strftime("%H:%M:%S\\n%Y-%m-%d",gmtime(time))
+            try:
+                ts=strftime("%H:%M:%S\\n%Y-%m-%d",gmtime(time))
+            except ValueError:
+                return "[invalid]"
             return ts
 
         def object_action(self,buff,object_offset):
