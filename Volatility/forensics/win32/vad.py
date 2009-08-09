@@ -385,19 +385,8 @@ def vad_dump(addr_space, types, VadRoot, name, offset, dir):
         EndingVpn = ((EndingVpn+1) << 12) - 1
         Range = EndingVpn - StartingVpn + 1   
 
-        NumberOfPages = Range >> 12
-
-        for i in range(0,NumberOfPages):
-            page_addr = StartingVpn+i*0x1000
-            if not addr_space.is_valid_address(page_addr):
-                range_data += ('\0' * 0x1000)
-                continue
-            page_read = addr_space.read(page_addr, 0x1000)
-            if page_read == None:
-                range_data = range_data + ('\0' * 0x1000)
-            else:
-                range_data = range_data + page_read
-
+        range_data = addr_space.zread(StartingVpn, Range)
+        
         if not dir == None:
             f = open(dir+"/"+"%s.%x.%08x-%08x.dmp" % (name,offset,StartingVpn,EndingVpn), 'wb')
         else:
