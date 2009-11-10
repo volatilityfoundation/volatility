@@ -70,7 +70,9 @@ def read_value(addr_space, value_type, vaddr):
     type_size        = builtin_types[value_type][0]
 
     buf = addr_space.read(vaddr, type_size)
-    if buf is None:
+    # This ensures buf is neither None, nor ''
+    # Fixes bug in scanner where an offset outside the address space is read
+    if not buf:
         return None
 
     (val, ) = struct.unpack('='+type_unpack_char, buf)
