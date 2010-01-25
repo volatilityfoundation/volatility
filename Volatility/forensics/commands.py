@@ -83,6 +83,13 @@ class command:
         function_name = "render_%s" % self.opts.outputformat
         if not self.opts.out_file:
             outfd = sys.stdout
+	## XXX Not sure if this is the correct place. It would be
+        ## possible to pass the fileobject and access the name but
+        ## it would be silly to open the file in the first place.
+        ## Leave it for now..see gleeda. Another option would be
+        ## to add a new option in the plugin.
+        elif self.opts.outputformat == "sql":
+            outfd = self.opts.out_file
         else:
             outfd = open(self.opts.out_file,'w')
             
