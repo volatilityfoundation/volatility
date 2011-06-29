@@ -109,7 +109,7 @@ Quick Start
    Example:
 
 > python vol.py -h
-Volatile Systems Volatility Framework 1.4_rc1
+Volatile Systems Volatility Framework 2.0
 Usage: Volatility - A memory forensics analysis platform.
 
 Options:
@@ -201,7 +201,7 @@ Options:
    Example:
    
     > python vol.py -f win7.dmp imageinfo
-    Volatile Systems Volatility Framework 1.4_rc1
+    Volatile Systems Volatility Framework 2.0
     Determining profile based on KDBG search...
              Suggested Profile : Win7SP0x86
                      AS Layer1 : JKIA32PagedMemory (Kernel AS)
