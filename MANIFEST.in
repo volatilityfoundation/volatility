@@ -1,0 +1,12 @@
+include *.txt
+include *.win
+include MANIFEST.in
+include setup.py
+include resources/*
+include pyinstaller/*.py
+include volatility/*.py
+include contrib/plugins/*.py
+include tools/*.py
+include vol.py
+include Makefile
+include volatility.spec

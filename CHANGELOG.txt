@@ -1,0 +1,681 @@
+Changelog
+
+04.8.2009      Volatility-1.3.1  moyix
+    * Update: Introduce BufferAddressSpace and refactor
+    * Files:
+        forensics/addrspace.py
+        forensics/object.py
+    Description:
+      Added a new BufferAddressSpace class that acts like a regular
+      FileAddressSpace, but can be instantiated from a string buffer.
+      This allows any function that expects an address space to work on
+      a buffer instead. Also refactored the *_buf functions in object.py
+      to use this class instead (reduces code duplication). Thanks to
+      Michael Cohen for the idea.
+
+04.8.2009      Volatility-1.3.1  moyix
+    * Update: Add support for inactive hiberfiles to hibinfo
+    * Files:
+        forensics/win32/hiber_addrspace.py
+    Description:
+      Added the ability to convert hibernation files that are in the
+      "inactive" state (their first page is zeroed) to dd format. It is
+      still not possible to run Volatility directly on such files, but
+      they can now be converted for analysis. Thanks to Jon Evans for
+      the suggestion.
+
+04.8.2009      Volatility-1.3.1  moyix
+    * Update: Pool scanning enhancements
+    * Files:
+        forensics/win32/scan2.py
+        forensics/object.py
+    Description:
+      Incorporated new functions written by Andreas Schuster to allow
+      more fine-grained checks in pool scanners, and modularize some of
+      the accessors (get_poolsize, get_poolsize, etc.). The patch also
+      adds read_unicode_string_buf and read_string_buf, which operate on
+      string buffers. Thanks to Andreas Schuster for the patch.
+
+04.7.2009      Volatility-1.3    awalters
+    * Update: Handle table parsing
+    * Files:
+        forensics/win32/handles.py
+    Description:
+      Updated handle parsing code to fix typo. It was not
+      adding the correct offset for Level 3 tables. It was also
+      not traversing all the entries. Thanks to Brendan Dolan-Gavitt.
+
+04.7.2009      Volatility-1.3    awalters
+    * Update: Network Offsets
+    * Files:
+        forensics/win32/network.py
+    Description:
+      Added new offset updates. Thanks to Jun Koi.
+
+03.17.2009     Volatility-1.3    awalters
+    * Update: x86.py robustness
+    * Files:
+        forensics/x86.py
+    Description:
+      Added more robustness to the x86 address space. This time
+      it focused on PAE.  Certain samples were reading outside of 
+      the physical address space. Thanks to Brendan Dolan-Gavitt for patch.
+
+03.17.2009    Volatility-1.3.1    awalters
+    * Bug: Hiberfil Address space w
+    * Files:
+        forensics\win32\hiber_addrspace.py
+    Description:
+      Needed to import the PAE address space. This only meant
+      that hibinfo was having some issue.  It would still process
+      hiberfil's just fine. Thanks to Andreas Schuster for the bug report.
+
+03.17.2009    Volatility-1.3.1    awalters
+    * Update: New version of tcp driver needed new offsets in SP3
+    * Files:
+        forensics/win32/network.py
+	forensics/win32/scan2.py
+	forensics/win32/scan.py
+    Description:
+      Added new offsets to network to handle new driver. Updated scan2
+      and scan as well to support new pool allocation size. Thanks to Brendan 
+      Dolan-Gavitt.
+
+02.22.2009    Volatility-1.3.1    awalters
+    * Update: procdump check peb
+    * Files:
+        vmodules.py
+    Description:
+      Added a check to make sure that the PEB is memory resident.
+
+02.05.2009    Volatility-1.3.1    awalters
+    * Update: Handle parsing
+    * Files: 
+        forensics/win32/handles.py
+	vmodules.py
+    Description:
+       Updated handle parsing code to correctly handle middle
+       and upper layer handles in multi-level schemes. Also
+       changed files to now use the common parsing code.
+
+12.11.2008    Volatility-1.3.1    awalters
+    * Update: Plugin Generators
+    * Files:
+        forensics/commands.py
+	memory_plugins/example4.py
+	vutils.py
+    Description:
+      Added the ability to use generators in your plugins. This
+      is extremely powerful and allows us to support arbitrary
+      output formats.  Thanks to Michael Cohen for the patch.
+
+
+12.11.2008    Volatility-1.3.1    awalters
+    * Update: Object Inheritance
+    * Files:
+       forensics/object2.py
+       forensics/registry.py
+       memory_plugins/example3.py
+    Description:
+      Plugins creators are now able to express an inheritance order
+      associated with an object. The default is the Profile objects.
+      This fixes a problem associated with collisions.  Thanks to 
+      Cameron C Caffee for the bug report and thanks to Brendan 
+      Dolan-Gavitt and Michael Cohen for insightful discussions.
+
+12.10.2008    Volatility-1.3.1    awalters
+    * Update: lists.py
+    * Files:
+        forensics/win32/lists.py
+    Description:
+        Added Brendan Dolan-Gavitt lists.py file for traversing kernel
+	linked lists. Thanks Brendan.
+
+12.06.2008    Volatility-1.3.1    awalters
+    * Bug: Crashdump base address space
+    * Files:
+        forensics/win32/tasks.py
+    Description:
+        Changed find_csdversion so that it does not pass in the filename.
+	Made fname an optional parameter to process_addr_space since it is
+	no longer being used and only maintained for backward compatibility.
+	Thanks to Richard Austin for the bug report.
+
+11.25.2008    Volatility-1.3.1    awalters
+    * Bug: modules_list
+    * Files:
+        forensics/win32/modules.py
+    Description:
+        Added a check to make sure both PsLoadedModuleList and this
+	module were defined.
+
+11.25.2008    Volatility-1.3.1    awalters
+    * Update: Tabs and spaces
+    * Files:
+        Too Many
+      Description:
+        Spent some quality time with the tab nanny.
+
+11.25.2008    Volatility-1.3.1    awalters
+    * Bug: Added more checks for registry objects
+    * Files:
+        forensics/win32/registry.py
+      Description:
+        Added more checks in print_entry_keys for invalid pages.
+	Some of the key path was crossing page boundaries so more
+	checks needed to be added. Thanks to Christian Herndler 
+	for the bug report.
+
+11.22.2008    Volatility-1.3.1    awalters
+    * Update: get_obj_offset no longer modifies passed in list
+    * Files:
+        forensics/object.py
+      Description:
+        get_obj_offset previously modified the passed-in list used
+	to represent type information.  Now it works on a copy to
+	prevent unexpected behavior. Thanks to Brendan Dolan-Gavitt
+	for the update.
+
+11.17.2008    Volatility-1.3.1    awalters
+    * Bug: Checks to make sure KeyControlBlock is a valid address
+    * Files:
+        forensics/win32/registry.py
+      Description:
+        print_entry_keys has been updated to check that KeyControlBlock 
+	is a valid address. Thanks to Christian Herndler for the bug
+	report and Brendan Dolan-Gavitt for the bug fix.
+
+11.15.2008    Volatility-1.3.1    awalters
+    * Update: removed sha module from crashdump
+    * Files:
+        forensics/win32/crashdump.py
+      Description:
+        Removed the attempt to import the sha module since it generates
+	a warning with Python 2.6. Thanks to STC for reporting the issue.
+
+11.14.2008    Volatility-1.3.1    awalters
+    * Bug: added more checks in object parsing for invalid pages
+    * Files:
+        forensics/win32/handles.py
+	forensics/win32/registry.py
+	vmodules.py
+      Description:
+         Added more checks for invalid pages while processing the 
+	 object directory. Thanks to Christian Herndler for the bug 
+	 report.
+
+11.03.2008    Volatility-1.3.1    awalters
+    * Bug: Python 2.5 finally
+    * Files:
+        vmodules.py
+      Description:
+        Removed the finally clause that is only available in Python 2.5.
+	Thanks to Cameron Caffee for the bug report and Brendan Dolan-Gavitt
+	for the bug fix.
+
+10.17.2008    Volatility-1.3.1    awalters
+    * Bug: Checking for invalid pages
+    * Files:
+       forensics/object2.py
+      Description:
+         Added more checks to object2 to makes sure the addresses
+	 being accessed are valid. If not, then they now return a None.
+	 Thanks to Jesse Kornblum for submitting a patch.
+
+9.27.2008     Volatility-1.3.1    awalters
+    * Update: plugin directory now relative to registry
+    * Files:
+        forensics/registry.py
+      Description:
+        The plugin search is now performed relative to registry.py. Thanks
+	to Michael Cohen for the patch.
+
+9.4.2008      Volatility-1.3.1    awalters
+    * Bug: length bug in hiberaddrspace
+    * Files:
+        forensics\win32\hiber_addrspace.py
+      Description:
+        We were referencing an undefined length variable. Thanks
+	to Andreas Schuster for sending the patch.
+
+9.4.2008      Volatility-1.3.1    awalters
+    * Update: Find the plugin modules
+    * Files:
+        forensics/registry.py
+      Description:
+        Added the absolute path to search for dynamic plugins. This allows
+	volatility to be called from anywhere on the system. Thanks
+	to Andreas Schuster for sending the patch.
+
+8.14.2008     Volatility-1.3    awalters
+    * Update: x86.py robustness
+    * Files:
+        forensics/x86.py
+      Description:
+        Added more robustness to the x86 address space. Thanks to Brendan
+	Dolan-Gavitt for sending in a bug report.
+
+8.14.2008     Volatility-1.3    awalters
+    * Update: Standardized _LDR_MODULE -> _LDR_DATA_TABLE_ENTRY
+    * Files:
+        forensics/win32/modules.py
+	forensics/win32/scan.py
+	forensics/win32/scan2.py
+    Description:
+        Changed the data type names to make them more standardized across
+        operating system versions. Thanks Brendan Dolan-Gavitt for
+        sending in update request.
+
+6.26.2008     Volatility-1.3    awalters
+    * Bug: regobjkey initialize list
+    * Files:
+        vmodules.py
+      Description:
+        When specifying a offset for regobjkey the list
+	had not been initialized yet. Thanks to Brendan Dolan-Gavitt
+	for sending in a bug report.
+
+6.24.2008     Volatility-1.3    awalters
+    * Update: 64-bit hosts
+    * Files:
+        forensics/object.py
+	forensics/win32/crashdump.py
+	forensics/win32/scan2.py
+	forensics/win32/network.py
+	forensics/win32/executable.py
+      Description:
+        Updated so that modules will work correctly
+	when run from 64-bit hosts using python 2.5.
+	Thanks to sham for sending in the bug report.
+
+6.23.2008     Volatility-1.3    awalters
+    * Bug: Non-resident Vad address
+    * Files:
+        forensics/win32/vad.py
+	vmodules.py
+      Description:
+        Updated the vad modules to handle
+	invalid addresses in low memory situations.
+	Thanks to Bryan D. Payne for sending in 
+	a bug report.
+
+6.23.2008     Volatility-1.3    awalters
+    * Bug: Handle count paged
+    * Files:
+        forensics/win32/tasks.py
+      Description:
+        Received a sample where the ObjectTable
+	was not a valid address. Added a check to make
+	sure it is valid.  Thanks to Bryan D. Payne
+	for sending in a bug report.
+
+6.22.2008     Volatility-1.3    awalters
+    * Update: Ident info
+    * Files:
+        forensics/win32/tasks.py
+	vutils.py 
+      Description:
+        Updated ident command so that it correctly
+	finds the version of XP, now that we have
+	support for SP3. Thanks to jeremie0 for noticing
+	and to Brendan Dolan-Gavitt for helping with
+	the fix.
+
+6.11.2008     Volatility-1.3    awalters
+    * Update: Array Types
+    * Files:
+        forensics/object2.py
+      Description:
+        Changed arrays so that they now return objects
+	in cases where they are not native types. Thanks
+	to Brendan Dolan-Gavitt for the update!
+
+6.8.2008      Volatility-1.3    awalters
+    * Bug: Invalid page directories
+    * Files:
+        vmodules.py
+      Description:
+        Added code to catch the cases when we encounter
+	invalid page directories.  Thanks to both Angelo Cavallini
+	and Brendan Dolan-Gavitt for reporting this bug.
+        
+6.8.2008      Volatility-1.3    awalters
+    * Update: potential bad string characters (unicode escaping)
+    * Files:
+        forensics/win32/scan2.py
+	forensics/object.py
+      Description:
+        Attempting to standardize error handling related to unicode
+	conversions. Thus we are now passing an explicit error
+	string argument. Thanks to Brendan Dolan-Gavitt.
+
+6.8.2008      Volatility-1.3    awalters
+    * Update: psscan2 check_dtb
+    * Files: 
+        forensics/win32/scan2.py 
+      Description:
+        Added a check from psscan to psscan2 in the 
+	check_dtb constraint to make sure the DTB
+	had a value. Thanks Andreas Schuster!
+
+6.7.2008      Volatility-1.3    awalters
+    * Update: SP3 support
+    * Files:
+        forensics/win32/network.py
+      Description:
+        Made changes to support SP3.
+
+5.21.2008     Volatility-1.3    awalters
+    * Update: Changed create_addr_space api
+    * Files:
+        forensics/win32/tasks.py
+        memory_objects/Windows/xp_sp2.py
+        memory_plugins/example2.py
+        memory_plugins/example3.py
+        vmodules.py
+      Description:
+        Changed the create_addr_space API so that it does
+	not require types or filname.  This was an
+	artifact of the way the function used to work.
+
+5.17.2008     Volatility-1.3    awalters
+    * Feature: New Object Model
+    * Files:
+        forensics/registry.py
+	memory_objects/Windows/xp_sp2.py
+	memory_plugins/example3.py
+	forensics/object2.py
+	forensics/win32/meta_info.py
+	vutils.py
+      Description:
+        Added a new object model to make navigating the data
+	structures more intuitive. All future modules will be 
+	transition to use this new model. Thanks to Brendan 
+	Dolan-Gavitt for all his help!
+
+5.14.2008     Volatility-1.3    awalters
+    * Feature: Plugin Architecture
+    * Files:
+        forensics/commands.py
+        forensics/registry.py
+        volatility
+        memory_plugins/example1.py
+        memory_plugins/example2.py
+      Description:
+        Added an entirely new plugin infrastructure.  Now it is 
+        possible to load the commands dynamically just by adding
+        them to the correct directory.  This will allow people
+        to support their own modules. This work is based on a 
+        similar registry implementation found in PyFlag. 
+        Thanks to Michael Cohen and David Collett for the great 
+        work they have done and help getting this code integrated.
+
+5.13.2008     Volatility-1.3    awalters
+    * Feature: Hiberfil support
+    * Files:
+        vmodules.py
+        volatility
+        forensics/win32/hiber_addrspace.py
+        forensics/win32/xpress.py
+        forensics/win32/scan.py
+        forensics/win32/network.py
+        forensics/win32/datetime.py
+      Description:
+          Added native hiberfil support.  Also added the ability
+          to convert from hiberfil to linear format.  Now all the
+          commands can be run against hiberfils natively.  This
+          is accomplished through the new hiberfil address space.
+          Thanks to Matthieu Suiche and Brendan Dolan-Gavitt for
+          all the great work they have done with hiberfil parsing
+          and the xpress compression algorithm.
+
+5.13.2008     Volatility-1.3    awalters
+    * Feature: New scanning infrastructure
+    * Files:
+        vmodules.py
+        volatility
+        forensics/win32/scan2.py
+        forensics/win32/globals.py
+        forensics/win32/crash_addrspace.py
+        forensics/win32/datetime.py
+      Description:
+          Added an entirely new OO scanning infrastructure. This allows
+          for extremely fast scanning and easier scanning across the
+          logical address spaces.  As part of this we also ported the 
+          scanning modules over to the new infrastructure. Thanks to
+          Michael Cohen and Andreas Schuster for the help and ideas 
+          to get this working!
+
+5.7.2008      Volatility-1.3    awalters
+    * Bug: get_available_addresses
+    * Files:
+        forensics/x86.py
+	vmodules.py
+	volatility
+      Description:
+          Fixed an off by 1 error in get_available_address for
+	  non-pae machines that seemed to have crept back in. Also
+	  changed the name of usrdmp to memdmp since it is really
+	  dumping a processes addressable memory. Thanks Eoghan Casey!
+
+4.30.2008     Volatility-1.3    awalters
+    * New Module: procdump
+    * Files:
+          forensics/win32/executable.py
+	  vtypes.py
+	  vmodules.py
+      Description:
+          Added a new module that will allow the analyst to extract
+	  the executable from memory for further analysis. Thanks to
+	  Brendan Dolan-Gavitt for all your hard work!
+
+4.28.2008     Volatility-1.3    awalters
+    * Bug: open registry keys
+    * Files:
+          forensics/win32/handles.py
+      Description:
+          During testing Brendan found a bug when processing object types.
+	  It would have been possible to enumerate KeyedEvents. Thanks 
+	  Brendan Dolan-Gavitt!
+
+4.28.2008     Volatility-1.3    awalters
+    * New Module: regobjkey
+    * Files:
+          vmodules.py
+          forensics/win32/registry.py
+          forensics/win32/handles.py
+          vtypes.py
+      Description:
+          Added a new module that will allow an analyst to dump the open
+          registry keys found in the object table.  Thanks to 
+          Brendan Dolan-Gavitt for his contributions!
+
+4.27.2008     Volatility-1.3    awalters
+    * Feature: psscan dot format
+    * Files:
+          vmodules.py
+	  forensics/win32/scan.py
+      Description:
+          Added the ability to print the output of psscan in dot format.
+	  Similar to that available by ptfinder by Andreas Schuster. This
+	  was requested by Eoghan Casey.
+
+4.23.2008     Volatility-1.3    awalters
+    * Useability: Pass pid or EPROCESS offset
+      Files:
+          vmodules.py
+	  forensics/win32/handles.py
+      Description:
+          Added the ability to dump files and dlllist by pid or EPROCESS
+	  offset.  One reason this was asked for was to deal with data
+	  only attacks which may remove the process from process list.
+	  Thanks to Eoghan Casey for the feedback!
+
+4.23.2008     Volatility-1.3    awalters
+    * New Modules: dmp2raw, raw2dmp
+      Files:
+         vtypes.py
+         vmodules.py
+         forensics/win32/crashdump.py
+	 forensics/win32/info.py
+         forensics/win32/tasks.py
+      Description:
+          Added modules to convert from raw dumps to crash dumps and vice
+	  versa. Thanks to Andreas Schuster for helping to get this started
+	  and thanks to Brendan Dolan-Gavitt for helping get it perfected!
+
+4.23.2008     Volatility-1.3    awalters
+    * Optimization: KUSER_SHARED_DATA
+      Files:
+         vmodules.py
+      Description:
+         Changed KUSER_SHARED_DATA in get_image_info and get_datetime to
+	 point to 0xFFDF0000 instead of 0x7ffe0000. Thanks Brendan
+	 Dolan-Gavitt!
+
+4.1.2008      Volatility-1.2.3pre  awalters
+    * Bug: socket crash
+      Files:
+         forensics/win32/network.py
+      Description:
+         In get_open_sockets, we needed to make sure that the AddrObjAddr
+	 and AddrTableSize were not none and if they were fail gracefully.
+	 Thanks to Eoghan Casey for the bug report.
+
+3.3.2008      Volatility-1.2.3pre awalters
+    * Bug: get_obj_offset() non-builtin
+      Files:
+        forensics/object.py
+      Description:
+        Modified get_obj_offset to support arrays of non-builtin types.  
+	Thanks Brendan Dolan-Gavitt!
+
+2.27.2008     Volatility-1.2.3pre  awalters
+    * Bug: Not traversing complete module list
+      Files:
+        forensics/win32/modules.py
+      Description:
+        Traversing the module list should not stop when it reaches a None but 
+	continue to the next module
+
+2.27.2008     Volatility-1.2.3pre  awalters
+    * Bug: is_valid_address(addr)
+      Files:
+        forensics/addrspace.py
+	forensics/x86.py
+      Description:
+        is_valid_address was failing to check if addr was None. This was found
+	by analyzing hiberfile images. Thanks to Brendan Dolan-Gavitt and
+	Andreas Schuster for helping me find the problem! 
+
+2.25.2008     Volatility-1.2.3pre  awalters
+
+    * Bug: hidden processes
+      Files:
+        vmodules.py
+      Description:
+        Both usrdmp and memmap were unable to handle hidden processes. They
+	can now be passed the offset to an EPROCESS object. Thanks to Eoghan
+	Casey for the bug report.
+
+12.28.2007    Volatility-1.2.3pre  awalters
+    * Bug: 64 bit
+      Files:
+        forensics/addrspace.py
+	forensics/object.py
+	forensics/win32/scan.py
+	forensics/x86.py
+	forensics/win32/crash_addrspace.py
+      Description:
+        Fixed a bug that occurs when people are running Python 2.5 on
+	a 64 bit OS. Python 2.5 changed the way that Python native types
+	are stored and thus changed the unpack usage. Thanks to Jamie Levy
+	and students!
+
+11.28.2007    Volatility-1.2.2pre  awalters
+    * Bug: memmap
+      Files:
+        vmodules.py
+      Description:
+        mem_map fixed so that you can specifiy a particular process.
+
+11.28.2007    Volatility-1.2.2pre  awalters
+    * Bug: dtb_aligned
+      Files:
+        forensics/win32/scan.py
+      Description:
+        On systems using PAE, EPROCESS.DirectoryTableBase actually
+	points to the base of the page directory pointer array.
+	Thanks Andreas Schuster.
+
+11.27.2007    Volatility-1.2.2pre  awalters
+    
+    * Optimization: find_dtb
+      Files:
+        forensics/win32/tasks.py
+      Description:
+        Dramatically reduced the time for find_dtb. Thanks Michael Cohen.
+
+09.21.2007    Volatility-1.2.1pre  awalters
+
+    * New Module: usrdmp
+      Files:
+        vmodules.py
+      Description:
+        Dumps a processes address space. Thanks Eoghan Casey. 
+
+09.20.2007    Volatility-1.2pre    awalters
+
+    * New Module: modscan
+      Files:
+        vmodules.py
+        forensics/win32/scan.py
+        forensics/win32/globals.py
+      Description:
+        Performs a linear scan for memory resident Windows modules. Contributed         by Andreas Schuster. 
+    * New Module: memmap
+      Files:
+        vmodules.py
+        forensics/x86.py
+      Description:
+        Provides a map of the virtual to physical address translations within 
+        a particular address space.  Based on similar tools by Andreas 
+        Schuster (memdump.pl) and Brendan Dolan-Gavitt (memdump.py).
+    * New Module: dmpchk 
+      Files:
+        vmodules.py
+        forensics/win32/crash_addrspace.py
+      Description:
+        Prints auxiliary information about the crash dump file.
+    * New Module: WindowsCrashDumpSpace32
+      Files:
+        forensics/x86.py
+        forensics/win32/crash_addrspace.py
+      Description:
+        Provides the ability to use crash dumps as input to Volatility. This is 
+	accomplished through the use of stackable address spaces. Contributions 
+	from Andreas Schuster.
+    * New Feature: get_available_pages()
+      Files:
+        forensics/x86.py 
+      Description:
+        This functions allows an investigator to find all available pages within        a particular address space.  Thanks Brendan Dolan-Gavitt.
+    * New Feature: zread()
+      Files:
+        forensics/x86.py
+	forensics/addrspace.py
+	forensics/win32/crash_addrspace.py
+      Description:
+        Added the ability to continuing reading even if pages are unavailable.
+	Invalid pages are replaced with zeros. Thanks Brendan Dolan-Gavitt.
+
+07.31.2007    Volatility-1.1.1    awalters
+
+    * Virtual Address Descriptor modules: vadinfo, vaddump, vadwalk. Based on the research of Brendan Dolan-Gavitt to be presented at DFRWS 2007
+    * Constraint based linear scanning framework. New modules include psscan, thrdscan, sockscan, connscan. Inspired by the work of Andreas Schuster.
+    * Completely open source. No third-party closed source dependencies.
+    * Auto-identification speed enhancements
+    * Bug fixes in network and socket modules
+    * Removed symbol dependencies
+    * Multiprocessor support
+
