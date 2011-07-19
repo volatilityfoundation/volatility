@@ -42,6 +42,11 @@ try:
 except ImportError:
     pass
 
+if False:
+    # Include a fake import for things like pyinstaller to hit
+    # since this is a dependency of the malware plugins
+    import yara
+
 import textwrap
 import volatility.registry as MemoryRegistry
 import volatility.conf as conf

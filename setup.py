@@ -74,7 +74,7 @@ if py2exe_available:
     # otherwise the help gets optimized out
     opts['options'] = {'py2exe':{'optimize': 1,
                                  'dist_dir': py2exe_distdir,
-                                 'packages': opts['packages'] + ['socket', 'ctypes', 'Crypto.Cipher', 'urllib'],
+                                 'packages': opts['packages'] + ['socket', 'ctypes', 'Crypto.Cipher', 'urllib', 'distorm3',  'yara', 'xml.etree.ElementTree'],
                                  # This, along with zipfile = None, ensures a single binary
                                  'bundle_files': 1,
                                 }
