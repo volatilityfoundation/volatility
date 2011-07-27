@@ -78,29 +78,3 @@ class HibInfo(commands.command):
         outfd.write(" CR4[PAE]: {0}\n".format((sr.Cr4 >> 5) & 1))
 
         outfd.write("\nWindows Version is {0}.{1} ({2})\n\n".format(peb.OSMajorVersion, peb.OSMinorVersion, peb.OSBuildNumber))
-
-class HibDump(HibInfo):
-    """Dumps the hibernation file to a raw file"""
-
-    def __init__(self, config, *args):
-        HibInfo.__init__(self, config, *args)
-        config.add_option("DUMP-FILE", short_option = "D", default = None,
-                          cache_invalidator = False,
-                          help = "Specifies the output dump file")
-
-    def render_text(self, outfd, data):
-        """Renders the text output of hibneration file dumping"""
-        if not self._config.DUMP_FILE:
-            debug.error("Hibdump requires an output file to dump the hibernation file")
-
-        if os.path.exists(self._config.DUMP_FILE):
-            debug.error("File " + self._config.DUMP_FILE + " already exists, please choose another file or delete it first")
-
-        outfd.write("Converting hibernation file...\n")
-
-        f = open(self._config.DUMP_FILE, 'wb')
-        total = data['adrs'].get_number_of_pages()
-        for pagenum in data['adrs'].convert_to_raw(f):
-            outfd.write("\r" + ("{0:08x}".format(pagenum)) + " / " + ("{0:08x}".format(total)) + " converted (" + ("{0:03d}".format(pagenum * 100 / total)) + "%)")
-        f.close()
-        outfd.write("\n")
