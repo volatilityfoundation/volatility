@@ -2,7 +2,7 @@ Volatility 2.0 Contributors (alphabetical):
 ------------
 
 We would like to acknowledge individuals that have made significant
-contributions, code and ideas, to the 2.0 releasse of the 
+contributions, code and ideas, to the 2.0 release of the 
 Volatility Framework 2.0:
 
 Mike Auty
