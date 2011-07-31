@@ -4,10 +4,7 @@ Volatility
 License
 -------
 
-Copyright (C) 2007,2008 Volatile Systems
-
-Original Source:
-Copyright (C) 2007  Komoku, Inc.
+Copyright (C) 2007-2011 Volatile Systems
 
 Volatility is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

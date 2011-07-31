@@ -232,8 +232,6 @@ Licensing and Copyright
 
 Copyright (C) 2007-2011 Volatile Systems
 
-Original Source:
-Copyright (C) 2007 Komoku, Inc.
 All Rights Reserved
 
 This program is free software; you can redistribute it and/or
