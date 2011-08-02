@@ -13,7 +13,6 @@ Michael Hale Ligh
 Jamie Levy
 AAron Walters
 
-
 Volatility 1.3 Contributors (alphabetical)
 ------------
 
@@ -34,6 +33,7 @@ Jide Abu
 Joseph Ayo Akinyele
 Tommaso Assandri
 Richard Austin
+Frank Boldewin 
 Cameron C Caffee
 Eoghan Casey
 Angelo Cavallini
