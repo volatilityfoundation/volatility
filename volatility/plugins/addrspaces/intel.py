@@ -55,6 +55,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
     cache = False
     pae = False
     paging_address_space = True
+    checkname = 'IA32ValidAS'
 
     def __init__(self, base, config, dtb = 0, *args, **kwargs):
         ## We must be stacked on someone else:
@@ -84,9 +85,8 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
             self._cache_values()
 
         volmag = obj.Object('VOLATILITY_MAGIC', offset = 0, vm = self)
-        checkname = 'IA32ValidAS'
-        if hasattr(volmag, checkname):
-            self.as_assert(getattr(volmag, checkname).v(), "Failed valid Address Space check")
+        if hasattr(volmag, self.checkname):
+            self.as_assert(getattr(volmag, self.checkname).v(), "Failed valid Address Space check")
 
         # Reserved for future use
         #self.pagefile = config.PAGEFILE
