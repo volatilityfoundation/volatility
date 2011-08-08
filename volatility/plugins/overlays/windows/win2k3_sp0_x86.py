@@ -92,11 +92,6 @@ class _MM_AVL_TABLE(obj.CType):
         for c in node.traverse():
             yield c
 
-class _EX_FAST_REF(obj.CType):
-    def dereference_as(self, theType):
-        """Use the _EX_FAST_REF.Object pointer to resolve an object of the specified type"""
-        return obj.Object(theType, vm = self.obj_vm, parent = self, offset = self.Object.v() & ~7)
-
 class _MMVAD_SHORT(windows._MMVAD_SHORT):
     def get_parent(self):
         return self.u1.Parent
@@ -111,8 +106,6 @@ class _MMVAD_LONG(_MMVAD_SHORT):
     pass
 
 Win2K3SP0x86.object_classes['_MM_AVL_TABLE'] = _MM_AVL_TABLE
-Win2K3SP0x86.object_classes['_EX_FAST_REF'] = _EX_FAST_REF
-
 Win2K3SP0x86.object_classes['_MMADDRESS_NODE'] = windows._MMVAD
 Win2K3SP0x86.object_classes['_MMVAD_SHORT'] = _MMVAD_SHORT
 Win2K3SP0x86.object_classes['_MMVAD_LONG'] = _MMVAD_LONG

@@ -148,7 +148,8 @@ class GetSIDs(taskmods.DllList):
             if not task.Token.is_valid():
                 outfd.write("{0} ({1}): Token unreadable\n".format(task.ImageFileName, int(task.UniqueProcessId)))
                 continue
-            tok = obj.Object('_TOKEN', task.Token.Value & ~0x7, task.obj_vm)
+
+            tok = task.Token.dereference_as("_TOKEN")
 
             for sa in tok.UserAndGroups.dereference():
                 sid = sa.Sid.dereference_as('_SID')
