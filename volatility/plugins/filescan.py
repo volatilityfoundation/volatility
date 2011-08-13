@@ -113,8 +113,8 @@ class FileScan(commands.command):
             yield (object_obj, file_obj, Name)
 
     def render_text(self, outfd, data):
-        outfd.write("{0:10} {1:10} {2:4} {3:4} {4:6} {5}\n".format(
-                     'Offset(V)', 'Obj Type', '#Ptr', '#Hnd', 'Access', 'Name'))
+        outfd.write("{0:10} {1:4} {2:4} {3:6} {4}\n".format(
+                     'Offset(V)', '#Ptr', '#Hnd', 'Access', 'Name'))
 
         for object_obj, file_obj, Name in data:
             ## Make a nicely formatted ACL string
@@ -125,18 +125,8 @@ class FileScan(commands.command):
                         ((file_obj.SharedWrite > 0 and "w") or '-') + \
                         ((file_obj.SharedDelete > 0 and "d") or '-')
 
-            ## Account for changes to the object header for Windows 7
-            # volmagic = obj.Object("VOLATILITY_MAGIC", 0x0, self.kernel_address_space)
-            try:
-                # New object header
-                # info_mask_to_offset = volmagic.InfoMaskToOffset.v()
-                type_info = object_obj.TypeIndex
-            except AttributeError:
-                # Default to old Object header
-                type_info = object_obj.Type
-
-            outfd.write("{0:#010x} {1:#010x} {2:4} {3:4} {4:6} {5}\n".format(
-                         object_obj.obj_offset, type_info, object_obj.PointerCount,
+            outfd.write("{0:#010x} {1:4} {2:4} {3:6} {4}\n".format(
+                         object_obj.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount, AccessStr, Name))
 
 class PoolScanDriver(PoolScanFile):
@@ -198,24 +188,14 @@ class DriverScan(FileScan):
 
     def render_text(self, outfd, data):
         """Renders the text-based output"""
-        outfd.write("{0:10} {1:10} {2:4} {3:4} {4:10} {5:>6} {6:20} {7}\n".format(
-                     'Offset', 'Obj Type', '#Ptr', '#Hnd',
+        outfd.write("{0:10} {1:4} {2:4} {3:10} {4:>6} {5:20} {6}\n".format(
+                     'Offset', '#Ptr', '#Hnd',
                      'Start', 'Size', 'Service key', 'Name'))
 
         for object_obj, driver_obj, extension_obj, ObjectNameString in data:
 
-            ## Account for changes to the object header for Windows 7
-            volmagic = obj.Object("VOLATILITY_MAGIC", 0x0, self.kernel_address_space)
-            try:
-                # New object header
-                info_mask_to_offset = volmagic.InfoMaskToOffset.v()
-                type_info = object_obj.TypeIndex
-            except AttributeError:
-                # Default to old Object header
-                type_info = object_obj.Type
-
-            outfd.write("0x{0:08x} 0x{1:08x} {2:4} {3:4} 0x{4:08x} {5:6} {6:20} {7:12} {8}\n".format(
-                         driver_obj.obj_offset, type_info, object_obj.PointerCount,
+            outfd.write("0x{0:08x} {1:4} {2:4} 0x{3:08x} {4:6} {5:20} {6:12} {7}\n".format(
+                         driver_obj.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount,
                          driver_obj.DriverStart, driver_obj.DriverSize,
                          self.parse_string(extension_obj.ServiceKeyName),
@@ -283,8 +263,8 @@ class MutantScan(FileScan):
 
     def render_text(self, outfd, data):
         """Renders the output"""
-        outfd.write("{0:10} {1:10} {2:4} {3:4} {4:6} {5:10} {6:10} {7}\n".format(
-                     'Offset', 'Obj Type', '#Ptr', '#Hnd', 'Signal',
+        outfd.write("{0:10} {1:4} {2:4} {3:6} {4:10} {5:10} {6}\n".format(
+                     'Offset', '#Ptr', '#Hnd', 'Signal',
                      'Thread', 'CID', 'Name'))
 
         for object_obj, mutant, ObjectNameString in data:
@@ -295,18 +275,8 @@ class MutantScan(FileScan):
             else:
                 CID = ""
 
-            ## Account for changes to the object header for Windows 7
-            volmagic = obj.Object("VOLATILITY_MAGIC", 0x0, self.kernel_address_space)
-            try:
-                # New object header
-                info_mask_to_offset = volmagic.InfoMaskToOffset.v()
-                type_info = object_obj.TypeIndex
-            except AttributeError:
-                # Default to old Object header
-                type_info = object_obj.Type
-
-            outfd.write("0x{0:08x} 0x{1:08x} {2:4} {3:4} {4:6} 0x{5:08x} {6:10} {7}\n".format(
-                         mutant.obj_offset, type_info, object_obj.PointerCount,
+            outfd.write("0x{0:08x} {1:4} {2:4} {3:6} 0x{4:08x} {5:10} {6}\n".format(
+                         mutant.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount, mutant.Header.SignalState,
                          mutant.OwnerThread, CID,
                          ObjectNameString
