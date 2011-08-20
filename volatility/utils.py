@@ -89,3 +89,13 @@ class AddrSpaceError(VolatilityException):
 
 class CacheRelativeURLException(VolatilityException):
     """Exception for gracefully not saving Relative URLs in the cache"""
+
+def Hexdump(data, width=16):
+    """ Hexdump function shared by various plugins """
+    for offset in xrange(0, len(data), width):
+        row_data = data[offset:offset+width]
+        translated_data = [x if ord(x) < 100 and ord(x) > 32 else "." for x in row_data]
+        hexdata = " ".join(["{0:02x}".format(ord(x)) for x in row_data])
+    
+        yield offset, hexdata, translated_data
+

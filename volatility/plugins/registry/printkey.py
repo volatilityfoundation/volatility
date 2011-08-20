@@ -34,25 +34,8 @@ import volatility.utils as utils
 import volatility.commands as commands
 import volatility.plugins.registry.hivelist as hivelist
 
-## This module requires a filename to be passed by the user
-#config.add_option("HIVE-OFFSET", default = 0, type='int',
-#                  help = "Offset to reg hive")
-
 def vol(k):
     return bool(k.obj_offset & 0x80000000)
-
-FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
-
-def hd(src, length = 16):
-    N = 0
-    result = ''
-    while src:
-        s, src = src[:length], src[length:]
-        hexa = ' '.join(["{0:02X}".format(ord(k)) for k in s])
-        s = s.translate(FILTER)
-        result += "{0:04X}   {2:{1}}   {3}\n".format(N, length * 3, hexa, s)
-        N += length
-    return result
 
 class PrintKey(hivelist.HiveList):
     "Print a registry key, and its subkeys and values"
@@ -125,7 +108,7 @@ class PrintKey(hivelist.HiveList):
                 for v in rawreg.values(key):
                     tp, dat = rawreg.value_data(v)
                     if tp == 'REG_BINARY':
-                        dat = "\n" + hd(dat, length = 16)
+                        dat = "\n" + "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(dat)])
                     if tp in ['REG_SZ', 'REG_EXPAND_SZ', 'REG_LINK']:
                         dat = dat.encode("ascii", 'backslashreplace')
                     if tp == 'REG_MULTI_SZ':

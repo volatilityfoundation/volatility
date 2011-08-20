@@ -173,15 +173,8 @@ class volshell(commands.command):
                 print "Memory unreadable at {0:08x}".format(address)
                 return
 
-            FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
-            N = 0; result = ''
-            while data:
-                s, data = data[:width], data[width:]
-                hexa = ' '.join(["{0:02x}".format(ord(x)) for x in s])
-                s = s.translate(FILTER)
-                result += "{0:08x}   {2:{1}}   {3}\n".format(address + N, width * 3, hexa, s)
-                N += width
-            print result
+            for offset, hex, chars in utils.Hexdump(data):
+                print "{0:#010x}  {1:<48}  {2}".format(address + offset, hex, ''.join(chars))
 
         def dd(address, length = 0x80, space = None):
             """Print dwords at address.

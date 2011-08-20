@@ -35,19 +35,6 @@ import volatility.cache as cache
 import volatility.utils as utils
 import volatility.commands as commands
 
-FILTER = ''.join([(len(repr(chr(i))) == 3) and chr(i) or '.' for i in range(256)])
-
-def hd(src, length = 16):
-    N = 0
-    result = '\n'
-    while src:
-        s, src = src[:length], src[length:]
-        hexa = ' '.join(["{0:02X}".format(ord(x)) for x in s])
-        s = s.translate(FILTER)
-        result += "{0:04X}   {2:{1}}   {3}\n".format(N, length * 3, hexa, s)
-        N += length
-    return result
-
 class LSADump(commands.command):
     """Dump (decrypted) LSA secrets from the registry"""
     # Declare meta information associated with this plugin
@@ -72,10 +59,6 @@ class LSADump(commands.command):
     def calculate(self):
         addr_space = utils.load_as(self._config)
 
-        # In general it's not recommended to update the global types on the fly,
-        # but I'm special and I know what I'm doing ;)
-        # types.update(regtypes)
-
         if not self._config.sys_offset or not self._config.sec_offset:
             debug.error("Both SYSTEM and SECURITY offsets must be provided")
 
@@ -88,7 +71,9 @@ class LSADump(commands.command):
     def render_text(self, outfd, data):
         for k in data:
             outfd.write(k + "\n")
-            outfd.write(hd(data[k]) + "\n")
+            for offset, hex, chars in utils.Hexdump(data[k]):
+                outfd.write("{0:#010x}  {1:<48}  {2}\n".format(offset, hex, ''.join(chars)))
+            outfd.write("\n")
 
 class HashDump(commands.command):
     """Dumps passwords hashes (LM/NTLM) from memory"""
