@@ -117,6 +117,8 @@ well_known_sids = {
   'S-1-5-64-14': 'SChannel Authentication',
   'S-1-5-64-21': 'Digest Authentication',
   'S-1-5-80': 'NT Service',
+  'S-1-5-86-1544737700-199408000-2549878335-3519669259-381336952': 'WMI (Local Service)',
+  'S-1-5-86-615999462-62705297-2911207457-59056572-3668589837': 'WMI (Network Service)',
   'S-1-5-1000': 'Other Organization',
   'S-1-16-0': 'Untrusted Mandatory Level',
   'S-1-16-4096': 'Low Mandatory Level',
