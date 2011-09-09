@@ -246,7 +246,7 @@ class UserAssist(printkey.PrintKey, hivelist.HiveList):
                     subname = v.Name
                     if tp == 'REG_BINARY':
                         dat_raw = dat
-                        dat = "\n" + printkey.hd(dat, length = 16)
+                        dat = "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(dat)])
                         try:
                             subname = subname.encode('rot_13')
                         except:
@@ -258,12 +258,14 @@ class UserAssist(printkey.PrintKey, hivelist.HiveList):
                         d = self.parse_data(dat_raw)
                         if d != None:
                             dat = d + dat
+                        else:
+                            dat = "\n" + dat
                     #these types shouldn't be encountered, but are just left here in case:
                     if tp in ['REG_SZ', 'REG_EXPAND_SZ', 'REG_LINK']:
                         dat = dat.encode("ascii", 'backslashreplace')
                     if tp == 'REG_MULTI_SZ':
                         for i in range(len(dat)):
                             dat[i] = dat[i].encode("ascii", 'backslashreplace')
-                    outfd.write("{0:13} {1:15} : {2:3s}\n".format(tp, subname, dat))
+                    outfd.write("\n{0:13} {1:15} : {2:3s}\n".format(tp, subname, dat))
         if not keyfound:
             outfd.write("The requested key could not be found in the hive(s) searched\n")
