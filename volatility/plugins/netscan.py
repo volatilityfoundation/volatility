@@ -243,7 +243,7 @@ class Netscan(commands.command):
 
     def render_text(self, outfd, data):
         outfd.write("{0:<10} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
-            "Offset", "Proto", "Local Address", "Foreign Address", "State", "Pid", "Owner", "Created"))
+            "Offset(P)", "Proto", "Local Address", "Foreign Address", "State", "Pid", "Owner", "Created"))
 
         for offset, proto, laddr, lport, raddr, rport, state, p, ctime in data:
             lendpoint = "{0}:{1}".format(laddr, lport)

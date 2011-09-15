@@ -80,6 +80,6 @@ class HiveScan(commands.command):
         return PoolScanHiveFast2(poolsize).scan(address_space)
 
     def render_text(self, outfd, data):
-        outfd.write("{0:15} {1:15}\n".format("Offset", "(hex)"))
+        outfd.write("{0:15} {1:15}\n".format("Offset(P)", "(hex)"))
         for offset in data:
             outfd.write("{0:<15} {1:#010x}\n".format(offset, offset))

@@ -75,6 +75,10 @@ xpsp2overlays = {
     'ExitTime' : [ None, ['WinTimeStamp', {}]],
     }],
 
+    '_OBJECT_SYMBOLIC_LINK' : [ None, { \
+    'CreationTime' : [ None, ['WinTimeStamp', {}]],
+    }],
+
     '_KUSER_SHARED_DATA' : [ None, { \
     'SystemTime' : [ None, ['WinTimeStamp', {}]], \
     'TimeZoneBias' : [ None, ['WinTimeStamp', {}]], \

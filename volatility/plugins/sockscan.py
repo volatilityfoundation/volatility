@@ -84,7 +84,7 @@ class SockScan(commands.command):
 
     def render_text(self, outfd, data):
 
-        outfd.write(" Offset     PID    Port   Proto               Address        Create Time               \n" + \
+        outfd.write(" Offset(P)  PID    Port   Proto               Address        Create Time               \n" + \
                     "---------- ------ ------ ------------------- -------------- -------------------------- \n")
 
         for sock_obj in data:

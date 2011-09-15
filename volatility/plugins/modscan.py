@@ -72,7 +72,7 @@ class ModScan(filescan.FileScan):
             yield ldr_entry
 
     def render_text(self, outfd, data):
-        outfd.write("{0:10} {1:50} {2:12} {3:8} {4}\n".format('Offset', 'File', 'Base', 'Size', 'Name'))
+        outfd.write("{0:10} {1:50} {2:12} {3:8} {4}\n".format('Offset(P)', 'File', 'Base', 'Size', 'Name'))
         for ldr_entry in data:
             outfd.write("{0:#010x} {1:50} {2:#012x} {3:#08x} {4}\n".format(
                          ldr_entry.obj_offset,
@@ -177,7 +177,7 @@ class ThrdScan(ModScan):
             yield thread
 
     def render_text(self, outfd, data):
-        outfd.write("Offset     PID    TID    Create Time               Exit Time                 StartAddr\n" + \
+        outfd.write("Offset(P)  PID    TID    Create Time               Exit Time                 StartAddr\n" + \
                     "---------- ------ ------ ------------------------- ------------------------- ----------\n")
 
         for thread in data:

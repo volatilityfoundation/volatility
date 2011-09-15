@@ -69,7 +69,7 @@ class ConnScan(commands.command):
             yield tcp_obj
 
     def render_text(self, outfd, data):
-        outfd.write(" Offset     Local Address             Remote Address            Pid   \n" + \
+        outfd.write(" Offset(P)  Local Address             Remote Address            Pid   \n" + \
                     "---------- ------------------------- ------------------------- ------ \n")
 
         ## We make a new scanner

@@ -114,7 +114,7 @@ class FileScan(commands.command):
 
     def render_text(self, outfd, data):
         outfd.write("{0:10} {1:4} {2:4} {3:6} {4}\n".format(
-                     'Offset(V)', '#Ptr', '#Hnd', 'Access', 'Name'))
+                     'Offset(P)', '#Ptr', '#Hnd', 'Access', 'Name'))
 
         for object_obj, file_obj, Name in data:
             ## Make a nicely formatted ACL string
@@ -189,7 +189,7 @@ class DriverScan(FileScan):
     def render_text(self, outfd, data):
         """Renders the text-based output"""
         outfd.write("{0:10} {1:4} {2:4} {3:10} {4:>6} {5:20} {6}\n".format(
-                     'Offset', '#Ptr', '#Hnd',
+                     'Offset(P)', '#Ptr', '#Hnd',
                      'Start', 'Size', 'Service key', 'Name'))
 
         for object_obj, driver_obj, extension_obj, ObjectNameString in data:
@@ -201,6 +201,64 @@ class DriverScan(FileScan):
                          self.parse_string(extension_obj.ServiceKeyName),
                          ObjectNameString,
                          self.parse_string(driver_obj.DriverName)))
+
+class PoolScanSymlink(PoolScanFile):
+    """ Scanner for symbolic link objects """
+    checks = [ ('PoolTagCheck', dict(tag = "Sym\xe2")),
+               # We use 0x48 as the lower bounds instead of 0x50 as described by Andreas
+               # http://computer.forensikblog.de/en/2009/04/symbolic_link_objects.html. 
+               # This is because the _OBJECT_SYMBOLIC_LINK structure size is 2 bytes smaller
+               # on Windows 7 (a field was removed) than on all other OS versions. 
+               ('CheckPoolSize', dict(condition = lambda x: x >= 0x48)),
+               ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
+               ]
+
+class SymLinkScan(FileScan):
+    "Scan for symbolic link objects "
+    def calculate(self):
+        ## Just grab the AS and scan it using our scanner
+        address_space = utils.load_as(self._config, astype = 'physical')
+
+        ## Will need the kernel AS for later:
+        self.kernel_address_space = utils.load_as(self._config)
+
+        for offset in PoolScanSymlink().scan(address_space):
+            pool_obj = obj.Object("_POOL_HEADER", vm = address_space,
+                                 offset = offset)
+
+            ## We work out the object from the end of the
+            ## allocation (bottom up).
+            link_obj = obj.Object("_OBJECT_SYMBOLIC_LINK", vm = address_space,
+                     offset = offset + pool_obj.BlockSize * self.pool_align - \
+                     address_space.profile.get_obj_size("_OBJECT_SYMBOLIC_LINK")
+                     )
+
+            ## The _OBJECT_HEADER is immediately below the _OBJECT_SYMBOLIC_LINK
+            object_obj = obj.Object(
+                "_OBJECT_HEADER", vm = address_space,
+                offset = link_obj.obj_offset - \
+                address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body')
+                )
+
+            object_obj.kas = self.kernel_address_space
+
+            if object_obj.get_object_type() != "SymbolicLink":
+                continue
+
+            object_name_string = object_obj.get_object_name()
+            yield object_obj, link_obj, object_name_string
+
+    def render_text(self, outfd, data):
+        """ Renders text-based output """
+
+        outfd.write("{0:10} {1:4} {2:4} {3:24} {4:<20} {5}\n".format(
+            'Offset(P)', '#Ptr', '#Hnd', 'CreateTime', 'From', 'To'))
+
+        for object, link, name in data:
+            outfd.write("{0:#010x} {1:4} {2:4} {3:<24} {4:<20} {5}\n".format(
+                        link.obj_offset, object.PointerCount, 
+                        object.HandleCount, link.CreationTime or '',
+                        name, self.parse_string(link.LinkTarget)))
 
 class PoolScanMutant(PoolScanDriver):
     """ Scanner for Mutants _KMUTANT """
@@ -264,7 +322,7 @@ class MutantScan(FileScan):
     def render_text(self, outfd, data):
         """Renders the output"""
         outfd.write("{0:10} {1:4} {2:4} {3:6} {4:10} {5:10} {6}\n".format(
-                     'Offset', '#Ptr', '#Hnd', 'Signal',
+                     'Offset(P)', '#Ptr', '#Hnd', 'Signal',
                      'Thread', 'CID', 'Name'))
 
         for object_obj, mutant, ObjectNameString in data:
@@ -387,7 +445,7 @@ class PSScan(commands.command):
 
 
     def render_text(self, outfd, data):
-        outfd.write(" Offset     Name             PID    PPID   PDB        Time created             Time exited             \n" + \
+        outfd.write(" Offset(P)  Name             PID    PPID   PDB        Time created             Time exited             \n" + \
                     "---------- ---------------- ------ ------ ---------- ------------------------ ------------------------ \n")
 
         for eprocess in data:
