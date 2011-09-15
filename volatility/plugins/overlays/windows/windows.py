@@ -420,6 +420,28 @@ class _MMVAD_SHORT(obj.CType):
         """Returns the FilePointer of the ControlArea of the MMVAD"""
         return self.ControlArea.FilePointer
 
+    def get_start(self):
+        """Get the starting virtual address"""
+        return self.StartingVpn << 12
+    
+    def get_end(self):
+        """Get the ending virtual address"""
+        return ((self.EndingVpn + 1) << 12) - 1
+    
+    def get_data(self):
+        """Get the data in a vad region"""
+    
+        start = self.get_start()
+        end   = self.get_end()
+
+        num_pages = (end - start + 1) >> 12
+
+        blank_page = '\x00' * 0x1000
+        pages_list = [(self.obj_vm.read(start + index * 0x1000, 0x1000) if self.obj_vm.is_valid_address(start + index * 0x1000) else blank_page) for index in xrange(num_pages)]
+        if None in pages_list:
+            pages_list = [a_page if a_page != None else blank_page for a_page in pages_list]
+        return ''.join(pages_list)
+
 class _MMVAD_LONG(_MMVAD_SHORT):
     """Subclasses _MMVAD_LONG based on _MMVAD_SHORT"""
     pass

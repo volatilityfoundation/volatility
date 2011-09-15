@@ -58,7 +58,7 @@ class VADInfo(taskmods.DllList):
     def write_vad_short(self, outfd, vad):
         """Renders a text version of a Short Vad"""
         outfd.write("VAD node @{0:08x} Start {1:08x} End {2:08x} Tag {3:4}\n".format(
-            vad.obj_offset, vad.StartingVpn << 12, ((vad.EndingVpn + 1) << 12) - 1, vad.Tag))
+            vad.obj_offset, vad.get_start(), vad.get_end(), vad.Tag))
         outfd.write("Flags: {0}\n".format(vad.Flags))
         outfd.write("Commit Charge: {0} Protection: {1:x}\n".format(
             vad.Flags.CommitCharge,
@@ -109,8 +109,8 @@ class VADTree(VADInfo):
                     level = levels.get(vad.get_parent().dereference().obj_offset, -1) + 1
                     levels[vad.obj_offset] = level
                     outfd.write(" " * level + "{0:08x} - {1:08x}\n".format(
-                                vad.StartingVpn << 12,
-                                ((vad.EndingVpn + 1) << 12) - 1))
+                                vad.get_start(),
+                                vad.get_end()))
 
     def render_dot(self, outfd, data):
         for task in data:
@@ -126,8 +126,8 @@ class VADTree(VADInfo):
                                 "shape = \"record\" color = \"blue\"];\n".format(
                         vad.obj_offset,
                         vad.Tag,
-                        vad.StartingVpn << 12,
-                        ((vad.EndingVpn + 1) << 12) - 1))
+                        vad.get_start(),
+                        vad.get_end()))
 
             outfd.write("}\n")
 
@@ -147,8 +147,8 @@ class VADWalk(VADInfo):
                         vad.get_parent().dereference().obj_offset or 0,
                         vad.LeftChild.dereference().obj_offset or 0,
                         vad.RightChild.dereference().obj_offset or 0,
-                        vad.StartingVpn << 12,
-                        ((vad.EndingVpn + 1) << 12) - 1,
+                        vad.get_start(),
+                        vad.get_end(),
                         vad.Tag))
 
 class VADDump(VADInfo):
@@ -184,30 +184,16 @@ class VADDump(VADInfo):
                     continue
 
                 # Find the start and end range
-                start = vad.StartingVpn << 12
-                end = ((vad.EndingVpn + 1) << 12) - 1
+                start = vad.get_start()
+                end = vad.get_end()
                 if start > 0xFFFFFFFF or end > (0xFFFFFFFF << 12):
                     continue
 
                 # Open the file and initialize the data
                 f = open(os.path.join(self._config.DUMP_DIR, "{0}.{1:x}.{2:08x}-{3:08x}.dmp".format(name, offset, start, end)), 'wb')
-                range_data = ""
-                num_pages = (end - start + 1) >> 12
-
-                for i in range(0, num_pages):
-                    # Run through the pages gathering the data
-                    page_addr = start + (i * 0x1000)
-                    if not task_space.is_valid_address(page_addr):
-                        range_data += ('\0' * 0x1000)
-                        continue
-                    page_read = task_space.read(page_addr, 0x1000)
-                    if page_read == None:
-                        range_data = range_data + ('\0' * 0x1000)
-                    else:
-                        range_data = range_data + page_read
+                range_data = vad.get_data()
 
                 if self._config.VERBOSE:
                     outfd.write("Writing VAD for " + ("{0}.{1:x}.{2:08x}-{3:08x}.dmp".format(name, offset, start, end)) + "\n")
                 f.write(range_data)
                 f.close()
-
