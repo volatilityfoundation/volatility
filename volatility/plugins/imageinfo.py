@@ -89,7 +89,7 @@ class ImageInfo(kdbg.KDBGScan):
         if hasattr(addr_space, "dtb"):
             yield ('DTB', hex(addr_space.dtb))
 
-        volmagic = obj.Object('VOLATILITY_MAGIC', 0x0, addr_space)
+        volmagic = obj.VolMagic(addr_space)
         kpcroffset = None
         if hasattr(addr_space, "dtb"):
             kdbgoffset = volmagic.KDBG.v()
@@ -122,8 +122,7 @@ class ImageInfo(kdbg.KDBGScan):
     def get_image_time(self, addr_space):
         """Get the Image Datetime"""
         result = {}
-        volmagic = obj.Object("VOLATILITY_MAGIC", 0x0, addr_space)
-        KUSER_SHARED_DATA = volmagic.KUSER_SHARED_DATA.v()
+        KUSER_SHARED_DATA = obj.VolMagic(addr_space).KUSER_SHARED_DATA.v()
         k = obj.Object("_KUSER_SHARED_DATA",
                               offset = KUSER_SHARED_DATA,
                               vm = addr_space)

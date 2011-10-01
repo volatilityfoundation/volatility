@@ -91,8 +91,7 @@ class KDBGScan(commands.command):
         for p in profilelist:
             self._config.update('PROFILE', p)
             buf = addrspace.BufferAddressSpace(self._config)
-            volmag = obj.Object('VOLATILITY_MAGIC', offset = 0, vm = buf)
-            proflens[p] = str(volmag.KDBGHeader)
+            proflens[p] = str(obj.VolMagic(buf).KDBGHeader)
             maxlen = max(maxlen, len(proflens[p]))
         self._config.update('PROFILE', origprofile)
 

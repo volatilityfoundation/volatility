@@ -84,7 +84,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         if self.cache:
             self._cache_values()
 
-        volmag = obj.Object('VOLATILITY_MAGIC', offset = 0, vm = self)
+        volmag = obj.VolMagic(self)
         if hasattr(volmag, self.checkname):
             self.as_assert(getattr(volmag, self.checkname).v(), "Failed valid Address Space check")
 
@@ -130,8 +130,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
             return self.base.dtb
         except AttributeError:
             ## Ok so we need to find our dtb ourselves:
-            volmagic = obj.Object('VOLATILITY_MAGIC', 0x0, self.base)
-            dtb = volmagic.DTB.v()
+            dtb = obj.VolMagic(self.base).DTB.v()
             if dtb:
                 ## Make sure to save dtb for other AS's
                 ## Will this have an effect on following ASes attempts if this fails?

@@ -71,13 +71,12 @@ class HiveScan(commands.command):
     @cache.CacheDecorator("tests/hivescan")
     def calculate(self):
         ## Just grab the AS and scan it using our scanner
-        address_space = utils.load_as(self._config, astype = 'physical')
-        volmag = obj.Object('VOLATILITY_MAGIC', offset = 0, vm = address_space)
-        o = volmag.HiveListPoolSize
+        pspace = utils.load_as(self._config, astype = 'physical')
+        o = obj.VolMagic(pspace).HiveListPoolSize
 
         poolsize = o.v()
 
-        return PoolScanHiveFast2(poolsize).scan(address_space)
+        return PoolScanHiveFast2(poolsize).scan(pspace)
 
     def render_text(self, outfd, data):
         outfd.write("{0:15} {1:15}\n".format("Offset(P)", "(hex)"))

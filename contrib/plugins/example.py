@@ -41,9 +41,8 @@ class DateTime(commands.command):
         result = {}
 
         # Create a VOLATILITY_MAGIC object to look up the location of certain constants
-        volmagic = obj.Object("VOLATILITY_MAGIC", 0x0, addr_space)
         # Get the KUSER_SHARED_DATA location
-        KUSER_SHARED_DATA = volmagic.KUSER_SHARED_DATA.v()
+        KUSER_SHARED_DATA = obj.VolMagic(addr_space).KUSER_SHARED_DATA.v()
         # Create the _KUSER_SHARED_DATA object at the appropriate offset
         k = obj.Object("_KUSER_SHARED_DATA",
                               offset = KUSER_SHARED_DATA,

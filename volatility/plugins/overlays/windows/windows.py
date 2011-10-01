@@ -303,9 +303,8 @@ class _OBJECT_HEADER(obj.CType):
 
     def get_object_type(self):
         """Return the object's type as a string"""
-        volmagic = obj.Object("VOLATILITY_MAGIC", 0x0, self.obj_vm)
         try:
-            type_map = dict((v, k) for k, v in volmagic.TypeIndexMap.v().items())
+            type_map = dict((v, k) for k, v in obj.VolMagic(self.obj_vm).TypeIndexMap.v().items())
             return type_map.get(self.TypeIndex.v(), '')
         except AttributeError:
             type_obj = obj.Object("_OBJECT_TYPE", self.Type, self.kas)
@@ -315,7 +314,7 @@ class _OBJECT_HEADER(obj.CType):
         """Return the name of the object from the name info header"""
 
         ## Account for changes to the object header for Windows 7
-        volmagic = obj.Object("VOLATILITY_MAGIC", 0x0, self.obj_vm)
+        volmagic = obj.VolMagic(self.obj_vm)
         try:
             info_mask_to_offset = volmagic.InfoMaskToOffset.v()
             OBJECT_HEADER_NAME_INFO = volmagic.InfoMaskMap.v()['_OBJECT_HEADER_NAME_INFO']
@@ -423,16 +422,16 @@ class _MMVAD_SHORT(obj.CType):
     def get_start(self):
         """Get the starting virtual address"""
         return self.StartingVpn << 12
-    
+
     def get_end(self):
         """Get the ending virtual address"""
         return ((self.EndingVpn + 1) << 12) - 1
-    
+
     def get_data(self):
         """Get the data in a vad region"""
-    
+
         start = self.get_start()
-        end   = self.get_end()
+        end = self.get_end()
 
         num_pages = (end - start + 1) >> 12
 
@@ -499,9 +498,7 @@ class VolatilityKDBG(obj.VolatilityMagic):
 
     def generate_suggestions(self):
         """Generates a list of possible KDBG structure locations"""
-        volmag = obj.Object('VOLATILITY_MAGIC', offset = 0, vm = self.obj_vm)
-
-        scanner = kdbg.KDBGScanner(needles = [volmag.KDBGHeader.v()])
+        scanner = kdbg.KDBGScanner(needles = [obj.VolMagic(self.obj_vm).KDBGHeader.v()])
         for val in scanner.scan(self.obj_vm):
             yield val
 

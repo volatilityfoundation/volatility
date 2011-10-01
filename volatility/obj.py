@@ -199,7 +199,7 @@ class NoneObject(object):
         return self
 
     def __int__(self):
-        return - 1
+        return -1
 
     def __lshift__(self, other):
         return self
@@ -828,6 +828,10 @@ class VolatilityMagic(BaseObject):
             return val
         else:
             return NoneObject("No suggestions available")
+
+def VolMagic(vm):
+    """Convenience function to save people typing out an actual obj.Object call"""
+    return Object("VOLATILITY_MAGIC", 0x0, vm = vm)
 
 ## Profiles are the interface for creating/interpreting
 ## objects

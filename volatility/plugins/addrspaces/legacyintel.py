@@ -84,8 +84,7 @@ class IA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddres
             return self.base.dtb
         except AttributeError:
             ## Ok so we need to find our dtb ourselves:
-            volmagic = obj.Object('VOLATILITY_MAGIC', 0x0, self.base)
-            dtb = volmagic.DTB.v()
+            dtb = obj.VolMagic(self.base).DTB.v()
             if dtb:
                 ## Make sure to save dtb for other AS's
                 self.base.dtb = dtb

@@ -44,8 +44,7 @@ def get_kdbg(addr_space):
         # Check the OwnerTag is in fact the string KDBG
         return kdbgobj.Header.OwnerTag == 0x4742444B
 
-    volmagic = obj.Object('VOLATILITY_MAGIC', 0x0, addr_space)
-    kdbgo = volmagic.KDBG.v()
+    kdbgo = obj.VolMagic(addr_space).KDBG.v()
 
     kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = kdbgo, vm = addr_space)
 
@@ -53,7 +52,7 @@ def get_kdbg(addr_space):
         return kdbg
     else:
         # Fall back to finding it via the KPCR
-        kpcra = volmagic.KDBG.v()
+        kpcra = obj.VolMagic(addr_space).KDBG.v()
         kpcrval = obj.Object("_KPCR", offset = kpcra, vm = addr_space)
 
         DebuggerDataList = kpcrval.KdVersionBlock.dereference_as("_DBGKD_GET_VERSION64").DebuggerDataList

@@ -92,9 +92,8 @@ class CheckThreads(scan.ScannerCheck):
                           self.address_space.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
 
         ## The preamble needs to be augmented for Windows7
-        volmagic = obj.Object("VOLATILITY_MAGIC", 0x0, self.address_space)
         try:
-            ObjectPreamble = volmagic.ObjectPreamble.v()
+            ObjectPreamble = obj.VolMagic(self.address_space).ObjectPreamble.v()
             offsetupdate = self.address_space.profile.get_obj_size(ObjectPreamble)
         except AttributeError:
             offsetupdate = 0
@@ -139,7 +138,7 @@ class PoolScanThreadFast(scan.PoolScanner):
         pool_base = found - self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
 
         ## Another data structure is added to the preamble for Win7.
-        volmagic = obj.Object("VOLATILITY_MAGIC", 0x0, self.buffer)
+        volmagic = obj.VolMagic(self.buffer)
         try:
             if not volmagic.ObjectPreamble.v() in self.preamble:
                 self.preamble.append(volmagic.ObjectPreamble.v())

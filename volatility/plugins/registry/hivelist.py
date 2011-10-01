@@ -77,8 +77,7 @@ class HiveList(hs.HiveScan):
         ## could go from physical to virtual memory easier.
         for offset in hives:
             hive = obj.Object("_CMHIVE", int(offset), flat)
-            volmag = obj.Object('VOLATILITY_MAGIC', offset = 0, vm = flat)
-            o = volmag.HiveListOffset
+            o = obj.VolMagic(flat).HiveListOffset
             if hive.HiveList.Flink.v():
                 start_hive_offset = hive.HiveList.Flink.v() - o.v()
 
