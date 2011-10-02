@@ -44,7 +44,7 @@ class Handles(taskmods.DllList, filescan.FileScan):
         output = []
         kcb = handle.KeyControlBlock
         while kcb.ParentKcb:
-            if kcb.NameBlock == None:
+            if kcb.NameBlock.Name == None:
                 break
             output.append(str(kcb.NameBlock.Name))
             kcb = kcb.ParentKcb
