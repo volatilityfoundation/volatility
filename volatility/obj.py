@@ -152,6 +152,8 @@ class NoneObject(object):
         else:
             debug.warning("{0}".format(self.reason))
 
+        return ""
+
     def write(self, data):
         """Write procedure only ever returns False"""
         return False
@@ -395,7 +397,6 @@ class BaseObject(object):
         return result
 
     def __setstate__(self, state):
-        #import pdb; pdb.set_trace()
         ## What we want to do here is to instantiate a new object and then copy it into ourselves
         #new_object = Object(state['theType'], state['offset'], state['vm'], name = state['name'])
         new_object = Object(**state)
@@ -594,8 +595,7 @@ class Void(NativeType):
         return bool(self.dereference())
 
     def dereference_as(self, derefType):
-        return Object(derefType, self.v(), \
-                         self.obj_vm, parent = self)
+        return Object(derefType, self.v(), self.obj_vm, parent = self)
 
 class Array(BaseObject):
     """ An array of objects of the same size """
@@ -743,8 +743,8 @@ class CType(BaseObject):
             ## Otherwise its relative to the start of our struct
             offset = int(offset) + int(self.obj_offset)
 
-        result = cls(offset = offset, vm = self.obj_vm,
-                     parent = self, name = attr)
+        result = cls(offset = offset, vm = self.obj_vm, parent = self,
+                     name = attr)
 
         return result
 
@@ -926,9 +926,6 @@ class Profile(object):
         different list types for backwards compatibility.
         """
         ## This supports plugin memory objects:
-        #if typeList[0] in MemoryRegistry.OBJECT_CLASSES.objects:
-        #    print "Using plugin for %s" % 
-
         try:
             args = typeList[1]
 
@@ -1067,8 +1064,7 @@ class Profile(object):
             members[k] = (v[0], self.list_to_type(k, v[1], typeDict))
 
         ## Allow the plugins to over ride the class constructor here
-        if self.object_classes and \
-               cname in self.object_classes:
+        if self.object_classes and cname in self.object_classes:
             cls = self.object_classes[cname]
         else:
             cls = CType
