@@ -143,7 +143,13 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         in the given entry
         '''
         if entry:
-            return (entry & 1) == 1
+            if (entry & 1):
+                return True
+
+            # The page is in transition and is actually present.
+            if (entry & (1 << 11)):
+                return True
+
         return False
 
     def page_size_flag(self, entry):

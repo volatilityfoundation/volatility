@@ -91,7 +91,15 @@ class IA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddres
                 return dtb
 
     def entry_present(self, entry):
-        return (entry & (0x00000001)) == 0x00000001
+        if entry:
+            if (entry & 1):
+                return True
+
+            # The page is in transition and is actually present.
+            if (entry & (1 << 11)):
+                return True
+
+        return False
 
     def page_size_flag(self, entry):
         if (entry & (1 << 7)) == (1 << 7):
