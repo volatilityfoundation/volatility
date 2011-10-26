@@ -121,20 +121,13 @@ class SSDT(commands.command):
 
         print "Finding appropriate address space for tables..."
         tables_with_vm = []
+        procs = list(tasks.pslist(addr_space))
         for idx, table, n in tables:
-            found = False
-            for p in tasks.pslist(addr_space):
-                ## This is the process address space
-                ps_ad = p.get_process_address_space()
-                ## Is the table accessible from the process AS?
-                if ps_ad.is_valid_address(table):
-                    tables_with_vm.append((idx, table, n, ps_ad))
-                    found = True
-                    break
-            ## If not we use the kernel address space
-            if not found:
-                # Any VM is equally bad...
-                tables_with_vm.append((idx, table, n, addr_space))
+            vm = tasks.find_space(addr_space, procs, table)
+            if vm:
+                tables_with_vm.append((idx, table, n, vm))
+            else:
+                debug.debug("[SSDT not resident at 0x{0:08X}]\n".format(table))
 
         for idx, table, n, vm in sorted(tables_with_vm, key = itemgetter(0)):
             yield idx, table, n, vm, mods, mod_addrs
@@ -165,5 +158,3 @@ class SSDT(commands.command):
                                                                        syscall_addr,
                                                                        syscall_name,
                                                                        syscall_modname))
-            else:
-                outfd.write("  [SSDT not resident at 0x{0:08X} ]\n".format(table))

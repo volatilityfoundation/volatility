@@ -202,6 +202,21 @@ class _EPROCESS(obj.CType):
 
         return process_as
 
+    def _get_modules(self, the_list, the_type):
+        """Generator for DLLs in one of the 3 PEB lists"""
+        if self.UniqueProcessId and the_list:
+            for l in the_list.list_of_type("_LDR_DATA_TABLE_ENTRY", the_type):
+                yield l
+    
+    def get_init_modules(self):
+        return self._get_modules(self.Peb.Ldr.InInitializationOrderModuleList, "InInitializationOrderLinks")
+    
+    def get_mem_modules(self):
+        return self._get_modules(self.Peb.Ldr.InMemoryOrderModuleList, "InMemoryOrderLinks")
+    
+    def get_load_modules(self):
+        return self._get_modules(self.Peb.Ldr.InLoadOrderModuleList, "InLoadOrderLinks")
+
 AbstractWindows.object_classes['_EPROCESS'] = _EPROCESS
 
 class _HANDLE_TABLE(obj.CType):

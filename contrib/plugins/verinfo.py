@@ -335,7 +335,7 @@ class VerInfo(procdump.ProcExeDump):
         tasks = win32.tasks.pslist(addr_space)
 
         for task in tasks:
-            for m in self.list_modules(task):
+            for m in task.get_load_modules():
                 if self._config.REGEX is not None:
                     if not (module_pattern.search(str(m.FullDllName))
                             or module_pattern.search(str(m.BaseDllName))):

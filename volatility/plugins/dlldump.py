@@ -71,7 +71,7 @@ class DLLDump(procdump.ProcExeDump):
             if ps_ad == None:
                 continue
 
-            mods = [(mod.DllBase.v(), mod) for mod in self.list_modules(proc)]
+            mods = [(mod.DllBase.v(), mod) for mod in proc.get_load_modules()]
 
             for (base, mod) in mods:
                 if self._config.REGEX:

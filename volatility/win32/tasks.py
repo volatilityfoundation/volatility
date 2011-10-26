@@ -76,3 +76,14 @@ def pslist(addr_space):
             yield l
     else:
         raise TasksNotFound("Could not list tasks, please verify the --profile option and whether this image is valid")
+
+def find_space(addr_space, procs, mod_base):
+    """Search for an address space (usually looking for a GUI process)"""
+    if addr_space.is_valid_address(mod_base):
+        return addr_space
+    for proc in procs:
+        ps_ad = proc.get_process_address_space()
+        if ps_ad != None:
+            if ps_ad.is_valid_address(mod_base):
+                return ps_ad
+    return None
