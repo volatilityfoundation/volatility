@@ -102,6 +102,10 @@ xpsp2overlays = {
     'Body' : [ None, ['unsigned int']],
     }],
 
+    '_IMAGE_SECTION_HEADER' : [ None, {
+    'Name' : [ 0x0, ['String', dict(length = 8)]],
+    }], 
+
     '_DBGKD_GET_VERSION64' : [  None, {
     'DebuggerDataList' : [ None, ['pointer', ['unsigned long']]], \
     }],

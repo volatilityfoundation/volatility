@@ -552,3 +552,56 @@ class VolatilityIA32ValidAS(obj.VolatilityMagic):
         yield False
 
 AbstractWindows.object_classes['VolatilityIA32ValidAS'] = VolatilityIA32ValidAS
+
+class _IMAGE_DOS_HEADER(obj.CType):
+    """DOS header"""
+
+    def get_nt_header(self):
+        """Get the NT header"""
+
+        if self.e_magic != 0x5a4d:
+            raise ValueError('e_magic {0:04X} is not a valid DOS signature.'.format(self.e_magic))
+
+        nt_header = obj.Object("_IMAGE_NT_HEADERS", 
+                          offset = self.e_lfanew + self.obj_offset,
+                          vm = self.obj_vm)
+
+        if nt_header.Signature != 0x4550:
+            raise ValueError('NT header signature {0:04X} is not a valid'.format(nt_header.Signature))
+
+        return nt_header
+
+AbstractWindows.object_classes['_IMAGE_DOS_HEADER'] = _IMAGE_DOS_HEADER
+
+class _IMAGE_NT_HEADERS(obj.CType):
+    """PE header"""
+
+    def get_sections(self, unsafe):
+        """Get the PE sections"""
+        sect_size = self.obj_vm.profile.get_obj_size("_IMAGE_SECTION_HEADER")
+        start_addr = self.FileHeader.SizeOfOptionalHeader + self.OptionalHeader.obj_offset
+
+        for i in range(self.FileHeader.NumberOfSections):
+            s_addr = start_addr + (i * sect_size)
+            sect = obj.Object("_IMAGE_SECTION_HEADER", offset = s_addr, vm = self.obj_vm, parent = self)
+            if not unsafe:
+                sect.sanity_check_section()
+            yield sect
+
+AbstractWindows.object_classes['_IMAGE_NT_HEADERS'] = _IMAGE_NT_HEADERS
+    
+class _IMAGE_SECTION_HEADER(obj.CType):
+    """PE section"""
+
+    def sanity_check_section(self):
+        """Sanity checks address boundaries"""
+        # Note: all addresses here are RVAs
+        image_size = self.obj_parent.OptionalHeader.SizeOfImage
+        if self.VirtualAddress > image_size:
+            raise ValueError('VirtualAddress {0:08x} is past the end of image.'.format(self.VirtualAddress))
+        if self.Misc.VirtualSize > image_size:
+            raise ValueError('VirtualSize {0:08x} is larger than image size.'.format(self.Misc.VirtualSize))
+        if self.SizeOfRawData > image_size:
+            raise ValueError('SizeOfRawData {0:08x} is larger than image size.'.format(self.SizeOfRawData))
+
+AbstractWindows.object_classes['_IMAGE_SECTION_HEADER'] = _IMAGE_SECTION_HEADER

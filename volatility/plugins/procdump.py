@@ -25,7 +25,7 @@ import struct
 import volatility.plugins.taskmods as taskmods
 import volatility.debug as debug
 import volatility.obj as obj
-
+    
 class ProcExeDump(taskmods.DllList):
     """Dump a process to an executable file sample"""
     def __init__(self, config, *args):
@@ -54,7 +54,6 @@ class ProcExeDump(taskmods.DllList):
             if task.Peb.ImageBaseAddress == None or task_space == None or task_space.vtop(task.Peb.ImageBaseAddress) == None:
                 outfd.write("Error: ImageBaseAddress not memory resident for process [{0}]\n".format(pid))
                 continue
-
             outfd.write("Dumping {0}, pid: {1:6} output: {2}\n".format(task.ImageFileName, pid, "executable." + str(pid) + ".exe"))
             of = open(os.path.join(self._config.DUMP_DIR, "executable." + str(pid) + ".exe"), 'wb')
             try:
@@ -79,36 +78,11 @@ class ProcExeDump(taskmods.DllList):
 
     def get_nt_header(self, addr_space, base_addr):
         """Returns the NT Header object for a task"""
+
         dos_header = obj.Object("_IMAGE_DOS_HEADER", offset = base_addr,
                                 vm = addr_space)
 
-        nt_header = obj.Object("_IMAGE_NT_HEADERS",
-                               offset = dos_header.e_lfanew + base_addr,
-                               vm = addr_space)
-
-        return nt_header
-
-    def get_sections(self, addr_space, nt_header):
-        """Returns the sectors from a process"""
-        sect_size = addr_space.profile.get_obj_size("_IMAGE_SECTION_HEADER")
-        start_addr = nt_header.FileHeader.SizeOfOptionalHeader + nt_header.OptionalHeader.obj_offset
-
-        for i in range(nt_header.FileHeader.NumberOfSections):
-            s_addr = start_addr + (i * sect_size)
-            sect = obj.Object("_IMAGE_SECTION_HEADER", s_addr, addr_space)
-            if not self._config.UNSAFE:
-                self.sanity_check_section(sect, nt_header.OptionalHeader.SizeOfImage)
-            yield sect
-
-    def sanity_check_section(self, sect, image_size):
-        """Sanity checks address boundaries"""
-        # Note: all addresses here are RVAs
-        if sect.VirtualAddress > image_size:
-            raise ValueError('VirtualAddress {0:08x} is past the end of image.'.format(sect.VirtualAddress))
-        if sect.Misc.VirtualSize > image_size:
-            raise ValueError('VirtualSize {0:08x} is larger than image size.'.format(sect.Misc.VirtualSize))
-        if sect.SizeOfRawData > image_size:
-            raise ValueError('SizeOfRawData {0:08x} is larger than image size.'.format(sect.SizeOfRawData))
+        return dos_header.get_nt_header()
 
     def get_code(self, addr_space, data_start, data_size, offset, outfd):
         """Returns a single section of re-created data from a file image"""
@@ -164,7 +138,7 @@ class ProcExeDump(taskmods.DllList):
         yield (0, header)
 
         fa = nt_header.OptionalHeader.FileAlignment
-        for sect in self.get_sections(addr_space, nt_header):
+        for sect in nt_header.get_sections(self._config.UNSAFE):
             foa = self.round(sect.PointerToRawData, fa)
             if foa != sect.PointerToRawData:
                 outfd.write("Warning: section start on disk not aligned to file alignment.\n")
@@ -196,7 +170,7 @@ class ProcMemDump(ProcExeDump):
 
         prevsect = None
         sect_sizes = []
-        for sect in self.get_sections(addr_space, nt_header):
+        for sect in nt_header.get_sections(self._config.UNSAFE):
             if prevsect is not None:
                 sect_sizes.append(sect.VirtualAddress - prevsect.VirtualAddress)
             prevsect = sect
@@ -205,7 +179,7 @@ class ProcMemDump(ProcExeDump):
 
         counter = 0
         start_addr = nt_header.FileHeader.SizeOfOptionalHeader + (nt_header.OptionalHeader.obj_offset - base_addr)
-        for sect in self.get_sections(addr_space, nt_header):
+        for sect in nt_header.get_sections(self._config.UNSAFE):
             sectheader = addr_space.read(sect.obj_offset, shs)
             # Change the PointerToRawData
             sectheader = self.replace_header_field(sect, sectheader, sect.PointerToRawData, sect.VirtualAddress)

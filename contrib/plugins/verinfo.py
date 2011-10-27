@@ -343,11 +343,6 @@ class VerInfo(procdump.ProcExeDump):
 
                 yield task.get_process_address_space(), m
 
-    def get_section_name(self, section):
-        """Returns the null-terminated section name"""
-        array = ''.join([chr(x) for x in section.Name]) + "\x00"
-        return array[:array.index("\x00")]
-
     def display_unicode(self, string):
         """Renders a UTF16 string"""
         if string is None:
@@ -362,12 +357,16 @@ class VerInfo(procdump.ProcExeDump):
         if not addr_space.is_valid_address(offset):
             return obj.NoneObject("Disk image not resident in memory")
 
-        nt_header = self.get_nt_header(addr_space = addr_space,
+        try:
+            nt_header = self.get_nt_header(addr_space = addr_space,
                                        base_addr = offset)
+        except ValueError:
+            return obj.NoneObject("PE file failed initial sanity checks")
+
         # header = s.read(m.DllBase, nt_header.OptionalHeader.SizeOfHeaders)
 
-        for sect in self.get_sections(addr_space, nt_header):
-            if self.get_section_name(sect) == '.rsrc':
+        for sect in nt_header.get_sections(self._config.UNSAFE):
+            if str(sect.Name) == '.rsrc':
                 root = obj.Object("_IMAGE_RESOURCE_DIRECTORY", offset + sect.VirtualAddress, addr_space)
                 for rname, rentry, rdata in root.get_entries():
                     # We're a VERSION resource and we have subelements
