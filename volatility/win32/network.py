@@ -31,7 +31,7 @@
 import volatility.win32 as win32
 import volatility.obj as obj
 
-module_versions = { \
+module_versions_xp = { \
 'MP' : { \
   'TCBTableOff' : [0x497e8], \
   'SizeOff' : [0x3f7c8], \
@@ -74,6 +74,9 @@ module_versions = { \
   'AddrObjTableOffset'  : [0x489E0], \
   'AddrObjTableSizeOffset' : [0x489E4], \
 },
+}
+
+module_versions_2k3 = { \
 # w2k3 sp0
 '3790' : { \
  'TCBTableOff' : [0x4c6c8], \
@@ -108,6 +111,11 @@ def determine_connections(addr_space):
     """Determines all connections for each module"""
     all_modules = win32.modules.lsmod(addr_space)
 
+    if addr_space.profile.metadata.get('major', 0) <= 5.1 and addr_space.profile.metadata.get('minor', 0) == 1:
+        module_versions = module_versions_xp
+    else:
+        module_versions = module_versions_2k3
+
     for m in all_modules:
         if str(m.BaseDllName).lower() == 'tcpip.sys':
             for attempt in module_versions:
@@ -139,6 +147,11 @@ def determine_connections(addr_space):
 def determine_sockets(addr_space):
     """Determines all sockets for each module"""
     all_modules = win32.modules.lsmod(addr_space)
+
+    if addr_space.profile.metadata.get('major', 0) <= 5.1 and addr_space.profile.metadata.get('minor', 0) == 1:
+        module_versions = module_versions_xp
+    else:
+        module_versions = module_versions_2k3
 
     for m in all_modules:
         if str(m.BaseDllName).lower() == 'tcpip.sys':
