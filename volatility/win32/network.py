@@ -111,7 +111,10 @@ def determine_connections(addr_space):
     """Determines all connections for each module"""
     all_modules = win32.modules.lsmod(addr_space)
 
-    if addr_space.profile.metadata.get('major', 0) <= 5.1 and addr_space.profile.metadata.get('minor', 0) == 1:
+    version = (addr_space.profile.metadata.get('major', 0), 
+               addr_space.profile.metadata.get('minor', 0))
+
+    if version <= (5, 1):
         module_versions = module_versions_xp
     else:
         module_versions = module_versions_2k3
