@@ -126,7 +126,7 @@ class FileScan(commands.command):
                         ((file_obj.SharedDelete > 0 and "d") or '-')
 
             outfd.write("{0:#010x} {1:4} {2:4} {3:6} {4}\n".format(
-                         object_obj.obj_offset, object_obj.PointerCount,
+                         file_obj.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount, AccessStr, Name))
 
 class PoolScanDriver(PoolScanFile):

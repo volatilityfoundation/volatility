@@ -65,9 +65,9 @@ class Handles(taskmods.DllList, filescan.FileScan):
             if object_list and otype not in object_list:
                 continue
             if not self._config.PHYSICAL_OFFSET:
-                offset = h.obj_offset
+                offset = h.Body.obj_offset
             else:
-                offset = h.obj_vm.vtop(h.obj_offset)
+                offset = h.obj_vm.vtop(h.Body.obj_offset)
 
             outfd.write("{0:#010x}   {1:<6} {2:<16} {3}\n".format(
                 offset, pid, otype, name))
