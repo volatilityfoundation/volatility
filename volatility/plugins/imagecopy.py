@@ -55,7 +55,7 @@ class ImageCopy(commands.command):
         if self._config.OUTPUT_IMAGE is None:
             debug.error("Please provide an output-image filename")
 
-        if os.path.exists(self._config.OUTPUT_IMAGE):
+        if os.path.exists(self._config.OUTPUT_IMAGE) and (os.path.getsize(self._config.OUTPUT_IMAGE) > 1):
             debug.error("Refusing to overwrite an existing file, please remove it before continuing")
 
         outfd.write("Writing data (" + self.human_readable(self._config.BLOCKSIZE) + " chunks): |")
