@@ -75,6 +75,9 @@ class FWForensic1394(object):
             devices = self._bus.devices()
             # FIXME: Base the device off the location rather than hardcoded first remote device
             self._device = devices[int(self.location)]
+            # Cetain Firewire cards misreport their maximum request size, notably Ricoh onboard chipsets
+            # Uncomment the line below for such broken hardware
+            # self._device._request_size = 1024
             if not self._device.isopen():
                 self._device.open()
             # The device requires time to settle before it can be used
