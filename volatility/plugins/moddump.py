@@ -65,9 +65,9 @@ class ModDump(procdump.ProcExeDump):
         procs = list(tasks.pslist(addr_space))
 
         if self._config.OFFSET:
-            try:
+            if mods.has_key(self._config.OFFSET):
                 mod_name = mods[self._config.OFFSET].BaseDllName
-            except KeyError:
+            else:
                 mod_name = "Unknown"
             yield addr_space, procs, int(self._config.OFFSET), mod_name
         else:
@@ -100,4 +100,4 @@ class ModDump(procdump.ProcExeDump):
                     outfd.write("You can use -u to disable this check.\n")
                 of.close()
             else:
-                print 'Cannot dump {0} at {1:8x}'.format(mod_name, mod_base)
+                outfd.write("Cannot dump {0} at {1:8x}\n".format(mod_name, mod_base))

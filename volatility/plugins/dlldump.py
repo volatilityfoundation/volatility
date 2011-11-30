@@ -56,7 +56,6 @@ class DLLDump(procdump.ProcExeDump):
         else:
             data = self.filter_tasks(tasks.pslist(addr_space))
 
-
         if self._config.REGEX:
             try:
                 if self._config.IGNORE_CASE:
@@ -71,16 +70,20 @@ class DLLDump(procdump.ProcExeDump):
             if ps_ad == None:
                 continue
 
-            mods = [(mod.DllBase.v(), mod) for mod in proc.get_load_modules()]
+            mods = dict((mod.DllBase.v(), mod) for mod in proc.get_load_modules())
 
-            for (base, mod) in mods:
-                if self._config.REGEX:
-                    if not mod_re.search(str(mod.FullDllName)) and not mod_re.search(str(mod.BaseDllName)):
-                        continue
-                if self._config.BASE:
-                    if base != self._config.BASE:
-                        continue
-                yield proc, ps_ad, mod
+            if self._config.BASE:
+                if mods.has_key(self._config.BASE):
+                    mod_name = mods[self._config.BASE].BaseDllName
+                else:
+                    mod_name = "Unknown"
+                yield proc, ps_ad, int(self._config.BASE), mod_name
+            else:
+                for mod in mods.values():
+                    if self._config.REGEX:
+                        if not mod_re.search(str(mod.FullDllName)) and not mod_re.search(str(mod.BaseDllName)):
+                            continue
+                    yield proc, ps_ad, mod.DllBase.v(), mod.BaseDllName
 
     def render_text(self, outfd, data):
         if self._config.DUMP_DIR == None:
@@ -88,14 +91,14 @@ class DLLDump(procdump.ProcExeDump):
         if not os.path.isdir(self._config.DUMP_DIR):
             debug.error(self._config.DUMP_DIR + " is not a directory")
 
-        for proc, ps_ad, mod in data:
-            if ps_ad.is_valid_address(mod.DllBase):
+        for proc, ps_ad, mod_base, mod_name in data:
+            if ps_ad.is_valid_address(mod_base):
                 process_offset = ps_ad.vtop(proc.obj_offset)
-                dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod.DllBase)
-                outfd.write("Dumping {0}, Process: {1}, Base: {2:8x} output: {3}\n".format(mod.BaseDllName, proc.ImageFileName, mod.DllBase, dump_file))
+                dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod_base)
+                outfd.write("Dumping {0}, Process: {1}, Base: {2:8x} output: {3}\n".format(mod_name, proc.ImageFileName, mod_base, dump_file))
                 of = open(os.path.join(self._config.DUMP_DIR, dump_file), 'wb')
                 try:
-                    for chunk in self.get_image(outfd, ps_ad, mod.DllBase):
+                    for chunk in self.get_image(outfd, ps_ad, mod_base):
                         offset, code = chunk
                         of.seek(offset)
                         of.write(code)
@@ -105,4 +108,4 @@ class DLLDump(procdump.ProcExeDump):
                     outfd.write("You can use -u to disable this check.\n")
                 of.close()
             else:
-                print 'Cannot dump {0}@{1} at {2:8x}'.format(proc.ImageFileName, mod.BaseDllName, mod.DllBase)
+                outfd.write("Cannot dump {0}@{1} at {2:8x}\n".format(proc.ImageFileName, mod_name, mod_base))
