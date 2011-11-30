@@ -38,6 +38,8 @@ class Handles(taskmods.DllList, filescan.FileScan):
         config.add_option("OBJECT-TYPE", short_option = 't', default = None,
                           help = 'Show these object types (comma-separated)',
                           action = 'store', type = 'str')
+        config.add_option("SILENT", short_option = 's', default = False,
+                          action = 'store_true', help = 'Suppress less meaningful results')
 
     def full_key_name(self, handle):
         """Returns the full name of a registry key based on its CM_KEY_BODY handle"""
@@ -64,6 +66,9 @@ class Handles(taskmods.DllList, filescan.FileScan):
         for pid, h, otype, name in data:
             if object_list and otype not in object_list:
                 continue
+            if self._config.SILENT:
+                if len(name.replace("'", "")) == 0:
+                    continue 
             if not self._config.PHYSICAL_OFFSET:
                 offset = h.Body.obj_offset
             else:
