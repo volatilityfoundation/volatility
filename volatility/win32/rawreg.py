@@ -36,6 +36,9 @@ RI_SIG = "ri"
 NK_SIG = "nk"
 VK_SIG = "vk"
 
+BIG_DATA_MAGIC = 0x3fd8
+
+
 KEY_FLAGS = {
     "KEY_IS_VOLATILE"   : 0x01,
     "KEY_HIVE_EXIT"     : 0x02,
@@ -147,6 +150,31 @@ def value_data(val):
         if val.DataLength == 0x80000000:
             return ("REG_DWORD", val.Type.v())
         valdata = val.obj_vm.read(val.Data.obj_offset, val.DataLength & 0x7FFFFFFF)
+    elif val.DataLength > 0x4000:
+        # Value is a BIG_DATA block, stored in chunked format
+        datalen = val.DataLength
+        big_data = obj.Object("_CM_BIG_DATA", val.Data, val.obj_vm)
+        valdata = ""
+        thelist = []
+        if not big_data.Count or big_data.Count > 0x80000000: 
+            thelist = []
+        else:
+            list_address = big_data.List
+            for i in range(big_data.Count):
+                ptr_off = big_data.List + (i * 4)
+                chunk_addr = obj.Object("unsigned int", ptr_off, val.obj_vm)
+                if not val.obj_vm.is_valid_address(chunk_addr):
+                    continue
+                thelist.append(chunk_addr)
+        
+        for chunk in thelist:
+            amount_to_read = min(BIG_DATA_MAGIC, datalen)
+            chunk_data = val.obj_vm.read(chunk, amount_to_read)
+            if not chunk_data:
+                valdata = None
+                break
+            valdata += chunk_data
+            datalen -= amount_to_read
     else:
         valdata = val.obj_vm.read(val.Data, val.DataLength)
 
