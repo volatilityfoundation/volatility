@@ -63,7 +63,6 @@ VALUE_TYPES = dict(enumerate([
     "REG_RESOURCE_REQUIREMENTS_LIST",
     "REG_QWORD",
 ]))
-VALUE_TYPES.setdefault("REG_UNKNOWN")
 
 def get_root(address_space, stable = True):
     if stable:
@@ -151,7 +150,7 @@ def value_data(val):
     else:
         valdata = val.obj_vm.read(val.Data, val.DataLength)
 
-    valtype = VALUE_TYPES[val.Type.v()]
+    valtype = VALUE_TYPES.get(val.Type.v(), "REG_UNKNOWN")
     if valtype in ["REG_DWORD", "REG_DWORD_BIG_ENDIAN", "REG_QWORD"]:
         if len(valdata) != struct.calcsize(value_formats[valtype]):
             return (valtype, obj.NoneObject("Value data did not match the expected data size for a {0}".format(valtype)))
