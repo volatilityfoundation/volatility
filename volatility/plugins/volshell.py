@@ -254,7 +254,7 @@ class volshell(commands.command):
                 nobj = obj.Object(objname, lst.offset - offset, vm)
                 yield nobj
 
-        def dt(objct, address = None):
+        def dt(objct, address = None, address_space = None):
             """Describe an object or show type info.
 
             Show the names and values of a complex object (struct). If the name of a
@@ -272,10 +272,10 @@ class volshell(commands.command):
                 dt('_EPROCESS', 0x81234567)
             """
 
-            profile = self.eproc.obj_vm.profile
+            profile = (address_space or self.eproc.obj_vm).profile
 
             if address is not None:
-                objct = obj.Object(objct, address, self.eproc.get_process_address_space())
+                objct = obj.Object(objct, address, address_space or self.eproc.get_process_address_space())
 
             if isinstance(objct, str):
                 size = profile.get_obj_size(objct)
@@ -287,10 +287,22 @@ class volshell(commands.command):
             elif isinstance(objct, obj.BaseObject):
                 membs = [ (o, m) for m, (o, _c) in objct.members.items() ]
                 print repr(objct)
+                offsets = []
                 for o, m in sorted(membs):
                     val = getattr(objct, m)
                     if isinstance(val, list):
                         val = [ str(v) for v in val ]
+
+                    # Handle a potentially callable offset
+                    if callable(o):
+                        o = o(objct) - objct.obj_offset
+
+                    offsets.append((o, m, val))
+                
+                # Deal with potentially out of order offsets
+                offsets.sort(key = lambda x: x[0])
+
+                for o, m, val in offsets:
                     print "{0:6}: {1:30} {2}".format(hex(o), m, val)
             else:
                 print "ERROR: first argument not an object or known type"
