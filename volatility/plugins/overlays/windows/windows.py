@@ -448,6 +448,11 @@ class _MMVAD_SHORT(obj.CType):
         start = self.get_start()
         end = self.get_end()
 
+        # avoid potential situations that would cause num_pages to 
+        # overflow and then be too large to pass to xrange
+        if start > 0xFFFFFFFF or end > (0xFFFFFFFF << 12):
+            return ''
+
         num_pages = (end - start + 1) >> 12
 
         blank_page = '\x00' * 0x1000

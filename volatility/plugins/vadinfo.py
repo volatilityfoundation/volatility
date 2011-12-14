@@ -186,8 +186,6 @@ class VADDump(VADInfo):
                 # Find the start and end range
                 start = vad.get_start()
                 end = vad.get_end()
-                if start > 0xFFFFFFFF or end > (0xFFFFFFFF << 12):
-                    continue
 
                 # Open the file and initialize the data
                 f = open(os.path.join(self._config.DUMP_DIR, "{0}.{1:x}.{2:08x}-{3:08x}.dmp".format(name, offset, start, end)), 'wb')
