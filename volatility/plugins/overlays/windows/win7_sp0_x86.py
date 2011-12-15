@@ -112,14 +112,14 @@ win7sp0x86overlays['VOLATILITY_MAGIC'][1]['TypeIndexMap'] = [ 0x0, ['VolatilityM
                     'FilterCommunicationPort' : 0x2a, \
                     'PcwObject' : 0x2b })]]
 
-win7_sp0_x86_vtypes.ntkrpamp_types.update(crash_vtypes.crash_vtypes)
-win7_sp0_x86_vtypes.ntkrpamp_types.update(hibernate_vtypes.hibernate_vtypes)
-win7_sp0_x86_vtypes.ntkrpamp_types.update(kdbg_vtypes.kdbg_vtypes)
-win7_sp0_x86_vtypes.ntkrpamp_types.update(tcpip_vtypes.tcpip_vtypes)
-win7_sp0_x86_vtypes.ntkrpamp_types.update(tcpip_vtypes.tcpip_vtypes_vista)
-win7_sp0_x86_vtypes.ntkrpamp_types.update(tcpip_vtypes.tcpip_vtypes_7)
+win7_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
+win7_sp0_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
+win7_sp0_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
+win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
+win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
+win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_7)
 
-win7_sp0_x86_vtypes.ntkrpamp_types.update({\
+win7_sp0_x86_vtypes.nt_types.update({\
   '_OBJECT_HEADER_NAME_INFORMATION' : [ 0xc, {
   'Directory' : [ 0x0, ['pointer', ['_OBJECT_DIRECTORY']]],
   'Name' : [ 0x04, ['_UNICODE_STRING']],
@@ -130,7 +130,10 @@ class Win7SP0x86(windows.AbstractWindows):
     """ A Profile for Windows 7 SP0 x86 """
     _md_major = 6
     _md_minor = 1
-    abstract_types = win7_sp0_x86_vtypes.ntkrpamp_types
+    abstract_types = win7_sp0_x86_vtypes.nt_types
     overlay = win7sp0x86overlays
     object_classes = copy.deepcopy(vista_sp0_x86.VistaSP0x86.object_classes)
     syscalls = win7_sp0_x86_syscalls.syscalls
+    # FIXME: Temporary fix for issue 105
+    native_types = copy.deepcopy(windows.AbstractWindows.native_types)
+    native_types['pointer64'] = windows.AbstractWindows.native_types['unsigned long long']

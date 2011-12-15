@@ -1,4 +1,4 @@
-ntkrnlmp_types = {
+nt_types = {
   '_u' : [ 0x50, {
     'KeyNode' : [ 0x0, ['_CM_KEY_NODE']],
     'KeyValue' : [ 0x0, ['_CM_KEY_VALUE']],

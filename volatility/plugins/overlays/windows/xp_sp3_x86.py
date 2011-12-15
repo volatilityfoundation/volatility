@@ -47,15 +47,15 @@ xpsp3overlays['_CONTROL_AREA'][1]['Flags'][0] = lambda x: x.u.obj_offset
 xpsp3overlays['_MMVAD_LONG'][1]['Flags'][0] = lambda x: x.u.obj_offset
 xpsp3overlays['_MMVAD_LONG'][1]['Flags2'][0] = lambda x: x.u2.obj_offset
 
-xp_sp3_x86_vtypes.ntoskrnl_types.update(crash_vtypes.crash_vtypes)
-xp_sp3_x86_vtypes.ntoskrnl_types.update(kdbg_vtypes.kdbg_vtypes)
-xp_sp3_x86_vtypes.ntoskrnl_types.update(hibernate_vtypes.hibernate_vtypes)
-xp_sp3_x86_vtypes.ntoskrnl_types.update(tcpip_vtypes.tcpip_vtypes)
+xp_sp3_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
+xp_sp3_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
+xp_sp3_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
+xp_sp3_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 
 class WinXPSP3x86(windows.AbstractWindows):
     """ A Profile for windows XP SP3 """
     _md_major = 5
     _md_minor = 1
-    abstract_types = xp_sp3_x86_vtypes.ntoskrnl_types
+    abstract_types = xp_sp3_x86_vtypes.nt_types
     overlay = xpsp3overlays
     syscalls = xp_sp2_x86_syscalls.syscalls

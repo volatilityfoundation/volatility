@@ -41,15 +41,15 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 
 win7sp1x86overlays = copy.deepcopy(win7_sp0_x86.win7sp0x86overlays)
 
-win7_sp1_x86_vtypes.ntkrnlmp_types.update(crash_vtypes.crash_vtypes)
-win7_sp1_x86_vtypes.ntkrnlmp_types.update(hibernate_vtypes.hibernate_vtypes)
-win7_sp1_x86_vtypes.ntkrnlmp_types.update(kdbg_vtypes.kdbg_vtypes)
-win7_sp1_x86_vtypes.ntkrnlmp_types.update(tcpip_vtypes.tcpip_vtypes)
-win7_sp1_x86_vtypes.ntkrnlmp_types.update(tcpip_vtypes.tcpip_vtypes_vista)
-win7_sp1_x86_vtypes.ntkrnlmp_types.update(tcpip_vtypes.tcpip_vtypes_7)
+win7_sp1_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
+win7_sp1_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
+win7_sp1_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
+win7_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
+win7_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
+win7_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_7)
 
 
-win7_sp1_x86_vtypes.ntkrnlmp_types.update({\
+win7_sp1_x86_vtypes.nt_types.update({\
   '_OBJECT_HEADER_NAME_INFORMATION' : [ 0xc, {
   'Directory' : [ 0x0, ['pointer', ['_OBJECT_DIRECTORY']]],
   'Name' : [ 0x04, ['_UNICODE_STRING']],
@@ -60,7 +60,7 @@ class Win7SP1x86(windows.AbstractWindows):
     """ A Profile for Windows 7 SP1 x86 """
     _md_major = 6
     _md_minor = 1
-    abstract_types = win7_sp1_x86_vtypes.ntkrnlmp_types
+    abstract_types = win7_sp1_x86_vtypes.nt_types
     overlay = win7sp1x86overlays
     object_classes = copy.deepcopy(win7_sp0_x86.Win7SP0x86.object_classes)
     syscalls = win7_sp0_x86_syscalls.syscalls

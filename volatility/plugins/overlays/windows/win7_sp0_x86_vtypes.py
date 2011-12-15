@@ -1,30 +1,4 @@
-ntkrpamp_types = {
-  '_WAIT_CONTEXT_BLOCK' : [ 0x28, {
-    'WaitQueueEntry' : [ 0x0, ['_KDEVICE_QUEUE_ENTRY']],
-    'DeviceRoutine' : [ 0x10, ['pointer', ['void']]],
-    'DeviceContext' : [ 0x14, ['pointer', ['void']]],
-    'NumberOfMapRegisters' : [ 0x18, ['unsigned long']],
-    'DeviceObject' : [ 0x1c, ['pointer', ['void']]],
-    'CurrentIrp' : [ 0x20, ['pointer', ['void']]],
-    'BufferChainingDpc' : [ 0x24, ['pointer', ['_KDPC']]],
-} ],
-  '_SECTION_OBJECT' : [ 0x18, {
-    'StartingVa' : [ 0x0, ['pointer', ['void']]],
-    'EndingVa' : [ 0x4, ['pointer', ['void']]],
-    'Parent' : [ 0x8, ['pointer', ['void']]],
-    'LeftChild' : [ 0xc, ['pointer', ['void']]],
-    'RightChild' : [ 0x10, ['pointer', ['void']]],
-    'Segment' : [ 0x14, ['pointer', ['_SEGMENT_OBJECT']]],
-} ],
-  '_CM_NAME_CONTROL_BLOCK' : [ 0x10, {
-    'Compressed' : [ 0x0, ['unsigned char']],
-    'RefCount' : [ 0x2, ['unsigned short']],
-    'NameHash' : [ 0x4, ['_CM_NAME_HASH']],
-    'ConvKey' : [ 0x4, ['unsigned long']],
-    'NextHash' : [ 0x8, ['pointer', ['_CM_KEY_HASH']]],
-    'NameLength' : [ 0xc, ['unsigned short']],
-    'Name' : [ 0xe, ['array', 1, ['wchar']]],
-} ],
+nt_types = {
   '_u' : [ 0x50, {
     'KeyNode' : [ 0x0, ['_CM_KEY_NODE']],
     'KeyValue' : [ 0x0, ['_CM_KEY_VALUE']],
@@ -45,6 +19,7 @@ ntkrpamp_types = {
     'TotalFrees' : [ 0x14, ['unsigned long']],
     'FreeMisses' : [ 0x18, ['unsigned long']],
     'FreeHits' : [ 0x18, ['unsigned long']],
+    'Type' : [ 0x1c, ['Enumeration', dict(target = 'long', choices = {0: 'NonPagedPool', 1: 'PagedPool', 2: 'NonPagedPoolMustSucceed', 3: 'DontUseThisType', 4: 'NonPagedPoolCacheAligned', 5: 'PagedPoolCacheAligned', 6: 'NonPagedPoolCacheAlignedMustS', 7: 'MaxPoolType', 34: 'NonPagedPoolMustSucceedSession', 35: 'DontUseThisTypeSession', 32: 'NonPagedPoolSession', 36: 'NonPagedPoolCacheAlignedSession', 33: 'PagedPoolSession', 38: 'NonPagedPoolCacheAlignedMustSSession', 37: 'PagedPoolCacheAlignedSession'})]],
     'Tag' : [ 0x20, ['unsigned long']],
     'Size' : [ 0x24, ['unsigned long']],
     'AllocateEx' : [ 0x28, ['pointer', ['void']]],
@@ -61,8 +36,11 @@ ntkrpamp_types = {
     'Linkage' : [ 0x0, ['_LIST_ENTRY']],
     'Signature' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_201c' : [ 0x4, {
+  '__unnamed_2008' : [ 0x4, {
     'AsULONG' : [ 0x0, ['unsigned long']],
+    'IncreasePolicy' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2)]],
+    'DecreasePolicy' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 4)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 32)]],
 } ],
   '_PPM_PERF_STATES' : [ 0x80, {
     'Count' : [ 0x0, ['unsigned long']],
@@ -79,7 +57,7 @@ ntkrpamp_types = {
     'ThrottleStatesOnly' : [ 0x26, ['unsigned char']],
     'PolicyType' : [ 0x27, ['unsigned char']],
     'TimerInterval' : [ 0x28, ['unsigned long']],
-    'Flags' : [ 0x2c, ['__unnamed_201c']],
+    'Flags' : [ 0x2c, ['__unnamed_2008']],
     'TargetProcessors' : [ 0x30, ['_KAFFINITY_EX']],
     'PStateHandler' : [ 0x3c, ['pointer', ['void']]],
     'PStateContext' : [ 0x40, ['unsigned long']],
@@ -129,11 +107,18 @@ ntkrpamp_types = {
     'Updates' : [ 0x0, ['unsigned char']],
     'State' : [ 0x1, ['unsigned char']],
     'Shutdown' : [ 0x2, ['unsigned char']],
+    'Action' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'PowerActionNone', 1: 'PowerActionReserved', 2: 'PowerActionSleep', 3: 'PowerActionHibernate', 4: 'PowerActionShutdown', 5: 'PowerActionShutdownReset', 6: 'PowerActionShutdownOff', 7: 'PowerActionWarmEject'})]],
+    'LightestState' : [ 0x8, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
     'Flags' : [ 0xc, ['unsigned long']],
     'Status' : [ 0x10, ['long']],
+    'DeviceType' : [ 0x14, ['Enumeration', dict(target = 'long', choices = {0: 'PolicyDeviceSystemButton', 1: 'PolicyDeviceThermalZone', 2: 'PolicyDeviceBattery', 3: 'PolicyDeviceMemory', 4: 'PolicyInitiatePowerActionAPI', 5: 'PolicySetPowerStateAPI', 6: 'PolicyImmediateDozeS4', 7: 'PolicySystemIdle', 8: 'PolicyDeviceMax'})]],
     'DeviceTypeFlags' : [ 0x18, ['unsigned long']],
     'IrpMinor' : [ 0x1c, ['unsigned char']],
     'Waking' : [ 0x1d, ['unsigned char']],
+    'SystemState' : [ 0x20, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'NextSystemState' : [ 0x24, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'EffectiveSystemState' : [ 0x28, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'CurrentSystemState' : [ 0x2c, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
     'ShutdownBugCode' : [ 0x30, ['pointer', ['_POP_SHUTDOWN_BUG_CHECK']]],
     'DevState' : [ 0x34, ['pointer', ['_POP_DEVICE_SYS_STATE']]],
     'HiberContext' : [ 0x38, ['pointer', ['_POP_HIBER_CONTEXT']]],
@@ -203,21 +188,27 @@ ntkrpamp_types = {
   '_IMAGE_SECURITY_CONTEXT' : [ 0x4, {
     'PageHashes' : [ 0x0, ['pointer', ['void']]],
     'Value' : [ 0x0, ['unsigned long']],
+    'SecurityBeingCreated' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'SecurityMandatory' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Unused' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'PageHashPointer' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 32)]],
 } ],
-  '__unnamed_205f' : [ 0x4, {
+  '__unnamed_204b' : [ 0x4, {
     'Level' : [ 0x0, ['unsigned long']],
 } ],
-  '__unnamed_2061' : [ 0x4, {
+  '__unnamed_204d' : [ 0x4, {
     'Type' : [ 0x0, ['unsigned long']],
 } ],
   '_POP_ACTION_TRIGGER' : [ 0x10, {
+    'Type' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'PolicyDeviceSystemButton', 1: 'PolicyDeviceThermalZone', 2: 'PolicyDeviceBattery', 3: 'PolicyDeviceMemory', 4: 'PolicyInitiatePowerActionAPI', 5: 'PolicySetPowerStateAPI', 6: 'PolicyImmediateDozeS4', 7: 'PolicySystemIdle', 8: 'PolicyDeviceMax'})]],
     'Flags' : [ 0x4, ['unsigned long']],
     'Wait' : [ 0x8, ['pointer', ['_POP_TRIGGER_WAIT']]],
-    'Battery' : [ 0xc, ['__unnamed_205f']],
-    'Button' : [ 0xc, ['__unnamed_2061']],
+    'Battery' : [ 0xc, ['__unnamed_204b']],
+    'Button' : [ 0xc, ['__unnamed_204d']],
 } ],
   '_KENLISTMENT_HISTORY' : [ 0x8, {
     'Notification' : [ 0x0, ['unsigned long']],
+    'NewState' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'KEnlistmentUninitialized', 256: 'KEnlistmentActive', 258: 'KEnlistmentPrepared', 259: 'KEnlistmentInDoubt', 260: 'KEnlistmentCommitted', 261: 'KEnlistmentCommittedNotify', 262: 'KEnlistmentCommitRequested', 257: 'KEnlistmentPreparing', 264: 'KEnlistmentDelegated', 265: 'KEnlistmentDelegatedDisconnected', 266: 'KEnlistmentPrePreparing', 263: 'KEnlistmentAborted', 268: 'KEnlistmentRecovering', 269: 'KEnlistmentAborting', 270: 'KEnlistmentReadOnly', 271: 'KEnlistmentOutcomeUnavailable', 272: 'KEnlistmentOffline', 273: 'KEnlistmentPrePrepared', 274: 'KEnlistmentInitialized', 267: 'KEnlistmentForgotten'})]],
 } ],
   '_FAST_IO_DISPATCH' : [ 0x70, {
     'SizeOfFastIoDispatch' : [ 0x0, ['unsigned long']],
@@ -275,6 +266,10 @@ ntkrpamp_types = {
     'FirmwareDescriptorListHead' : [ 0x40, ['_LIST_ENTRY']],
     'AcpiTable' : [ 0x48, ['pointer', ['void']]],
     'AcpiTableSize' : [ 0x4c, ['unsigned long']],
+    'LastBootSucceeded' : [ 0x50, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'LastBootShutdown' : [ 0x50, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'IoPortAccessSupported' : [ 0x50, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Reserved' : [ 0x50, ['BitField', dict(start_bit = 3, end_bit = 32)]],
     'LoaderPerformanceData' : [ 0x54, ['pointer', ['_LOADER_PERFORMANCE_DATA']]],
     'BootApplicationPersistentData' : [ 0x58, ['_LIST_ENTRY']],
     'WmdTestResult' : [ 0x60, ['pointer', ['void']]],
@@ -348,6 +343,11 @@ ntkrpamp_types = {
     'PageCount' : [ 0x4, ['unsigned long']],
 } ],
   '_RTL_SRWLOCK' : [ 0x4, {
+    'Locked' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Waiting' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Waking' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'MultipleShared' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Shared' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 32)]],
     'Value' : [ 0x0, ['unsigned long']],
     'Ptr' : [ 0x0, ['pointer', ['void']]],
 } ],
@@ -391,12 +391,16 @@ ntkrpamp_types = {
     'PowerButton' : [ 0x4, ['POWER_ACTION_POLICY']],
     'SleepButton' : [ 0x10, ['POWER_ACTION_POLICY']],
     'LidClose' : [ 0x1c, ['POWER_ACTION_POLICY']],
+    'LidOpenWake' : [ 0x28, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
     'Reserved' : [ 0x2c, ['unsigned long']],
     'Idle' : [ 0x30, ['POWER_ACTION_POLICY']],
     'IdleTimeout' : [ 0x3c, ['unsigned long']],
     'IdleSensitivity' : [ 0x40, ['unsigned char']],
     'DynamicThrottle' : [ 0x41, ['unsigned char']],
     'Spare2' : [ 0x42, ['array', 2, ['unsigned char']]],
+    'MinSleep' : [ 0x44, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'MaxSleep' : [ 0x48, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'ReducedLatencySleep' : [ 0x4c, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
     'WinLogonFlags' : [ 0x50, ['unsigned long']],
     'Spare3' : [ 0x54, ['unsigned long']],
     'DozeS4Timeout' : [ 0x58, ['unsigned long']],
@@ -413,6 +417,10 @@ ntkrpamp_types = {
     'OverThrottled' : [ 0xdc, ['POWER_ACTION_POLICY']],
 } ],
   '_POOL_HEADER' : [ 0x8, {
+    'PreviousSize' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 9)]],
+    'PoolIndex' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 16)]],
+    'BlockSize' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 9)]],
+    'PoolType' : [ 0x2, ['BitField', dict(start_bit = 9, end_bit = 16)]],
     'Ulong1' : [ 0x0, ['unsigned long']],
     'PoolTag' : [ 0x4, ['unsigned long']],
     'AllocatorBackTraceIndex' : [ 0x4, ['unsigned short']],
@@ -420,6 +428,7 @@ ntkrpamp_types = {
 } ],
   '_ETW_PROVIDER_TABLE_ENTRY' : [ 0x10, {
     'RefCount' : [ 0x0, ['long']],
+    'State' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'EtwProviderStateFree', 1: 'EtwProviderStateTransition', 2: 'EtwProviderStateActive', 3: 'EtwProviderStateMax'})]],
     'RegEntry' : [ 0x8, ['pointer', ['_ETW_REG_ENTRY']]],
     'Caller' : [ 0xc, ['pointer', ['void']]],
 } ],
@@ -438,13 +447,13 @@ ntkrpamp_types = {
     'Thread' : [ 0x8, ['pointer', ['_ETHREAD']]],
     'StackTrace' : [ 0xc, ['array', 13, ['pointer', ['void']]]],
 } ],
-  '__unnamed_20f3' : [ 0x4, {
+  '__unnamed_20df' : [ 0x4, {
     'LongFlags' : [ 0x0, ['unsigned long']],
     'Flags' : [ 0x0, ['_MM_SESSION_SPACE_FLAGS']],
 } ],
-  '_MM_SESSION_SPACE' : [ 0x2040, {
+  '_MM_SESSION_SPACE' : [ 0x2000, {
     'ReferenceCount' : [ 0x0, ['long']],
-    'u' : [ 0x4, ['__unnamed_20f3']],
+    'u' : [ 0x4, ['__unnamed_20df']],
     'SessionId' : [ 0x8, ['unsigned long']],
     'ProcessReferenceToSession' : [ 0xc, ['long']],
     'ProcessList' : [ 0x10, ['_LIST_ENTRY']],
@@ -471,24 +480,27 @@ ntkrpamp_types = {
     'DriverUnload' : [ 0xde0, ['pointer', ['void']]],
     'PagedPool' : [ 0xe00, ['_POOL_DESCRIPTOR']],
     'PageTables' : [ 0x1f40, ['pointer', ['_MMPTE']]],
-    'SpecialPool' : [ 0x1f48, ['_MI_SPECIAL_POOL']],
-    'SessionPteLock' : [ 0x1f80, ['_KGUARDED_MUTEX']],
-    'PoolBigEntriesInUse' : [ 0x1fa0, ['long']],
-    'PagedPoolPdeCount' : [ 0x1fa4, ['unsigned long']],
-    'SpecialPoolPdeCount' : [ 0x1fa8, ['unsigned long']],
-    'DynamicSessionPdeCount' : [ 0x1fac, ['unsigned long']],
-    'SystemPteInfo' : [ 0x1fb0, ['_MI_SYSTEM_PTE_TYPE']],
-    'PoolTrackTableExpansion' : [ 0x1fe0, ['pointer', ['void']]],
-    'PoolTrackTableExpansionSize' : [ 0x1fe4, ['unsigned long']],
-    'PoolTrackBigPages' : [ 0x1fe8, ['pointer', ['void']]],
-    'PoolTrackBigPagesSize' : [ 0x1fec, ['unsigned long']],
-    'IoStateSequence' : [ 0x1ff4, ['unsigned long']],
-    'IoNotificationEvent' : [ 0x1ff8, ['_KEVENT']],
-    'SessionPoolPdes' : [ 0x2008, ['_RTL_BITMAP']],
-    'CpuQuotaBlock' : [ 0x2010, ['pointer', ['_PS_CPU_QUOTA_BLOCK']]],
+    'SpecialPool' : [ 0x1f44, ['_MI_SPECIAL_POOL']],
+    'SessionPteLock' : [ 0x1f68, ['_KGUARDED_MUTEX']],
+    'PoolBigEntriesInUse' : [ 0x1f88, ['long']],
+    'PagedPoolPdeCount' : [ 0x1f8c, ['unsigned long']],
+    'SpecialPoolPdeCount' : [ 0x1f90, ['unsigned long']],
+    'DynamicSessionPdeCount' : [ 0x1f94, ['unsigned long']],
+    'SystemPteInfo' : [ 0x1f98, ['_MI_SYSTEM_PTE_TYPE']],
+    'PoolTrackTableExpansion' : [ 0x1fc8, ['pointer', ['void']]],
+    'PoolTrackTableExpansionSize' : [ 0x1fcc, ['unsigned long']],
+    'PoolTrackBigPages' : [ 0x1fd0, ['pointer', ['void']]],
+    'PoolTrackBigPagesSize' : [ 0x1fd4, ['unsigned long']],
+    'IoState' : [ 0x1fd8, ['Enumeration', dict(target = 'long', choices = {1: 'IoSessionStateCreated', 2: 'IoSessionStateInitialized', 3: 'IoSessionStateConnected', 4: 'IoSessionStateDisconnected', 5: 'IoSessionStateDisconnectedLoggedOn', 6: 'IoSessionStateLoggedOn', 7: 'IoSessionStateLoggedOff', 8: 'IoSessionStateTerminated', 9: 'IoSessionStateMax'})]],
+    'IoStateSequence' : [ 0x1fdc, ['unsigned long']],
+    'IoNotificationEvent' : [ 0x1fe0, ['_KEVENT']],
+    'SessionPoolPdes' : [ 0x1ff0, ['_RTL_BITMAP']],
+    'CpuQuotaBlock' : [ 0x1ff8, ['pointer', ['_PS_CPU_QUOTA_BLOCK']]],
 } ],
   '_OBJECT_HANDLE_COUNT_ENTRY' : [ 0x8, {
     'Process' : [ 0x0, ['pointer', ['_EPROCESS']]],
+    'HandleCount' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 24)]],
+    'LockCount' : [ 0x4, ['BitField', dict(start_bit = 24, end_bit = 32)]],
 } ],
   '_CLIENT_ID' : [ 0x8, {
     'UniqueProcess' : [ 0x0, ['pointer', ['void']]],
@@ -514,8 +526,18 @@ ntkrpamp_types = {
 } ],
   '_KWAIT_STATUS_REGISTER' : [ 0x1, {
     'Flags' : [ 0x0, ['unsigned char']],
+    'State' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2)]],
+    'Affinity' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Priority' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Apc' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'UserApc' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'Alert' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'Unused' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
 } ],
   '_VI_DEADLOCK_RESOURCE' : [ 0x80, {
+    'Type' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'VfDeadlockUnknown', 1: 'VfDeadlockMutex', 2: 'VfDeadlockMutexAbandoned', 3: 'VfDeadlockFastMutex', 4: 'VfDeadlockFastMutexUnsafe', 5: 'VfDeadlockSpinLock', 6: 'VfDeadlockInStackQueuedSpinLock', 7: 'VfDeadlockUnusedSpinLock', 8: 'VfDeadlockEresource', 9: 'VfDeadlockTypeMaximum'})]],
+    'NodeCount' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 16)]],
+    'RecursionCount' : [ 0x4, ['BitField', dict(start_bit = 16, end_bit = 32)]],
     'ResourceAddress' : [ 0x8, ['pointer', ['void']]],
     'ThreadOwner' : [ 0xc, ['pointer', ['_VI_DEADLOCK_THREAD']]],
     'ResourceList' : [ 0x10, ['_LIST_ENTRY']],
@@ -533,6 +555,33 @@ ntkrpamp_types = {
     'Length' : [ 0x10, ['unsigned long']],
 } ],
   '_MMSECTION_FLAGS' : [ 0x4, {
+    'BeingDeleted' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'BeingCreated' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'BeingPurged' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'NoModifiedWriting' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'FailAllIo' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'Image' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'Based' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'File' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'Networked' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'Rom' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'PhysicalMemory' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'Reserve' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 13)]],
+    'Commit' : [ 0x0, ['BitField', dict(start_bit = 13, end_bit = 14)]],
+    'Accessed' : [ 0x0, ['BitField', dict(start_bit = 14, end_bit = 15)]],
+    'WasPurged' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16)]],
+    'UserReference' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 17)]],
+    'GlobalMemory' : [ 0x0, ['BitField', dict(start_bit = 17, end_bit = 18)]],
+    'DeleteOnClose' : [ 0x0, ['BitField', dict(start_bit = 18, end_bit = 19)]],
+    'FilePointerNull' : [ 0x0, ['BitField', dict(start_bit = 19, end_bit = 20)]],
+    'GlobalOnlyPerSession' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 21)]],
+    'SetMappedFileIoComplete' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 22)]],
+    'CollidedFlush' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 23)]],
+    'NoChange' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 24)]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 25)]],
+    'UserWritable' : [ 0x0, ['BitField', dict(start_bit = 25, end_bit = 26)]],
+    'PreferredNode' : [ 0x0, ['BitField', dict(start_bit = 26, end_bit = 32)]],
 } ],
   '_SECURITY_CLIENT_CONTEXT' : [ 0x3c, {
     'SecurityQos' : [ 0x0, ['_SECURITY_QUALITY_OF_SERVICE']],
@@ -638,13 +687,13 @@ ntkrpamp_types = {
     'AllocateFromCount' : [ 0x4, ['unsigned long']],
     'AllocateFrom' : [ 0x8, ['pointer', ['_CM_PARTIAL_RESOURCE_DESCRIPTOR']]],
 } ],
-  '_MI_SPECIAL_POOL' : [ 0x38, {
+  '_MI_SPECIAL_POOL' : [ 0x24, {
     'PteBase' : [ 0x0, ['pointer', ['_MMPTE']]],
     'Lock' : [ 0x4, ['unsigned long']],
     'Paged' : [ 0x8, ['_MI_SPECIAL_POOL_PTE_LIST']],
-    'NonPaged' : [ 0x18, ['_MI_SPECIAL_POOL_PTE_LIST']],
-    'PagesInUse' : [ 0x28, ['long']],
-    'SpecialPoolPdes' : [ 0x2c, ['_RTL_BITMAP']],
+    'NonPaged' : [ 0x10, ['_MI_SPECIAL_POOL_PTE_LIST']],
+    'PagesInUse' : [ 0x18, ['long']],
+    'SpecialPoolPdes' : [ 0x1c, ['_RTL_BITMAP']],
 } ],
   '_ARBITER_QUERY_CONFLICT_PARAMETERS' : [ 0x10, {
     'PhysicalDeviceObject' : [ 0x0, ['pointer', ['_DEVICE_OBJECT']]],
@@ -726,18 +775,18 @@ ntkrpamp_types = {
     'Count' : [ 0x2, ['unsigned short']],
     'List' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_2183' : [ 0x8, {
+  '__unnamed_216f' : [ 0x8, {
     'UserData' : [ 0x0, ['pointer', ['void']]],
     'Owner' : [ 0x4, ['pointer', ['void']]],
 } ],
-  '__unnamed_2185' : [ 0x8, {
+  '__unnamed_2171' : [ 0x8, {
     'ListHead' : [ 0x0, ['_LIST_ENTRY']],
 } ],
   '_RTLP_RANGE_LIST_ENTRY' : [ 0x28, {
     'Start' : [ 0x0, ['unsigned long long']],
     'End' : [ 0x8, ['unsigned long long']],
-    'Allocated' : [ 0x10, ['__unnamed_2183']],
-    'Merged' : [ 0x10, ['__unnamed_2185']],
+    'Allocated' : [ 0x10, ['__unnamed_216f']],
+    'Merged' : [ 0x10, ['__unnamed_2171']],
     'Attributes' : [ 0x18, ['unsigned char']],
     'PublicFlags' : [ 0x19, ['unsigned char']],
     'PrivateFlags' : [ 0x1a, ['unsigned short']],
@@ -748,12 +797,15 @@ ntkrpamp_types = {
     'Packet' : [ 0x4, ['pointer', ['_IO_MINI_COMPLETION_PACKET_USER']]],
     'Lookaside' : [ 0x8, ['pointer', ['_ALPC_COMPLETION_PACKET_LOOKASIDE']]],
 } ],
-  '__unnamed_218d' : [ 0x2, {
+  '__unnamed_2179' : [ 0x2, {
     'AsUSHORT' : [ 0x0, ['unsigned short']],
+    'AllowScaling' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Disabled' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 16)]],
 } ],
   'PROCESSOR_IDLESTATE_POLICY' : [ 0x20, {
     'Revision' : [ 0x0, ['unsigned short']],
-    'Flags' : [ 0x2, ['__unnamed_218d']],
+    'Flags' : [ 0x2, ['__unnamed_2179']],
     'PolicyCount' : [ 0x4, ['unsigned long']],
     'Policy' : [ 0x8, ['array', 3, ['PROCESSOR_IDLESTATE_INFO']]],
 } ],
@@ -772,10 +824,10 @@ ntkrpamp_types = {
     'PtesInSubsection' : [ 0xc, ['unsigned long']],
     'UnusedPtes' : [ 0x10, ['unsigned long']],
     'GlobalPerSessionHead' : [ 0x10, ['pointer', ['_MM_AVL_TABLE']]],
-    'u' : [ 0x14, ['__unnamed_1f07']],
+    'u' : [ 0x14, ['__unnamed_1ef2']],
     'StartingSector' : [ 0x18, ['unsigned long']],
     'NumberOfFullSectors' : [ 0x1c, ['unsigned long']],
-    'u1' : [ 0x20, ['__unnamed_1f94']],
+    'u1' : [ 0x20, ['__unnamed_1f80']],
     'LeftChild' : [ 0x24, ['pointer', ['_MMSUBSECTION_NODE']]],
     'RightChild' : [ 0x28, ['pointer', ['_MMSUBSECTION_NODE']]],
     'DereferenceList' : [ 0x2c, ['_LIST_ENTRY']],
@@ -803,9 +855,9 @@ ntkrpamp_types = {
     'QueryCapsuleCapabilities' : [ 0x30, ['unsigned long']],
     'QueryVariableInfo' : [ 0x34, ['unsigned long']],
 } ],
-  '_MI_SPECIAL_POOL_PTE_LIST' : [ 0x10, {
+  '_MI_SPECIAL_POOL_PTE_LIST' : [ 0x8, {
     'FreePteHead' : [ 0x0, ['_MMPTE']],
-    'FreePteTail' : [ 0x8, ['_MMPTE']],
+    'FreePteTail' : [ 0x4, ['_MMPTE']],
 } ],
   'SYSTEM_POWER_CAPABILITIES' : [ 0x4c, {
     'PowerButtonPresent' : [ 0x0, ['unsigned char']],
@@ -832,16 +884,21 @@ ntkrpamp_types = {
     'SystemBatteriesPresent' : [ 0x1e, ['unsigned char']],
     'BatteriesAreShortTerm' : [ 0x1f, ['unsigned char']],
     'BatteryScale' : [ 0x20, ['array', 3, ['BATTERY_REPORTING_SCALE']]],
+    'AcOnLineWake' : [ 0x38, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'SoftLidWake' : [ 0x3c, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'RtcWake' : [ 0x40, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'MinDeviceWakeState' : [ 0x44, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'DefaultLowLatencyWake' : [ 0x48, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
 } ],
-  '__unnamed_21a3' : [ 0x4, {
+  '__unnamed_218f' : [ 0x4, {
     'ImageCommitment' : [ 0x0, ['unsigned long']],
     'CreatingProcess' : [ 0x0, ['pointer', ['_EPROCESS']]],
 } ],
-  '__unnamed_21a7' : [ 0x4, {
+  '__unnamed_2193' : [ 0x4, {
     'ImageInformation' : [ 0x0, ['pointer', ['_MI_SECTION_IMAGE_INFORMATION']]],
     'FirstMappedVa' : [ 0x0, ['pointer', ['void']]],
 } ],
-  '_SEGMENT' : [ 0x38, {
+  '_SEGMENT' : [ 0x30, {
     'ControlArea' : [ 0x0, ['pointer', ['_CONTROL_AREA']]],
     'TotalNumberOfPtes' : [ 0x4, ['unsigned long']],
     'SegmentFlags' : [ 0x8, ['_SEGMENT_FLAGS']],
@@ -850,28 +907,31 @@ ntkrpamp_types = {
     'ExtendInfo' : [ 0x18, ['pointer', ['_MMEXTEND_INFO']]],
     'BasedAddress' : [ 0x18, ['pointer', ['void']]],
     'SegmentLock' : [ 0x1c, ['_EX_PUSH_LOCK']],
-    'u1' : [ 0x20, ['__unnamed_21a3']],
-    'u2' : [ 0x24, ['__unnamed_21a7']],
+    'u1' : [ 0x20, ['__unnamed_218f']],
+    'u2' : [ 0x24, ['__unnamed_2193']],
     'PrototypePte' : [ 0x28, ['pointer', ['_MMPTE']]],
-    'ThePtes' : [ 0x30, ['array', 1, ['_MMPTE']]],
+    'ThePtes' : [ 0x2c, ['array', 1, ['_MMPTE']]],
 } ],
   '_DIAGNOSTIC_CONTEXT' : [ 0x10, {
+    'CallerType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'KernelRequester', 1: 'UserProcessRequester', 2: 'UserSharedServiceRequester'})]],
     'Process' : [ 0x4, ['pointer', ['_EPROCESS']]],
     'ServiceTag' : [ 0x8, ['unsigned long']],
     'DeviceObject' : [ 0x4, ['pointer', ['_DEVICE_OBJECT']]],
     'ReasonSize' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_21b0' : [ 0x4, {
+  '__unnamed_219c' : [ 0x4, {
+    'MissedEtwRegistration' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 32)]],
 } ],
-  '__unnamed_21b2' : [ 0x4, {
-    'Flags' : [ 0x0, ['__unnamed_21b0']],
+  '__unnamed_219e' : [ 0x4, {
+    'Flags' : [ 0x0, ['__unnamed_219c']],
     'Whole' : [ 0x0, ['unsigned long']],
 } ],
   '_VF_TARGET_VERIFIED_DRIVER_DATA' : [ 0x90, {
     'SuspectDriverEntry' : [ 0x0, ['pointer', ['_VF_SUSPECT_DRIVER_ENTRY']]],
     'WMICallback' : [ 0x4, ['pointer', ['void']]],
     'EtwHandlesListHead' : [ 0x8, ['_LIST_ENTRY']],
-    'u1' : [ 0x10, ['__unnamed_21b2']],
+    'u1' : [ 0x10, ['__unnamed_219e']],
     'Signature' : [ 0x14, ['unsigned long']],
     'PoolPageHeaders' : [ 0x18, ['_SLIST_HEADER']],
     'PoolTrackers' : [ 0x20, ['_SLIST_HEADER']],
@@ -934,6 +994,10 @@ ntkrpamp_types = {
     'ChildHiveReference' : [ 0x1c, ['_CM_KEY_REFERENCE']],
     'Security' : [ 0x2c, ['unsigned long']],
     'Class' : [ 0x30, ['unsigned long']],
+    'MaxNameLen' : [ 0x34, ['BitField', dict(start_bit = 0, end_bit = 16)]],
+    'UserFlags' : [ 0x34, ['BitField', dict(start_bit = 16, end_bit = 20)]],
+    'VirtControlFlags' : [ 0x34, ['BitField', dict(start_bit = 20, end_bit = 24)]],
+    'Debug' : [ 0x34, ['BitField', dict(start_bit = 24, end_bit = 32)]],
     'MaxClassLen' : [ 0x38, ['unsigned long']],
     'MaxValueNameLen' : [ 0x3c, ['unsigned long']],
     'MaxValueDataLen' : [ 0x40, ['unsigned long']],
@@ -944,6 +1008,7 @@ ntkrpamp_types = {
 } ],
   '_TPM_BOOT_ENTROPY_LDR_RESULT' : [ 0x48, {
     'Policy' : [ 0x0, ['unsigned long long']],
+    'ResultCode' : [ 0x8, ['Enumeration', dict(target = 'long', choices = {0: 'TpmBootEntropyStructureUninitialized', 1: 'TpmBootEntropyDisabledByPolicy', 2: 'TpmBootEntropyNoTpmFound', 3: 'TpmBootEntropyTpmError', 4: 'TpmBootEntropySuccess'})]],
     'ResultStatus' : [ 0xc, ['long']],
     'Time' : [ 0x10, ['unsigned long long']],
     'EntropyLength' : [ 0x18, ['unsigned long']],
@@ -967,6 +1032,10 @@ ntkrpamp_types = {
     'Offset' : [ 0x18, ['unsigned long']],
     'Length' : [ 0x1c, ['unsigned long']],
     'Page' : [ 0x20, ['unsigned long']],
+    'IoMapping' : [ 0x24, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Matched' : [ 0x24, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'CacheAttribute' : [ 0x24, ['BitField', dict(start_bit = 2, end_bit = 4)]],
+    'Spare' : [ 0x24, ['BitField', dict(start_bit = 4, end_bit = 32)]],
     'CallingAddress' : [ 0x28, ['pointer', ['void']]],
     'CallersCaller' : [ 0x2c, ['pointer', ['void']]],
 } ],
@@ -1026,12 +1095,14 @@ ntkrpamp_types = {
   '_PNP_DEVICE_ACTION_ENTRY' : [ 0x20, {
     'ListEntry' : [ 0x0, ['_LIST_ENTRY']],
     'DeviceObject' : [ 0x8, ['pointer', ['_DEVICE_OBJECT']]],
+    'RequestType' : [ 0xc, ['Enumeration', dict(target = 'long', choices = {0: 'AssignResources', 1: 'ClearDeviceProblem', 2: 'ClearProblem', 3: 'ClearEjectProblem', 4: 'HaltDevice', 5: 'QueryPowerRelations', 6: 'Rebalance', 7: 'ReenumerateBootDevices', 8: 'ReenumerateDeviceOnly', 9: 'ReenumerateDeviceTree', 10: 'ReenumerateRootDevices', 11: 'RequeryDeviceState', 12: 'ResetDevice', 13: 'ResourceRequirementsChanged', 14: 'RestartEnumeration', 15: 'SetDeviceProblem', 16: 'StartDevice', 17: 'StartSystemDevicesPass0', 18: 'StartSystemDevicesPass1'})]],
     'ReorderingBarrier' : [ 0x10, ['unsigned char']],
     'RequestArgument' : [ 0x14, ['unsigned long']],
     'CompletionEvent' : [ 0x18, ['pointer', ['_KEVENT']]],
     'CompletionStatus' : [ 0x1c, ['pointer', ['long']]],
 } ],
   '_COUNTER_READING' : [ 0x18, {
+    'Type' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'PMCCounter', 1: 'MaxHardwareCounterType'})]],
     'Index' : [ 0x4, ['unsigned long']],
     'Start' : [ 0x8, ['unsigned long long']],
     'Total' : [ 0x10, ['unsigned long long']],
@@ -1083,15 +1154,19 @@ ntkrpamp_types = {
     'AlternativeCount' : [ 0x8, ['unsigned long']],
     'Alternatives' : [ 0xc, ['pointer', ['_IO_RESOURCE_DESCRIPTOR']]],
     'PhysicalDeviceObject' : [ 0x10, ['pointer', ['_DEVICE_OBJECT']]],
+    'RequestSource' : [ 0x14, ['Enumeration', dict(target = 'long', choices = {0: 'ArbiterRequestLegacyReported', 1: 'ArbiterRequestHalReported', 2: 'ArbiterRequestLegacyAssigned', 3: 'ArbiterRequestPnpDetected', 4: 'ArbiterRequestPnpEnumerated', -1: 'ArbiterRequestUndefined'})]],
     'Flags' : [ 0x18, ['unsigned long']],
     'WorkSpace' : [ 0x1c, ['long']],
+    'InterfaceType' : [ 0x20, ['Enumeration', dict(target = 'long', choices = {0: 'Internal', 1: 'Isa', 2: 'Eisa', 3: 'MicroChannel', 4: 'TurboChannel', 5: 'PCIBus', 6: 'VMEBus', 7: 'NuBus', 8: 'PCMCIABus', 9: 'CBus', 10: 'MPIBus', 11: 'MPSABus', 12: 'ProcessorInternal', 13: 'InternalPowerBus', 14: 'PNPISABus', 15: 'PNPBus', 16: 'Vmcs', 17: 'MaximumInterfaceType', -1: 'InterfaceTypeUndefined'})]],
     'SlotNumber' : [ 0x24, ['unsigned long']],
     'BusNumber' : [ 0x28, ['unsigned long']],
     'Assignment' : [ 0x2c, ['pointer', ['_CM_PARTIAL_RESOURCE_DESCRIPTOR']]],
     'SelectedAlternative' : [ 0x30, ['pointer', ['_IO_RESOURCE_DESCRIPTOR']]],
+    'Result' : [ 0x34, ['Enumeration', dict(target = 'long', choices = {0: 'ArbiterResultSuccess', 1: 'ArbiterResultExternalConflict', 2: 'ArbiterResultNullRequest', -1: 'ArbiterResultUndefined'})]],
 } ],
   '_POP_DEVICE_SYS_STATE' : [ 0x1a8, {
     'IrpMinor' : [ 0x0, ['unsigned char']],
+    'SystemState' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
     'SpinLock' : [ 0x8, ['unsigned long']],
     'Thread' : [ 0xc, ['pointer', ['_KTHREAD']]],
     'AbortEvent' : [ 0x10, ['pointer', ['_KEVENT']]],
@@ -1109,6 +1184,18 @@ ntkrpamp_types = {
     'TimeRefreshLockAcquired' : [ 0x1a4, ['unsigned char']],
 } ],
   '_SEGMENT_FLAGS' : [ 0x4, {
+    'TotalNumberOfPtes4132' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 10)]],
+    'ExtraSharedWowSubsections' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'LargePages' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'WatchProto' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 13)]],
+    'DebugSymbolsLoaded' : [ 0x0, ['BitField', dict(start_bit = 13, end_bit = 14)]],
+    'WriteCombined' : [ 0x0, ['BitField', dict(start_bit = 14, end_bit = 15)]],
+    'NoCache' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16)]],
+    'FloppyMedia' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 17)]],
+    'DefaultProtectionMask' : [ 0x0, ['BitField', dict(start_bit = 17, end_bit = 22)]],
+    'Binary32' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 23)]],
+    'ContainsDebug' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 24)]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 32)]],
 } ],
   '_VF_KE_CRITICAL_REGION_TRACE' : [ 0x20, {
     'Thread' : [ 0x0, ['pointer', ['_ETHREAD']]],
@@ -1116,6 +1203,7 @@ ntkrpamp_types = {
 } ],
   '_DIAGNOSTIC_BUFFER' : [ 0x18, {
     'Size' : [ 0x0, ['unsigned long']],
+    'CallerType' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'KernelRequester', 1: 'UserProcessRequester', 2: 'UserSharedServiceRequester'})]],
     'ProcessImageNameOffset' : [ 0x8, ['unsigned long']],
     'ProcessId' : [ 0xc, ['unsigned long']],
     'ServiceTag' : [ 0x10, ['unsigned long']],
@@ -1169,6 +1257,7 @@ ntkrpamp_types = {
   '_KRESOURCEMANAGER' : [ 0x154, {
     'NotificationAvailable' : [ 0x0, ['_KEVENT']],
     'cookie' : [ 0x10, ['unsigned long']],
+    'State' : [ 0x14, ['Enumeration', dict(target = 'long', choices = {0: 'KResourceManagerUninitialized', 1: 'KResourceManagerOffline', 2: 'KResourceManagerOnline'})]],
     'Flags' : [ 0x18, ['unsigned long']],
     'Mutex' : [ 0x1c, ['_KMUTANT']],
     'NamespaceLink' : [ 0x3c, ['_KTMOBJECT_NAMESPACE_LINK']],
@@ -1192,7 +1281,7 @@ ntkrpamp_types = {
     'HDC' : [ 0x8, ['unsigned long long']],
     'Buffer' : [ 0x10, ['array', 310, ['unsigned long']]],
 } ],
-  '__unnamed_2229' : [ 0x4, {
+  '__unnamed_2215' : [ 0x4, {
     'NodeSize' : [ 0x0, ['unsigned long']],
     'UseLookaside' : [ 0x0, ['unsigned long']],
 } ],
@@ -1203,7 +1292,7 @@ ntkrpamp_types = {
     'NodeCount' : [ 0xc, ['unsigned long']],
     'Tables' : [ 0x10, ['pointer', ['_VF_AVL_TABLE']]],
     'TablesNo' : [ 0x14, ['unsigned long']],
-    'u1' : [ 0x18, ['__unnamed_2229']],
+    'u1' : [ 0x18, ['__unnamed_2215']],
 } ],
   '_FILE_NETWORK_OPEN_INFORMATION' : [ 0x38, {
     'CreationTime' : [ 0x0, ['_LARGE_INTEGER']],
@@ -1215,6 +1304,22 @@ ntkrpamp_types = {
     'FileAttributes' : [ 0x30, ['unsigned long']],
 } ],
   '_WHEA_MEMORY_ERROR_SECTION_VALIDBITS' : [ 0x8, {
+    'ErrorStatus' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'PhysicalAddress' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'PhysicalAddressMask' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Node' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Card' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'Module' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'Bank' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'Device' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'Row' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'Column' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'BitPosition' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'RequesterId' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'ResponderId' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 13)]],
+    'TargetId' : [ 0x0, ['BitField', dict(start_bit = 13, end_bit = 14)]],
+    'ErrorType' : [ 0x0, ['BitField', dict(start_bit = 14, end_bit = 15)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 64)]],
     'ValidBits' : [ 0x0, ['unsigned long long']],
 } ],
   '_RELATION_LIST_ENTRY' : [ 0xc, {
@@ -1259,6 +1364,7 @@ ntkrpamp_types = {
   '_KTM' : [ 0x238, {
     'cookie' : [ 0x0, ['unsigned long']],
     'Mutex' : [ 0x4, ['_KMUTANT']],
+    'State' : [ 0x24, ['Enumeration', dict(target = 'long', choices = {0: 'KKtmUninitialized', 1: 'KKtmInitialized', 2: 'KKtmRecovering', 3: 'KKtmOnline', 4: 'KKtmRecoveryFailed', 5: 'KKtmOffline'})]],
     'NamespaceLink' : [ 0x28, ['_KTMOBJECT_NAMESPACE_LINK']],
     'TmIdentity' : [ 0x3c, ['_GUID']],
     'Flags' : [ 0x4c, ['unsigned long']],
@@ -1291,6 +1397,8 @@ ntkrpamp_types = {
     'OfflineWorkItem' : [ 0x228, ['_WORK_QUEUE_ITEM']],
 } ],
   '_CONFIGURATION_COMPONENT' : [ 0x24, {
+    'Class' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'SystemClass', 1: 'ProcessorClass', 2: 'CacheClass', 3: 'AdapterClass', 4: 'ControllerClass', 5: 'PeripheralClass', 6: 'MemoryClass', 7: 'MaximumClass'})]],
+    'Type' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'ArcSystem', 1: 'CentralProcessor', 2: 'FloatingPointProcessor', 3: 'PrimaryIcache', 4: 'PrimaryDcache', 5: 'SecondaryIcache', 6: 'SecondaryDcache', 7: 'SecondaryCache', 8: 'EisaAdapter', 9: 'TcAdapter', 10: 'ScsiAdapter', 11: 'DtiAdapter', 12: 'MultiFunctionAdapter', 13: 'DiskController', 14: 'TapeController', 15: 'CdromController', 16: 'WormController', 17: 'SerialController', 18: 'NetworkController', 19: 'DisplayController', 20: 'ParallelController', 21: 'PointerController', 22: 'KeyboardController', 23: 'AudioController', 24: 'OtherController', 25: 'DiskPeripheral', 26: 'FloppyDiskPeripheral', 27: 'TapePeripheral', 28: 'ModemPeripheral', 29: 'MonitorPeripheral', 30: 'PrinterPeripheral', 31: 'PointerPeripheral', 32: 'KeyboardPeripheral', 33: 'TerminalPeripheral', 34: 'OtherPeripheral', 35: 'LinePeripheral', 36: 'NetworkPeripheral', 37: 'SystemMemory', 38: 'DockingInformation', 39: 'RealModeIrqRoutingTable', 40: 'RealModePCIEnumeration', 41: 'MaximumType'})]],
     'Flags' : [ 0x8, ['_DEVICE_FLAGS']],
     'Version' : [ 0xc, ['unsigned short']],
     'Revision' : [ 0xe, ['unsigned short']],
@@ -1305,6 +1413,9 @@ ntkrpamp_types = {
   '_VF_BTS_RECORD' : [ 0xc, {
     'JumpedFrom' : [ 0x0, ['pointer', ['void']]],
     'JumpedTo' : [ 0x4, ['pointer', ['void']]],
+    'Unused1' : [ 0x8, ['BitField', dict(start_bit = 0, end_bit = 3)]],
+    'Predicted' : [ 0x8, ['BitField', dict(start_bit = 3, end_bit = 7)]],
+    'Unused2' : [ 0x8, ['BitField', dict(start_bit = 7, end_bit = 32)]],
 } ],
   '_KTRANSACTION' : [ 0x1e0, {
     'OutcomeEvent' : [ 0x0, ['_KEVENT']],
@@ -1314,6 +1425,7 @@ ntkrpamp_types = {
     'GlobalNamespaceLink' : [ 0x38, ['_KTMOBJECT_NAMESPACE_LINK']],
     'TmNamespaceLink' : [ 0x4c, ['_KTMOBJECT_NAMESPACE_LINK']],
     'UOW' : [ 0x60, ['_GUID']],
+    'State' : [ 0x70, ['Enumeration', dict(target = 'long', choices = {0: 'KTransactionUninitialized', 1: 'KTransactionActive', 2: 'KTransactionPreparing', 3: 'KTransactionPrepared', 4: 'KTransactionInDoubt', 5: 'KTransactionCommitted', 6: 'KTransactionAborted', 7: 'KTransactionDelegated', 8: 'KTransactionPrePreparing', 9: 'KTransactionForgotten', 10: 'KTransactionRecovering', 11: 'KTransactionPrePrepared'})]],
     'Flags' : [ 0x74, ['unsigned long']],
     'EnlistmentHead' : [ 0x78, ['_LIST_ENTRY']],
     'EnlistmentCount' : [ 0x80, ['unsigned long']],
@@ -1336,6 +1448,7 @@ ntkrpamp_types = {
     'RollbackDpc' : [ 0xe4, ['_KDPC']],
     'RollbackTimer' : [ 0x108, ['_KTIMER']],
     'LsnOrderedEntry' : [ 0x130, ['_LIST_ENTRY']],
+    'Outcome' : [ 0x138, ['Enumeration', dict(target = 'long', choices = {0: 'KTxOutcomeUninitialized', 1: 'KTxOutcomeUndetermined', 2: 'KTxOutcomeCommitted', 3: 'KTxOutcomeAborted', 4: 'KTxOutcomeUnavailable'})]],
     'Tm' : [ 0x13c, ['pointer', ['_KTM']]],
     'CommitReservation' : [ 0x140, ['long long']],
     'TransactionHistory' : [ 0x148, ['array', 10, ['_KTRANSACTION_HISTORY']]],
@@ -1348,6 +1461,11 @@ ntkrpamp_types = {
     'PromotionCompletedEvent' : [ 0x1cc, ['_KEVENT']],
 } ],
   '_PRIVATE_CACHE_MAP_FLAGS' : [ 0x4, {
+    'DontUse' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 16)]],
+    'ReadAheadActive' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 17)]],
+    'ReadAheadEnabled' : [ 0x0, ['BitField', dict(start_bit = 17, end_bit = 18)]],
+    'PagePriority' : [ 0x0, ['BitField', dict(start_bit = 18, end_bit = 21)]],
+    'Available' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 32)]],
 } ],
   '_CM_KCB_UOW' : [ 0x38, {
     'TransactionListEntry' : [ 0x0, ['_LIST_ENTRY']],
@@ -1357,6 +1475,8 @@ ntkrpamp_types = {
     'KeyControlBlock' : [ 0x18, ['pointer', ['_CM_KEY_CONTROL_BLOCK']]],
     'Transaction' : [ 0x1c, ['pointer', ['_CM_TRANS']]],
     'UoWState' : [ 0x20, ['unsigned long']],
+    'ActionType' : [ 0x24, ['Enumeration', dict(target = 'long', choices = {0: 'UoWAddThisKey', 1: 'UoWAddChildKey', 2: 'UoWDeleteThisKey', 3: 'UoWDeleteChildKey', 4: 'UoWSetValueNew', 5: 'UoWSetValueExisting', 6: 'UoWDeleteValue', 7: 'UoWSetKeyUserFlags', 8: 'UoWSetLastWriteTime', 9: 'UoWSetSecurityDescriptor', 10: 'UoWRenameSubKey', 11: 'UoWRenameOldSubKey', 12: 'UoWRenameNewSubKey', 13: 'UoWIsolation', 14: 'UoWInvalid'})]],
+    'StorageType' : [ 0x28, ['Enumeration', dict(target = 'long', choices = {0: 'Stable', 1: 'Volatile', 2: 'InvalidStorage'})]],
     'ChildKCB' : [ 0x30, ['pointer', ['_CM_KEY_CONTROL_BLOCK']]],
     'VolatileKeyCell' : [ 0x30, ['unsigned long']],
     'OldValueCell' : [ 0x30, ['unsigned long']],
@@ -1373,7 +1493,16 @@ ntkrpamp_types = {
     'ContextFrame' : [ 0x0, ['_CONTEXT']],
     'SpecialRegisters' : [ 0x2cc, ['_KSPECIAL_REGISTERS']],
 } ],
-  '_MMPTE_TRANSITION' : [ 0x8, {
+  '_MMPTE_TRANSITION' : [ 0x4, {
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Write' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Owner' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'WriteThrough' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'CacheDisable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 10)]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'Transition' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'PageFrameNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
 } ],
   '_VF_WATCHDOG_IRP' : [ 0x14, {
     'ListEntry' : [ 0x0, ['_LIST_ENTRY']],
@@ -1384,15 +1513,23 @@ ntkrpamp_types = {
     'CancelTimeoutTicks' : [ 0x12, ['unsigned short']],
 } ],
   '_flags' : [ 0x1, {
+    'Removable' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'GroupAssigned' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'GroupCommitted' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'GroupAssignmentFixed' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Fill' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 8)]],
 } ],
-  '__unnamed_2277' : [ 0x8, {
+  '__unnamed_2270' : [ 0x8, {
+    'Head' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 24)]],
+    'Tail' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 48)]],
+    'ActiveThreadCount' : [ 0x0, ['BitField', dict(start_bit = 48, end_bit = 64)]],
 } ],
-  '__unnamed_2279' : [ 0x8, {
-    's1' : [ 0x0, ['__unnamed_2277']],
+  '__unnamed_2272' : [ 0x8, {
+    's1' : [ 0x0, ['__unnamed_2270']],
     'Value' : [ 0x0, ['unsigned long long']],
 } ],
   '_ALPC_COMPLETION_LIST_STATE' : [ 0x8, {
-    'u1' : [ 0x0, ['__unnamed_2279']],
+    'u1' : [ 0x0, ['__unnamed_2272']],
 } ],
   '_PSP_CPU_SHARE_CAPTURED_WEIGHT_DATA' : [ 0x8, {
     'CapturedCpuShareWeight' : [ 0x0, ['unsigned long']],
@@ -1412,12 +1549,19 @@ ntkrpamp_types = {
     'Count' : [ 0x18, ['unsigned long']],
 } ],
   '_MMSECURE_FLAGS' : [ 0x4, {
+    'ReadOnly' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'NoWrite' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 12)]],
 } ],
   '_PO_IRP_QUEUE' : [ 0x8, {
     'CurrentIrp' : [ 0x0, ['pointer', ['_IRP']]],
     'PendingIrpList' : [ 0x4, ['pointer', ['_IRP']]],
 } ],
-  '__unnamed_228c' : [ 0x4, {
+  '__unnamed_2285' : [ 0x4, {
+    'Active' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'OnlyTryAcquireUsed' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'ReleasedOutOfOrder' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'SequenceNumber' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 32)]],
     'Whole' : [ 0x0, ['unsigned long']],
 } ],
   '_VI_DEADLOCK_NODE' : [ 0x6c, {
@@ -1428,7 +1572,7 @@ ntkrpamp_types = {
     'FreeListEntry' : [ 0x14, ['_LIST_ENTRY']],
     'Root' : [ 0x1c, ['pointer', ['_VI_DEADLOCK_RESOURCE']]],
     'ThreadEntry' : [ 0x20, ['pointer', ['_VI_DEADLOCK_THREAD']]],
-    'u1' : [ 0x24, ['__unnamed_228c']],
+    'u1' : [ 0x24, ['__unnamed_2285']],
     'ChildrenCount' : [ 0x28, ['long']],
     'StackTrace' : [ 0x2c, ['array', 8, ['pointer', ['void']]]],
     'ParentStackTrace' : [ 0x4c, ['array', 8, ['pointer', ['void']]]],
@@ -1460,6 +1604,7 @@ ntkrpamp_types = {
     'Spare' : [ 0x1, ['array', 3, ['unsigned char']]],
     'BatteryLevel' : [ 0x4, ['unsigned long']],
     'PowerPolicy' : [ 0x8, ['POWER_ACTION_POLICY']],
+    'MinSystemState' : [ 0x14, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
 } ],
   '_OBJECT_DUMP_CONTROL' : [ 0x8, {
     'Stream' : [ 0x0, ['pointer', ['void']]],
@@ -1506,8 +1651,24 @@ ntkrpamp_types = {
 } ],
   '_WHEA_ERROR_STATUS' : [ 0x8, {
     'ErrorStatus' : [ 0x0, ['unsigned long long']],
+    'Reserved1' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 8)]],
+    'ErrorType' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 16)]],
+    'Address' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 17)]],
+    'Control' : [ 0x0, ['BitField', dict(start_bit = 17, end_bit = 18)]],
+    'Data' : [ 0x0, ['BitField', dict(start_bit = 18, end_bit = 19)]],
+    'Responder' : [ 0x0, ['BitField', dict(start_bit = 19, end_bit = 20)]],
+    'Requester' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 21)]],
+    'FirstError' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 22)]],
+    'Overflow' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 23)]],
+    'Reserved2' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 64)]],
 } ],
   '_WHEA_PERSISTENCE_INFO' : [ 0x8, {
+    'Signature' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 16)]],
+    'Length' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 40)]],
+    'Identifier' : [ 0x0, ['BitField', dict(start_bit = 40, end_bit = 56)]],
+    'Attributes' : [ 0x0, ['BitField', dict(start_bit = 56, end_bit = 58)]],
+    'DoNotLog' : [ 0x0, ['BitField', dict(start_bit = 58, end_bit = 59)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 59, end_bit = 64)]],
     'AsULONGLONG' : [ 0x0, ['unsigned long long']],
 } ],
   '_MI_SECTION_IMAGE_INFORMATION' : [ 0x38, {
@@ -1564,6 +1725,11 @@ ntkrpamp_types = {
     'Machine' : [ 0x20, ['unsigned short']],
     'ImageContainsCode' : [ 0x22, ['unsigned char']],
     'ImageFlags' : [ 0x23, ['unsigned char']],
+    'ComPlusNativeReady' : [ 0x23, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'ComPlusILOnly' : [ 0x23, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'ImageDynamicallyRelocated' : [ 0x23, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'ImageMappedFlat' : [ 0x23, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Reserved' : [ 0x23, ['BitField', dict(start_bit = 4, end_bit = 8)]],
     'LoaderFlags' : [ 0x24, ['unsigned long']],
     'ImageFileSize' : [ 0x28, ['unsigned long']],
     'CheckSum' : [ 0x2c, ['unsigned long']],
@@ -1575,20 +1741,22 @@ ntkrpamp_types = {
   '_TOKEN_AUDIT_POLICY' : [ 0x1b, {
     'PerUserPolicy' : [ 0x0, ['array', 27, ['unsigned char']]],
 } ],
-  '__unnamed_22e2' : [ 0x8, {
+  '__unnamed_22db' : [ 0x8, {
     'EndingOffset' : [ 0x0, ['pointer', ['_LARGE_INTEGER']]],
     'ResourceToRelease' : [ 0x4, ['pointer', ['pointer', ['_ERESOURCE']]]],
 } ],
-  '__unnamed_22e4' : [ 0x4, {
+  '__unnamed_22dd' : [ 0x4, {
     'ResourceToRelease' : [ 0x0, ['pointer', ['_ERESOURCE']]],
 } ],
-  '__unnamed_22e8' : [ 0x8, {
+  '__unnamed_22e1' : [ 0x8, {
+    'SyncType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'SyncTypeOther', 1: 'SyncTypeCreateSection'})]],
     'PageProtection' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_22ec' : [ 0x8, {
+  '__unnamed_22e5' : [ 0x8, {
+    'NotificationType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'NotifyTypeCreate', 1: 'NotifyTypeRetired'})]],
     'SafeToRecurse' : [ 0x4, ['unsigned char']],
 } ],
-  '__unnamed_22ee' : [ 0x14, {
+  '__unnamed_22e7' : [ 0x14, {
     'Argument1' : [ 0x0, ['pointer', ['void']]],
     'Argument2' : [ 0x4, ['pointer', ['void']]],
     'Argument3' : [ 0x8, ['pointer', ['void']]],
@@ -1596,11 +1764,11 @@ ntkrpamp_types = {
     'Argument5' : [ 0x10, ['pointer', ['void']]],
 } ],
   '_FS_FILTER_PARAMETERS' : [ 0x14, {
-    'AcquireForModifiedPageWriter' : [ 0x0, ['__unnamed_22e2']],
-    'ReleaseForModifiedPageWriter' : [ 0x0, ['__unnamed_22e4']],
-    'AcquireForSectionSynchronization' : [ 0x0, ['__unnamed_22e8']],
-    'NotifyStreamFileObject' : [ 0x0, ['__unnamed_22ec']],
-    'Others' : [ 0x0, ['__unnamed_22ee']],
+    'AcquireForModifiedPageWriter' : [ 0x0, ['__unnamed_22db']],
+    'ReleaseForModifiedPageWriter' : [ 0x0, ['__unnamed_22dd']],
+    'AcquireForSectionSynchronization' : [ 0x0, ['__unnamed_22e1']],
+    'NotifyStreamFileObject' : [ 0x0, ['__unnamed_22e5']],
+    'Others' : [ 0x0, ['__unnamed_22e7']],
 } ],
   '_PROFILE_PARAMETER_BLOCK' : [ 0x10, {
     'Status' : [ 0x0, ['unsigned short']],
@@ -1681,6 +1849,7 @@ ntkrpamp_types = {
     'ProgMsg' : [ 0x94, ['_STRING']],
     'DoneMsg' : [ 0x9c, ['_STRING']],
     'FileObject' : [ 0xa4, ['pointer', ['void']]],
+    'UsageType' : [ 0xa8, ['Enumeration', dict(target = 'long', choices = {0: 'DeviceUsageTypeUndefined', 1: 'DeviceUsageTypePaging', 2: 'DeviceUsageTypeHibernation', 3: 'DeviceUsageTypeDumpFile'})]],
 } ],
   '_FILE_STANDARD_INFORMATION' : [ 0x18, {
     'AllocationSize' : [ 0x0, ['_LARGE_INTEGER']],
@@ -1715,7 +1884,7 @@ ntkrpamp_types = {
     'Flags' : [ 0x0, ['unsigned long']],
     'NextFree' : [ 0x0, ['pointer', ['_RTL_HANDLE_TABLE_ENTRY']]],
 } ],
-  '__unnamed_2312' : [ 0x10, {
+  '__unnamed_230b' : [ 0x10, {
     'TestAllocation' : [ 0x0, ['_ARBITER_TEST_ALLOCATION_PARAMETERS']],
     'RetestAllocation' : [ 0x0, ['_ARBITER_RETEST_ALLOCATION_PARAMETERS']],
     'BootAllocation' : [ 0x0, ['_ARBITER_BOOT_ALLOCATION_PARAMETERS']],
@@ -1725,17 +1894,18 @@ ntkrpamp_types = {
     'AddReserved' : [ 0x0, ['_ARBITER_ADD_RESERVED_PARAMETERS']],
 } ],
   '_ARBITER_PARAMETERS' : [ 0x10, {
-    'Parameters' : [ 0x0, ['__unnamed_2312']],
+    'Parameters' : [ 0x0, ['__unnamed_230b']],
 } ],
-  '__unnamed_2316' : [ 0x8, {
+  '__unnamed_230f' : [ 0x8, {
     'idxRecord' : [ 0x0, ['unsigned long']],
     'cidContainer' : [ 0x4, ['unsigned long']],
 } ],
   '_CLS_LSN' : [ 0x8, {
-    'offset' : [ 0x0, ['__unnamed_2316']],
+    'offset' : [ 0x0, ['__unnamed_230f']],
     'ullOffset' : [ 0x0, ['unsigned long long']],
 } ],
   'POWER_ACTION_POLICY' : [ 0xc, {
+    'Action' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'PowerActionNone', 1: 'PowerActionReserved', 2: 'PowerActionSleep', 3: 'PowerActionHibernate', 4: 'PowerActionShutdown', 5: 'PowerActionShutdownReset', 6: 'PowerActionShutdownOff', 7: 'PowerActionWarmEject'})]],
     'Flags' : [ 0x4, ['unsigned long']],
     'EventCode' : [ 0x8, ['unsigned long']],
 } ],
@@ -1768,6 +1938,10 @@ ntkrpamp_types = {
     'ResumeContextPages' : [ 0xdc, ['unsigned long']],
 } ],
   'EX_QUEUE_WORKER_INFO' : [ 0x4, {
+    'QueueDisabled' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'MakeThreadsAsNecessary' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'WaitMode' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'WorkerCount' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 32)]],
     'QueueWorkerInfo' : [ 0x0, ['long']],
 } ],
   'BATTERY_REPORTING_SCALE' : [ 0x8, {
@@ -1793,6 +1967,13 @@ ntkrpamp_types = {
     'FileRuns' : [ 0x50, ['unsigned long']],
 } ],
   '_DEVICE_FLAGS' : [ 0x4, {
+    'Failed' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'ReadOnly' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Removable' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'ConsoleIn' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'ConsoleOut' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'Input' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'Output' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
 } ],
   '_RTL_BALANCED_LINKS' : [ 0x10, {
     'Parent' : [ 0x0, ['pointer', ['_RTL_BALANCED_LINKS']]],
@@ -1803,12 +1984,21 @@ ntkrpamp_types = {
 } ],
   '_MMVIEW' : [ 0x18, {
     'Entry' : [ 0x0, ['unsigned long']],
+    'Writable' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 1)]],
     'ControlArea' : [ 0x4, ['pointer', ['_CONTROL_AREA']]],
     'ViewLinks' : [ 0x8, ['_LIST_ENTRY']],
     'SessionViewVa' : [ 0x10, ['pointer', ['void']]],
     'SessionId' : [ 0x14, ['unsigned long']],
 } ],
   '_MM_SESSION_SPACE_FLAGS' : [ 0x4, {
+    'Initialized' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'DeletePending' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'PoolInitialized' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'DynamicVaInitialized' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'WsInitialized' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'PoolDestroyed' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'ObjectInitialized' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'Filler' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 32)]],
 } ],
   '_HEADLESS_LOADER_BLOCK' : [ 0x34, {
     'UsedBiosSettings' : [ 0x0, ['unsigned char']],
@@ -1829,16 +2019,16 @@ ntkrpamp_types = {
     'IsMMIODevice' : [ 0x30, ['unsigned char']],
     'TerminalType' : [ 0x31, ['unsigned char']],
 } ],
-  '__unnamed_233e' : [ 0x8, {
+  '__unnamed_2337' : [ 0x8, {
     'Signature' : [ 0x0, ['unsigned long']],
     'CheckSum' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_2340' : [ 0x10, {
+  '__unnamed_2339' : [ 0x10, {
     'DiskId' : [ 0x0, ['_GUID']],
 } ],
-  '__unnamed_2342' : [ 0x10, {
-    'Mbr' : [ 0x0, ['__unnamed_233e']],
-    'Gpt' : [ 0x0, ['__unnamed_2340']],
+  '__unnamed_233b' : [ 0x10, {
+    'Mbr' : [ 0x0, ['__unnamed_2337']],
+    'Gpt' : [ 0x0, ['__unnamed_2339']],
 } ],
   '_DUMP_INITIALIZATION_CONTEXT' : [ 0x70, {
     'Length' : [ 0x0, ['unsigned long']],
@@ -1859,7 +2049,7 @@ ntkrpamp_types = {
     'TargetAddress' : [ 0x50, ['pointer', ['void']]],
     'WritePendingRoutine' : [ 0x54, ['pointer', ['void']]],
     'PartitionStyle' : [ 0x58, ['unsigned long']],
-    'DiskInfo' : [ 0x5c, ['__unnamed_2342']],
+    'DiskInfo' : [ 0x5c, ['__unnamed_233b']],
 } ],
   '_MI_SYSTEM_PTE_TYPE' : [ 0x30, {
     'Bitmap' : [ 0x0, ['_RTL_BITMAP']],
@@ -1967,6 +2157,7 @@ ntkrpamp_types = {
     'TableContext' : [ 0x34, ['pointer', ['void']]],
 } ],
   '_KTRANSACTION_HISTORY' : [ 0x8, {
+    'RecordType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {1: 'KTMOH_CommitTransaction_Result', 2: 'KTMOH_RollbackTransaction_Result'})]],
     'Payload' : [ 0x4, ['unsigned long']],
 } ],
   '_DESCRIPTOR' : [ 0x8, {
@@ -2001,6 +2192,7 @@ ntkrpamp_types = {
     'TimeZoneId' : [ 0x240, ['unsigned long']],
     'LargePageMinimum' : [ 0x244, ['unsigned long']],
     'Reserved2' : [ 0x248, ['array', 7, ['unsigned long']]],
+    'NtProductType' : [ 0x264, ['Enumeration', dict(target = 'long', choices = {1: 'NtProductWinNt', 2: 'NtProductLanManNt', 3: 'NtProductServer'})]],
     'ProductTypeIsValid' : [ 0x268, ['unsigned char']],
     'NtMajorVersion' : [ 0x26c, ['unsigned long']],
     'NtMinorVersion' : [ 0x270, ['unsigned long']],
@@ -2008,6 +2200,7 @@ ntkrpamp_types = {
     'Reserved1' : [ 0x2b4, ['unsigned long']],
     'Reserved3' : [ 0x2b8, ['unsigned long']],
     'TimeSlip' : [ 0x2bc, ['unsigned long']],
+    'AlternativeArchitecture' : [ 0x2c0, ['Enumeration', dict(target = 'long', choices = {0: 'StandardDesign', 1: 'NEC98x86', 2: 'EndAlternatives'})]],
     'AltArchitecturePad' : [ 0x2c4, ['array', 1, ['unsigned long']]],
     'SystemExpirationDate' : [ 0x2c8, ['_LARGE_INTEGER']],
     'SuiteMask' : [ 0x2d0, ['unsigned long']],
@@ -2020,8 +2213,19 @@ ntkrpamp_types = {
     'NumberOfPhysicalPages' : [ 0x2e8, ['unsigned long']],
     'SafeBootMode' : [ 0x2ec, ['unsigned char']],
     'TscQpcData' : [ 0x2ed, ['unsigned char']],
+    'TscQpcEnabled' : [ 0x2ed, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'TscQpcSpareFlag' : [ 0x2ed, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'TscQpcShift' : [ 0x2ed, ['BitField', dict(start_bit = 2, end_bit = 8)]],
     'TscQpcPad' : [ 0x2ee, ['array', 2, ['unsigned char']]],
     'SharedDataFlags' : [ 0x2f0, ['unsigned long']],
+    'DbgErrorPortPresent' : [ 0x2f0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'DbgElevationEnabled' : [ 0x2f0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'DbgVirtEnabled' : [ 0x2f0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'DbgInstallerDetectEnabled' : [ 0x2f0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'DbgSystemDllRelocated' : [ 0x2f0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'DbgDynProcessorEnabled' : [ 0x2f0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'DbgSEHValidationEnabled' : [ 0x2f0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'SpareBits' : [ 0x2f0, ['BitField', dict(start_bit = 7, end_bit = 32)]],
     'DataFlagsPad' : [ 0x2f4, ['array', 1, ['unsigned long']]],
     'TestRetInstruction' : [ 0x2f8, ['unsigned long long']],
     'SystemCall' : [ 0x300, ['unsigned long']],
@@ -2072,6 +2276,9 @@ ntkrpamp_types = {
     'QuadPart' : [ 0x0, ['long long']],
 } ],
   '__unnamed_105e' : [ 0x4, {
+    'LongFunction' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Persistent' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Private' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 32)]],
 } ],
   '__unnamed_1060' : [ 0x4, {
     'Flags' : [ 0x0, ['unsigned long']],
@@ -2086,6 +2293,7 @@ ntkrpamp_types = {
     'ActivationContext' : [ 0x14, ['pointer', ['_ACTIVATION_CONTEXT']]],
     'FinalizationCallback' : [ 0x18, ['pointer', ['void']]],
     'u' : [ 0x1c, ['__unnamed_1060']],
+    'CallbackPriority' : [ 0x20, ['Enumeration', dict(target = 'long', choices = {0: 'TP_CALLBACK_PRIORITY_HIGH', 1: 'TP_CALLBACK_PRIORITY_NORMAL', 2: 'TP_CALLBACK_PRIORITY_LOW', 3: 'TP_CALLBACK_PRIORITY_INVALID'})]],
     'Size' : [ 0x24, ['unsigned long']],
 } ],
   '_TP_TASK' : [ 0x20, {
@@ -2184,7 +2392,20 @@ ntkrpamp_types = {
     'MergedPrefLanguages' : [ 0xfc0, ['pointer', ['void']]],
     'MuiImpersonation' : [ 0xfc4, ['unsigned long']],
     'CrossTebFlags' : [ 0xfc8, ['unsigned short']],
+    'SpareCrossTebBits' : [ 0xfc8, ['BitField', dict(start_bit = 0, end_bit = 16)]],
     'SameTebFlags' : [ 0xfca, ['unsigned short']],
+    'SafeThunkCall' : [ 0xfca, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'InDebugPrint' : [ 0xfca, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'HasFiberData' : [ 0xfca, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'SkipThreadAttach' : [ 0xfca, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'WerInShipAssertCode' : [ 0xfca, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'RanProcessInit' : [ 0xfca, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'ClonedThread' : [ 0xfca, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'SuppressDebugMsg' : [ 0xfca, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'DisableUserStackWalk' : [ 0xfca, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'RtlExceptionAttached' : [ 0xfca, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'InitialThread' : [ 0xfca, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'SpareSameTebBits' : [ 0xfca, ['BitField', dict(start_bit = 11, end_bit = 16)]],
     'TxnScopeEnterCallback' : [ 0xfcc, ['pointer', ['void']]],
     'TxnScopeExitCallback' : [ 0xfd0, ['pointer', ['void']]],
     'TxnScopeContext' : [ 0xfd4, ['pointer', ['void']]],
@@ -2416,6 +2637,7 @@ ntkrpamp_types = {
     'DpcRequestSummary' : [ 0x1934, ['long']],
     'DpcRequestSlot' : [ 0x1934, ['array', 2, ['short']]],
     'NormalDpcState' : [ 0x1934, ['short']],
+    'DpcThreadActive' : [ 0x1936, ['BitField', dict(start_bit = 0, end_bit = 1)]],
     'ThreadDpcState' : [ 0x1936, ['short']],
     'TimerHand' : [ 0x1938, ['unsigned long']],
     'LastTick' : [ 0x193c, ['unsigned long']],
@@ -2572,6 +2794,20 @@ ntkrpamp_types = {
     'WaitRegister' : [ 0x38, ['_KWAIT_STATUS_REGISTER']],
     'Running' : [ 0x39, ['unsigned char']],
     'Alerted' : [ 0x3a, ['array', 2, ['unsigned char']]],
+    'KernelStackResident' : [ 0x3c, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'ReadyTransition' : [ 0x3c, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'ProcessReadyQueue' : [ 0x3c, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'WaitNext' : [ 0x3c, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'SystemAffinityActive' : [ 0x3c, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'Alertable' : [ 0x3c, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'GdiFlushActive' : [ 0x3c, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'UserStackWalkActive' : [ 0x3c, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'ApcInterruptRequest' : [ 0x3c, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'ForceDeferSchedule' : [ 0x3c, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'QuantumEndMigrate' : [ 0x3c, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'UmsDirectedSwitchEnable' : [ 0x3c, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'TimerActive' : [ 0x3c, ['BitField', dict(start_bit = 12, end_bit = 13)]],
+    'Reserved' : [ 0x3c, ['BitField', dict(start_bit = 13, end_bit = 32)]],
     'MiscFlags' : [ 0x3c, ['long']],
     'ApcState' : [ 0x40, ['_KAPC_STATE']],
     'ApcStateFill' : [ 0x40, ['array', 23, ['unsigned char']]],
@@ -2595,6 +2831,16 @@ ntkrpamp_types = {
     'CombinedApcDisable' : [ 0x84, ['unsigned long']],
     'Teb' : [ 0x88, ['pointer', ['void']]],
     'Timer' : [ 0x90, ['_KTIMER']],
+    'AutoAlignment' : [ 0xb8, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'DisableBoost' : [ 0xb8, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'EtwStackTraceApc1Inserted' : [ 0xb8, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'EtwStackTraceApc2Inserted' : [ 0xb8, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'CalloutActive' : [ 0xb8, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'ApcQueueable' : [ 0xb8, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'EnableStackSwap' : [ 0xb8, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'GuiThread' : [ 0xb8, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'UmsPerformingSyscall' : [ 0xb8, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'ReservedFlags' : [ 0xb8, ['BitField', dict(start_bit = 9, end_bit = 32)]],
     'ThreadFlags' : [ 0xb8, ['long']],
     'ServiceTable' : [ 0xbc, ['pointer', ['void']]],
     'WaitBlock' : [ 0xc0, ['array', 4, ['_KWAIT_BLOCK']]],
@@ -2606,6 +2852,8 @@ ntkrpamp_types = {
     'ApcStateIndex' : [ 0x134, ['unsigned char']],
     'BasePriority' : [ 0x135, ['unsigned char']],
     'PriorityDecrement' : [ 0x136, ['unsigned char']],
+    'ForegroundBoost' : [ 0x136, ['BitField', dict(start_bit = 0, end_bit = 4)]],
+    'UnusualBoost' : [ 0x136, ['BitField', dict(start_bit = 4, end_bit = 8)]],
     'Preempted' : [ 0x137, ['unsigned char']],
     'AdjustReason' : [ 0x138, ['unsigned char']],
     'AdjustIncrement' : [ 0x139, ['unsigned char']],
@@ -2691,6 +2939,11 @@ ntkrpamp_types = {
     'Information' : [ 0x4, ['unsigned long']],
 } ],
   '_EX_PUSH_LOCK' : [ 0x4, {
+    'Locked' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Waiting' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Waking' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'MultipleShared' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Shared' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 32)]],
     'Value' : [ 0x0, ['unsigned long']],
     'Ptr' : [ 0x0, ['pointer', ['void']]],
 } ],
@@ -2717,6 +2970,7 @@ ntkrpamp_types = {
     'TotalFrees' : [ 0x14, ['unsigned long']],
     'FreeMisses' : [ 0x18, ['unsigned long']],
     'FreeHits' : [ 0x18, ['unsigned long']],
+    'Type' : [ 0x1c, ['Enumeration', dict(target = 'long', choices = {0: 'NonPagedPool', 1: 'PagedPool', 2: 'NonPagedPoolMustSucceed', 3: 'DontUseThisType', 4: 'NonPagedPoolCacheAligned', 5: 'PagedPoolCacheAligned', 6: 'NonPagedPoolCacheAlignedMustS', 7: 'MaxPoolType', 34: 'NonPagedPoolMustSucceedSession', 35: 'DontUseThisTypeSession', 32: 'NonPagedPoolSession', 36: 'NonPagedPoolCacheAlignedSession', 33: 'PagedPoolSession', 38: 'NonPagedPoolCacheAlignedMustSSession', 37: 'PagedPoolCacheAlignedSession'})]],
     'Tag' : [ 0x20, ['unsigned long']],
     'Size' : [ 0x24, ['unsigned long']],
     'AllocateEx' : [ 0x28, ['pointer', ['void']]],
@@ -2731,6 +2985,7 @@ ntkrpamp_types = {
 } ],
   '_EX_FAST_REF' : [ 0x4, {
     'Object' : [ 0x0, ['pointer', ['void']]],
+    'RefCnt' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 3)]],
     'Value' : [ 0x0, ['unsigned long']],
 } ],
   '_EX_PUSH_LOCK_WAIT_BLOCK' : [ 0x30, {
@@ -2771,8 +3026,51 @@ ntkrpamp_types = {
     'ReadClusterSize' : [ 0x278, ['unsigned long']],
     'MmLockOrdering' : [ 0x27c, ['long']],
     'CrossThreadFlags' : [ 0x280, ['unsigned long']],
+    'Terminated' : [ 0x280, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'ThreadInserted' : [ 0x280, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'HideFromDebugger' : [ 0x280, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'ActiveImpersonationInfo' : [ 0x280, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'SystemThread' : [ 0x280, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'HardErrorsAreDisabled' : [ 0x280, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'BreakOnTermination' : [ 0x280, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'SkipCreationMsg' : [ 0x280, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'SkipTerminationMsg' : [ 0x280, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'CopyTokenOnOpen' : [ 0x280, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'ThreadIoPriority' : [ 0x280, ['BitField', dict(start_bit = 10, end_bit = 13)]],
+    'ThreadPagePriority' : [ 0x280, ['BitField', dict(start_bit = 13, end_bit = 16)]],
+    'RundownFail' : [ 0x280, ['BitField', dict(start_bit = 16, end_bit = 17)]],
+    'NeedsWorkingSetAging' : [ 0x280, ['BitField', dict(start_bit = 17, end_bit = 18)]],
     'SameThreadPassiveFlags' : [ 0x284, ['unsigned long']],
+    'ActiveExWorker' : [ 0x284, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'ExWorkerCanWaitUser' : [ 0x284, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'MemoryMaker' : [ 0x284, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'ClonedThread' : [ 0x284, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'KeyedEventInUse' : [ 0x284, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'RateApcState' : [ 0x284, ['BitField', dict(start_bit = 5, end_bit = 7)]],
+    'SelfTerminate' : [ 0x284, ['BitField', dict(start_bit = 7, end_bit = 8)]],
     'SameThreadApcFlags' : [ 0x288, ['unsigned long']],
+    'Spare' : [ 0x288, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'StartAddressInvalid' : [ 0x288, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'EtwPageFaultCalloutActive' : [ 0x288, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'OwnsProcessWorkingSetExclusive' : [ 0x288, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'OwnsProcessWorkingSetShared' : [ 0x288, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'OwnsSystemCacheWorkingSetExclusive' : [ 0x288, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'OwnsSystemCacheWorkingSetShared' : [ 0x288, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'OwnsSessionWorkingSetExclusive' : [ 0x288, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'OwnsSessionWorkingSetShared' : [ 0x289, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'OwnsProcessAddressSpaceExclusive' : [ 0x289, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'OwnsProcessAddressSpaceShared' : [ 0x289, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'SuppressSymbolLoad' : [ 0x289, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Prefetching' : [ 0x289, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'OwnsDynamicMemoryShared' : [ 0x289, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'OwnsChangeControlAreaExclusive' : [ 0x289, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'OwnsChangeControlAreaShared' : [ 0x289, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'OwnsPagedPoolWorkingSetExclusive' : [ 0x28a, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'OwnsPagedPoolWorkingSetShared' : [ 0x28a, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'OwnsSystemPtesWorkingSetExclusive' : [ 0x28a, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'OwnsSystemPtesWorkingSetShared' : [ 0x28a, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'TrimTrigger' : [ 0x28a, ['BitField', dict(start_bit = 4, end_bit = 6)]],
+    'Spare1' : [ 0x28a, ['BitField', dict(start_bit = 6, end_bit = 8)]],
     'PriorityRegionActive' : [ 0x28b, ['unsigned char']],
     'CacheManagerActive' : [ 0x28c, ['unsigned char']],
     'DisablePageFaultClustering' : [ 0x28d, ['unsigned char']],
@@ -2807,6 +3105,7 @@ ntkrpamp_types = {
     'DebugPort' : [ 0xec, ['pointer', ['void']]],
     'ExceptionPortData' : [ 0xf0, ['pointer', ['void']]],
     'ExceptionPortValue' : [ 0xf0, ['unsigned long']],
+    'ExceptionPortState' : [ 0xf0, ['BitField', dict(start_bit = 0, end_bit = 3)]],
     'ObjectTable' : [ 0xf4, ['pointer', ['_HANDLE_TABLE']]],
     'Token' : [ 0xf8, ['_EX_FAST_REF']],
     'WorkingSetPage' : [ 0xfc, ['unsigned long']],
@@ -2864,7 +3163,56 @@ ntkrpamp_types = {
     'HighestUserAddress' : [ 0x264, ['pointer', ['void']]],
     'ModifiedPageCount' : [ 0x268, ['unsigned long']],
     'Flags2' : [ 0x26c, ['unsigned long']],
+    'JobNotReallyActive' : [ 0x26c, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'AccountingFolded' : [ 0x26c, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'NewProcessReported' : [ 0x26c, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'ExitProcessReported' : [ 0x26c, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'ReportCommitChanges' : [ 0x26c, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'LastReportMemory' : [ 0x26c, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'ReportPhysicalPageChanges' : [ 0x26c, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'HandleTableRundown' : [ 0x26c, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'NeedsHandleRundown' : [ 0x26c, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'RefTraceEnabled' : [ 0x26c, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'NumaAware' : [ 0x26c, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'ProtectedProcess' : [ 0x26c, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'DefaultPagePriority' : [ 0x26c, ['BitField', dict(start_bit = 12, end_bit = 15)]],
+    'PrimaryTokenFrozen' : [ 0x26c, ['BitField', dict(start_bit = 15, end_bit = 16)]],
+    'ProcessVerifierTarget' : [ 0x26c, ['BitField', dict(start_bit = 16, end_bit = 17)]],
+    'StackRandomizationDisabled' : [ 0x26c, ['BitField', dict(start_bit = 17, end_bit = 18)]],
+    'AffinityPermanent' : [ 0x26c, ['BitField', dict(start_bit = 18, end_bit = 19)]],
+    'AffinityUpdateEnable' : [ 0x26c, ['BitField', dict(start_bit = 19, end_bit = 20)]],
+    'PropagateNode' : [ 0x26c, ['BitField', dict(start_bit = 20, end_bit = 21)]],
+    'ExplicitAffinity' : [ 0x26c, ['BitField', dict(start_bit = 21, end_bit = 22)]],
     'Flags' : [ 0x270, ['unsigned long']],
+    'CreateReported' : [ 0x270, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'NoDebugInherit' : [ 0x270, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'ProcessExiting' : [ 0x270, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'ProcessDelete' : [ 0x270, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Wow64SplitPages' : [ 0x270, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'VmDeleted' : [ 0x270, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'OutswapEnabled' : [ 0x270, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'Outswapped' : [ 0x270, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'ForkFailed' : [ 0x270, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'Wow64VaSpace4Gb' : [ 0x270, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'AddressSpaceInitialized' : [ 0x270, ['BitField', dict(start_bit = 10, end_bit = 12)]],
+    'SetTimerResolution' : [ 0x270, ['BitField', dict(start_bit = 12, end_bit = 13)]],
+    'BreakOnTermination' : [ 0x270, ['BitField', dict(start_bit = 13, end_bit = 14)]],
+    'DeprioritizeViews' : [ 0x270, ['BitField', dict(start_bit = 14, end_bit = 15)]],
+    'WriteWatch' : [ 0x270, ['BitField', dict(start_bit = 15, end_bit = 16)]],
+    'ProcessInSession' : [ 0x270, ['BitField', dict(start_bit = 16, end_bit = 17)]],
+    'OverrideAddressSpace' : [ 0x270, ['BitField', dict(start_bit = 17, end_bit = 18)]],
+    'HasAddressSpace' : [ 0x270, ['BitField', dict(start_bit = 18, end_bit = 19)]],
+    'LaunchPrefetched' : [ 0x270, ['BitField', dict(start_bit = 19, end_bit = 20)]],
+    'InjectInpageErrors' : [ 0x270, ['BitField', dict(start_bit = 20, end_bit = 21)]],
+    'VmTopDown' : [ 0x270, ['BitField', dict(start_bit = 21, end_bit = 22)]],
+    'ImageNotifyDone' : [ 0x270, ['BitField', dict(start_bit = 22, end_bit = 23)]],
+    'PdeUpdateNeeded' : [ 0x270, ['BitField', dict(start_bit = 23, end_bit = 24)]],
+    'VdmAllowed' : [ 0x270, ['BitField', dict(start_bit = 24, end_bit = 25)]],
+    'CrossSessionCreate' : [ 0x270, ['BitField', dict(start_bit = 25, end_bit = 26)]],
+    'ProcessInserted' : [ 0x270, ['BitField', dict(start_bit = 26, end_bit = 27)]],
+    'DefaultIoPriority' : [ 0x270, ['BitField', dict(start_bit = 27, end_bit = 30)]],
+    'ProcessSelfDelete' : [ 0x270, ['BitField', dict(start_bit = 30, end_bit = 31)]],
+    'SetTimerResolutionLink' : [ 0x270, ['BitField', dict(start_bit = 31, end_bit = 32)]],
     'ExitStatus' : [ 0x274, ['long']],
     'VadRoot' : [ 0x278, ['_MM_AVL_TABLE']],
     'AlpcContext' : [ 0x298, ['_ALPC_PROCESS_CONTEXT']],
@@ -2886,6 +3234,11 @@ ntkrpamp_types = {
     'ReadyListHead' : [ 0x44, ['_LIST_ENTRY']],
     'SwapListEntry' : [ 0x4c, ['_SINGLE_LIST_ENTRY']],
     'ActiveProcessors' : [ 0x50, ['_KAFFINITY_EX']],
+    'AutoAlignment' : [ 0x5c, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'DisableBoost' : [ 0x5c, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'DisableQuantum' : [ 0x5c, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'ActiveGroupsMask' : [ 0x5c, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'ReservedFlags' : [ 0x5c, ['BitField', dict(start_bit = 4, end_bit = 32)]],
     'ProcessFlags' : [ 0x5c, ['long']],
     'BasePriority' : [ 0x60, ['unsigned char']],
     'QuantumReset' : [ 0x61, ['unsigned char']],
@@ -3021,6 +3374,7 @@ ntkrpamp_types = {
   '__unnamed_12c9' : [ 0x10, {
     'Length' : [ 0x0, ['unsigned long']],
     'FileName' : [ 0x4, ['pointer', ['_UNICODE_STRING']]],
+    'FileInformationClass' : [ 0x8, ['Enumeration', dict(target = 'long', choices = {1: 'FileDirectoryInformation', 2: 'FileFullDirectoryInformation', 3: 'FileBothDirectoryInformation', 4: 'FileBasicInformation', 5: 'FileStandardInformation', 6: 'FileInternalInformation', 7: 'FileEaInformation', 8: 'FileAccessInformation', 9: 'FileNameInformation', 10: 'FileRenameInformation', 11: 'FileLinkInformation', 12: 'FileNamesInformation', 13: 'FileDispositionInformation', 14: 'FilePositionInformation', 15: 'FileFullEaInformation', 16: 'FileModeInformation', 17: 'FileAlignmentInformation', 18: 'FileAllInformation', 19: 'FileAllocationInformation', 20: 'FileEndOfFileInformation', 21: 'FileAlternateNameInformation', 22: 'FileStreamInformation', 23: 'FilePipeInformation', 24: 'FilePipeLocalInformation', 25: 'FilePipeRemoteInformation', 26: 'FileMailslotQueryInformation', 27: 'FileMailslotSetInformation', 28: 'FileCompressionInformation', 29: 'FileObjectIdInformation', 30: 'FileCompletionInformation', 31: 'FileMoveClusterInformation', 32: 'FileQuotaInformation', 33: 'FileReparsePointInformation', 34: 'FileNetworkOpenInformation', 35: 'FileAttributeTagInformation', 36: 'FileTrackingInformation', 37: 'FileIdBothDirectoryInformation', 38: 'FileIdFullDirectoryInformation', 39: 'FileValidDataLengthInformation', 40: 'FileShortNameInformation', 41: 'FileIoCompletionNotificationInformation', 42: 'FileIoStatusBlockRangeInformation', 43: 'FileIoPriorityHintInformation', 44: 'FileSfioReserveInformation', 45: 'FileSfioVolumeInformation', 46: 'FileHardLinkInformation', 47: 'FileProcessIdsUsingFileInformation', 48: 'FileNormalizedNameInformation', 49: 'FileNetworkPhysicalNameInformation', 50: 'FileIdGlobalTxDirectoryInformation', 51: 'FileIsRemoteDeviceInformation', 52: 'FileAttributeCacheInformation', 53: 'FileNumaNodeInformation', 54: 'FileStandardLinkInformation', 55: 'FileRemoteProtocolInformation', 56: 'FileMaximumInformation'})]],
     'FileIndex' : [ 0xc, ['unsigned long']],
 } ],
   '__unnamed_12cb' : [ 0x8, {
@@ -3029,9 +3383,11 @@ ntkrpamp_types = {
 } ],
   '__unnamed_12cd' : [ 0x8, {
     'Length' : [ 0x0, ['unsigned long']],
+    'FileInformationClass' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {1: 'FileDirectoryInformation', 2: 'FileFullDirectoryInformation', 3: 'FileBothDirectoryInformation', 4: 'FileBasicInformation', 5: 'FileStandardInformation', 6: 'FileInternalInformation', 7: 'FileEaInformation', 8: 'FileAccessInformation', 9: 'FileNameInformation', 10: 'FileRenameInformation', 11: 'FileLinkInformation', 12: 'FileNamesInformation', 13: 'FileDispositionInformation', 14: 'FilePositionInformation', 15: 'FileFullEaInformation', 16: 'FileModeInformation', 17: 'FileAlignmentInformation', 18: 'FileAllInformation', 19: 'FileAllocationInformation', 20: 'FileEndOfFileInformation', 21: 'FileAlternateNameInformation', 22: 'FileStreamInformation', 23: 'FilePipeInformation', 24: 'FilePipeLocalInformation', 25: 'FilePipeRemoteInformation', 26: 'FileMailslotQueryInformation', 27: 'FileMailslotSetInformation', 28: 'FileCompressionInformation', 29: 'FileObjectIdInformation', 30: 'FileCompletionInformation', 31: 'FileMoveClusterInformation', 32: 'FileQuotaInformation', 33: 'FileReparsePointInformation', 34: 'FileNetworkOpenInformation', 35: 'FileAttributeTagInformation', 36: 'FileTrackingInformation', 37: 'FileIdBothDirectoryInformation', 38: 'FileIdFullDirectoryInformation', 39: 'FileValidDataLengthInformation', 40: 'FileShortNameInformation', 41: 'FileIoCompletionNotificationInformation', 42: 'FileIoStatusBlockRangeInformation', 43: 'FileIoPriorityHintInformation', 44: 'FileSfioReserveInformation', 45: 'FileSfioVolumeInformation', 46: 'FileHardLinkInformation', 47: 'FileProcessIdsUsingFileInformation', 48: 'FileNormalizedNameInformation', 49: 'FileNetworkPhysicalNameInformation', 50: 'FileIdGlobalTxDirectoryInformation', 51: 'FileIsRemoteDeviceInformation', 52: 'FileAttributeCacheInformation', 53: 'FileNumaNodeInformation', 54: 'FileStandardLinkInformation', 55: 'FileRemoteProtocolInformation', 56: 'FileMaximumInformation'})]],
 } ],
   '__unnamed_12cf' : [ 0x10, {
     'Length' : [ 0x0, ['unsigned long']],
+    'FileInformationClass' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {1: 'FileDirectoryInformation', 2: 'FileFullDirectoryInformation', 3: 'FileBothDirectoryInformation', 4: 'FileBasicInformation', 5: 'FileStandardInformation', 6: 'FileInternalInformation', 7: 'FileEaInformation', 8: 'FileAccessInformation', 9: 'FileNameInformation', 10: 'FileRenameInformation', 11: 'FileLinkInformation', 12: 'FileNamesInformation', 13: 'FileDispositionInformation', 14: 'FilePositionInformation', 15: 'FileFullEaInformation', 16: 'FileModeInformation', 17: 'FileAlignmentInformation', 18: 'FileAllInformation', 19: 'FileAllocationInformation', 20: 'FileEndOfFileInformation', 21: 'FileAlternateNameInformation', 22: 'FileStreamInformation', 23: 'FilePipeInformation', 24: 'FilePipeLocalInformation', 25: 'FilePipeRemoteInformation', 26: 'FileMailslotQueryInformation', 27: 'FileMailslotSetInformation', 28: 'FileCompressionInformation', 29: 'FileObjectIdInformation', 30: 'FileCompletionInformation', 31: 'FileMoveClusterInformation', 32: 'FileQuotaInformation', 33: 'FileReparsePointInformation', 34: 'FileNetworkOpenInformation', 35: 'FileAttributeTagInformation', 36: 'FileTrackingInformation', 37: 'FileIdBothDirectoryInformation', 38: 'FileIdFullDirectoryInformation', 39: 'FileValidDataLengthInformation', 40: 'FileShortNameInformation', 41: 'FileIoCompletionNotificationInformation', 42: 'FileIoStatusBlockRangeInformation', 43: 'FileIoPriorityHintInformation', 44: 'FileSfioReserveInformation', 45: 'FileSfioVolumeInformation', 46: 'FileHardLinkInformation', 47: 'FileProcessIdsUsingFileInformation', 48: 'FileNormalizedNameInformation', 49: 'FileNetworkPhysicalNameInformation', 50: 'FileIdGlobalTxDirectoryInformation', 51: 'FileIsRemoteDeviceInformation', 52: 'FileAttributeCacheInformation', 53: 'FileNumaNodeInformation', 54: 'FileStandardLinkInformation', 55: 'FileRemoteProtocolInformation', 56: 'FileMaximumInformation'})]],
     'FileObject' : [ 0x8, ['pointer', ['_FILE_OBJECT']]],
     'ReplaceIfExists' : [ 0xc, ['unsigned char']],
     'AdvanceOnly' : [ 0xd, ['unsigned char']],
@@ -3049,6 +3405,7 @@ ntkrpamp_types = {
 } ],
   '__unnamed_12d7' : [ 0x8, {
     'Length' : [ 0x0, ['unsigned long']],
+    'FsInformationClass' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {1: 'FileFsVolumeInformation', 2: 'FileFsLabelInformation', 3: 'FileFsSizeInformation', 4: 'FileFsDeviceInformation', 5: 'FileFsAttributeInformation', 6: 'FileFsControlInformation', 7: 'FileFsFullSizeInformation', 8: 'FileFsObjectIdInformation', 9: 'FileFsDriverPathInformation', 10: 'FileFsVolumeFlagsInformation', 11: 'FileFsMaximumInformation'})]],
 } ],
   '__unnamed_12d9' : [ 0x10, {
     'OutputBufferLength' : [ 0x0, ['unsigned long']],
@@ -3089,6 +3446,7 @@ ntkrpamp_types = {
     'SidListLength' : [ 0xc, ['unsigned long']],
 } ],
   '__unnamed_12f2' : [ 0x4, {
+    'Type' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'BusRelations', 1: 'EjectionRelations', 2: 'PowerRelations', 3: 'RemovalRelations', 4: 'TargetDeviceRelation', 5: 'SingleBusRelations', 6: 'TransportRelations'})]],
 } ],
   '__unnamed_12f8' : [ 0x10, {
     'InterfaceType' : [ 0x0, ['pointer', ['_GUID']]],
@@ -3113,15 +3471,19 @@ ntkrpamp_types = {
     'Lock' : [ 0x0, ['unsigned char']],
 } ],
   '__unnamed_1308' : [ 0x4, {
+    'IdType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'BusQueryDeviceID', 1: 'BusQueryHardwareIDs', 2: 'BusQueryCompatibleIDs', 3: 'BusQueryInstanceID', 4: 'BusQueryDeviceSerialNumber', 5: 'BusQueryContainerID'})]],
 } ],
   '__unnamed_130c' : [ 0x8, {
+    'DeviceTextType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'DeviceTextDescription', 1: 'DeviceTextLocationInformation'})]],
     'LocaleId' : [ 0x4, ['unsigned long']],
 } ],
   '__unnamed_1310' : [ 0x8, {
     'InPath' : [ 0x0, ['unsigned char']],
     'Reserved' : [ 0x1, ['array', 3, ['unsigned char']]],
+    'Type' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'DeviceUsageTypeUndefined', 1: 'DeviceUsageTypePaging', 2: 'DeviceUsageTypeHibernation', 3: 'DeviceUsageTypeDumpFile'})]],
 } ],
   '__unnamed_1314' : [ 0x4, {
+    'PowerState' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
 } ],
   '__unnamed_1318' : [ 0x4, {
     'PowerSequence' : [ 0x0, ['pointer', ['_POWER_SEQUENCE']]],
@@ -3129,7 +3491,9 @@ ntkrpamp_types = {
   '__unnamed_1320' : [ 0x10, {
     'SystemContext' : [ 0x0, ['unsigned long']],
     'SystemPowerStateContext' : [ 0x0, ['_SYSTEM_POWER_STATE_CONTEXT']],
+    'Type' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'SystemPowerState', 1: 'DevicePowerState'})]],
     'State' : [ 0x8, ['_POWER_STATE']],
+    'ShutdownType' : [ 0xc, ['Enumeration', dict(target = 'long', choices = {0: 'PowerActionNone', 1: 'PowerActionReserved', 2: 'PowerActionSleep', 3: 'PowerActionHibernate', 4: 'PowerActionShutdown', 5: 'PowerActionShutdownReset', 6: 'PowerActionShutdownOff', 7: 'PowerActionWarmEject'})]],
 } ],
   '__unnamed_1324' : [ 0x8, {
     'AllocatedResources' : [ 0x0, ['pointer', ['_CM_RESOURCE_LIST']]],
@@ -3250,6 +3614,7 @@ ntkrpamp_types = {
     'Size' : [ 0x0, ['unsigned long']],
     'ThreadPriority' : [ 0x4, ['unsigned long']],
     'PagePriority' : [ 0x8, ['unsigned long']],
+    'IoPriority' : [ 0xc, ['Enumeration', dict(target = 'long', choices = {0: 'IoPriorityVeryLow', 1: 'IoPriorityLow', 2: 'IoPriorityNormal', 3: 'IoPriorityHigh', 4: 'IoPriorityCritical', 5: 'MaxIoPriorityTypes'})]],
 } ],
   '_OBJECT_ATTRIBUTES' : [ 0x18, {
     'Length' : [ 0x0, ['unsigned long']],
@@ -3318,6 +3683,7 @@ ntkrpamp_types = {
 } ],
   '_MM_PAGE_ACCESS_INFO_HEADER' : [ 0x38, {
     'Link' : [ 0x0, ['_SINGLE_LIST_ENTRY']],
+    'Type' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'MmPteAccessType', 1: 'MmCcReadAheadType', 2: 'MmPfnRepurposeType', 3: 'MmMaximumPageAccessType'})]],
     'EmptySequenceNumber' : [ 0x8, ['unsigned long']],
     'CurrentFileIndex' : [ 0x8, ['unsigned long']],
     'CreateTime' : [ 0x10, ['unsigned long long']],
@@ -3336,9 +3702,13 @@ ntkrpamp_types = {
     'Version' : [ 0x4, ['unsigned long']],
     'Length' : [ 0x8, ['unsigned long']],
     'Flags' : [ 0xc, ['_WHEA_ERROR_PACKET_FLAGS']],
+    'ErrorType' : [ 0x10, ['Enumeration', dict(target = 'long', choices = {0: 'WheaErrTypeProcessor', 1: 'WheaErrTypeMemory', 2: 'WheaErrTypePCIExpress', 3: 'WheaErrTypeNMI', 4: 'WheaErrTypePCIXBus', 5: 'WheaErrTypePCIXDevice', 6: 'WheaErrTypeGeneric'})]],
+    'ErrorSeverity' : [ 0x14, ['Enumeration', dict(target = 'long', choices = {0: 'WheaErrSevRecoverable', 1: 'WheaErrSevFatal', 2: 'WheaErrSevCorrected', 3: 'WheaErrSevInformational'})]],
     'ErrorSourceId' : [ 0x18, ['unsigned long']],
+    'ErrorSourceType' : [ 0x1c, ['Enumeration', dict(target = 'long', choices = {0: 'WheaErrSrcTypeMCE', 1: 'WheaErrSrcTypeCMC', 2: 'WheaErrSrcTypeCPE', 3: 'WheaErrSrcTypeNMI', 4: 'WheaErrSrcTypePCIe', 5: 'WheaErrSrcTypeGeneric', 6: 'WheaErrSrcTypeINIT', 7: 'WheaErrSrcTypeBOOT', 8: 'WheaErrSrcTypeSCIGeneric', 9: 'WheaErrSrcTypeIPFMCA', 10: 'WheaErrSrcTypeIPFCMC', 11: 'WheaErrSrcTypeIPFCPE', 12: 'WheaErrSrcTypeMax'})]],
     'NotifyType' : [ 0x20, ['_GUID']],
     'Context' : [ 0x30, ['unsigned long long']],
+    'DataFormat' : [ 0x38, ['Enumeration', dict(target = 'long', choices = {0: 'WheaDataFormatIPFSalRecord', 1: 'WheaDataFormatXPFMCA', 2: 'WheaDataFormatMemory', 3: 'WheaDataFormatPCIExpress', 4: 'WheaDataFormatNMIPort', 5: 'WheaDataFormatPCIXBus', 6: 'WheaDataFormatPCIXDevice', 7: 'WheaDataFormatGeneric', 8: 'WheaDataFormatMax'})]],
     'Reserved1' : [ 0x3c, ['unsigned long']],
     'DataOffset' : [ 0x40, ['unsigned long']],
     'DataLength' : [ 0x44, ['unsigned long']],
@@ -3358,6 +3728,7 @@ ntkrpamp_types = {
     'Flags' : [ 0xc, ['_WHEA_ERROR_RECORD_SECTION_DESCRIPTOR_FLAGS']],
     'SectionType' : [ 0x10, ['_GUID']],
     'FRUId' : [ 0x20, ['_GUID']],
+    'SectionSeverity' : [ 0x30, ['Enumeration', dict(target = 'long', choices = {0: 'WheaErrSevRecoverable', 1: 'WheaErrSevFatal', 2: 'WheaErrSevCorrected', 3: 'WheaErrSevInformational'})]],
     'FRUText' : [ 0x34, ['array', 20, ['unsigned char']]],
 } ],
   '_GUID' : [ 0x10, {
@@ -3372,6 +3743,8 @@ ntkrpamp_types = {
     'Flags' : [ 0x4, ['unsigned char']],
     'IsFastIoPossible' : [ 0x5, ['unsigned char']],
     'Flags2' : [ 0x6, ['unsigned char']],
+    'Reserved' : [ 0x7, ['BitField', dict(start_bit = 0, end_bit = 4)]],
+    'Version' : [ 0x7, ['BitField', dict(start_bit = 4, end_bit = 8)]],
     'Resource' : [ 0x8, ['pointer', ['_ERESOURCE']]],
     'PagingIoResource' : [ 0xc, ['pointer', ['_ERESOURCE']]],
     'AllocationSize' : [ 0x10, ['_LARGE_INTEGER']],
@@ -3392,10 +3765,9 @@ ntkrpamp_types = {
     '_bufsiz' : [ 0x18, ['long']],
     '_tmpfname' : [ 0x1c, ['pointer', ['unsigned char']]],
 } ],
-  '__unnamed_14ae' : [ 0x8, {
-    'Long' : [ 0x0, ['unsigned long long']],
-    'VolatileLong' : [ 0x0, ['unsigned long long']],
-    'HighLow' : [ 0x0, ['_MMPTE_HIGHLOW']],
+  '__unnamed_14ad' : [ 0x4, {
+    'Long' : [ 0x0, ['unsigned long']],
+    'VolatileLong' : [ 0x0, ['unsigned long']],
     'Flush' : [ 0x0, ['_HARDWARE_PTE']],
     'Hard' : [ 0x0, ['_MMPTE_HARDWARE']],
     'Proto' : [ 0x0, ['_MMPTE_PROTOTYPE']],
@@ -3405,10 +3777,10 @@ ntkrpamp_types = {
     'Subsect' : [ 0x0, ['_MMPTE_SUBSECTION']],
     'List' : [ 0x0, ['_MMPTE_LIST']],
 } ],
-  '_MMPTE' : [ 0x8, {
-    'u' : [ 0x0, ['__unnamed_14ae']],
+  '_MMPTE' : [ 0x4, {
+    'u' : [ 0x0, ['__unnamed_14ad']],
 } ],
-  '__unnamed_14bf' : [ 0xc, {
+  '__unnamed_14be' : [ 0xc, {
     'I386' : [ 0x0, ['_I386_LOADER_BLOCK']],
     'Ia64' : [ 0x0, ['_IA64_LOADER_BLOCK']],
 } ],
@@ -3436,7 +3808,7 @@ ntkrpamp_types = {
     'ArcDiskInformation' : [ 0x5c, ['pointer', ['_ARC_DISK_INFORMATION']]],
     'OemFontFile' : [ 0x60, ['pointer', ['void']]],
     'Extension' : [ 0x64, ['pointer', ['_LOADER_PARAMETER_EXTENSION']]],
-    'u' : [ 0x68, ['__unnamed_14bf']],
+    'u' : [ 0x68, ['__unnamed_14be']],
     'FirmwareInformation' : [ 0x74, ['_FIRMWARE_INFORMATION_LOADER_BLOCK']],
 } ],
   '_KLOCK_QUEUE_HANDLE' : [ 0xc, {
@@ -3445,11 +3817,12 @@ ntkrpamp_types = {
 } ],
   '_MMPFNLIST' : [ 0x14, {
     'Total' : [ 0x0, ['unsigned long']],
+    'ListName' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'ZeroedPageList', 1: 'FreePageList', 2: 'StandbyPageList', 3: 'ModifiedPageList', 4: 'ModifiedNoWritePageList', 5: 'BadPageList', 6: 'ActiveAndValid', 7: 'TransitionPage'})]],
     'Flink' : [ 0x8, ['unsigned long']],
     'Blink' : [ 0xc, ['unsigned long']],
     'Lock' : [ 0x10, ['unsigned long']],
 } ],
-  '__unnamed_14f0' : [ 0x4, {
+  '__unnamed_14ef' : [ 0x4, {
     'Flink' : [ 0x0, ['unsigned long']],
     'WsIndex' : [ 0x0, ['unsigned long']],
     'Event' : [ 0x0, ['pointer', ['_KEVENT']]],
@@ -3458,34 +3831,39 @@ ntkrpamp_types = {
     'KernelStackOwner' : [ 0x0, ['pointer', ['_KTHREAD']]],
     'NextStackPfn' : [ 0x0, ['_SINGLE_LIST_ENTRY']],
 } ],
-  '__unnamed_14f2' : [ 0x4, {
+  '__unnamed_14f1' : [ 0x4, {
     'Blink' : [ 0x0, ['unsigned long']],
     'ImageProtoPte' : [ 0x0, ['pointer', ['_MMPTE']]],
     'ShareCount' : [ 0x0, ['unsigned long']],
 } ],
-  '__unnamed_14f5' : [ 0x4, {
+  '__unnamed_14f4' : [ 0x4, {
     'ReferenceCount' : [ 0x0, ['unsigned short']],
     'VolatileReferenceCount' : [ 0x0, ['short']],
     'ShortFlags' : [ 0x2, ['unsigned short']],
 } ],
-  '__unnamed_14f7' : [ 0x4, {
+  '__unnamed_14f6' : [ 0x4, {
     'ReferenceCount' : [ 0x0, ['unsigned short']],
     'e1' : [ 0x2, ['_MMPFNENTRY']],
-    'e2' : [ 0x0, ['__unnamed_14f5']],
+    'e2' : [ 0x0, ['__unnamed_14f4']],
 } ],
-  '__unnamed_14fc' : [ 0x4, {
+  '__unnamed_14fb' : [ 0x4, {
+    'PteFrame' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 25)]],
+    'PfnImageVerified' : [ 0x0, ['BitField', dict(start_bit = 25, end_bit = 26)]],
+    'AweAllocation' : [ 0x0, ['BitField', dict(start_bit = 26, end_bit = 27)]],
+    'PrototypePte' : [ 0x0, ['BitField', dict(start_bit = 27, end_bit = 28)]],
+    'PageColor' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 32)]],
 } ],
-  '_MMPFN' : [ 0x1c, {
-    'u1' : [ 0x0, ['__unnamed_14f0']],
-    'u2' : [ 0x4, ['__unnamed_14f2']],
+  '_MMPFN' : [ 0x18, {
+    'u1' : [ 0x0, ['__unnamed_14ef']],
+    'u2' : [ 0x4, ['__unnamed_14f1']],
     'PteAddress' : [ 0x8, ['pointer', ['_MMPTE']]],
     'VolatilePteAddress' : [ 0x8, ['pointer', ['void']]],
     'Lock' : [ 0x8, ['long']],
     'PteLong' : [ 0x8, ['unsigned long']],
-    'u3' : [ 0xc, ['__unnamed_14f7']],
+    'u3' : [ 0xc, ['__unnamed_14f6']],
     'OriginalPte' : [ 0x10, ['_MMPTE']],
     'AweReferenceCount' : [ 0x10, ['long']],
-    'u4' : [ 0x18, ['__unnamed_14fc']],
+    'u4' : [ 0x14, ['__unnamed_14fb']],
 } ],
   '_MI_COLOR_BASE' : [ 0x8, {
     'ColorPointer' : [ 0x0, ['pointer', ['unsigned short']]],
@@ -3515,7 +3893,7 @@ ntkrpamp_types = {
     'Spare' : [ 0x64, ['array', 1, ['unsigned long']]],
     'Flags' : [ 0x68, ['_MMSUPPORT_FLAGS']],
 } ],
-  '_MMWSL' : [ 0xd08, {
+  '_MMWSL' : [ 0x6a8, {
     'FirstFree' : [ 0x0, ['unsigned long']],
     'FirstDynamic' : [ 0x4, ['unsigned long']],
     'LastEntry' : [ 0x8, ['unsigned long']],
@@ -3534,31 +3912,35 @@ ntkrpamp_types = {
     'NonDirectHash' : [ 0x3c, ['pointer', ['_MMWSLE_NONDIRECT_HASH']]],
     'HashTableStart' : [ 0x40, ['pointer', ['_MMWSLE_HASH']]],
     'HighestPermittedHashAddress' : [ 0x44, ['pointer', ['_MMWSLE_HASH']]],
-    'UsedPageTableEntries' : [ 0x48, ['array', 1536, ['unsigned short']]],
-    'CommittedPageTables' : [ 0xc48, ['array', 48, ['unsigned long']]],
+    'UsedPageTableEntries' : [ 0x48, ['array', 768, ['unsigned short']]],
+    'CommittedPageTables' : [ 0x648, ['array', 24, ['unsigned long']]],
 } ],
-  '__unnamed_1529' : [ 0x4, {
+  '__unnamed_152b' : [ 0x4, {
     'VirtualAddress' : [ 0x0, ['pointer', ['void']]],
     'Long' : [ 0x0, ['unsigned long']],
     'e1' : [ 0x0, ['_MMWSLENTRY']],
     'e2' : [ 0x0, ['_MMWSLE_FREE_ENTRY']],
 } ],
   '_MMWSLE' : [ 0x4, {
-    'u1' : [ 0x0, ['__unnamed_1529']],
+    'u1' : [ 0x0, ['__unnamed_152b']],
 } ],
-  '__unnamed_1538' : [ 0x4, {
+  '__unnamed_153a' : [ 0x4, {
     'LongFlags' : [ 0x0, ['unsigned long']],
     'Flags' : [ 0x0, ['_MMSECTION_FLAGS']],
 } ],
-  '__unnamed_1542' : [ 0xc, {
+  '__unnamed_1544' : [ 0xc, {
     'NumberOfSystemCacheViews' : [ 0x0, ['unsigned long']],
     'ImageRelocationStartBit' : [ 0x0, ['unsigned long']],
     'WritableUserReferences' : [ 0x4, ['long']],
+    'ImageRelocationSizeIn64k' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 16)]],
+    'Unused' : [ 0x4, ['BitField', dict(start_bit = 16, end_bit = 30)]],
+    'BitMap64' : [ 0x4, ['BitField', dict(start_bit = 30, end_bit = 31)]],
+    'ImageActive' : [ 0x4, ['BitField', dict(start_bit = 31, end_bit = 32)]],
     'SubsectionRoot' : [ 0x8, ['pointer', ['_MM_SUBSECTION_AVL_TABLE']]],
     'SeImageStub' : [ 0x8, ['pointer', ['_MI_IMAGE_SECURITY_REFERENCE']]],
 } ],
-  '__unnamed_1544' : [ 0xc, {
-    'e2' : [ 0x0, ['__unnamed_1542']],
+  '__unnamed_1546' : [ 0xc, {
+    'e2' : [ 0x0, ['__unnamed_1544']],
 } ],
   '_CONTROL_AREA' : [ 0x50, {
     'Segment' : [ 0x0, ['pointer', ['_SEGMENT']]],
@@ -3567,18 +3949,20 @@ ntkrpamp_types = {
     'NumberOfPfnReferences' : [ 0x10, ['unsigned long']],
     'NumberOfMappedViews' : [ 0x14, ['unsigned long']],
     'NumberOfUserReferences' : [ 0x18, ['unsigned long']],
-    'u' : [ 0x1c, ['__unnamed_1538']],
+    'u' : [ 0x1c, ['__unnamed_153a']],
     'FlushInProgressCount' : [ 0x20, ['unsigned long']],
     'FilePointer' : [ 0x24, ['_EX_FAST_REF']],
     'ControlAreaLock' : [ 0x28, ['long']],
     'ModifiedWriteCount' : [ 0x2c, ['unsigned long']],
     'StartingFrame' : [ 0x2c, ['unsigned long']],
     'WaitingForDeletion' : [ 0x30, ['pointer', ['_MI_SECTION_CREATION_GATE']]],
-    'u2' : [ 0x34, ['__unnamed_1544']],
+    'u2' : [ 0x34, ['__unnamed_1546']],
     'LockedPages' : [ 0x40, ['long long']],
     'ViewList' : [ 0x48, ['_LIST_ENTRY']],
 } ],
   '_MM_STORE_KEY' : [ 0x4, {
+    'KeyLow' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 28)]],
+    'KeyHigh' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 32)]],
     'EntireKey' : [ 0x0, ['unsigned long']],
 } ],
   '_MMPAGING_FILE' : [ 0x50, {
@@ -3596,6 +3980,11 @@ ntkrpamp_types = {
     'BitmapHint' : [ 0x34, ['unsigned long']],
     'LastAllocationSize' : [ 0x38, ['unsigned long']],
     'ToBeEvictedCount' : [ 0x3c, ['unsigned long']],
+    'PageFileNumber' : [ 0x40, ['BitField', dict(start_bit = 0, end_bit = 4)]],
+    'BootPartition' : [ 0x40, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'Spare0' : [ 0x40, ['BitField', dict(start_bit = 5, end_bit = 16)]],
+    'AdriftMdls' : [ 0x42, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Spare1' : [ 0x42, ['BitField', dict(start_bit = 1, end_bit = 16)]],
     'FileHandle' : [ 0x44, ['pointer', ['void']]],
     'Lock' : [ 0x48, ['unsigned long']],
     'LockOwner' : [ 0x4c, ['pointer', ['_ETHREAD']]],
@@ -3606,10 +3995,14 @@ ntkrpamp_types = {
 } ],
   '_MM_AVL_TABLE' : [ 0x20, {
     'BalancedRoot' : [ 0x0, ['_MMADDRESS_NODE']],
+    'DepthOfTree' : [ 0x14, ['BitField', dict(start_bit = 0, end_bit = 5)]],
+    'Unused' : [ 0x14, ['BitField', dict(start_bit = 5, end_bit = 8)]],
+    'NumberGenericTableElements' : [ 0x14, ['BitField', dict(start_bit = 8, end_bit = 32)]],
     'NodeHint' : [ 0x18, ['pointer', ['void']]],
     'NodeFreeHint' : [ 0x1c, ['pointer', ['void']]],
 } ],
   '__unnamed_1580' : [ 0x4, {
+    'Balance' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2)]],
     'Parent' : [ 0x0, ['pointer', ['_MMVAD']]],
 } ],
   '__unnamed_1583' : [ 0x4, {
@@ -3631,6 +4024,7 @@ ntkrpamp_types = {
     'u5' : [ 0x1c, ['__unnamed_1586']],
 } ],
   '__unnamed_158e' : [ 0x4, {
+    'Balance' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2)]],
     'Parent' : [ 0x0, ['pointer', ['_MMADDRESS_NODE']]],
 } ],
   '_MMADDRESS_NODE' : [ 0x14, {
@@ -3814,6 +4208,16 @@ ntkrpamp_types = {
 } ],
   '_CM_KEY_CONTROL_BLOCK' : [ 0xa0, {
     'RefCount' : [ 0x0, ['unsigned long']],
+    'ExtFlags' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 16)]],
+    'PrivateAlloc' : [ 0x4, ['BitField', dict(start_bit = 16, end_bit = 17)]],
+    'Delete' : [ 0x4, ['BitField', dict(start_bit = 17, end_bit = 18)]],
+    'HiveUnloaded' : [ 0x4, ['BitField', dict(start_bit = 18, end_bit = 19)]],
+    'Decommissioned' : [ 0x4, ['BitField', dict(start_bit = 19, end_bit = 20)]],
+    'LockTablePresent' : [ 0x4, ['BitField', dict(start_bit = 20, end_bit = 21)]],
+    'TotalLevels' : [ 0x4, ['BitField', dict(start_bit = 21, end_bit = 31)]],
+    'DelayedDeref' : [ 0x8, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'DelayedClose' : [ 0x8, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Parking' : [ 0x8, ['BitField', dict(start_bit = 2, end_bit = 3)]],
     'KeyHash' : [ 0xc, ['_CM_KEY_HASH']],
     'ConvKey' : [ 0xc, ['unsigned long']],
     'NextHash' : [ 0x10, ['pointer', ['_CM_KEY_HASH']]],
@@ -3837,6 +4241,10 @@ ntkrpamp_types = {
     'KcbMaxNameLen' : [ 0x60, ['unsigned short']],
     'KcbMaxValueNameLen' : [ 0x62, ['unsigned short']],
     'KcbMaxValueDataLen' : [ 0x64, ['unsigned long']],
+    'KcbUserFlags' : [ 0x68, ['BitField', dict(start_bit = 0, end_bit = 4)]],
+    'KcbVirtControlFlags' : [ 0x68, ['BitField', dict(start_bit = 4, end_bit = 8)]],
+    'KcbDebug' : [ 0x68, ['BitField', dict(start_bit = 8, end_bit = 16)]],
+    'Flags' : [ 0x68, ['BitField', dict(start_bit = 16, end_bit = 32)]],
     'KCBUoWListHead' : [ 0x6c, ['_LIST_ENTRY']],
     'DelayQueueEntry' : [ 0x74, ['_LIST_ENTRY']],
     'Stolen' : [ 0x74, ['pointer', ['unsigned char']]],
@@ -3853,6 +4261,7 @@ ntkrpamp_types = {
     'Entry' : [ 0x8, ['pointer', ['_CM_KEY_HASH']]],
 } ],
   '__unnamed_162b' : [ 0xc, {
+    'Failure' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: '_None', 1: '_CmInitializeHive', 2: '_HvInitializeHive', 3: '_HvpBuildMap', 4: '_HvpBuildMapAndCopy', 5: '_HvpInitMap', 6: '_HvLoadHive', 7: '_HvpReadFileImageAndBuildMap', 8: '_HvpRecoverData', 9: '_HvpRecoverWholeHive', 10: '_HvpMapFileImageAndBuildMap', 11: '_CmpValidateHiveSecurityDescriptors', 12: '_HvpEnlistBinInMap', 13: '_CmCheckRegistry', 14: '_CmRegistryIO', 15: '_CmCheckRegistry2', 16: '_CmpCheckKey', 17: '_CmpCheckValueList', 18: '_HvCheckHive', 19: '_HvCheckBin'})]],
     'Status' : [ 0x4, ['long']],
     'Point' : [ 0x8, ['unsigned long']],
 } ],
@@ -4037,7 +4446,20 @@ ntkrpamp_types = {
     'MergedPrefLanguages' : [ 0xfc0, ['unsigned long']],
     'MuiImpersonation' : [ 0xfc4, ['unsigned long']],
     'CrossTebFlags' : [ 0xfc8, ['unsigned short']],
+    'SpareCrossTebBits' : [ 0xfc8, ['BitField', dict(start_bit = 0, end_bit = 16)]],
     'SameTebFlags' : [ 0xfca, ['unsigned short']],
+    'SafeThunkCall' : [ 0xfca, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'InDebugPrint' : [ 0xfca, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'HasFiberData' : [ 0xfca, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'SkipThreadAttach' : [ 0xfca, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'WerInShipAssertCode' : [ 0xfca, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'RanProcessInit' : [ 0xfca, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'ClonedThread' : [ 0xfca, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'SuppressDebugMsg' : [ 0xfca, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'DisableUserStackWalk' : [ 0xfca, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'RtlExceptionAttached' : [ 0xfca, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'InitialThread' : [ 0xfca, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'SpareSameTebBits' : [ 0xfca, ['BitField', dict(start_bit = 11, end_bit = 16)]],
     'TxnScopeEnterCallback' : [ 0xfcc, ['unsigned long']],
     'TxnScopeExitCallback' : [ 0xfd0, ['unsigned long']],
     'TxnScopeContext' : [ 0xfd4, ['unsigned long']],
@@ -4127,7 +4549,20 @@ ntkrpamp_types = {
     'MergedPrefLanguages' : [ 0x17e0, ['unsigned long long']],
     'MuiImpersonation' : [ 0x17e8, ['unsigned long']],
     'CrossTebFlags' : [ 0x17ec, ['unsigned short']],
+    'SpareCrossTebBits' : [ 0x17ec, ['BitField', dict(start_bit = 0, end_bit = 16)]],
     'SameTebFlags' : [ 0x17ee, ['unsigned short']],
+    'SafeThunkCall' : [ 0x17ee, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'InDebugPrint' : [ 0x17ee, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'HasFiberData' : [ 0x17ee, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'SkipThreadAttach' : [ 0x17ee, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'WerInShipAssertCode' : [ 0x17ee, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'RanProcessInit' : [ 0x17ee, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'ClonedThread' : [ 0x17ee, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'SuppressDebugMsg' : [ 0x17ee, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'DisableUserStackWalk' : [ 0x17ee, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'RtlExceptionAttached' : [ 0x17ee, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'InitialThread' : [ 0x17ee, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'SpareSameTebBits' : [ 0x17ee, ['BitField', dict(start_bit = 11, end_bit = 16)]],
     'TxnScopeEnterCallback' : [ 0x17f0, ['unsigned long long']],
     'TxnScopeExitCallback' : [ 0x17f8, ['unsigned long long']],
     'TxnScopeContext' : [ 0x1800, ['unsigned long long']],
@@ -4210,6 +4645,9 @@ ntkrpamp_types = {
     'PreviousTrapFrame' : [ 0x0, ['pointer', ['_KTRAP_FRAME']]],
     'PreviousExceptionList' : [ 0x0, ['pointer', ['void']]],
     'StackControlFlags' : [ 0x4, ['unsigned long']],
+    'PreviousLargeStack' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'PreviousSegmentsPresent' : [ 0x4, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'ExpandCalloutStack' : [ 0x4, ['BitField', dict(start_bit = 2, end_bit = 3)]],
     'Previous' : [ 0x8, ['_KERNEL_STACK_SEGMENT']],
 } ],
   '_KTRAP_FRAME' : [ 0x8c, {
@@ -4287,6 +4725,7 @@ ntkrpamp_types = {
     'NextResourceDeviceNode' : [ 0x0, ['pointer', ['_DEVICE_NODE']]],
 } ],
   '__unnamed_1746' : [ 0x10, {
+    'DockStatus' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'DOCK_NOTDOCKDEVICE', 1: 'DOCK_QUIESCENT', 2: 'DOCK_ARRIVING', 3: 'DOCK_DEPARTING', 4: 'DOCK_EJECTIRP_COMPLETED'})]],
     'ListEntry' : [ 0x4, ['_LIST_ENTRY']],
     'SerialNumber' : [ 0xc, ['pointer', ['unsigned short']]],
 } ],
@@ -4302,6 +4741,9 @@ ntkrpamp_types = {
     'Level' : [ 0x28, ['unsigned long']],
     'Notify' : [ 0x2c, ['_PO_DEVICE_NOTIFY']],
     'PoIrpManager' : [ 0x68, ['_PO_IRP_MANAGER']],
+    'State' : [ 0x78, ['Enumeration', dict(target = 'long', choices = {768: 'DeviceNodeUnspecified', 769: 'DeviceNodeUninitialized', 770: 'DeviceNodeInitialized', 771: 'DeviceNodeDriversAdded', 772: 'DeviceNodeResourcesAssigned', 773: 'DeviceNodeStartPending', 774: 'DeviceNodeStartCompletion', 775: 'DeviceNodeStartPostWork', 776: 'DeviceNodeStarted', 777: 'DeviceNodeQueryStopped', 778: 'DeviceNodeStopped', 779: 'DeviceNodeRestartCompletion', 780: 'DeviceNodeEnumeratePending', 781: 'DeviceNodeEnumerateCompletion', 782: 'DeviceNodeAwaitingQueuedDeletion', 783: 'DeviceNodeAwaitingQueuedRemoval', 784: 'DeviceNodeQueryRemoved', 785: 'DeviceNodeRemovePendingCloses', 786: 'DeviceNodeRemoved', 787: 'DeviceNodeDeletePendingCloses', 788: 'DeviceNodeDeleted', 789: 'MaxDeviceNodeState'})]],
+    'PreviousState' : [ 0x7c, ['Enumeration', dict(target = 'long', choices = {768: 'DeviceNodeUnspecified', 769: 'DeviceNodeUninitialized', 770: 'DeviceNodeInitialized', 771: 'DeviceNodeDriversAdded', 772: 'DeviceNodeResourcesAssigned', 773: 'DeviceNodeStartPending', 774: 'DeviceNodeStartCompletion', 775: 'DeviceNodeStartPostWork', 776: 'DeviceNodeStarted', 777: 'DeviceNodeQueryStopped', 778: 'DeviceNodeStopped', 779: 'DeviceNodeRestartCompletion', 780: 'DeviceNodeEnumeratePending', 781: 'DeviceNodeEnumerateCompletion', 782: 'DeviceNodeAwaitingQueuedDeletion', 783: 'DeviceNodeAwaitingQueuedRemoval', 784: 'DeviceNodeQueryRemoved', 785: 'DeviceNodeRemovePendingCloses', 786: 'DeviceNodeRemoved', 787: 'DeviceNodeDeletePendingCloses', 788: 'DeviceNodeDeleted', 789: 'MaxDeviceNodeState'})]],
+    'StateHistory' : [ 0x80, ['array', -80, ['Enumeration', dict(target = 'long', choices = {768: 'DeviceNodeUnspecified', 769: 'DeviceNodeUninitialized', 770: 'DeviceNodeInitialized', 771: 'DeviceNodeDriversAdded', 772: 'DeviceNodeResourcesAssigned', 773: 'DeviceNodeStartPending', 774: 'DeviceNodeStartCompletion', 775: 'DeviceNodeStartPostWork', 776: 'DeviceNodeStarted', 777: 'DeviceNodeQueryStopped', 778: 'DeviceNodeStopped', 779: 'DeviceNodeRestartCompletion', 780: 'DeviceNodeEnumeratePending', 781: 'DeviceNodeEnumerateCompletion', 782: 'DeviceNodeAwaitingQueuedDeletion', 783: 'DeviceNodeAwaitingQueuedRemoval', 784: 'DeviceNodeQueryRemoved', 785: 'DeviceNodeRemovePendingCloses', 786: 'DeviceNodeRemoved', 787: 'DeviceNodeDeletePendingCloses', 788: 'DeviceNodeDeleted', 789: 'MaxDeviceNodeState'})]]],
     'StateHistoryEntry' : [ 0xd0, ['unsigned long']],
     'CompletionStatus' : [ 0xd4, ['long']],
     'Flags' : [ 0xd8, ['unsigned long']],
@@ -4311,7 +4753,9 @@ ntkrpamp_types = {
     'ResourceListTranslated' : [ 0xe8, ['pointer', ['_CM_RESOURCE_LIST']]],
     'DuplicatePDO' : [ 0xec, ['pointer', ['_DEVICE_OBJECT']]],
     'ResourceRequirements' : [ 0xf0, ['pointer', ['_IO_RESOURCE_REQUIREMENTS_LIST']]],
+    'InterfaceType' : [ 0xf4, ['Enumeration', dict(target = 'long', choices = {0: 'Internal', 1: 'Isa', 2: 'Eisa', 3: 'MicroChannel', 4: 'TurboChannel', 5: 'PCIBus', 6: 'VMEBus', 7: 'NuBus', 8: 'PCMCIABus', 9: 'CBus', 10: 'MPIBus', 11: 'MPSABus', 12: 'ProcessorInternal', 13: 'InternalPowerBus', 14: 'PNPISABus', 15: 'PNPBus', 16: 'Vmcs', 17: 'MaximumInterfaceType', -1: 'InterfaceTypeUndefined'})]],
     'BusNumber' : [ 0xf8, ['unsigned long']],
+    'ChildInterfaceType' : [ 0xfc, ['Enumeration', dict(target = 'long', choices = {0: 'Internal', 1: 'Isa', 2: 'Eisa', 3: 'MicroChannel', 4: 'TurboChannel', 5: 'PCIBus', 6: 'VMEBus', 7: 'NuBus', 8: 'PCMCIABus', 9: 'CBus', 10: 'MPIBus', 11: 'MPSABus', 12: 'ProcessorInternal', 13: 'InternalPowerBus', 14: 'PNPISABus', 15: 'PNPBus', 16: 'Vmcs', 17: 'MaximumInterfaceType', -1: 'InterfaceTypeUndefined'})]],
     'ChildBusNumber' : [ 0x100, ['unsigned long']],
     'ChildBusTypeIndex' : [ 0x104, ['unsigned short']],
     'RemovalPolicy' : [ 0x106, ['unsigned char']],
@@ -4367,6 +4811,7 @@ ntkrpamp_types = {
   '_PNP_RESOURCE_REQUEST' : [ 0x28, {
     'PhysicalDevice' : [ 0x0, ['pointer', ['_DEVICE_OBJECT']]],
     'Flags' : [ 0x4, ['unsigned long']],
+    'AllocationType' : [ 0x8, ['Enumeration', dict(target = 'long', choices = {0: 'ArbiterRequestLegacyReported', 1: 'ArbiterRequestHalReported', 2: 'ArbiterRequestLegacyAssigned', 3: 'ArbiterRequestPnpDetected', 4: 'ArbiterRequestPnpEnumerated', -1: 'ArbiterRequestUndefined'})]],
     'Priority' : [ 0xc, ['unsigned long']],
     'Position' : [ 0x10, ['unsigned long']],
     'ResourceRequirements' : [ 0x14, ['pointer', ['_IO_RESOURCE_REQUIREMENTS_LIST']]],
@@ -4377,6 +4822,7 @@ ntkrpamp_types = {
 } ],
   '_IO_RESOURCE_REQUIREMENTS_LIST' : [ 0x48, {
     'ListSize' : [ 0x0, ['unsigned long']],
+    'InterfaceType' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'Internal', 1: 'Isa', 2: 'Eisa', 3: 'MicroChannel', 4: 'TurboChannel', 5: 'PCIBus', 6: 'VMEBus', 7: 'NuBus', 8: 'PCMCIABus', 9: 'CBus', 10: 'MPIBus', 11: 'MPSABus', 12: 'ProcessorInternal', 13: 'InternalPowerBus', 14: 'PNPISABus', 15: 'PNPBus', 16: 'Vmcs', 17: 'MaximumInterfaceType', -1: 'InterfaceTypeUndefined'})]],
     'BusNumber' : [ 0x8, ['unsigned long']],
     'SlotNumber' : [ 0xc, ['unsigned long']],
     'Reserved' : [ 0x10, ['array', 3, ['unsigned long']]],
@@ -4854,6 +5300,12 @@ ntkrpamp_types = {
     'ReadImageFileExecOptions' : [ 0x1, ['unsigned char']],
     'BeingDebugged' : [ 0x2, ['unsigned char']],
     'BitField' : [ 0x3, ['unsigned char']],
+    'ImageUsesLargePages' : [ 0x3, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'IsProtectedProcess' : [ 0x3, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'IsLegacyProcess' : [ 0x3, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'IsImageDynamicallyRelocated' : [ 0x3, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'SkipPatchingUser32Forwarders' : [ 0x3, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'SpareBits' : [ 0x3, ['BitField', dict(start_bit = 5, end_bit = 8)]],
     'Mutant' : [ 0x4, ['pointer', ['void']]],
     'ImageBaseAddress' : [ 0x8, ['pointer', ['void']]],
     'Ldr' : [ 0xc, ['pointer', ['_PEB_LDR_DATA']]],
@@ -4864,6 +5316,12 @@ ntkrpamp_types = {
     'AtlThunkSListPtr' : [ 0x20, ['pointer', ['void']]],
     'IFEOKey' : [ 0x24, ['pointer', ['void']]],
     'CrossProcessFlags' : [ 0x28, ['unsigned long']],
+    'ProcessInJob' : [ 0x28, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'ProcessInitializing' : [ 0x28, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'ProcessUsingVEH' : [ 0x28, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'ProcessUsingVCH' : [ 0x28, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'ProcessUsingFTH' : [ 0x28, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'ReservedBits0' : [ 0x28, ['BitField', dict(start_bit = 5, end_bit = 32)]],
     'KernelCallbackTable' : [ 0x2c, ['pointer', ['void']]],
     'UserSharedInfoPtr' : [ 0x2c, ['pointer', ['void']]],
     'SystemReserved' : [ 0x30, ['array', 1, ['unsigned long']]],
@@ -4926,6 +5384,9 @@ ntkrpamp_types = {
     'pContextData' : [ 0x238, ['pointer', ['void']]],
     'pImageHeaderHash' : [ 0x23c, ['pointer', ['void']]],
     'TracingFlags' : [ 0x240, ['unsigned long']],
+    'HeapTracingEnabled' : [ 0x240, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'CritSecTracingEnabled' : [ 0x240, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'SpareTracingBits' : [ 0x240, ['BitField', dict(start_bit = 2, end_bit = 32)]],
 } ],
   '_PEB_LDR_DATA' : [ 0x30, {
     'Length' : [ 0x0, ['unsigned long']],
@@ -5010,6 +5471,7 @@ ntkrpamp_types = {
     'Object' : [ 0x0, ['pointer', ['void']]],
 } ],
   '_BLOB_TYPE' : [ 0x24, {
+    'ResourceId' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'BLOB_TYPE_UNKNOWN', 1: 'BLOB_TYPE_CONNECTION_INFO', 2: 'BLOB_TYPE_MESSAGE', 3: 'BLOB_TYPE_SECURITY_CONTEXT', 4: 'BLOB_TYPE_SECTION', 5: 'BLOB_TYPE_REGION', 6: 'BLOB_TYPE_VIEW', 7: 'BLOB_TYPE_RESERVE', 8: 'BLOB_TYPE_DIRECT_TRANSFER', 9: 'BLOB_TYPE_HANDLE_DATA', 10: 'BLOB_TYPE_MAX_ID'})]],
     'PoolTag' : [ 0x4, ['unsigned long']],
     'Flags' : [ 0x8, ['unsigned long']],
     'CreatedObjects' : [ 0xc, ['unsigned long']],
@@ -5020,6 +5482,10 @@ ntkrpamp_types = {
     'LookasideIndex' : [ 0x20, ['unsigned long']],
 } ],
   '__unnamed_197e' : [ 0x1, {
+    'ReferenceCache' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Lookaside' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Initializing' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Deleted' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
 } ],
   '__unnamed_1980' : [ 0x1, {
     's1' : [ 0x0, ['__unnamed_197e']],
@@ -5036,6 +5502,8 @@ ntkrpamp_types = {
     'Pad' : [ 0x14, ['unsigned long']],
 } ],
   '__unnamed_1992' : [ 0x4, {
+    'Internal' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Secure' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
 } ],
   '__unnamed_1994' : [ 0x4, {
     's1' : [ 0x0, ['__unnamed_1992']],
@@ -5052,6 +5520,7 @@ ntkrpamp_types = {
     'RegionListHead' : [ 0x20, ['_LIST_ENTRY']],
 } ],
   '__unnamed_199a' : [ 0x4, {
+    'Secure' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
 } ],
   '__unnamed_199c' : [ 0x4, {
     's1' : [ 0x0, ['__unnamed_199a']],
@@ -5069,6 +5538,9 @@ ntkrpamp_types = {
     'ReadWriteView' : [ 0x2c, ['pointer', ['_KALPC_VIEW']]],
 } ],
   '__unnamed_19a2' : [ 0x4, {
+    'WriteAccess' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'AutoRelease' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'ForceUnlink' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
 } ],
   '__unnamed_19a4' : [ 0x4, {
     's1' : [ 0x0, ['__unnamed_19a2']],
@@ -5094,6 +5566,22 @@ ntkrpamp_types = {
     'HandleTable' : [ 0x14, ['_ALPC_HANDLE_TABLE']],
 } ],
   '__unnamed_19c0' : [ 0x4, {
+    'Initialized' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Type' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 3)]],
+    'ConnectionPending' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'ConnectionRefused' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'Disconnected' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'Closed' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'NoFlushOnClose' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'ReturnExtendedInfo' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'Waitable' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'DynamicSecurity' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'Wow64CompletionList' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'Lpc' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 13)]],
+    'LpcToLpc' : [ 0x0, ['BitField', dict(start_bit = 13, end_bit = 14)]],
+    'HasCompletionList' : [ 0x0, ['BitField', dict(start_bit = 14, end_bit = 15)]],
+    'HadCompletionList' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16)]],
+    'EnableCompletionList' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 17)]],
 } ],
   '__unnamed_19c2' : [ 0x4, {
     's1' : [ 0x0, ['__unnamed_19c0']],
@@ -5149,6 +5637,18 @@ ntkrpamp_types = {
     'CallbackList' : [ 0x80, ['_LIST_ENTRY']],
 } ],
   '__unnamed_19da' : [ 0x4, {
+    'QueueType' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2)]],
+    'QueuePortType' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 6)]],
+    'Canceled' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'Ready' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'ReleaseMessage' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'SharedQuota' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'ReplyWaitReply' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'OwnerPortReference' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'ReserveReference' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 13)]],
+    'ReceiverReference' : [ 0x0, ['BitField', dict(start_bit = 13, end_bit = 14)]],
+    'ViewAttributeRetrieved' : [ 0x0, ['BitField', dict(start_bit = 14, end_bit = 15)]],
+    'InDispatch' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16)]],
 } ],
   '__unnamed_19dc' : [ 0x4, {
     's1' : [ 0x0, ['__unnamed_19da']],
@@ -5205,6 +5705,8 @@ ntkrpamp_types = {
     'HandleData' : [ 0x18, ['pointer', ['_KALPC_HANDLE_DATA']]],
 } ],
   '__unnamed_1a19' : [ 0x4, {
+    'Revoked' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Impersonated' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
 } ],
   '__unnamed_1a1b' : [ 0x4, {
     's1' : [ 0x0, ['__unnamed_1a19']],
@@ -5256,6 +5758,10 @@ ntkrpamp_types = {
     'DriverUnload' : [ 0x34, ['pointer', ['void']]],
     'MajorFunction' : [ 0x38, ['array', 28, ['pointer', ['void']]]],
 } ],
+  '_FILE_SEGMENT_ELEMENT' : [ 0x8, {
+    'Buffer' : [ 0x0, ['pointer64', ['void']]],
+    'Alignment' : [ 0x0, ['unsigned long long']],
+} ],
   '_RELATIVE_SYMLINK_INFO' : [ 0x14, {
     'ExposedNamespaceLength' : [ 0x0, ['unsigned short']],
     'Flags' : [ 0x2, ['unsigned short']],
@@ -5272,6 +5778,7 @@ ntkrpamp_types = {
   '_IOP_FILE_OBJECT_EXTENSION' : [ 0x24, {
     'FoExtFlags' : [ 0x0, ['unsigned long']],
     'FoExtPerTypeExtension' : [ 0x4, ['array', 7, ['pointer', ['void']]]],
+    'FoIoPriorityHint' : [ 0x20, ['Enumeration', dict(target = 'long', choices = {0: 'IopIoPriorityNotSet', 1: 'IopIoPriorityVeryLow', 2: 'IopIoPriorityLow', 3: 'IopIoPriorityNormal', 4: 'IopIoPriorityHigh', 5: 'IopIoPriorityCritical', 6: 'MaxIopIoPriorityTypes'})]],
 } ],
   '_OPEN_PACKET' : [ 0x70, {
     'Type' : [ 0x0, ['short']],
@@ -5292,6 +5799,7 @@ ntkrpamp_types = {
     'Disposition' : [ 0x3c, ['unsigned long']],
     'BasicInformation' : [ 0x40, ['pointer', ['_FILE_BASIC_INFORMATION']]],
     'NetworkInformation' : [ 0x44, ['pointer', ['_FILE_NETWORK_OPEN_INFORMATION']]],
+    'CreateFileType' : [ 0x48, ['Enumeration', dict(target = 'long', choices = {0: 'CreateFileTypeNone', 1: 'CreateFileTypeNamedPipe', 2: 'CreateFileTypeMailslot'})]],
     'MailslotOrPipeParameters' : [ 0x4c, ['pointer', ['void']]],
     'Override' : [ 0x50, ['unsigned char']],
     'QueryOnly' : [ 0x51, ['unsigned char']],
@@ -5363,6 +5871,7 @@ ntkrpamp_types = {
     'InstanceGuid' : [ 0xbc, ['_GUID']],
     'FileCounter' : [ 0xcc, ['long']],
     'BufferCallback' : [ 0xd0, ['pointer', ['void']]],
+    'PoolType' : [ 0xd4, ['Enumeration', dict(target = 'long', choices = {0: 'NonPagedPool', 1: 'PagedPool', 2: 'NonPagedPoolMustSucceed', 3: 'DontUseThisType', 4: 'NonPagedPoolCacheAligned', 5: 'PagedPoolCacheAligned', 6: 'NonPagedPoolCacheAlignedMustS', 7: 'MaxPoolType', 34: 'NonPagedPoolMustSucceedSession', 35: 'DontUseThisTypeSession', 32: 'NonPagedPoolSession', 36: 'NonPagedPoolCacheAlignedSession', 33: 'PagedPoolSession', 38: 'NonPagedPoolCacheAlignedMustSSession', 37: 'PagedPoolCacheAlignedSession'})]],
     'ReferenceTime' : [ 0xd8, ['_ETW_REF_CLOCK']],
     'Consumers' : [ 0xe8, ['_LIST_ENTRY']],
     'NumConsumers' : [ 0xf0, ['unsigned long']],
@@ -5376,6 +5885,7 @@ ntkrpamp_types = {
     'RealtimeMaximumFileSize' : [ 0x128, ['unsigned long long']],
     'RealtimeBuffersSaved' : [ 0x130, ['unsigned long']],
     'RealtimeReferenceTime' : [ 0x138, ['_ETW_REF_CLOCK']],
+    'NewRTEventsLost' : [ 0x148, ['Enumeration', dict(target = 'long', choices = {0: 'EtwRtEventNoLoss', 1: 'EtwRtEventLost', 2: 'EtwRtBufferLost', 3: 'EtwRtBackupLost', 4: 'EtwRtEventLossMax'})]],
     'LoggerEvent' : [ 0x14c, ['_KEVENT']],
     'FlushEvent' : [ 0x15c, ['_KEVENT']],
     'FlushTimeOutTimer' : [ 0x170, ['_KTIMER']],
@@ -5388,7 +5898,23 @@ ntkrpamp_types = {
     'SecurityDescriptor' : [ 0x21c, ['_EX_FAST_REF']],
     'BufferSequenceNumber' : [ 0x220, ['long long']],
     'Flags' : [ 0x228, ['unsigned long']],
+    'Persistent' : [ 0x228, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'AutoLogger' : [ 0x228, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'FsReady' : [ 0x228, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'RealTime' : [ 0x228, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Wow' : [ 0x228, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'KernelTrace' : [ 0x228, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'NoMoreEnable' : [ 0x228, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'StackTracing' : [ 0x228, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'ErrorLogged' : [ 0x228, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'RealtimeLoggerContextFreed' : [ 0x228, ['BitField', dict(start_bit = 9, end_bit = 10)]],
     'RequestFlag' : [ 0x22c, ['unsigned long']],
+    'RequestNewFie' : [ 0x22c, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'RequestUpdateFile' : [ 0x22c, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'RequestFlush' : [ 0x22c, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'RequestDisableRealtime' : [ 0x22c, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'RequestDisconnectConsumer' : [ 0x22c, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'RequestConnectConsumer' : [ 0x22c, ['BitField', dict(start_bit = 5, end_bit = 6)]],
     'HookIdMap' : [ 0x230, ['_RTL_BITMAP']],
 } ],
   '_ETW_LOGGER_HANDLE' : [ 0x1, {
@@ -5438,6 +5964,8 @@ ntkrpamp_types = {
     'EnableFlags' : [ 0x0, ['_LARGE_INTEGER']],
     'LoggerId' : [ 0x8, ['unsigned short']],
     'Level' : [ 0xa, ['unsigned char']],
+    'Enabled' : [ 0xb, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'InternalFlag' : [ 0xb, ['BitField', dict(start_bit = 1, end_bit = 8)]],
 } ],
   '_TRACE_ENABLE_CONTEXT' : [ 0x8, {
     'LoggerId' : [ 0x0, ['unsigned short']],
@@ -5501,6 +6029,8 @@ ntkrpamp_types = {
     'PrimaryGroup' : [ 0x98, ['pointer', ['void']]],
     'DynamicPart' : [ 0x9c, ['pointer', ['unsigned long']]],
     'DefaultDacl' : [ 0xa0, ['pointer', ['_ACL']]],
+    'TokenType' : [ 0xa4, ['Enumeration', dict(target = 'long', choices = {1: 'TokenPrimary', 2: 'TokenImpersonation'})]],
+    'ImpersonationLevel' : [ 0xa8, ['Enumeration', dict(target = 'long', choices = {0: 'SecurityAnonymous', 1: 'SecurityIdentification', 2: 'SecurityImpersonation', 3: 'SecurityDelegation'})]],
     'TokenFlags' : [ 0xac, ['unsigned long']],
     'TokenInUse' : [ 0xb0, ['unsigned char']],
     'IntegrityLevelIndex' : [ 0xb4, ['unsigned long']],
@@ -5582,6 +6112,8 @@ ntkrpamp_types = {
   '_PS_CLIENT_SECURITY_CONTEXT' : [ 0x4, {
     'ImpersonationData' : [ 0x0, ['unsigned long']],
     'ImpersonationToken' : [ 0x0, ['pointer', ['void']]],
+    'ImpersonationLevel' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2)]],
+    'EffectiveOnly' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
 } ],
   '_DBGKD_ANY_CONTROL_SET' : [ 0x1c, {
     'X86ControlSet' : [ 0x0, ['_X86_DBGKD_CONTROL_SET']],
@@ -5592,6 +6124,12 @@ ntkrpamp_types = {
     'PpcControlSet' : [ 0x0, ['_PPC_DBGKD_CONTROL_SET']],
 } ],
   '_MMVAD_FLAGS3' : [ 0x4, {
+    'PreferredNode' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 6)]],
+    'Teb' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'SequentialAccess' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'LastSequentialTrim' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 24)]],
+    'Spare2' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 32)]],
 } ],
   '_MI_VERIFIER_POOL_HEADER' : [ 0x4, {
     'VerifierPoolEntry' : [ 0x0, ['pointer', ['_VI_POOL_ENTRY']]],
@@ -5653,9 +6191,20 @@ ntkrpamp_types = {
     'PortContext' : [ 0x10, ['pointer', ['void']]],
     'Request' : [ 0x18, ['_PORT_MESSAGE']],
 } ],
-  '_HARDWARE_PTE' : [ 0x8, {
-    'LowPart' : [ 0x0, ['unsigned long']],
-    'HighPart' : [ 0x4, ['unsigned long']],
+  '_HARDWARE_PTE' : [ 0x4, {
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Write' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Owner' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'WriteThrough' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'CacheDisable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'Accessed' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'Dirty' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'LargePage' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'Global' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'reserved' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'PageFrameNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
 } ],
   '_DUAL' : [ 0x13c, {
     'Length' : [ 0x0, ['unsigned long']],
@@ -5690,17 +6239,36 @@ ntkrpamp_types = {
 } ],
   '_KSTACK_COUNT' : [ 0x4, {
     'Value' : [ 0x0, ['long']],
+    'State' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 3)]],
+    'StackCount' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 32)]],
 } ],
   '_DISPATCHER_HEADER' : [ 0x10, {
     'Type' : [ 0x0, ['unsigned char']],
     'TimerControlFlags' : [ 0x1, ['unsigned char']],
+    'Absolute' : [ 0x1, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Coalescable' : [ 0x1, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'KeepShifting' : [ 0x1, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'EncodedTolerableDelay' : [ 0x1, ['BitField', dict(start_bit = 3, end_bit = 8)]],
     'Abandoned' : [ 0x1, ['unsigned char']],
     'Signalling' : [ 0x1, ['unsigned char']],
     'ThreadControlFlags' : [ 0x2, ['unsigned char']],
+    'CpuThrottled' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'CycleProfiling' : [ 0x2, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'CounterProfiling' : [ 0x2, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Reserved' : [ 0x2, ['BitField', dict(start_bit = 3, end_bit = 8)]],
     'Hand' : [ 0x2, ['unsigned char']],
     'Size' : [ 0x2, ['unsigned char']],
     'TimerMiscFlags' : [ 0x3, ['unsigned char']],
+    'Index' : [ 0x3, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Processor' : [ 0x3, ['BitField', dict(start_bit = 1, end_bit = 6)]],
+    'Inserted' : [ 0x3, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'Expired' : [ 0x3, ['BitField', dict(start_bit = 7, end_bit = 8)]],
     'DebugActive' : [ 0x3, ['unsigned char']],
+    'ActiveDR7' : [ 0x3, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Instrumented' : [ 0x3, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Reserved2' : [ 0x3, ['BitField', dict(start_bit = 2, end_bit = 6)]],
+    'UmsScheduled' : [ 0x3, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'UmsPrimary' : [ 0x3, ['BitField', dict(start_bit = 7, end_bit = 8)]],
     'DpcActive' : [ 0x3, ['unsigned char']],
     'Lock' : [ 0x0, ['long']],
     'SignalState' : [ 0x4, ['long']],
@@ -5715,6 +6283,8 @@ ntkrpamp_types = {
     'Flags' : [ 0x0, ['_MM_PAGE_ACCESS_INFO_FLAGS']],
     'FileOffset' : [ 0x0, ['unsigned long long']],
     'VirtualAddress' : [ 0x0, ['pointer', ['void']]],
+    'DontUse0' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 3)]],
+    'Spare0' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 32)]],
     'PointerProtoPte' : [ 0x4, ['pointer', ['void']]],
 } ],
   '_HEAP_COUNTERS' : [ 0x54, {
@@ -5767,9 +6337,11 @@ ntkrpamp_types = {
     'DeviceObject' : [ 0x1c, ['pointer', ['_DEVICE_OBJECT']]],
     'RelationsList' : [ 0x20, ['pointer', ['_RELATION_LIST']]],
     'EjectIrp' : [ 0x24, ['pointer', ['_IRP']]],
+    'Lock' : [ 0x28, ['Enumeration', dict(target = 'long', choices = {0: 'IRPLOCK_CANCELABLE', 1: 'IRPLOCK_CANCEL_STARTED', 2: 'IRPLOCK_CANCEL_COMPLETE', 3: 'IRPLOCK_COMPLETED'})]],
     'Problem' : [ 0x2c, ['unsigned long']],
     'ProfileChangingEject' : [ 0x30, ['unsigned char']],
     'DisplaySafeRemovalDialog' : [ 0x31, ['unsigned char']],
+    'LightestSleepState' : [ 0x34, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
     'DockInterface' : [ 0x38, ['pointer', ['DOCK_INTERFACE']]],
 } ],
   '_I386_LOADER_BLOCK' : [ 0xc, {
@@ -5809,6 +6381,7 @@ ntkrpamp_types = {
     'DebugInfo' : [ 0x1c, ['pointer', ['_HANDLE_TRACE_DEBUG_INFO']]],
     'ExtraInfoPages' : [ 0x20, ['long']],
     'Flags' : [ 0x24, ['unsigned long']],
+    'StrictFIFO' : [ 0x24, ['BitField', dict(start_bit = 0, end_bit = 1)]],
     'FirstFreeHandle' : [ 0x28, ['unsigned long']],
     'LastFreeHandleEntry' : [ 0x2c, ['pointer', ['_HANDLE_TABLE_ENTRY']]],
     'HandleCount' : [ 0x30, ['unsigned long']],
@@ -5822,6 +6395,15 @@ ntkrpamp_types = {
     'NumberOfBytes' : [ 0xc, ['unsigned long']],
 } ],
   '_MMVAD_FLAGS2' : [ 0x4, {
+    'FileOffset' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 24)]],
+    'SecNoChange' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 25)]],
+    'OneSecured' : [ 0x0, ['BitField', dict(start_bit = 25, end_bit = 26)]],
+    'MultipleSecured' : [ 0x0, ['BitField', dict(start_bit = 26, end_bit = 27)]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 27, end_bit = 28)]],
+    'LongVad' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 29)]],
+    'ExtendableFile' : [ 0x0, ['BitField', dict(start_bit = 29, end_bit = 30)]],
+    'Inherit' : [ 0x0, ['BitField', dict(start_bit = 30, end_bit = 31)]],
+    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 31, end_bit = 32)]],
 } ],
   '_TEB_ACTIVE_FRAME' : [ 0xc, {
     'Flags' : [ 0x0, ['unsigned long']],
@@ -5842,6 +6424,8 @@ ntkrpamp_types = {
     'NotifyBlock' : [ 0x8, ['pointer', ['_CM_NOTIFY_BLOCK']]],
     'ProcessID' : [ 0xc, ['pointer', ['void']]],
     'KeyBodyList' : [ 0x10, ['_LIST_ENTRY']],
+    'Flags' : [ 0x18, ['BitField', dict(start_bit = 0, end_bit = 16)]],
+    'HandleTags' : [ 0x18, ['BitField', dict(start_bit = 16, end_bit = 32)]],
     'KtmTrans' : [ 0x1c, ['pointer', ['void']]],
     'KtmUow' : [ 0x20, ['pointer', ['_GUID']]],
     'ContextListHead' : [ 0x24, ['_LIST_ENTRY']],
@@ -5855,9 +6439,21 @@ ntkrpamp_types = {
     'WaitType' : [ 0x16, ['unsigned char']],
     'BlockState' : [ 0x17, ['unsigned char']],
 } ],
-  '_MMPTE_PROTOTYPE' : [ 0x8, {
+  '_MMPTE_PROTOTYPE' : [ 0x4, {
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'ProtoAddressLow' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 9)]],
+    'ReadOnly' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'ProtoAddressHigh' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 32)]],
 } ],
   '_WHEA_ERROR_PACKET_FLAGS' : [ 0x4, {
+    'PreviousError' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Reserved1' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'HypervisorError' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Simulated' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'PlatformPfaControl' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'PlatformDirectedOffline' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'Reserved2' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 32)]],
     'AsULONG' : [ 0x0, ['unsigned long']],
 } ],
   '_THERMAL_INFORMATION_EX' : [ 0x58, {
@@ -5873,13 +6469,20 @@ ntkrpamp_types = {
     'ActiveTripPoint' : [ 0x2c, ['array', 10, ['unsigned long']]],
     'S4TransitionTripPoint' : [ 0x54, ['unsigned long']],
 } ],
-  '__unnamed_1c2a' : [ 0x4, {
+  '__unnamed_1c1b' : [ 0x4, {
+    'FilePointerIndex' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 9)]],
+    'HardFault' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'Image' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'Spare0' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
 } ],
-  '__unnamed_1c2c' : [ 0x4, {
+  '__unnamed_1c1d' : [ 0x4, {
+    'FilePointerIndex' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 9)]],
+    'HardFault' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'Spare1' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 12)]],
 } ],
   '_MM_PAGE_ACCESS_INFO_FLAGS' : [ 0x4, {
-    'File' : [ 0x0, ['__unnamed_1c2a']],
-    'Private' : [ 0x0, ['__unnamed_1c2c']],
+    'File' : [ 0x0, ['__unnamed_1c1b']],
+    'Private' : [ 0x0, ['__unnamed_1c1d']],
 } ],
   '_VI_VERIFIER_ISSUE' : [ 0x10, {
     'IssueType' : [ 0x0, ['unsigned long']],
@@ -5887,6 +6490,14 @@ ntkrpamp_types = {
     'Parameters' : [ 0x8, ['array', 2, ['unsigned long']]],
 } ],
   '_MMSUBSECTION_FLAGS' : [ 0x4, {
+    'SubsectionAccessed' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 6)]],
+    'StartingSector4132' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 16)]],
+    'SubsectionStatic' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'GlobalMemory' : [ 0x2, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'DirtyPages' : [ 0x2, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Spare' : [ 0x2, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'SectorEndOffset' : [ 0x2, ['BitField', dict(start_bit = 4, end_bit = 16)]],
 } ],
   '_EXCEPTION_POINTERS' : [ 0x8, {
     'ExceptionRecord' : [ 0x0, ['pointer', ['_EXCEPTION_RECORD']]],
@@ -5921,20 +6532,17 @@ ntkrpamp_types = {
     'CreatorBackTraceIndex' : [ 0xe, ['unsigned short']],
     'TagName' : [ 0x10, ['array', 24, ['wchar']]],
 } ],
-  '_MMPTE_HIGHLOW' : [ 0x8, {
-    'LowPart' : [ 0x0, ['unsigned long']],
-    'HighPart' : [ 0x4, ['unsigned long']],
-} ],
   '_SECURITY_QUALITY_OF_SERVICE' : [ 0xc, {
     'Length' : [ 0x0, ['unsigned long']],
+    'ImpersonationLevel' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'SecurityAnonymous', 1: 'SecurityIdentification', 2: 'SecurityImpersonation', 3: 'SecurityDelegation'})]],
     'ContextTrackingMode' : [ 0x8, ['unsigned char']],
     'EffectiveOnly' : [ 0x9, ['unsigned char']],
 } ],
-  '__unnamed_1c4f' : [ 0x8, {
+  '__unnamed_1c3f' : [ 0x8, {
     'List' : [ 0x0, ['_LIST_ENTRY']],
     'Secured' : [ 0x0, ['_MMADDRESS_LIST']],
 } ],
-  '__unnamed_1c55' : [ 0x4, {
+  '__unnamed_1c45' : [ 0x4, {
     'Banked' : [ 0x0, ['pointer', ['_MMBANKED_SECTION']]],
     'ExtendedInfo' : [ 0x0, ['pointer', ['_MMEXTEND_INFO']]],
 } ],
@@ -5953,10 +6561,13 @@ ntkrpamp_types = {
     'LastContiguousPte' : [ 0x2c, ['pointer', ['_MMPTE']]],
     'ViewLinks' : [ 0x30, ['_LIST_ENTRY']],
     'VadsProcess' : [ 0x38, ['pointer', ['_EPROCESS']]],
-    'u3' : [ 0x3c, ['__unnamed_1c4f']],
-    'u4' : [ 0x44, ['__unnamed_1c55']],
+    'u3' : [ 0x3c, ['__unnamed_1c3f']],
+    'u4' : [ 0x44, ['__unnamed_1c45']],
 } ],
   '_MMWSLE_FREE_ENTRY' : [ 0x4, {
+    'MustBeZero' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'PreviousFree' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 12)]],
+    'NextFree' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
 } ],
   '_NT_TIB' : [ 0x1c, {
     'ExceptionList' : [ 0x0, ['pointer', ['_EXCEPTION_REGISTRATION_RECORD']]],
@@ -6017,12 +6628,16 @@ ntkrpamp_types = {
     'MemberLevel' : [ 0x12c, ['unsigned long']],
     'JobFlags' : [ 0x130, ['unsigned long']],
 } ],
-  '__unnamed_1c67' : [ 0x4, {
+  '__unnamed_1c56' : [ 0x4, {
     'AsULONG' : [ 0x0, ['unsigned long']],
+    'AllowScaling' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Disabled' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'HvMaxCState' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 6)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 32)]],
 } ],
   '_PPM_IDLE_STATES' : [ 0x68, {
     'Count' : [ 0x0, ['unsigned long']],
-    'Flags' : [ 0x4, ['__unnamed_1c67']],
+    'Flags' : [ 0x4, ['__unnamed_1c56']],
     'TargetState' : [ 0x8, ['unsigned long']],
     'ActualState' : [ 0xc, ['unsigned long']],
     'OldState' : [ 0x10, ['unsigned long']],
@@ -6030,12 +6645,14 @@ ntkrpamp_types = {
     'TargetProcessors' : [ 0x18, ['_KAFFINITY_EX']],
     'State' : [ 0x28, ['array', 1, ['_PPM_IDLE_STATE']]],
 } ],
-  '__unnamed_1c70' : [ 0x10, {
+  '__unnamed_1c5f' : [ 0x10, {
     'EfiInformation' : [ 0x0, ['_EFI_FIRMWARE_INFORMATION']],
     'PcatInformation' : [ 0x0, ['_PCAT_FIRMWARE_INFORMATION']],
 } ],
   '_FIRMWARE_INFORMATION_LOADER_BLOCK' : [ 0x14, {
-    'u' : [ 0x4, ['__unnamed_1c70']],
+    'FirmwareTypeEfi' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 32)]],
+    'u' : [ 0x4, ['__unnamed_1c5f']],
 } ],
   '_HEAP_UCR_DESCRIPTOR' : [ 0x18, {
     'ListEntry' : [ 0x0, ['_LIST_ENTRY']],
@@ -6065,24 +6682,35 @@ ntkrpamp_types = {
     'UserPagesAllocated' : [ 0x48, ['unsigned long']],
     'UserPagesReused' : [ 0x4c, ['unsigned long']],
 } ],
-  '__unnamed_1c79' : [ 0x4, {
+  '__unnamed_1c68' : [ 0x4, {
     'BaseMid' : [ 0x0, ['unsigned char']],
     'Flags1' : [ 0x1, ['unsigned char']],
     'Flags2' : [ 0x2, ['unsigned char']],
     'BaseHi' : [ 0x3, ['unsigned char']],
 } ],
-  '__unnamed_1c7f' : [ 0x4, {
+  '__unnamed_1c6e' : [ 0x4, {
+    'BaseMid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 8)]],
+    'Type' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 13)]],
+    'Dpl' : [ 0x0, ['BitField', dict(start_bit = 13, end_bit = 15)]],
+    'Pres' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16)]],
+    'LimitHi' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 20)]],
+    'Sys' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 21)]],
+    'Reserved_0' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 22)]],
+    'Default_Big' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 23)]],
+    'Granularity' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 24)]],
+    'BaseHi' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 32)]],
 } ],
-  '__unnamed_1c81' : [ 0x4, {
-    'Bytes' : [ 0x0, ['__unnamed_1c79']],
-    'Bits' : [ 0x0, ['__unnamed_1c7f']],
+  '__unnamed_1c70' : [ 0x4, {
+    'Bytes' : [ 0x0, ['__unnamed_1c68']],
+    'Bits' : [ 0x0, ['__unnamed_1c6e']],
 } ],
   '_KGDTENTRY' : [ 0x8, {
     'LimitLow' : [ 0x0, ['unsigned short']],
     'BaseLow' : [ 0x2, ['unsigned short']],
-    'HighWord' : [ 0x4, ['__unnamed_1c81']],
+    'HighWord' : [ 0x4, ['__unnamed_1c70']],
 } ],
   '_POOL_DESCRIPTOR' : [ 0x1140, {
+    'PoolType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'NonPagedPool', 1: 'PagedPool', 2: 'NonPagedPoolMustSucceed', 3: 'DontUseThisType', 4: 'NonPagedPoolCacheAligned', 5: 'PagedPoolCacheAligned', 6: 'NonPagedPoolCacheAlignedMustS', 7: 'MaxPoolType', 34: 'NonPagedPoolMustSucceedSession', 35: 'DontUseThisTypeSession', 32: 'NonPagedPoolSession', 36: 'NonPagedPoolCacheAlignedSession', 33: 'PagedPoolSession', 38: 'NonPagedPoolCacheAlignedMustSSession', 37: 'PagedPoolCacheAlignedSession'})]],
     'PagedLock' : [ 0x4, ['_KGUARDED_MUTEX']],
     'NonPagedLock' : [ 0x4, ['unsigned long']],
     'RunningAllocs' : [ 0x40, ['long']],
@@ -6104,6 +6732,7 @@ ntkrpamp_types = {
     'Revision' : [ 0x4, ['_WHEA_REVISION']],
     'SignatureEnd' : [ 0x6, ['unsigned long']],
     'SectionCount' : [ 0xa, ['unsigned short']],
+    'Severity' : [ 0xc, ['Enumeration', dict(target = 'long', choices = {0: 'WheaErrSevRecoverable', 1: 'WheaErrSevFatal', 2: 'WheaErrSevCorrected', 3: 'WheaErrSevInformational'})]],
     'ValidBits' : [ 0x10, ['_WHEA_ERROR_RECORD_HEADER_VALIDBITS']],
     'Length' : [ 0x14, ['unsigned long']],
     'Timestamp' : [ 0x18, ['_WHEA_TIMESTAMP']],
@@ -6139,6 +6768,9 @@ ntkrpamp_types = {
     'PostList' : [ 0x8, ['_LIST_ENTRY']],
     'KeyControlBlock' : [ 0x10, ['pointer', ['_CM_KEY_CONTROL_BLOCK']]],
     'KeyBody' : [ 0x14, ['pointer', ['_CM_KEY_BODY']]],
+    'Filter' : [ 0x18, ['BitField', dict(start_bit = 0, end_bit = 30)]],
+    'WatchTree' : [ 0x18, ['BitField', dict(start_bit = 30, end_bit = 31)]],
+    'NotifyPending' : [ 0x18, ['BitField', dict(start_bit = 31, end_bit = 32)]],
     'SubjectContext' : [ 0x1c, ['_SECURITY_SUBJECT_CONTEXT']],
 } ],
   '_KINTERRUPT' : [ 0x278, {
@@ -6161,6 +6793,8 @@ ntkrpamp_types = {
     'Number' : [ 0x34, ['unsigned long']],
     'ShareVector' : [ 0x38, ['unsigned char']],
     'Pad' : [ 0x39, ['array', 3, ['unsigned char']]],
+    'Mode' : [ 0x3c, ['Enumeration', dict(target = 'long', choices = {0: 'LevelSensitive', 1: 'Latched'})]],
+    'Polarity' : [ 0x40, ['Enumeration', dict(target = 'long', choices = {0: 'InterruptPolarityUnknown', 1: 'InterruptActiveHigh', 2: 'InterruptActiveLow'})]],
     'ServiceCount' : [ 0x44, ['unsigned long']],
     'DispatchCount' : [ 0x48, ['unsigned long']],
     'Rsvd1' : [ 0x50, ['unsigned long long']],
@@ -6257,7 +6891,20 @@ ntkrpamp_types = {
     'Flags' : [ 0x8, ['unsigned long']],
     'Lock' : [ 0xc, ['_EX_PUSH_LOCK']],
 } ],
-  '_MMPTE_HARDWARE' : [ 0x8, {
+  '_MMPTE_HARDWARE' : [ 0x4, {
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Dirty1' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Owner' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'WriteThrough' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'CacheDisable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'Accessed' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'Dirty' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'LargePage' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'Global' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'Unused' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'Write' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'PageFrameNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
 } ],
   '_IO_COMPLETION_CONTEXT' : [ 0x8, {
     'Port' : [ 0x0, ['pointer', ['void']]],
@@ -6339,6 +6986,8 @@ ntkrpamp_types = {
     'FunctionalBusDevice' : [ 0x30, ['pointer', ['_DEVICE_OBJECT']]],
     'AttachedDevice' : [ 0x34, ['pointer', ['_DEVICE_OBJECT']]],
     'BusNumber' : [ 0x38, ['unsigned long']],
+    'SystemPowerState' : [ 0x3c, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'DevicePowerState' : [ 0x40, ['Enumeration', dict(target = 'long', choices = {0: 'PowerDeviceUnspecified', 1: 'PowerDeviceD0', 2: 'PowerDeviceD1', 3: 'PowerDeviceD2', 4: 'PowerDeviceD3', 5: 'PowerDeviceMaximum'})]],
 } ],
   '_EXCEPTION_REGISTRATION_RECORD' : [ 0x8, {
     'Next' : [ 0x0, ['pointer', ['_EXCEPTION_REGISTRATION_RECORD']]],
@@ -6382,6 +7031,13 @@ ntkrpamp_types = {
     'List' : [ 0x4, ['unsigned long']],
 } ],
   '_MMVAD_FLAGS' : [ 0x4, {
+    'CommitCharge' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 19)]],
+    'NoChange' : [ 0x0, ['BitField', dict(start_bit = 19, end_bit = 20)]],
+    'VadType' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 23)]],
+    'MemCommit' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 24)]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 29)]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 29, end_bit = 31)]],
+    'PrivateMemory' : [ 0x0, ['BitField', dict(start_bit = 31, end_bit = 32)]],
 } ],
   '_MMWSLE_HASH' : [ 0x4, {
     'Index' : [ 0x0, ['unsigned long']],
@@ -6418,6 +7074,10 @@ ntkrpamp_types = {
 } ],
   '_VF_TRACKER_STAMP' : [ 0x8, {
     'Thread' : [ 0x0, ['pointer', ['void']]],
+    'Flags' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 8)]],
+    'OldIrql' : [ 0x5, ['BitField', dict(start_bit = 0, end_bit = 8)]],
+    'NewIrql' : [ 0x6, ['BitField', dict(start_bit = 0, end_bit = 8)]],
+    'Processor' : [ 0x7, ['BitField', dict(start_bit = 0, end_bit = 8)]],
 } ],
   '_VI_TRACK_IRQL' : [ 0x20, {
     'Thread' : [ 0x0, ['pointer', ['void']]],
@@ -6433,6 +7093,7 @@ ntkrpamp_types = {
     'CallerEvent' : [ 0xc, ['pointer', ['_KEVENT']]],
     'Callback' : [ 0x10, ['pointer', ['void']]],
     'Context' : [ 0x14, ['pointer', ['void']]],
+    'VetoType' : [ 0x18, ['pointer', ['Enumeration', dict(target = 'long', choices = {0: 'PNP_VetoTypeUnknown', 1: 'PNP_VetoLegacyDevice', 2: 'PNP_VetoPendingClose', 3: 'PNP_VetoWindowsApp', 4: 'PNP_VetoWindowsService', 5: 'PNP_VetoOutstandingOpen', 6: 'PNP_VetoDevice', 7: 'PNP_VetoDriver', 8: 'PNP_VetoIllegalDeviceRequest', 9: 'PNP_VetoInsufficientPower', 10: 'PNP_VetoNonDisableable', 11: 'PNP_VetoLegacyDriver', 12: 'PNP_VetoInsufficientRights'})]]],
     'VetoName' : [ 0x1c, ['pointer', ['_UNICODE_STRING']]],
     'Data' : [ 0x20, ['_PLUGPLAY_EVENT_BLOCK']],
 } ],
@@ -6460,6 +7121,7 @@ ntkrpamp_types = {
   '_XSTATE_CONFIGURATION' : [ 0x210, {
     'EnabledFeatures' : [ 0x0, ['unsigned long long']],
     'Size' : [ 0x8, ['unsigned long']],
+    'OptimizedSave' : [ 0xc, ['BitField', dict(start_bit = 0, end_bit = 1)]],
     'Features' : [ 0x10, ['array', 64, ['_XSTATE_FEATURE']]],
 } ],
   '_CM_KEY_SECURITY_CACHE' : [ 0x2c, {
@@ -6470,7 +7132,13 @@ ntkrpamp_types = {
     'RealRefCount' : [ 0x14, ['unsigned long']],
     'Descriptor' : [ 0x18, ['_SECURITY_DESCRIPTOR_RELATIVE']],
 } ],
-  '_MMPTE_SOFTWARE' : [ 0x8, {
+  '_MMPTE_SOFTWARE' : [ 0x4, {
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'PageFileLow' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 5)]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 10)]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'Transition' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'PageFileHigh' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
 } ],
   '_NT_TIB32' : [ 0x1c, {
     'ExceptionList' : [ 0x0, ['unsigned long']],
@@ -6497,16 +7165,27 @@ ntkrpamp_types = {
 } ],
   '_MM_SUBSECTION_AVL_TABLE' : [ 0x20, {
     'BalancedRoot' : [ 0x0, ['_MMSUBSECTION_NODE']],
+    'DepthOfTree' : [ 0x18, ['BitField', dict(start_bit = 0, end_bit = 5)]],
+    'Unused' : [ 0x18, ['BitField', dict(start_bit = 5, end_bit = 8)]],
+    'NumberGenericTableElements' : [ 0x18, ['BitField', dict(start_bit = 8, end_bit = 32)]],
     'NodeHint' : [ 0x1c, ['pointer', ['void']]],
 } ],
   '_HANDLE_TABLE_ENTRY_INFO' : [ 0x4, {
     'AuditMask' : [ 0x0, ['unsigned long']],
 } ],
   '_CM_FULL_RESOURCE_DESCRIPTOR' : [ 0x20, {
+    'InterfaceType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'Internal', 1: 'Isa', 2: 'Eisa', 3: 'MicroChannel', 4: 'TurboChannel', 5: 'PCIBus', 6: 'VMEBus', 7: 'NuBus', 8: 'PCMCIABus', 9: 'CBus', 10: 'MPIBus', 11: 'MPSABus', 12: 'ProcessorInternal', 13: 'InternalPowerBus', 14: 'PNPISABus', 15: 'PNPBus', 16: 'Vmcs', 17: 'MaximumInterfaceType', -1: 'InterfaceTypeUndefined'})]],
     'BusNumber' : [ 0x4, ['unsigned long']],
     'PartialResourceList' : [ 0x8, ['_CM_PARTIAL_RESOURCE_LIST']],
 } ],
   '_WHEA_ERROR_RECORD_SECTION_DESCRIPTOR_FLAGS' : [ 0x4, {
+    'Primary' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'ContainmentWarning' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Reset' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'ThresholdExceeded' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'ResourceNotAvailable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'LatentError' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 32)]],
     'AsULONG' : [ 0x0, ['unsigned long']],
 } ],
   '_WMI_BUFFER_HEADER' : [ 0x48, {
@@ -6520,6 +7199,7 @@ ntkrpamp_types = {
     'SlistEntry' : [ 0x20, ['_SINGLE_LIST_ENTRY']],
     'NextBuffer' : [ 0x20, ['pointer', ['_WMI_BUFFER_HEADER']]],
     'ClientContext' : [ 0x28, ['_ETW_BUFFER_CONTEXT']],
+    'State' : [ 0x2c, ['Enumeration', dict(target = 'long', choices = {0: 'EtwBufferStateFree', 1: 'EtwBufferStateGeneralLogging', 2: 'EtwBufferStateCSwitch', 3: 'EtwBufferStateFlush', 4: 'EtwBufferStateMaximum'})]],
     'Offset' : [ 0x30, ['unsigned long']],
     'BufferFlag' : [ 0x34, ['unsigned short']],
     'BufferType' : [ 0x36, ['unsigned short']],
@@ -6550,6 +7230,7 @@ ntkrpamp_types = {
     'IdleTimeTotal' : [ 0x10, ['unsigned long long']],
     'IdleTimeEntry' : [ 0x18, ['unsigned long long']],
     'IdleAccounting' : [ 0x20, ['pointer', ['_PROC_IDLE_ACCOUNTING']]],
+    'Hypervisor' : [ 0x24, ['Enumeration', dict(target = 'long', choices = {0: 'ProcHypervisorNone', 1: 'ProcHypervisorPresent', 2: 'ProcHypervisorPower'})]],
     'PerfHistoryTotal' : [ 0x28, ['unsigned long']],
     'ThermalConstraint' : [ 0x2c, ['unsigned char']],
     'PerfHistoryCount' : [ 0x2d, ['unsigned char']],
@@ -6584,6 +7265,17 @@ ntkrpamp_types = {
     'CurrentSymbolEnd' : [ 0x8, ['unsigned long']],
 } ],
   '_MMPFNENTRY' : [ 0x2, {
+    'PageLocation' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 3)]],
+    'WriteInProgress' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Modified' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'ReadInProgress' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'CacheAttribute' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 8)]],
+    'Priority' : [ 0x1, ['BitField', dict(start_bit = 0, end_bit = 3)]],
+    'Rom' : [ 0x1, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'InPageError' : [ 0x1, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'KernelStack' : [ 0x1, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'RemovalRequested' : [ 0x1, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'ParityError' : [ 0x1, ['BitField', dict(start_bit = 7, end_bit = 8)]],
 } ],
   '_SEGMENT_OBJECT' : [ 0x28, {
     'BaseAddress' : [ 0x0, ['pointer', ['void']]],
@@ -6670,6 +7362,21 @@ ntkrpamp_types = {
     'DataLength' : [ 0x8, ['unsigned long']],
 } ],
   '_MMSUPPORT_FLAGS' : [ 0x4, {
+    'WorkingSetType' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 3)]],
+    'ModwriterAttached' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'TrimHard' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'MaximumWorkingSetHard' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'ForceTrim' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'MinimumWorkingSetHard' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'SessionMaster' : [ 0x1, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'TrimmerState' : [ 0x1, ['BitField', dict(start_bit = 1, end_bit = 3)]],
+    'Reserved' : [ 0x1, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'PageStealers' : [ 0x1, ['BitField', dict(start_bit = 4, end_bit = 8)]],
+    'MemoryPriority' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 8)]],
+    'WsleDeleted' : [ 0x3, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'VmExiting' : [ 0x3, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'ExpansionFailed' : [ 0x3, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Available' : [ 0x3, ['BitField', dict(start_bit = 3, end_bit = 8)]],
 } ],
   '_IMAGE_OPTIONAL_HEADER' : [ 0xe0, {
     'Magic' : [ 0x0, ['unsigned short']],
@@ -6722,6 +7429,7 @@ ntkrpamp_types = {
 } ],
   '_MEMORY_ALLOCATION_DESCRIPTOR' : [ 0x14, {
     'ListEntry' : [ 0x0, ['_LIST_ENTRY']],
+    'MemoryType' : [ 0x8, ['Enumeration', dict(target = 'long', choices = {0: 'LoaderExceptionBlock', 1: 'LoaderSystemBlock', 2: 'LoaderFree', 3: 'LoaderBad', 4: 'LoaderLoadedProgram', 5: 'LoaderFirmwareTemporary', 6: 'LoaderFirmwarePermanent', 7: 'LoaderOsloaderHeap', 8: 'LoaderOsloaderStack', 9: 'LoaderSystemCode', 10: 'LoaderHalCode', 11: 'LoaderBootDriver', 12: 'LoaderConsoleInDriver', 13: 'LoaderConsoleOutDriver', 14: 'LoaderStartupDpcStack', 15: 'LoaderStartupKernelStack', 16: 'LoaderStartupPanicStack', 17: 'LoaderStartupPcrPage', 18: 'LoaderStartupPdrPage', 19: 'LoaderRegistryData', 20: 'LoaderMemoryData', 21: 'LoaderNlsData', 22: 'LoaderSpecialMemory', 23: 'LoaderBBTMemory', 24: 'LoaderReserve', 25: 'LoaderXIPRom', 26: 'LoaderHALCachedMemory', 27: 'LoaderLargePageFiller', 28: 'LoaderErrorLogMemory', 29: 'LoaderMaximum'})]],
     'BasePage' : [ 0xc, ['unsigned long']],
     'PageCount' : [ 0x10, ['unsigned long']],
 } ],
@@ -6814,6 +7522,9 @@ ntkrpamp_types = {
 } ],
   '_OWNER_ENTRY' : [ 0x8, {
     'OwnerThread' : [ 0x0, ['unsigned long']],
+    'IoPriorityBoosted' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'OwnerReferenced' : [ 0x4, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'OwnerCount' : [ 0x4, ['BitField', dict(start_bit = 2, end_bit = 32)]],
     'TableSize' : [ 0x4, ['unsigned long']],
 } ],
   '_MI_SECTION_CREATION_GATE' : [ 0x14, {
@@ -6839,12 +7550,12 @@ ntkrpamp_types = {
     'Header' : [ 0x0, ['_POOL_HEADER']],
     'List' : [ 0x8, ['_LIST_ENTRY']],
 } ],
-  '__unnamed_1dd8' : [ 0x4, {
+  '__unnamed_1dc5' : [ 0x4, {
     'Flags' : [ 0x0, ['_MMSECURE_FLAGS']],
     'StartVa' : [ 0x0, ['pointer', ['void']]],
 } ],
   '_MMADDRESS_LIST' : [ 0x8, {
-    'u1' : [ 0x0, ['__unnamed_1dd8']],
+    'u1' : [ 0x0, ['__unnamed_1dc5']],
     'EndVa' : [ 0x4, ['pointer', ['void']]],
 } ],
   '_XSTATE_FEATURE' : [ 0x8, {
@@ -6901,24 +7612,24 @@ ntkrpamp_types = {
     'SortKey' : [ 0x8, ['unsigned long']],
     'Inserted' : [ 0xc, ['unsigned char']],
 } ],
-  '__unnamed_1e31' : [ 0x4, {
+  '__unnamed_1e1e' : [ 0x4, {
     'UserData' : [ 0x0, ['unsigned long']],
     'Next' : [ 0x0, ['unsigned long']],
 } ],
-  '__unnamed_1e33' : [ 0x8, {
+  '__unnamed_1e20' : [ 0x8, {
     'Last' : [ 0x0, ['unsigned long']],
-    'u' : [ 0x4, ['__unnamed_1e31']],
+    'u' : [ 0x4, ['__unnamed_1e1e']],
 } ],
-  '__unnamed_1e35' : [ 0x4, {
-    'u' : [ 0x0, ['__unnamed_1e31']],
+  '__unnamed_1e22' : [ 0x4, {
+    'u' : [ 0x0, ['__unnamed_1e1e']],
 } ],
-  '__unnamed_1e37' : [ 0x8, {
-    'OldCell' : [ 0x0, ['__unnamed_1e33']],
-    'NewCell' : [ 0x0, ['__unnamed_1e35']],
+  '__unnamed_1e24' : [ 0x8, {
+    'OldCell' : [ 0x0, ['__unnamed_1e20']],
+    'NewCell' : [ 0x0, ['__unnamed_1e22']],
 } ],
   '_HCELL' : [ 0xc, {
     'Size' : [ 0x0, ['long']],
-    'u' : [ 0x4, ['__unnamed_1e37']],
+    'u' : [ 0x4, ['__unnamed_1e24']],
 } ],
   '_HMAP_TABLE' : [ 0x2000, {
     'Table' : [ 0x0, ['array', 512, ['_HMAP_ENTRY']]],
@@ -6941,8 +7652,31 @@ ntkrpamp_types = {
   '_DEVICE_CAPABILITIES' : [ 0x40, {
     'Size' : [ 0x0, ['unsigned short']],
     'Version' : [ 0x2, ['unsigned short']],
+    'DeviceD1' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'DeviceD2' : [ 0x4, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'LockSupported' : [ 0x4, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'EjectSupported' : [ 0x4, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Removable' : [ 0x4, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'DockDevice' : [ 0x4, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'UniqueID' : [ 0x4, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'SilentInstall' : [ 0x4, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'RawDeviceOK' : [ 0x4, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'SurpriseRemovalOK' : [ 0x4, ['BitField', dict(start_bit = 9, end_bit = 10)]],
+    'WakeFromD0' : [ 0x4, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'WakeFromD1' : [ 0x4, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'WakeFromD2' : [ 0x4, ['BitField', dict(start_bit = 12, end_bit = 13)]],
+    'WakeFromD3' : [ 0x4, ['BitField', dict(start_bit = 13, end_bit = 14)]],
+    'HardwareDisabled' : [ 0x4, ['BitField', dict(start_bit = 14, end_bit = 15)]],
+    'NonDynamic' : [ 0x4, ['BitField', dict(start_bit = 15, end_bit = 16)]],
+    'WarmEjectSupported' : [ 0x4, ['BitField', dict(start_bit = 16, end_bit = 17)]],
+    'NoDisplayInUI' : [ 0x4, ['BitField', dict(start_bit = 17, end_bit = 18)]],
+    'Reserved1' : [ 0x4, ['BitField', dict(start_bit = 18, end_bit = 19)]],
+    'Reserved' : [ 0x4, ['BitField', dict(start_bit = 19, end_bit = 32)]],
     'Address' : [ 0x8, ['unsigned long']],
     'UINumber' : [ 0xc, ['unsigned long']],
+    'DeviceState' : [ 0x10, ['array', -28, ['Enumeration', dict(target = 'long', choices = {0: 'PowerDeviceUnspecified', 1: 'PowerDeviceD0', 2: 'PowerDeviceD1', 3: 'PowerDeviceD2', 4: 'PowerDeviceD3', 5: 'PowerDeviceMaximum'})]]],
+    'SystemWake' : [ 0x2c, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'DeviceWake' : [ 0x30, ['Enumeration', dict(target = 'long', choices = {0: 'PowerDeviceUnspecified', 1: 'PowerDeviceD0', 2: 'PowerDeviceD1', 3: 'PowerDeviceD2', 4: 'PowerDeviceD3', 5: 'PowerDeviceMaximum'})]],
     'D1Latency' : [ 0x34, ['unsigned long']],
     'D2Latency' : [ 0x38, ['unsigned long']],
     'D3Latency' : [ 0x3c, ['unsigned long']],
@@ -6954,67 +7688,68 @@ ntkrpamp_types = {
     'MissesLast' : [ 0x10, ['unsigned long']],
     'Pad0' : [ 0x14, ['unsigned long']],
 } ],
-  '__unnamed_1e4a' : [ 0x18, {
+  '__unnamed_1e37' : [ 0x18, {
     'Length' : [ 0x0, ['unsigned long']],
     'Alignment' : [ 0x4, ['unsigned long']],
     'MinimumAddress' : [ 0x8, ['_LARGE_INTEGER']],
     'MaximumAddress' : [ 0x10, ['_LARGE_INTEGER']],
 } ],
-  '__unnamed_1e4e' : [ 0x14, {
+  '__unnamed_1e3b' : [ 0x14, {
     'MinimumVector' : [ 0x0, ['unsigned long']],
     'MaximumVector' : [ 0x4, ['unsigned long']],
     'AffinityPolicy' : [ 0x8, ['unsigned short']],
     'Group' : [ 0xa, ['unsigned short']],
+    'PriorityPolicy' : [ 0xc, ['Enumeration', dict(target = 'long', choices = {0: 'IrqPriorityUndefined', 1: 'IrqPriorityLow', 2: 'IrqPriorityNormal', 3: 'IrqPriorityHigh'})]],
     'TargetedProcessors' : [ 0x10, ['unsigned long']],
 } ],
-  '__unnamed_1e50' : [ 0x8, {
+  '__unnamed_1e3d' : [ 0x8, {
     'MinimumChannel' : [ 0x0, ['unsigned long']],
     'MaximumChannel' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_1e52' : [ 0xc, {
+  '__unnamed_1e3f' : [ 0xc, {
     'Data' : [ 0x0, ['array', 3, ['unsigned long']]],
 } ],
-  '__unnamed_1e54' : [ 0x10, {
+  '__unnamed_1e41' : [ 0x10, {
     'Length' : [ 0x0, ['unsigned long']],
     'MinBusNumber' : [ 0x4, ['unsigned long']],
     'MaxBusNumber' : [ 0x8, ['unsigned long']],
     'Reserved' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_1e56' : [ 0xc, {
+  '__unnamed_1e43' : [ 0xc, {
     'Priority' : [ 0x0, ['unsigned long']],
     'Reserved1' : [ 0x4, ['unsigned long']],
     'Reserved2' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1e58' : [ 0x18, {
+  '__unnamed_1e45' : [ 0x18, {
     'Length40' : [ 0x0, ['unsigned long']],
     'Alignment40' : [ 0x4, ['unsigned long']],
     'MinimumAddress' : [ 0x8, ['_LARGE_INTEGER']],
     'MaximumAddress' : [ 0x10, ['_LARGE_INTEGER']],
 } ],
-  '__unnamed_1e5a' : [ 0x18, {
+  '__unnamed_1e47' : [ 0x18, {
     'Length48' : [ 0x0, ['unsigned long']],
     'Alignment48' : [ 0x4, ['unsigned long']],
     'MinimumAddress' : [ 0x8, ['_LARGE_INTEGER']],
     'MaximumAddress' : [ 0x10, ['_LARGE_INTEGER']],
 } ],
-  '__unnamed_1e5c' : [ 0x18, {
+  '__unnamed_1e49' : [ 0x18, {
     'Length64' : [ 0x0, ['unsigned long']],
     'Alignment64' : [ 0x4, ['unsigned long']],
     'MinimumAddress' : [ 0x8, ['_LARGE_INTEGER']],
     'MaximumAddress' : [ 0x10, ['_LARGE_INTEGER']],
 } ],
-  '__unnamed_1e5e' : [ 0x18, {
-    'Port' : [ 0x0, ['__unnamed_1e4a']],
-    'Memory' : [ 0x0, ['__unnamed_1e4a']],
-    'Interrupt' : [ 0x0, ['__unnamed_1e4e']],
-    'Dma' : [ 0x0, ['__unnamed_1e50']],
-    'Generic' : [ 0x0, ['__unnamed_1e4a']],
-    'DevicePrivate' : [ 0x0, ['__unnamed_1e52']],
-    'BusNumber' : [ 0x0, ['__unnamed_1e54']],
-    'ConfigData' : [ 0x0, ['__unnamed_1e56']],
-    'Memory40' : [ 0x0, ['__unnamed_1e58']],
-    'Memory48' : [ 0x0, ['__unnamed_1e5a']],
-    'Memory64' : [ 0x0, ['__unnamed_1e5c']],
+  '__unnamed_1e4b' : [ 0x18, {
+    'Port' : [ 0x0, ['__unnamed_1e37']],
+    'Memory' : [ 0x0, ['__unnamed_1e37']],
+    'Interrupt' : [ 0x0, ['__unnamed_1e3b']],
+    'Dma' : [ 0x0, ['__unnamed_1e3d']],
+    'Generic' : [ 0x0, ['__unnamed_1e37']],
+    'DevicePrivate' : [ 0x0, ['__unnamed_1e3f']],
+    'BusNumber' : [ 0x0, ['__unnamed_1e41']],
+    'ConfigData' : [ 0x0, ['__unnamed_1e43']],
+    'Memory40' : [ 0x0, ['__unnamed_1e45']],
+    'Memory48' : [ 0x0, ['__unnamed_1e47']],
+    'Memory64' : [ 0x0, ['__unnamed_1e49']],
 } ],
   '_IO_RESOURCE_DESCRIPTOR' : [ 0x20, {
     'Option' : [ 0x0, ['unsigned char']],
@@ -7023,7 +7758,7 @@ ntkrpamp_types = {
     'Spare1' : [ 0x3, ['unsigned char']],
     'Flags' : [ 0x4, ['unsigned short']],
     'Spare2' : [ 0x6, ['unsigned short']],
-    'u' : [ 0x8, ['__unnamed_1e5e']],
+    'u' : [ 0x8, ['__unnamed_1e4b']],
 } ],
   '_POP_THERMAL_ZONE' : [ 0x150, {
     'Link' : [ 0x0, ['_LIST_ENTRY']],
@@ -7045,7 +7780,13 @@ ntkrpamp_types = {
     'InfoLastUpdateTime' : [ 0xe0, ['_LARGE_INTEGER']],
     'Metrics' : [ 0xe8, ['_POP_THERMAL_ZONE_METRICS']],
 } ],
-  '_MMPTE_LIST' : [ 0x8, {
+  '_MMPTE_LIST' : [ 0x4, {
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'OneEntry' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'filler0' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 10)]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'filler1' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'NextEntry' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
 } ],
   '_VI_POOL_PAGE_HEADER' : [ 0xc, {
     'NextPage' : [ 0x0, ['pointer', ['_SINGLE_LIST_ENTRY']]],
@@ -7091,6 +7832,10 @@ ntkrpamp_types = {
     'HiveArray' : [ 0x48, ['array', 7, ['pointer', ['_CMHIVE']]]],
 } ],
   '_WHEA_ERROR_RECORD_HEADER_VALIDBITS' : [ 0x4, {
+    'PlatformId' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Timestamp' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'PartitionId' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 32)]],
     'AsULONG' : [ 0x0, ['unsigned long']],
 } ],
   '_CM_PARTIAL_RESOURCE_LIST' : [ 0x18, {
@@ -7167,74 +7912,78 @@ ntkrpamp_types = {
     'AdtTokenPolicy' : [ 0x0, ['_TOKEN_AUDIT_POLICY']],
     'PolicySetStatus' : [ 0x1b, ['unsigned char']],
 } ],
-  '__unnamed_1e9c' : [ 0x4, {
+  '__unnamed_1e88' : [ 0x4, {
+    'SnapSharedExportsFailed' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 32)]],
 } ],
-  '__unnamed_1e9e' : [ 0xc, {
+  '__unnamed_1e8a' : [ 0xc, {
     'AllSharedExportThunks' : [ 0x0, ['_VF_TARGET_ALL_SHARED_EXPORT_THUNKS']],
-    'Flags' : [ 0x0, ['__unnamed_1e9c']],
+    'Flags' : [ 0x0, ['__unnamed_1e88']],
 } ],
   '_VF_TARGET_DRIVER' : [ 0x18, {
     'TreeNode' : [ 0x0, ['_VF_AVL_TREE_NODE']],
-    'u1' : [ 0x8, ['__unnamed_1e9e']],
+    'u1' : [ 0x8, ['__unnamed_1e8a']],
     'VerifiedData' : [ 0x14, ['pointer', ['_VF_TARGET_VERIFIED_DRIVER_DATA']]],
 } ],
-  '__unnamed_1ea6' : [ 0x14, {
+  '__unnamed_1e92' : [ 0x14, {
     'ClassGuid' : [ 0x0, ['_GUID']],
     'SymbolicLinkName' : [ 0x10, ['array', 1, ['wchar']]],
 } ],
-  '__unnamed_1ea8' : [ 0x2, {
+  '__unnamed_1e94' : [ 0x2, {
     'DeviceIds' : [ 0x0, ['array', 1, ['wchar']]],
 } ],
-  '__unnamed_1eaa' : [ 0x2, {
+  '__unnamed_1e96' : [ 0x2, {
     'DeviceId' : [ 0x0, ['array', 1, ['wchar']]],
 } ],
-  '__unnamed_1eac' : [ 0x8, {
+  '__unnamed_1e98' : [ 0x8, {
     'NotificationStructure' : [ 0x0, ['pointer', ['void']]],
     'DeviceIds' : [ 0x4, ['array', 1, ['wchar']]],
 } ],
-  '__unnamed_1eae' : [ 0x4, {
+  '__unnamed_1e9a' : [ 0x4, {
     'Notification' : [ 0x0, ['pointer', ['void']]],
 } ],
-  '__unnamed_1eb0' : [ 0x8, {
+  '__unnamed_1e9c' : [ 0x8, {
     'NotificationCode' : [ 0x0, ['unsigned long']],
     'NotificationData' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_1eb2' : [ 0x8, {
+  '__unnamed_1e9e' : [ 0x8, {
+    'VetoType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'PNP_VetoTypeUnknown', 1: 'PNP_VetoLegacyDevice', 2: 'PNP_VetoPendingClose', 3: 'PNP_VetoWindowsApp', 4: 'PNP_VetoWindowsService', 5: 'PNP_VetoOutstandingOpen', 6: 'PNP_VetoDevice', 7: 'PNP_VetoDriver', 8: 'PNP_VetoIllegalDeviceRequest', 9: 'PNP_VetoInsufficientPower', 10: 'PNP_VetoNonDisableable', 11: 'PNP_VetoLegacyDriver', 12: 'PNP_VetoInsufficientRights'})]],
     'DeviceIdVetoNameBuffer' : [ 0x4, ['array', 1, ['wchar']]],
 } ],
-  '__unnamed_1eb4' : [ 0x10, {
+  '__unnamed_1ea0' : [ 0x10, {
     'BlockedDriverGuid' : [ 0x0, ['_GUID']],
 } ],
-  '__unnamed_1eb6' : [ 0x2, {
+  '__unnamed_1ea2' : [ 0x2, {
     'ParentId' : [ 0x0, ['array', 1, ['wchar']]],
 } ],
-  '__unnamed_1eb8' : [ 0x20, {
+  '__unnamed_1ea4' : [ 0x20, {
     'PowerSettingGuid' : [ 0x0, ['_GUID']],
     'Flags' : [ 0x10, ['unsigned long']],
     'SessionId' : [ 0x14, ['unsigned long']],
     'DataLength' : [ 0x18, ['unsigned long']],
     'Data' : [ 0x1c, ['array', 1, ['unsigned char']]],
 } ],
-  '__unnamed_1eba' : [ 0x20, {
-    'DeviceClass' : [ 0x0, ['__unnamed_1ea6']],
-    'TargetDevice' : [ 0x0, ['__unnamed_1ea8']],
-    'InstallDevice' : [ 0x0, ['__unnamed_1eaa']],
-    'CustomNotification' : [ 0x0, ['__unnamed_1eac']],
-    'ProfileNotification' : [ 0x0, ['__unnamed_1eae']],
-    'PowerNotification' : [ 0x0, ['__unnamed_1eb0']],
-    'VetoNotification' : [ 0x0, ['__unnamed_1eb2']],
-    'BlockedDriverNotification' : [ 0x0, ['__unnamed_1eb4']],
-    'InvalidIDNotification' : [ 0x0, ['__unnamed_1eb6']],
-    'PowerSettingNotification' : [ 0x0, ['__unnamed_1eb8']],
-    'PropertyChangeNotification' : [ 0x0, ['__unnamed_1eaa']],
+  '__unnamed_1ea6' : [ 0x20, {
+    'DeviceClass' : [ 0x0, ['__unnamed_1e92']],
+    'TargetDevice' : [ 0x0, ['__unnamed_1e94']],
+    'InstallDevice' : [ 0x0, ['__unnamed_1e96']],
+    'CustomNotification' : [ 0x0, ['__unnamed_1e98']],
+    'ProfileNotification' : [ 0x0, ['__unnamed_1e9a']],
+    'PowerNotification' : [ 0x0, ['__unnamed_1e9c']],
+    'VetoNotification' : [ 0x0, ['__unnamed_1e9e']],
+    'BlockedDriverNotification' : [ 0x0, ['__unnamed_1ea0']],
+    'InvalidIDNotification' : [ 0x0, ['__unnamed_1ea2']],
+    'PowerSettingNotification' : [ 0x0, ['__unnamed_1ea4']],
+    'PropertyChangeNotification' : [ 0x0, ['__unnamed_1e96']],
 } ],
   '_PLUGPLAY_EVENT_BLOCK' : [ 0x44, {
     'EventGuid' : [ 0x0, ['_GUID']],
+    'EventCategory' : [ 0x10, ['Enumeration', dict(target = 'long', choices = {0: 'HardwareProfileChangeEvent', 1: 'TargetDeviceChangeEvent', 2: 'DeviceClassChangeEvent', 3: 'CustomDeviceEvent', 4: 'DeviceInstallEvent', 5: 'DeviceArrivalEvent', 6: 'VetoEvent', 7: 'BlockedDriverEvent', 8: 'InvalidIDEvent', 9: 'DevicePropertyChangeEvent', 10: 'DeviceInstanceRemovalEvent', 11: 'MaxPlugEventCategory'})]],
     'Result' : [ 0x14, ['pointer', ['unsigned long']]],
     'Flags' : [ 0x18, ['unsigned long']],
     'TotalSize' : [ 0x1c, ['unsigned long']],
     'DeviceObject' : [ 0x20, ['pointer', ['void']]],
-    'u' : [ 0x24, ['__unnamed_1eba']],
+    'u' : [ 0x24, ['__unnamed_1ea6']],
 } ],
   '_VF_SUSPECT_DRIVER_ENTRY' : [ 0x18, {
     'Links' : [ 0x0, ['_LIST_ENTRY']],
@@ -7242,7 +7991,13 @@ ntkrpamp_types = {
     'Unloads' : [ 0xc, ['unsigned long']],
     'BaseName' : [ 0x10, ['_UNICODE_STRING']],
 } ],
-  '_MMPTE_TIMESTAMP' : [ 0x8, {
+  '_MMPTE_TIMESTAMP' : [ 0x4, {
+    'MustBeZero' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'PageFileLow' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 5)]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 10)]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'Transition' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
+    'GlobalTimeStamp' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
 } ],
   '_SID_AND_ATTRIBUTES_HASH' : [ 0x88, {
     'SidCount' : [ 0x0, ['unsigned long']],
@@ -7296,6 +8051,8 @@ ntkrpamp_types = {
     'SessionId' : [ 0x8, ['unsigned long']],
     'CpuShareWeight' : [ 0xc, ['unsigned long']],
     'CapturedWeightData' : [ 0x10, ['_PSP_CPU_SHARE_CAPTURED_WEIGHT_DATA']],
+    'DuplicateInputMarker' : [ 0x18, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Reserved' : [ 0x18, ['BitField', dict(start_bit = 1, end_bit = 32)]],
     'MiscFlags' : [ 0x18, ['long']],
     'BlockCurrentGenerationLock' : [ 0x0, ['unsigned long']],
     'CyclesAccumulated' : [ 0x8, ['unsigned long long']],
@@ -7305,8 +8062,12 @@ ntkrpamp_types = {
     'CyclesFinishedForCurrentGeneration' : [ 0x50, ['unsigned char']],
     'Cpu' : [ 0x80, ['array', 32, ['_PS_PER_CPU_QUOTA_CACHE_AWARE']]],
 } ],
-  '__unnamed_1ed6' : [ 0x1, {
+  '__unnamed_1ec1' : [ 0x1, {
     'AsUCHAR' : [ 0x0, ['unsigned char']],
+    'NoDomainAccounting' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'IncreasePolicy' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 3)]],
+    'DecreasePolicy' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 5)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 8)]],
 } ],
   'PROCESSOR_PERFSTATE_POLICY' : [ 0x1c, {
     'Revision' : [ 0x0, ['unsigned long']],
@@ -7314,7 +8075,7 @@ ntkrpamp_types = {
     'MinThrottle' : [ 0x5, ['unsigned char']],
     'BusyAdjThreshold' : [ 0x6, ['unsigned char']],
     'Spare' : [ 0x7, ['unsigned char']],
-    'Flags' : [ 0x7, ['__unnamed_1ed6']],
+    'Flags' : [ 0x7, ['__unnamed_1ec1']],
     'TimeCheck' : [ 0x8, ['unsigned long']],
     'IncreaseTime' : [ 0xc, ['unsigned long']],
     'DecreaseTime' : [ 0x10, ['unsigned long']],
@@ -7338,16 +8099,31 @@ ntkrpamp_types = {
     'Busy' : [ 0x10, ['unsigned char']],
 } ],
   '_SYSTEM_POWER_STATE_CONTEXT' : [ 0x4, {
+    'Reserved1' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 8)]],
+    'TargetSystemState' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 12)]],
+    'EffectiveSystemState' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 16)]],
+    'CurrentSystemState' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 20)]],
+    'IgnoreHibernationPath' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 21)]],
+    'PseudoTransition' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 22)]],
+    'Reserved2' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 32)]],
     'ContextAsUlong' : [ 0x0, ['unsigned long']],
 } ],
   '_OBJECT_TYPE_INITIALIZER' : [ 0x50, {
     'Length' : [ 0x0, ['unsigned short']],
     'ObjectTypeFlags' : [ 0x2, ['unsigned char']],
+    'CaseInsensitive' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'UnnamedObjectsOnly' : [ 0x2, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'UseDefaultObject' : [ 0x2, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'SecurityRequired' : [ 0x2, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'MaintainHandleCount' : [ 0x2, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'MaintainTypeList' : [ 0x2, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'SupportsObjectCallbacks' : [ 0x2, ['BitField', dict(start_bit = 6, end_bit = 7)]],
     'ObjectTypeCode' : [ 0x4, ['unsigned long']],
     'InvalidAttributes' : [ 0x8, ['unsigned long']],
     'GenericMapping' : [ 0xc, ['_GENERIC_MAPPING']],
     'ValidAccessMask' : [ 0x1c, ['unsigned long']],
     'RetainAccess' : [ 0x20, ['unsigned long']],
+    'PoolType' : [ 0x24, ['Enumeration', dict(target = 'long', choices = {0: 'NonPagedPool', 1: 'PagedPool', 2: 'NonPagedPoolMustSucceed', 3: 'DontUseThisType', 4: 'NonPagedPoolCacheAligned', 5: 'PagedPoolCacheAligned', 6: 'NonPagedPoolCacheAlignedMustS', 7: 'MaxPoolType', 34: 'NonPagedPoolMustSucceedSession', 35: 'DontUseThisTypeSession', 32: 'NonPagedPoolSession', 36: 'NonPagedPoolCacheAlignedSession', 33: 'PagedPoolSession', 38: 'NonPagedPoolCacheAlignedMustSSession', 37: 'PagedPoolCacheAlignedSession'})]],
     'DefaultPagedPoolCharge' : [ 0x28, ['unsigned long']],
     'DefaultNonPagedPoolCharge' : [ 0x2c, ['unsigned long']],
     'DumpProcedure' : [ 0x30, ['pointer', ['void']]],
@@ -7359,7 +8135,7 @@ ntkrpamp_types = {
     'QueryNameProcedure' : [ 0x48, ['pointer', ['void']]],
     'OkayToCloseProcedure' : [ 0x4c, ['pointer', ['void']]],
 } ],
-  '__unnamed_1f07' : [ 0x4, {
+  '__unnamed_1ef2' : [ 0x4, {
     'LongFlags' : [ 0x0, ['unsigned long']],
     'SubsectionFlags' : [ 0x0, ['_MMSUBSECTION_FLAGS']],
 } ],
@@ -7370,7 +8146,7 @@ ntkrpamp_types = {
     'PtesInSubsection' : [ 0xc, ['unsigned long']],
     'UnusedPtes' : [ 0x10, ['unsigned long']],
     'GlobalPerSessionHead' : [ 0x10, ['pointer', ['_MM_AVL_TABLE']]],
-    'u' : [ 0x14, ['__unnamed_1f07']],
+    'u' : [ 0x14, ['__unnamed_1ef2']],
     'StartingSector' : [ 0x18, ['unsigned long']],
     'NumberOfFullSectors' : [ 0x1c, ['unsigned long']],
 } ],
@@ -7402,6 +8178,14 @@ ntkrpamp_types = {
     'ActualLimit' : [ 0x10, ['unsigned long']],
 } ],
   '_KEXECUTE_OPTIONS' : [ 0x1, {
+    'ExecuteDisable' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'ExecuteEnable' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'DisableThunkEmulation' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Permanent' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'ExecuteDispatchEnable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'ImageDispatchEnable' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
+    'DisableExceptionChainValidation' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
     'ExecuteOptions' : [ 0x0, ['unsigned char']],
 } ],
   '_SEP_TOKEN_PRIVILEGES' : [ 0x18, {
@@ -7435,6 +8219,13 @@ ntkrpamp_types = {
     'Reserved' : [ 0xc, ['unsigned long']],
 } ],
   '_MMWSLENTRY' : [ 0x4, {
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Hashed' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Direct' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 9)]],
+    'Age' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 12)]],
+    'VirtualPageNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
 } ],
   '_DBGKD_SWITCH_PARTITION' : [ 0x4, {
     'Partition' : [ 0x0, ['unsigned long']],
@@ -7463,6 +8254,15 @@ ntkrpamp_types = {
     'Exchg' : [ 0x0, ['long long']],
 } ],
   '_WHEA_TIMESTAMP' : [ 0x8, {
+    'Seconds' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 8)]],
+    'Minutes' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 16)]],
+    'Hours' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 24)]],
+    'Precise' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 25)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 25, end_bit = 32)]],
+    'Day' : [ 0x0, ['BitField', dict(start_bit = 32, end_bit = 40)]],
+    'Month' : [ 0x0, ['BitField', dict(start_bit = 40, end_bit = 48)]],
+    'Year' : [ 0x0, ['BitField', dict(start_bit = 48, end_bit = 56)]],
+    'Century' : [ 0x0, ['BitField', dict(start_bit = 56, end_bit = 64)]],
     'AsLARGE_INTEGER' : [ 0x0, ['_LARGE_INTEGER']],
 } ],
   '_VPB' : [ 0x58, {
@@ -7481,6 +8281,7 @@ ntkrpamp_types = {
     'Associativity' : [ 0x1, ['unsigned char']],
     'LineSize' : [ 0x2, ['unsigned short']],
     'Size' : [ 0x4, ['unsigned long']],
+    'Type' : [ 0x8, ['Enumeration', dict(target = 'long', choices = {0: 'CacheUnified', 1: 'CacheInstruction', 2: 'CacheData', 3: 'CacheTrace'})]],
 } ],
   '_FILE_BASIC_INFORMATION' : [ 0x28, {
     'CreationTime' : [ 0x0, ['_LARGE_INTEGER']],
@@ -7491,6 +8292,7 @@ ntkrpamp_types = {
 } ],
   '_SECURITY_SUBJECT_CONTEXT' : [ 0x10, {
     'ClientToken' : [ 0x0, ['pointer', ['void']]],
+    'ImpersonationLevel' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'SecurityAnonymous', 1: 'SecurityIdentification', 2: 'SecurityImpersonation', 3: 'SecurityDelegation'})]],
     'PrimaryToken' : [ 0x8, ['pointer', ['void']]],
     'ProcessAuditId' : [ 0xc, ['pointer', ['void']]],
 } ],
@@ -7521,6 +8323,7 @@ ntkrpamp_types = {
     'Timeout' : [ 0xc, ['unsigned long']],
     'LastUserInput' : [ 0x10, ['unsigned long']],
     'Action' : [ 0x14, ['POWER_ACTION_POLICY']],
+    'MinState' : [ 0x20, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
     'SystemRequired' : [ 0x24, ['unsigned char']],
     'IdleWorker' : [ 0x25, ['unsigned char']],
     'Sampling' : [ 0x26, ['unsigned char']],
@@ -7544,9 +8347,15 @@ ntkrpamp_types = {
     'ObjectInfo' : [ 0x10, ['_HANDLE_TABLE_ENTRY_INFO']],
     'HandleAttributes' : [ 0x14, ['unsigned long']],
 } ],
-  '_MMPTE_SUBSECTION' : [ 0x8, {
+  '_MMPTE_SUBSECTION' : [ 0x4, {
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'SubsectionAddressLow' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 10)]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
+    'SubsectionAddressHigh' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 32)]],
 } ],
   '_POWER_STATE' : [ 0x4, {
+    'SystemState' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
+    'DeviceState' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'PowerDeviceUnspecified', 1: 'PowerDeviceD0', 2: 'PowerDeviceD1', 3: 'PowerDeviceD2', 4: 'PowerDeviceD3', 5: 'PowerDeviceMaximum'})]],
 } ],
   '_EFI_FIRMWARE_INFORMATION' : [ 0x10, {
     'FirmwareVersion' : [ 0x0, ['unsigned long']],
@@ -7554,80 +8363,80 @@ ntkrpamp_types = {
     'SetVirtualAddressMapStatus' : [ 0x8, ['long']],
     'MissedMappingsCount' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_1f67' : [ 0xc, {
+  '__unnamed_1f53' : [ 0xc, {
     'Start' : [ 0x0, ['_LARGE_INTEGER']],
     'Length' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1f69' : [ 0xc, {
+  '__unnamed_1f55' : [ 0xc, {
     'Level' : [ 0x0, ['unsigned short']],
     'Group' : [ 0x2, ['unsigned short']],
     'Vector' : [ 0x4, ['unsigned long']],
     'Affinity' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1f6b' : [ 0xc, {
+  '__unnamed_1f57' : [ 0xc, {
     'Group' : [ 0x0, ['unsigned short']],
     'MessageCount' : [ 0x2, ['unsigned short']],
     'Vector' : [ 0x4, ['unsigned long']],
     'Affinity' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1f6d' : [ 0xc, {
-    'Raw' : [ 0x0, ['__unnamed_1f6b']],
-    'Translated' : [ 0x0, ['__unnamed_1f69']],
+  '__unnamed_1f59' : [ 0xc, {
+    'Raw' : [ 0x0, ['__unnamed_1f57']],
+    'Translated' : [ 0x0, ['__unnamed_1f55']],
 } ],
-  '__unnamed_1f6f' : [ 0xc, {
+  '__unnamed_1f5b' : [ 0xc, {
     'Channel' : [ 0x0, ['unsigned long']],
     'Port' : [ 0x4, ['unsigned long']],
     'Reserved1' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1f71' : [ 0xc, {
+  '__unnamed_1f5d' : [ 0xc, {
     'Start' : [ 0x0, ['unsigned long']],
     'Length' : [ 0x4, ['unsigned long']],
     'Reserved' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1f73' : [ 0xc, {
+  '__unnamed_1f5f' : [ 0xc, {
     'DataSize' : [ 0x0, ['unsigned long']],
     'Reserved1' : [ 0x4, ['unsigned long']],
     'Reserved2' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1f75' : [ 0xc, {
+  '__unnamed_1f61' : [ 0xc, {
     'Start' : [ 0x0, ['_LARGE_INTEGER']],
     'Length40' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1f77' : [ 0xc, {
+  '__unnamed_1f63' : [ 0xc, {
     'Start' : [ 0x0, ['_LARGE_INTEGER']],
     'Length48' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1f79' : [ 0xc, {
+  '__unnamed_1f65' : [ 0xc, {
     'Start' : [ 0x0, ['_LARGE_INTEGER']],
     'Length64' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1f7b' : [ 0xc, {
-    'Generic' : [ 0x0, ['__unnamed_1f67']],
-    'Port' : [ 0x0, ['__unnamed_1f67']],
-    'Interrupt' : [ 0x0, ['__unnamed_1f69']],
-    'MessageInterrupt' : [ 0x0, ['__unnamed_1f6d']],
-    'Memory' : [ 0x0, ['__unnamed_1f67']],
-    'Dma' : [ 0x0, ['__unnamed_1f6f']],
-    'DevicePrivate' : [ 0x0, ['__unnamed_1e52']],
-    'BusNumber' : [ 0x0, ['__unnamed_1f71']],
-    'DeviceSpecificData' : [ 0x0, ['__unnamed_1f73']],
-    'Memory40' : [ 0x0, ['__unnamed_1f75']],
-    'Memory48' : [ 0x0, ['__unnamed_1f77']],
-    'Memory64' : [ 0x0, ['__unnamed_1f79']],
+  '__unnamed_1f67' : [ 0xc, {
+    'Generic' : [ 0x0, ['__unnamed_1f53']],
+    'Port' : [ 0x0, ['__unnamed_1f53']],
+    'Interrupt' : [ 0x0, ['__unnamed_1f55']],
+    'MessageInterrupt' : [ 0x0, ['__unnamed_1f59']],
+    'Memory' : [ 0x0, ['__unnamed_1f53']],
+    'Dma' : [ 0x0, ['__unnamed_1f5b']],
+    'DevicePrivate' : [ 0x0, ['__unnamed_1e3f']],
+    'BusNumber' : [ 0x0, ['__unnamed_1f5d']],
+    'DeviceSpecificData' : [ 0x0, ['__unnamed_1f5f']],
+    'Memory40' : [ 0x0, ['__unnamed_1f61']],
+    'Memory48' : [ 0x0, ['__unnamed_1f63']],
+    'Memory64' : [ 0x0, ['__unnamed_1f65']],
 } ],
   '_CM_PARTIAL_RESOURCE_DESCRIPTOR' : [ 0x10, {
     'Type' : [ 0x0, ['unsigned char']],
     'ShareDisposition' : [ 0x1, ['unsigned char']],
     'Flags' : [ 0x2, ['unsigned short']],
-    'u' : [ 0x4, ['__unnamed_1f7b']],
+    'u' : [ 0x4, ['__unnamed_1f67']],
 } ],
-  '__unnamed_1f80' : [ 0x4, {
+  '__unnamed_1f6c' : [ 0x4, {
     'PhysicalAddress' : [ 0x0, ['unsigned long']],
     'VirtualSize' : [ 0x0, ['unsigned long']],
 } ],
   '_IMAGE_SECTION_HEADER' : [ 0x28, {
     'Name' : [ 0x0, ['array', 8, ['unsigned char']]],
-    'Misc' : [ 0x8, ['__unnamed_1f80']],
+    'Misc' : [ 0x8, ['__unnamed_1f6c']],
     'VirtualAddress' : [ 0xc, ['unsigned long']],
     'SizeOfRawData' : [ 0x10, ['unsigned long']],
     'PointerToRawData' : [ 0x14, ['unsigned long']],
@@ -7640,13 +8449,13 @@ ntkrpamp_types = {
   '_ARBITER_ADD_RESERVED_PARAMETERS' : [ 0x4, {
     'ReserveDevice' : [ 0x0, ['pointer', ['_DEVICE_OBJECT']]],
 } ],
-  '__unnamed_1f8a' : [ 0x50, {
+  '__unnamed_1f76' : [ 0x50, {
     'CellData' : [ 0x0, ['_CELL_DATA']],
     'List' : [ 0x0, ['array', 1, ['unsigned long']]],
 } ],
   '_CM_CACHED_VALUE_INDEX' : [ 0x54, {
     'CellIndex' : [ 0x0, ['unsigned long']],
-    'Data' : [ 0x4, ['__unnamed_1f8a']],
+    'Data' : [ 0x4, ['__unnamed_1f76']],
 } ],
   '_CONFIGURATION_COMPONENT_DATA' : [ 0x34, {
     'Parent' : [ 0x0, ['pointer', ['_CONFIGURATION_COMPONENT_DATA']]],
@@ -7658,14 +8467,15 @@ ntkrpamp_types = {
   '_DBGKD_QUERY_SPECIAL_CALLS' : [ 0x4, {
     'NumberOfSpecialCalls' : [ 0x0, ['unsigned long']],
 } ],
-  '__unnamed_1f94' : [ 0x4, {
+  '__unnamed_1f80' : [ 0x4, {
+    'Balance' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2)]],
     'Parent' : [ 0x0, ['pointer', ['_MMSUBSECTION_NODE']]],
 } ],
   '_MMSUBSECTION_NODE' : [ 0x18, {
-    'u' : [ 0x0, ['__unnamed_1f07']],
+    'u' : [ 0x0, ['__unnamed_1ef2']],
     'StartingSector' : [ 0x4, ['unsigned long']],
     'NumberOfFullSectors' : [ 0x8, ['unsigned long']],
-    'u1' : [ 0xc, ['__unnamed_1f94']],
+    'u1' : [ 0xc, ['__unnamed_1f80']],
     'LeftChild' : [ 0x10, ['pointer', ['_MMSUBSECTION_NODE']]],
     'RightChild' : [ 0x14, ['pointer', ['_MMSUBSECTION_NODE']]],
 } ],
@@ -7673,12 +8483,12 @@ ntkrpamp_types = {
     'p' : [ 0x0, ['pointer', ['void']]],
     'RangeSize' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_1f9c' : [ 0x8, {
+  '__unnamed_1f88' : [ 0x8, {
     'IdleTime' : [ 0x0, ['unsigned long']],
     'NonIdleTime' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_1f9e' : [ 0x8, {
-    'Disk' : [ 0x0, ['__unnamed_1f9c']],
+  '__unnamed_1f8a' : [ 0x8, {
+    'Disk' : [ 0x0, ['__unnamed_1f88']],
 } ],
   '_DEVICE_OBJECT_POWER_EXTENSION' : [ 0x40, {
     'IdleCount' : [ 0x0, ['unsigned long']],
@@ -7689,8 +8499,11 @@ ntkrpamp_types = {
     'PerformanceIdleTime' : [ 0x14, ['unsigned long']],
     'DeviceObject' : [ 0x18, ['pointer', ['_DEVICE_OBJECT']]],
     'IdleList' : [ 0x1c, ['_LIST_ENTRY']],
+    'IdleType' : [ 0x24, ['Enumeration', dict(target = 'long', choices = {0: 'DeviceIdleNormal', 1: 'DeviceIdleDisk'})]],
+    'IdleState' : [ 0x28, ['Enumeration', dict(target = 'long', choices = {0: 'PowerDeviceUnspecified', 1: 'PowerDeviceD0', 2: 'PowerDeviceD1', 3: 'PowerDeviceD2', 4: 'PowerDeviceD3', 5: 'PowerDeviceMaximum'})]],
+    'CurrentState' : [ 0x2c, ['Enumeration', dict(target = 'long', choices = {0: 'PowerDeviceUnspecified', 1: 'PowerDeviceD0', 2: 'PowerDeviceD1', 3: 'PowerDeviceD2', 4: 'PowerDeviceD3', 5: 'PowerDeviceMaximum'})]],
     'Volume' : [ 0x30, ['_LIST_ENTRY']],
-    'Specific' : [ 0x38, ['__unnamed_1f9e']],
+    'Specific' : [ 0x38, ['__unnamed_1f8a']],
 } ],
   '_ARBITER_RETEST_ALLOCATION_PARAMETERS' : [ 0xc, {
     'ArbitrationList' : [ 0x0, ['pointer', ['_LIST_ENTRY']]],
@@ -7698,6 +8511,9 @@ ntkrpamp_types = {
     'AllocateFrom' : [ 0x8, ['pointer', ['_CM_PARTIAL_RESOURCE_DESCRIPTOR']]],
 } ],
   '_WHEA_ERROR_RECORD_SECTION_DESCRIPTOR_VALIDBITS' : [ 0x1, {
+    'FRUId' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'FRUText' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 8)]],
     'AsUCHAR' : [ 0x0, ['unsigned char']],
 } ],
   '_FS_FILTER_CALLBACKS' : [ 0x38, {
@@ -7725,6 +8541,7 @@ ntkrpamp_types = {
     'NextSameRm' : [ 0x50, ['_LIST_ENTRY']],
     'ResourceManager' : [ 0x58, ['pointer', ['_KRESOURCEMANAGER']]],
     'Transaction' : [ 0x5c, ['pointer', ['_KTRANSACTION']]],
+    'State' : [ 0x60, ['Enumeration', dict(target = 'long', choices = {0: 'KEnlistmentUninitialized', 256: 'KEnlistmentActive', 258: 'KEnlistmentPrepared', 259: 'KEnlistmentInDoubt', 260: 'KEnlistmentCommitted', 261: 'KEnlistmentCommittedNotify', 262: 'KEnlistmentCommitRequested', 257: 'KEnlistmentPreparing', 264: 'KEnlistmentDelegated', 265: 'KEnlistmentDelegatedDisconnected', 266: 'KEnlistmentPrePreparing', 263: 'KEnlistmentAborted', 268: 'KEnlistmentRecovering', 269: 'KEnlistmentAborting', 270: 'KEnlistmentReadOnly', 271: 'KEnlistmentOutcomeUnavailable', 272: 'KEnlistmentOffline', 273: 'KEnlistmentPrePrepared', 274: 'KEnlistmentInitialized', 267: 'KEnlistmentForgotten'})]],
     'Flags' : [ 0x64, ['unsigned long']],
     'NotificationMask' : [ 0x68, ['unsigned long']],
     'Key' : [ 0x6c, ['pointer', ['void']]],
@@ -7856,7 +8673,7 @@ ntkrpamp_types = {
     'Count' : [ 0x4, ['unsigned long']],
     'Descriptors' : [ 0x8, ['array', 1, ['_IO_RESOURCE_DESCRIPTOR']]],
 } ],
-  '_MMBANKED_SECTION' : [ 0x28, {
+  '_MMBANKED_SECTION' : [ 0x20, {
     'BasePhysicalPage' : [ 0x0, ['unsigned long']],
     'BasedPte' : [ 0x4, ['pointer', ['_MMPTE']]],
     'BankSize' : [ 0x8, ['unsigned long']],
@@ -7864,9 +8681,13 @@ ntkrpamp_types = {
     'BankedRoutine' : [ 0x10, ['pointer', ['void']]],
     'Context' : [ 0x14, ['pointer', ['void']]],
     'CurrentMappedPte' : [ 0x18, ['pointer', ['_MMPTE']]],
-    'BankTemplate' : [ 0x20, ['array', 1, ['_MMPTE']]],
+    'BankTemplate' : [ 0x1c, ['array', 1, ['_MMPTE']]],
 } ],
   '_WHEA_ERROR_RECORD_HEADER_FLAGS' : [ 0x4, {
+    'Recovered' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'PreviousError' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
+    'Simulated' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 32)]],
     'AsULONG' : [ 0x0, ['unsigned long']],
 } ],
   '_XSAVE_AREA_HEADER' : [ 0x40, {
@@ -7884,6 +8705,7 @@ ntkrpamp_types = {
     'ListEntry' : [ 0x0, ['_LIST_ENTRY']],
     'DeviceNode' : [ 0x8, ['pointer', ['_DEVICE_NODE']]],
     'Context' : [ 0xc, ['pointer', ['void']]],
+    'CompletionState' : [ 0x10, ['Enumeration', dict(target = 'long', choices = {768: 'DeviceNodeUnspecified', 769: 'DeviceNodeUninitialized', 770: 'DeviceNodeInitialized', 771: 'DeviceNodeDriversAdded', 772: 'DeviceNodeResourcesAssigned', 773: 'DeviceNodeStartPending', 774: 'DeviceNodeStartCompletion', 775: 'DeviceNodeStartPostWork', 776: 'DeviceNodeStarted', 777: 'DeviceNodeQueryStopped', 778: 'DeviceNodeStopped', 779: 'DeviceNodeRestartCompletion', 780: 'DeviceNodeEnumeratePending', 781: 'DeviceNodeEnumerateCompletion', 782: 'DeviceNodeAwaitingQueuedDeletion', 783: 'DeviceNodeAwaitingQueuedRemoval', 784: 'DeviceNodeQueryRemoved', 785: 'DeviceNodeRemovePendingCloses', 786: 'DeviceNodeRemoved', 787: 'DeviceNodeDeletePendingCloses', 788: 'DeviceNodeDeleted', 789: 'MaxDeviceNodeState'})]],
     'IrpPended' : [ 0x14, ['unsigned long']],
     'Status' : [ 0x18, ['long']],
     'Information' : [ 0x1c, ['pointer', ['void']]],
@@ -7898,5 +8720,31 @@ ntkrpamp_types = {
     'InstanceId' : [ 0x8, ['unsigned long long']],
     'Size' : [ 0x10, ['unsigned long']],
     'NextOffset' : [ 0x14, ['unsigned long']],
+} ],
+  '_WAIT_CONTEXT_BLOCK' : [ 0x28, {
+    'WaitQueueEntry' : [ 0x0, ['_KDEVICE_QUEUE_ENTRY']],
+    'DeviceRoutine' : [ 0x10, ['pointer', ['void']]],
+    'DeviceContext' : [ 0x14, ['pointer', ['void']]],
+    'NumberOfMapRegisters' : [ 0x18, ['unsigned long']],
+    'DeviceObject' : [ 0x1c, ['pointer', ['void']]],
+    'CurrentIrp' : [ 0x20, ['pointer', ['void']]],
+    'BufferChainingDpc' : [ 0x24, ['pointer', ['_KDPC']]],
+} ],
+  '_SECTION_OBJECT' : [ 0x18, {
+    'StartingVa' : [ 0x0, ['pointer', ['void']]],
+    'EndingVa' : [ 0x4, ['pointer', ['void']]],
+    'Parent' : [ 0x8, ['pointer', ['void']]],
+    'LeftChild' : [ 0xc, ['pointer', ['void']]],
+    'RightChild' : [ 0x10, ['pointer', ['void']]],
+    'Segment' : [ 0x14, ['pointer', ['_SEGMENT_OBJECT']]],
+} ],
+  '_CM_NAME_CONTROL_BLOCK' : [ 0x10, {
+    'Compressed' : [ 0x0, ['unsigned char']],
+    'RefCount' : [ 0x2, ['unsigned short']],
+    'NameHash' : [ 0x4, ['_CM_NAME_HASH']],
+    'ConvKey' : [ 0x4, ['unsigned long']],
+    'NextHash' : [ 0x8, ['pointer', ['_CM_KEY_HASH']]],
+    'NameLength' : [ 0xc, ['unsigned short']],
+    'Name' : [ 0xe, ['array', 1, ['wchar']]],
 } ],
 }

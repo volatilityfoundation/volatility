@@ -54,17 +54,17 @@ win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic
 win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['HiveListOffset'][1] = ['VolatilityMagic', dict(value = 0x2e4)]
 win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['HiveListPoolSize'][1] = ['VolatilityMagic', dict(value = 0x578)]
 
-win2k3_sp0_x86_vtypes.ntoskrnl_types.update(crash_vtypes.crash_vtypes)
-win2k3_sp0_x86_vtypes.ntoskrnl_types.update(hibernate_vtypes.hibernate_vtypes)
-win2k3_sp0_x86_vtypes.ntoskrnl_types.update(tcpip_vtypes.tcpip_vtypes)
-win2k3_sp0_x86_vtypes.ntoskrnl_types.update(tcpip_vtypes.tcpip_vtypes_vista)
-win2k3_sp0_x86_vtypes.ntoskrnl_types.update(kdbg_vtypes.kdbg_vtypes)
+win2k3_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
+win2k3_sp0_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
+win2k3_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
+win2k3_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
+win2k3_sp0_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
 
 class Win2K3SP0x86(windows.AbstractWindows):
     """ A Profile for Windows 2003 SP0 x86 """
     _md_major = 5
     _md_minor = 2
-    abstract_types = win2k3_sp0_x86_vtypes.ntoskrnl_types
+    abstract_types = win2k3_sp0_x86_vtypes.nt_types
     overlay = win2k3sp0x86overlays
     object_classes = windows.AbstractWindows.object_classes.copy()
     syscalls = win2k3_sp0_x86_syscalls.syscalls

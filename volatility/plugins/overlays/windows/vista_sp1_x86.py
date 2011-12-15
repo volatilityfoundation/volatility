@@ -43,17 +43,17 @@ vistasp1x86overlays = copy.deepcopy(vista_sp0_x86.vistasp0x86overlays)
 
 vistasp1x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x30\x03')]
 
-vista_sp1_x86_vtypes.ntkrnlmp_types.update(crash_vtypes.crash_vtypes)
-vista_sp1_x86_vtypes.ntkrnlmp_types.update(hibernate_vtypes.hibernate_vtypes)
-vista_sp1_x86_vtypes.ntkrnlmp_types.update(kdbg_vtypes.kdbg_vtypes)
-vista_sp1_x86_vtypes.ntkrnlmp_types.update(tcpip_vtypes.tcpip_vtypes)
-vista_sp1_x86_vtypes.ntkrnlmp_types.update(tcpip_vtypes.tcpip_vtypes_vista)
+vista_sp1_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
+vista_sp1_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
+vista_sp1_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
+vista_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
+vista_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
 
 class VistaSP1x86(windows.AbstractWindows):
     """ A Profile for Windows Vista SP1 x86 """
     _md_major = 6
     _md_minor = 0
-    abstract_types = vista_sp1_x86_vtypes.ntkrnlmp_types
+    abstract_types = vista_sp1_x86_vtypes.nt_types
     overlay = vistasp1x86overlays
     object_classes = copy.deepcopy(vista_sp0_x86.VistaSP0x86.object_classes)
     syscalls = vista_sp12_x86_syscalls.syscalls

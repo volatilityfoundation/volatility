@@ -44,17 +44,17 @@ win2k3sp1x86overlays['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMag
 win2k3sp1x86overlays['VOLATILITY_MAGIC'][1]['HiveListPoolSize'][1] = ['VolatilityMagic', dict(value = 0x588)]
 win2k3sp1x86overlays['_ETHREAD'][1]['CreateTime'][1] = ['WinTimeStamp', {}]
 
-win2k3_sp1_x86_vtypes.ntoskrnl_types.update(crash_vtypes.crash_vtypes)
-win2k3_sp1_x86_vtypes.ntoskrnl_types.update(hibernate_vtypes.hibernate_vtypes)
-win2k3_sp1_x86_vtypes.ntoskrnl_types.update(tcpip_vtypes.tcpip_vtypes)
-win2k3_sp1_x86_vtypes.ntoskrnl_types.update(tcpip_vtypes.tcpip_vtypes_2k3_sp1_sp2)
-win2k3_sp1_x86_vtypes.ntoskrnl_types.update(kdbg_vtypes.kdbg_vtypes)
+win2k3_sp1_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
+win2k3_sp1_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
+win2k3_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
+win2k3_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_2k3_sp1_sp2)
+win2k3_sp1_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
 
 class Win2K3SP1x86(windows.AbstractWindows):
     """ A Profile for Windows 2003 SP1 x86 """
     _md_major = 5
     _md_minor = 2
-    abstract_types = win2k3_sp1_x86_vtypes.ntoskrnl_types
+    abstract_types = win2k3_sp1_x86_vtypes.nt_types
     overlay = win2k3sp1x86overlays
     object_classes = copy.deepcopy(win2k3_sp0_x86.Win2K3SP0x86.object_classes)
     syscalls = win2k3_sp12_x86_syscalls.syscalls

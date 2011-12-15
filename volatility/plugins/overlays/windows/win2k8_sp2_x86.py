@@ -40,17 +40,17 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 
 win2k8sp2x86overlays = copy.deepcopy(vista_sp2_x86.vistasp2x86overlays)
 
-win2k8_sp2_x86_vtypes.ntkrnlmp_types.update(crash_vtypes.crash_vtypes)
-win2k8_sp2_x86_vtypes.ntkrnlmp_types.update(hibernate_vtypes.hibernate_vtypes)
-win2k8_sp2_x86_vtypes.ntkrnlmp_types.update(tcpip_vtypes.tcpip_vtypes)
-win2k8_sp2_x86_vtypes.ntkrnlmp_types.update(kdbg_vtypes.kdbg_vtypes)
-win2k8_sp2_x86_vtypes.ntkrnlmp_types.update(tcpip_vtypes.tcpip_vtypes_vista)
+win2k8_sp2_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
+win2k8_sp2_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
+win2k8_sp2_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
+win2k8_sp2_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
+win2k8_sp2_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
 
 class Win2K8SP2x86(windows.AbstractWindows):
     """ A Profile for Windows 2008 SP2 x86 """
     _md_major = 6
     _md_minor = 0
-    abstract_types = win2k8_sp2_x86_vtypes.ntkrnlmp_types
+    abstract_types = win2k8_sp2_x86_vtypes.nt_types
     overlay = win2k8sp2x86overlays
     object_classes = copy.deepcopy(vista_sp2_x86.VistaSP2x86.object_classes)
     syscalls = vista_sp12_x86_syscalls.syscalls
