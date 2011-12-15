@@ -95,8 +95,9 @@ class IA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddres
             if (entry & 1):
                 return True
 
-            # The page is in transition and is actually present.
-            if (entry & (1 << 11)):
+            # The page is in transition and not a prototype.
+            # Thus, we will treat it as present.
+            if (entry & (1 << 11)) and not (entry & (1 << 10)):
                 return True
 
         return False
