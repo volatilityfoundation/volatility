@@ -66,6 +66,12 @@ class VADInfo(taskmods.DllList):
 
     def write_vad_control(self, outfd, vad):
         """Renders a text version of a (non-short) Vad's control information"""
+        
+        # even if the ControlArea is not NULL, it is only meaningful 
+        # for shared (non private) memory sections. 
+        if vad.u.VadFlags.PrivateMemory == 1:
+            return
+        
         CA = vad.get_control_area()
         if not CA:
             #debug.b()
