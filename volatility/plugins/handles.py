@@ -55,8 +55,8 @@ class Handles(taskmods.DllList, filescan.FileScan):
     def render_text(self, outfd, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
 
-        outfd.write("{0:6}{1:6} {2:6} {3:<16} {4}\n".format(
-            "Offset", offsettype, "Pid", "Type", "Details"))
+        outfd.write("{0:6}{1:6} {2:6} {3:10} {4:<16} {5}\n".format(
+            "Offset", offsettype, "Pid", "Access", "Type", "Details"))
 
         if self._config.OBJECT_TYPE:
             object_list = [s for s in self._config.OBJECT_TYPE.split(',')]
@@ -74,8 +74,8 @@ class Handles(taskmods.DllList, filescan.FileScan):
             else:
                 offset = h.obj_vm.vtop(h.Body.obj_offset)
 
-            outfd.write("{0:#010x}   {1:<6} {2:<16} {3}\n".format(
-                offset, pid, otype, name))
+            outfd.write("{0:#010x}   {1:<6} {2:<#10x} {3:<16} {4}\n".format(
+                offset, pid, h.members['GrantedAccess'], otype, name))
 
     def calculate(self):
         ## Will need the kernel AS for later:

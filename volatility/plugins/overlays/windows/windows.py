@@ -266,6 +266,10 @@ class _HANDLE_TABLE(obj.CType):
                     if item == None:
                         continue
 
+                    # carry over the access from _HANDLE_TABLE_ENTRY and make it  
+                    # an "fake" member of _OBJECT_HEADER. see Issue 135. 
+                    item.members['GrantedAccess'] = entry.GrantedAccess
+
                     try:
                         # New object header
                         if item.TypeIndex != 0x0:
