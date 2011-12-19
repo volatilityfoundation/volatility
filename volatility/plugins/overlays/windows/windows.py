@@ -207,13 +207,13 @@ class _EPROCESS(obj.CType):
         if self.UniqueProcessId and the_list:
             for l in the_list.list_of_type("_LDR_DATA_TABLE_ENTRY", the_type):
                 yield l
-    
+
     def get_init_modules(self):
         return self._get_modules(self.Peb.Ldr.InInitializationOrderModuleList, "InInitializationOrderLinks")
-    
+
     def get_mem_modules(self):
         return self._get_modules(self.Peb.Ldr.InMemoryOrderModuleList, "InMemoryOrderLinks")
-    
+
     def get_load_modules(self):
         return self._get_modules(self.Peb.Ldr.InLoadOrderModuleList, "InLoadOrderLinks")
 
@@ -571,7 +571,7 @@ class _IMAGE_DOS_HEADER(obj.CType):
         if self.e_magic != 0x5a4d:
             raise ValueError('e_magic {0:04X} is not a valid DOS signature.'.format(self.e_magic))
 
-        nt_header = obj.Object("_IMAGE_NT_HEADERS", 
+        nt_header = obj.Object("_IMAGE_NT_HEADERS",
                           offset = self.e_lfanew + self.obj_offset,
                           vm = self.obj_vm)
 
@@ -598,7 +598,7 @@ class _IMAGE_NT_HEADERS(obj.CType):
             yield sect
 
 AbstractWindows.object_classes['_IMAGE_NT_HEADERS'] = _IMAGE_NT_HEADERS
-    
+
 class _IMAGE_SECTION_HEADER(obj.CType):
     """PE section"""
 
