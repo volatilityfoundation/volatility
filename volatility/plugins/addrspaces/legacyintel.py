@@ -232,7 +232,10 @@ class IA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddres
         return longval
 
     def read_long_phys(self, addr):
-        string = self.base.read(addr, 4)
+        try:
+            string = self.base.read(addr, 4)
+        except IOError:
+            string = None
         if string is None:
             return obj.NoneObject("Unable to read base AS at " + str(addr))
         (longval,) = struct.unpack('=I', string)
@@ -324,7 +327,10 @@ class IA32PagedMemoryPae(IA32PagedMemory):
         return retVal
 
     def _read_long_long_phys(self, addr):
-        string = self.base.read(addr, 8)
+        try:
+            string = self.base.read(addr, 8)
+        except IOError:
+            string = None
         if string == None:
             return obj.NoneObject("Unable to read base AS at " + str(addr))
         (longlongval,) = struct.unpack('=Q', string)

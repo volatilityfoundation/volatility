@@ -303,8 +303,10 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         Returns an unsigned 32-bit integer from the address addr in
         physical memory. If unable to read from that location, returns None.
         '''
-
-        string = self.base.read(addr, 4)
+        try:
+            string = self.base.read(addr, 4)
+        except IOError:
+            string = None
         if not string:
             return obj.NoneObject("Could not read_long_phys at offset " + str(addr))
         (longval,) = struct.unpack('<I', string)
