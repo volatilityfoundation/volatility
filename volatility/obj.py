@@ -173,6 +173,9 @@ class NoneObject(object):
         raise StopIteration()
 
     def __getattribute__(self, attr):
+        # By returning self for any unknown attribute
+        # and ensuring the self is callable, we cover both properties and methods
+        # Override NotImplemented functions in object with self
         try:
             return object.__getattribute__(self, attr)
         except AttributeError:
@@ -194,26 +197,41 @@ class NoneObject(object):
     def __getitem__(self, item):
         return self
 
-    def __add__(self, x):
-        return self
-
-    def __sub__(self, x):
+    def __call__(self, *arg, **kwargs):
         return self
 
     def __int__(self):
         return -1
 
-    def __lshift__(self, other):
-        return self
+    # These must be defined explicitly, 
+    # due to the way new style objects bypass __getattribute__ for speed
+    # See http://docs.python.org/reference/datamodel.html#new-style-special-lookup
+    __add__ = __call__
+    __sub__ = __call__
+    __mul__ = __call__
+    __floordiv__ = __call__
+    __mod__ = __call__
+    __divmod__ = __call__
+    __pow__ = __call__
+    __lshift__ = __call__
+    __rshift__ = __call__
+    __and__ = __call__
+    __xor__ = __call__
+    __or__ = __call__
 
-    def __rshift__(self, other):
-        return self
+    __radd__ = __call__
+    __rsub__ = __call__
+    __rmul__ = __call__
+    __rfloordiv__ = __call__
+    __rmod__ = __call__
+    __rdivmod__ = __call__
+    __rpow__ = __call__
+    __rlshift__ = __call__
+    __rrshift__ = __call__
+    __rand__ = __call__
+    __rxor__ = __call__
+    __ror__ = __call__
 
-    def __or__(self, other):
-        return self
-
-    def __call__(self, *arg, **kwargs):
-        return self
 
 class InvalidOffsetError(utils.VolatilityException):
     """Simple placeholder to identify invalid offsets"""

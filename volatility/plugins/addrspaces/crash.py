@@ -101,7 +101,7 @@ class WindowsCrashDumpSpace32(standard.FileAddressSpace):
 
         baddr = self.get_addr(addr)
         if baddr == None:
-            return None
+            return obj.NoneObject("Could not get base address at " + str(addr))
 
         if length < first_block:
             stuff_read = self.base.read(baddr, length)
@@ -112,14 +112,14 @@ class WindowsCrashDumpSpace32(standard.FileAddressSpace):
         for _i in range(0, full_blocks):
             baddr = self.get_addr(new_addr)
             if baddr == None:
-                return None
+                return obj.NoneObject("Could not get base address at " + str(new_addr))
             stuff_read = stuff_read + self.base.read(baddr, 0x1000)
             new_addr = new_addr + 0x1000
 
         if left_over > 0:
             baddr = self.get_addr(new_addr)
             if baddr == None:
-                return None
+                return obj.NoneObject("Could not get base address at " + str(new_addr))
             stuff_read = stuff_read + self.base.read(baddr, left_over)
 
         return stuff_read
@@ -167,6 +167,8 @@ class WindowsCrashDumpSpace32(standard.FileAddressSpace):
     def read_long(self, addr):
         _baseaddr = self.get_addr(addr)
         string = self.read(addr, 4)
+        if not string:
+            return obj.NoneObject("Could not read data at " + str(addr))
         (longval,) = struct.unpack('=I', string)
         return longval
 

@@ -275,7 +275,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
                 if pad:
                     buf = '\x00' * chunk_len
                 else:
-                    return ''
+                    return obj.NoneObject("Could not read_chunks from addr " + str(vaddr) + " of size " + str(chunk_len))
 
             ret += buf
             vaddr += chunk_len
@@ -306,7 +306,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
 
         string = self.base.read(addr, 4)
         if not string:
-            return None
+            return obj.NoneObject("Could not read_long_phys at offset " + str(addr))
         (longval,) = struct.unpack('<I', string)
         return longval
 
@@ -462,9 +462,12 @@ class JKIA32PagedMemoryPae(JKIA32PagedMemory):
         Returns an unsigned 64-bit integer from the address addr in
         physical memory. If unable to read from that location, returns None.
         '''
-        string = self.base.read(addr, 8)
+        try:
+            string = self.base.read(addr, 8)
+        except IOError:
+            string = None
         if not string:
-            return None
+            return obj.NoneObject("Unable to read_long_long_phys at " + str(addr))
         (longlongval,) = struct.unpack('<Q', string)
         return longlongval
 

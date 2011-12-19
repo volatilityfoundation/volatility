@@ -332,6 +332,9 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
             length -= len(data)
             result += data
 
+        if result == '':
+            result = obj.NoneObject("Unable to read data at " + str(addr) + " for length " + str(length))
+
         return result
 
     def zread(self, addr, length):
@@ -374,6 +377,8 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
     def read_long(self, addr):
         _baseaddr = self.get_addr(addr)
         string = self.read(addr, 4)
+        if not string:
+            return obj.NoneObject("Could not read long at " + str(addr))
         (longval,) = struct.unpack('=I', string)
         return longval
 
