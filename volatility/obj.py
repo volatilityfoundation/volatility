@@ -772,11 +772,6 @@ class CType(BaseObject):
         except AttributeError:
             pass
 
-        try:
-            return object.__getattribute__(self, "_" + attr)(attr)
-        except:
-            pass
-
         return self.m(attr)
 
     def __setattr__(self, attr, value):

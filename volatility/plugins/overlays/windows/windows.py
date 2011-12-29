@@ -171,7 +171,8 @@ AbstractWindows.object_classes['WinTimeStamp'] = WinTimeStamp
 
 class _EPROCESS(obj.CType):
     """ An extensive _EPROCESS with bells and whistles """
-    def _Peb(self, _attr):
+    @property
+    def Peb(self):
         """ Returns a _PEB object which is using the process address space.
 
         The PEB structure is referencing back into the process address
@@ -491,18 +492,20 @@ AbstractWindows.object_classes['ThreadCreateTimeStamp'] = ThreadCreateTimeStamp
 
 class _TCPT_OBJECT(obj.CType):
     """Provides additional functions for TCPT_OBJECTs"""
+    @property
+    def RemoteIpAddress(self):
+        return socket.inet_ntoa(struct.pack("<I", self.m('RemoteIpAddress').v()))
 
-    def _RemoteIpAddress(self, attr):
-        return socket.inet_ntoa(struct.pack("<I", self.m(attr).v()))
-
-    def _LocalIpAddress(self, attr):
-        return socket.inet_ntoa(struct.pack("<I", self.m(attr).v()))
+    @property
+    def LocalIpAddress(self):
+        return socket.inet_ntoa(struct.pack("<I", self.m('LocalIpAddress').v()))
 
 AbstractWindows.object_classes['_TCPT_OBJECT'] = _TCPT_OBJECT
 
 class _ADDRESS_OBJECT(obj.CType):
-    def _LocalIpAddress(self, attr):
-        return socket.inet_ntoa(struct.pack("<I", self.m(attr).v()))
+    @property
+    def LocalIpAddress(self):
+        return socket.inet_ntoa(struct.pack("<I", self.m('LocalIpAddress').v()))
 
 AbstractWindows.object_classes['_ADDRESS_OBJECT'] = _ADDRESS_OBJECT
 
