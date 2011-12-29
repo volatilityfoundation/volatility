@@ -110,11 +110,9 @@ AbstractWindows.object_classes['_LIST_ENTRY'] = _LIST_ENTRY
 class WinTimeStamp(obj.NativeType):
     """Class for handling Windows Time Stamps"""
 
-    def __init__(self, theType = None, offset = None, vm = None,
-                 parent = None, name = None, is_utc = False, **args):
+    def __init__(self, theType, offset, vm, is_utc = False, **kwargs):
         self.is_utc = is_utc
-        obj.NativeType.__init__(self, theType, offset, vm, parent = parent,
-                                name = name, format_string = "q")
+        obj.NativeType.__init__(self, theType, offset, vm, format_string = "q", **kwargs)
 
     def windows_to_unix_time(self, windows_time):
         """

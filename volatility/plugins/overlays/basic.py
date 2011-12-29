@@ -50,7 +50,7 @@ x86_native_types_32bit = {
 class String(obj.NativeType):
     """Class for dealing with Strings"""
     def __init__(self, theType, offset, vm = None,
-                 length = 1, parent = None, profile = None, name = None, **args):
+                 length = 1, parent = None, profile = None, **kwargs):
         ## Allow length to be a callable:
         if callable(length):
             length = length(parent)
@@ -59,7 +59,7 @@ class String(obj.NativeType):
 
         ## length must be an integer
         obj.NativeType.__init__(self, theType, offset, vm, parent = parent, profile = profile,
-                            name = name, format_string = "{0}s".format(length))
+                                format_string = "{0}s".format(length), **kwargs)
 
     def proxied(self, name):
         """ Return an object to be proxied """
@@ -96,14 +96,14 @@ class Flags(obj.NativeType):
     maskmap = None
 
     def __init__(self, theType = None, offset = 0, vm = None, parent = None,
-                 bitmap = None, name = None, maskmap = None, target = "unsigned long",
-                 **args):
+                 bitmap = None, maskmap = None, target = "unsigned long",
+                 **kwargs):
         self.bitmap = bitmap or {}
         self.maskmap = maskmap or {}
         self.target = target
 
         self.target_obj = obj.Object(target, offset = offset, vm = vm, parent = parent)
-        obj.NativeType.__init__(self, theType, offset, vm, parent, **args)
+        obj.NativeType.__init__(self, theType, offset, vm, parent, **kwargs)
 
     def v(self):
         return self.target_obj.v()
@@ -138,12 +138,11 @@ class Enumeration(obj.NativeType):
     """Enumeration class for handling multiple possible meanings for a single value"""
 
     def __init__(self, theType = None, offset = 0, vm = None, parent = None,
-                 choices = None, name = None, target = "unsigned long",
-                 **args):
+                 choices = None, target = "unsigned long", **kwargs):
         self.choices = choices or {}
         self.target = target
         self.target_obj = obj.Object(target, offset = offset, vm = vm, parent = parent)
-        obj.NativeType.__init__(self, theType, offset, vm, parent, **args)
+        obj.NativeType.__init__(self, theType, offset, vm, parent, **kwargs)
 
     def v(self):
         return self.target_obj.v()
@@ -165,9 +164,9 @@ class VOLATILITY_MAGIC(obj.CType):
     
        Needed to ensure that the address space is not verified as valid for constants
     """
-    def __init__(self, theType, offset, vm, parent = None, members = None, name = None, struct_size = 0):
+    def __init__(self, theType, offset, vm, **kwargs):
         try:
-            obj.CType.__init__(self, theType, offset, vm, parent = parent, members = members, name = name, struct_size = struct_size)
+            obj.CType.__init__(self, theType, offset, vm, **kwargs)
         except obj.InvalidOffsetError:
             # The exception will be raised before this point,
             # so we must finish off the CType's __init__ ourselves
