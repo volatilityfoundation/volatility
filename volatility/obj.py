@@ -366,8 +366,8 @@ class BaseObject(object):
     def dereference(self):
         return NoneObject("Can't dereference {0}".format(self.obj_name), self.obj_vm.profile.strict)
 
-    def dereference_as(self, derefType):
-        return Object(derefType, self.v(), self.obj_vm, parent = self)
+    def dereference_as(self, derefType, **kwargs):
+        return Object(derefType, self.v(), self._vol_vm, parent = self, **kwargs)
 
     def cast(self, castString):
         return Object(castString, self.obj_offset, self.obj_vm)
