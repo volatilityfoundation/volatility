@@ -113,7 +113,7 @@ class FileScan(commands.command):
 
             outfd.write("{0:#010x} {1:4} {2:4} {3:6} {4}\n".format(
                          file_obj.obj_offset, object_obj.PointerCount,
-                         object_obj.HandleCount, AccessStr, file_obj.FileName.v()))
+                         object_obj.HandleCount, AccessStr, repr(file_obj.FileName.v())))
 
 class PoolScanDriver(PoolScanFile):
     """ Scanner for _DRIVER_OBJECT """
@@ -183,9 +183,9 @@ class DriverScan(FileScan):
                          driver_obj.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount,
                          driver_obj.DriverStart, driver_obj.DriverSize,
-                         extension_obj.ServiceKeyName.v(),
-                         object_obj.get_object_name(),
-                         driver_obj.DriverName.v()))
+                         repr(extension_obj.ServiceKeyName.v()),
+                         repr(object_obj.get_object_name()),
+                         repr(driver_obj.DriverName.v())))
 
 class PoolScanSymlink(PoolScanFile):
     """ Scanner for symbolic link objects """
@@ -242,7 +242,7 @@ class SymLinkScan(FileScan):
             outfd.write("{0:#010x} {1:4} {2:4} {3:<24} {4:<20} {5}\n".format(
                         link.obj_offset, objct.PointerCount,
                         objct.HandleCount, link.CreationTime or '',
-                        objct.get_object_name(), link.LinkTarget.v()))
+                        repr(objct.get_object_name()), repr(link.LinkTarget.v())))
 
 class PoolScanMutant(PoolScanDriver):
     """ Scanner for Mutants _KMUTANT """
@@ -318,7 +318,7 @@ class MutantScan(FileScan):
                          mutant.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount, mutant.Header.SignalState,
                          mutant.OwnerThread, CID,
-                         object_obj.get_object_name()
+                         repr(object_obj.get_object_name())
                          ))
 
 class CheckProcess(scan.ScannerCheck):

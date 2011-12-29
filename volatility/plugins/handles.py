@@ -91,7 +91,7 @@ class Handles(taskmods.DllList, filescan.FileScan):
                     if otype == "File":
                         file_obj = obj.Object("_FILE_OBJECT", h.Body.obj_offset, h.obj_vm)
                         if file_obj.FileName:
-                            name = file_obj.FileName.v()
+                            name = repr(file_obj.FileName.v())
                     elif otype == "Key":
                         key_obj = obj.Object("_CM_KEY_BODY", h.Body.obj_offset, h.obj_vm)
                         name = self.full_key_name(key_obj)
