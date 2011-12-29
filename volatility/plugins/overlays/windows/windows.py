@@ -45,9 +45,9 @@ class _UNICODE_STRING(obj.CType):
             length = self.Length.v()
             if length > 1024:
                 length = 0
-            data = self.obj_vm.read(self.Buffer.v(), length)
-            return data.decode("utf16", "ignore").encode("ascii", 'backslashreplace')
-        except Exception, _e:
+            data = self.Buffer.dereference_as('String', length = length)
+            return data.v().decode("utf16", "ignore").encode("ascii", 'backslashreplace')
+        except Exception, e:
             return ''
 
     def __nonzero__(self):
@@ -304,29 +304,14 @@ AbstractWindows.object_classes['_HANDLE_TABLE'] = _HANDLE_TABLE
 class _OBJECT_HEADER(obj.CType):
     """A Volatility object to handle Windows object headers"""
 
-    def __init__(self, *args, **kwargs):
-        # kernel AS for dereferencing pointers 
-        self.kas = None
-        obj.CType.__init__(self, *args, **kwargs)
-
-    def parse_string(self, unicode_obj):
-        """Unicode string parser - from FileScan"""
-        string_length = unicode_obj.Length
-        string_offset = unicode_obj.Buffer
-
-        string = self.kas.read(string_offset, string_length)
-        if not string:
-            return ''
-        return string[:255].decode("utf16", "ignore").encode("utf8", "xmlcharrefreplace")
-
     def get_object_type(self):
         """Return the object's type as a string"""
         try:
             type_map = dict((v, k) for k, v in obj.VolMagic(self.obj_vm).TypeIndexMap.v().items())
             return type_map.get(self.TypeIndex.v(), '')
         except AttributeError:
-            type_obj = obj.Object("_OBJECT_TYPE", self.Type, self.kas)
-            return self.parse_string(type_obj.Name)
+            type_obj = obj.Object("_OBJECT_TYPE", self.Type, self._vol_vm, self._vol_offsetlayer)
+            return type_obj.Name.v()
 
     def get_object_name(self):
         """Return the name of the object from the name info header"""
@@ -350,9 +335,10 @@ class _OBJECT_HEADER(obj.CType):
         if name_info_offset:
             ## Now work out the OBJECT_HEADER_NAME_INFORMATION object
             object_name_info_obj = obj.Object("_OBJECT_HEADER_NAME_INFORMATION",
-                                              vm = self.obj_vm,
+                                              vm = self._vol_vm,
+                                              offsetlayer = self._vol_offsetlayer,
                                               offset = self.obj_offset - int(name_info_offset))
-            object_name_string = self.parse_string(object_name_info_obj.Name)
+            object_name_string = object_name_info_obj.Name.v()
 
         return object_name_string
 

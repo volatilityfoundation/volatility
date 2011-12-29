@@ -63,12 +63,12 @@ class ModScan(filescan.FileScan):
         address_space = utils.load_as(self._config, astype = 'physical')
 
         ## We need the kernel_address_space later
-        self.kernel_address_space = utils.load_as(self._config)
+        kernel_as = utils.load_as(self._config)
 
         scanner = PoolScanModuleFast()
         for offset in scanner.scan(address_space):
-            ldr_entry = obj.Object('_LDR_DATA_TABLE_ENTRY', vm = address_space,
-                                  offset = offset)
+            ldr_entry = obj.Object('_LDR_DATA_TABLE_ENTRY', vm = address_space, offset = offset)
+            ldr_entry.elevate_vm(kernel_as)
             yield ldr_entry
 
     def render_text(self, outfd, data):
@@ -76,10 +76,10 @@ class ModScan(filescan.FileScan):
         for ldr_entry in data:
             outfd.write("{0:#010x} {1:50} {2:#012x} {3:#08x} {4}\n".format(
                          ldr_entry.obj_offset,
-                         self.parse_string(ldr_entry.FullDllName),
+                         ldr_entry.FullDllName.v(),
                          ldr_entry.DllBase,
                          ldr_entry.SizeOfImage,
-                         self.parse_string(ldr_entry.BaseDllName)))
+                         ldr_entry.BaseDllName.v()))
 
 class CheckThreads(scan.ScannerCheck):
     """ Check sanity of _ETHREAD """

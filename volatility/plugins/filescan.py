@@ -60,19 +60,6 @@ class FileScan(commands.command):
 
     def __init__(self, config, *args):
         commands.command.__init__(self, config, *args)
-        self.kernel_address_space = None
-
-    def parse_string(self, unicode_obj):
-        """Unicode string parser"""
-        ## We need to do this because the unicode_obj buffer is in
-        ## kernel_address_space
-        string_length = unicode_obj.Length
-        string_offset = unicode_obj.Buffer
-
-        string = self.kernel_address_space.read(string_offset, string_length)
-        if not string:
-            return ''
-        return repr(string[:255].decode("utf16", "ignore").encode("utf8", "xmlcharrefreplace"))
 
     # Can't be cached until self.kernel_address_space is moved entirely within calculate
     def calculate(self):
@@ -80,7 +67,7 @@ class FileScan(commands.command):
         address_space = utils.load_as(self._config, astype = 'physical')
 
         ## Will need the kernel AS for later:
-        self.kernel_address_space = utils.load_as(self._config)
+        kernel_as = utils.load_as(self._config)
 
         for offset in PoolScanFile().scan(address_space):
 
@@ -100,23 +87,23 @@ class FileScan(commands.command):
                                    address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body')
                                    )
 
-            object_obj.kas = self.kernel_address_space
+            object_obj.elevate_vm(kernel_as)
+            file_obj.elevate_vm(kernel_as)
 
             if object_obj.get_object_type() != "File":
                 continue
 
             ## If the string is not reachable we skip it
-            Name = self.parse_string(file_obj.FileName)
-            if not Name:
+            if not file_obj.FileName.v():
                 continue
 
-            yield (object_obj, file_obj, Name)
+            yield (object_obj, file_obj)
 
     def render_text(self, outfd, data):
         outfd.write("{0:10} {1:4} {2:4} {3:6} {4}\n".format(
                      'Offset(P)', '#Ptr', '#Hnd', 'Access', 'Name'))
 
-        for object_obj, file_obj, Name in data:
+        for object_obj, file_obj in data:
             ## Make a nicely formatted ACL string
             AccessStr = ((file_obj.ReadAccess > 0 and "R") or '-') + \
                         ((file_obj.WriteAccess > 0  and "W") or '-') + \
@@ -127,7 +114,7 @@ class FileScan(commands.command):
 
             outfd.write("{0:#010x} {1:4} {2:4} {3:6} {4}\n".format(
                          file_obj.obj_offset, object_obj.PointerCount,
-                         object_obj.HandleCount, AccessStr, Name))
+                         object_obj.HandleCount, AccessStr, file_obj.FileName.v()))
 
 class PoolScanDriver(PoolScanFile):
     """ Scanner for _DRIVER_OBJECT """
@@ -145,7 +132,7 @@ class DriverScan(FileScan):
         address_space = utils.load_as(self._config, astype = 'physical')
 
         ## Will need the kernel AS for later:
-        self.kernel_address_space = utils.load_as(self._config)
+        kernel_as = utils.load_as(self._config)
 
         for offset in PoolScanDriver().scan(address_space):
             pool_obj = obj.Object("_POOL_HEADER", vm = address_space,
@@ -176,14 +163,14 @@ class DriverScan(FileScan):
             #if object_obj.Type == 0xbad0b0b0:
             #    continue
 
-            object_obj.kas = self.kernel_address_space
+            object_obj.elevate_vm(kernel_as)
+            driver_obj.elevate_vm(kernel_as)
+            extension_obj.elevate_vm(kernel_as)
 
             if object_obj.get_object_type() != "Driver":
                 continue
 
-            object_name_string = object_obj.get_object_name()
-
-            yield (object_obj, driver_obj, extension_obj, repr(object_name_string))
+            yield (object_obj, driver_obj, extension_obj)
 
 
     def render_text(self, outfd, data):
@@ -192,15 +179,15 @@ class DriverScan(FileScan):
                      'Offset(P)', '#Ptr', '#Hnd',
                      'Start', 'Size', 'Service key', 'Name'))
 
-        for object_obj, driver_obj, extension_obj, ObjectNameString in data:
+        for object_obj, driver_obj, extension_obj in data:
 
             outfd.write("0x{0:08x} {1:4} {2:4} 0x{3:08x} {4:6} {5:20} {6:12} {7}\n".format(
                          driver_obj.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount,
                          driver_obj.DriverStart, driver_obj.DriverSize,
-                         self.parse_string(extension_obj.ServiceKeyName),
-                         ObjectNameString,
-                         self.parse_string(driver_obj.DriverName)))
+                         extension_obj.ServiceKeyName.v(),
+                         object_obj.get_object_name(),
+                         driver_obj.DriverName.v()))
 
 class PoolScanSymlink(PoolScanFile):
     """ Scanner for symbolic link objects """
@@ -220,7 +207,7 @@ class SymLinkScan(FileScan):
         address_space = utils.load_as(self._config, astype = 'physical')
 
         ## Will need the kernel AS for later:
-        self.kernel_address_space = utils.load_as(self._config)
+        kernel_as = utils.load_as(self._config)
 
         for offset in PoolScanSymlink().scan(address_space):
             pool_obj = obj.Object("_POOL_HEADER", vm = address_space,
@@ -240,13 +227,13 @@ class SymLinkScan(FileScan):
                 address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body')
                 )
 
-            object_obj.kas = self.kernel_address_space
+            object_obj.elevate_vm(kernel_as)
+            link_obj.elevate_vm(kernel_as)
 
             if object_obj.get_object_type() != "SymbolicLink":
                 continue
 
-            object_name_string = object_obj.get_object_name()
-            yield object_obj, link_obj, object_name_string
+            yield object_obj, link_obj
 
     def render_text(self, outfd, data):
         """ Renders text-based output """
@@ -254,11 +241,11 @@ class SymLinkScan(FileScan):
         outfd.write("{0:10} {1:4} {2:4} {3:24} {4:<20} {5}\n".format(
             'Offset(P)', '#Ptr', '#Hnd', 'CreateTime', 'From', 'To'))
 
-        for object, link, name in data:
+        for objct, link in data:
             outfd.write("{0:#010x} {1:4} {2:4} {3:<24} {4:<20} {5}\n".format(
-                        link.obj_offset, object.PointerCount, 
-                        object.HandleCount, link.CreationTime or '',
-                        name, self.parse_string(link.LinkTarget)))
+                        link.obj_offset, objct.PointerCount,
+                        objct.HandleCount, link.CreationTime or '',
+                        objct.get_object_name(), link.LinkTarget.v()))
 
 class PoolScanMutant(PoolScanDriver):
     """ Scanner for Mutants _KMUTANT """
@@ -281,7 +268,7 @@ class MutantScan(FileScan):
         address_space = utils.load_as(self._config, astype = 'physical')
 
         ## Will need the kernel AS for later:
-        self.kernel_address_space = utils.load_as(self._config)
+        kernel_as = utils.load_as(self._config)
 
         for offset in PoolScanMutant().scan(address_space):
             pool_obj = obj.Object("_POOL_HEADER", vm = address_space,
@@ -301,7 +288,8 @@ class MutantScan(FileScan):
                 address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body')
                 )
 
-            object_obj.kas = self.kernel_address_space
+            object_obj.elevate_vm(kernel_as)
+            mutant.elevate_vm(kernel_as)
 
             if object_obj.get_object_type() != "Mutant":
                 continue
@@ -310,13 +298,11 @@ class MutantScan(FileScan):
             ##if object_obj.Type == 0xbad0b0b0:
             ##   continue
 
-            object_name_string = object_obj.get_object_name()
-
             if self._config.SILENT:
-                if len(object_name_string) == 0:
+                if len(object_obj.get_object_name()) == 0:
                     continue
 
-            yield (object_obj, mutant, repr(object_name_string))
+            yield (object_obj, mutant)
 
 
     def render_text(self, outfd, data):
@@ -325,10 +311,10 @@ class MutantScan(FileScan):
                      'Offset(P)', '#Ptr', '#Hnd', 'Signal',
                      'Thread', 'CID', 'Name'))
 
-        for object_obj, mutant, ObjectNameString in data:
+        for object_obj, mutant in data:
             if mutant.OwnerThread > 0x80000000:
-                thread = obj.Object("_ETHREAD", vm = self.kernel_address_space,
-                                   offset = mutant.OwnerThread)
+                print mutant.OwnerThread
+                thread = mutant.OwnerThread.dereference_as('_ETHREAD')
                 CID = "{0}:{1}".format(thread.Cid.UniqueProcess, thread.Cid.UniqueThread)
             else:
                 CID = ""
@@ -337,7 +323,7 @@ class MutantScan(FileScan):
                          mutant.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount, mutant.Header.SignalState,
                          mutant.OwnerThread, CID,
-                         ObjectNameString
+                         object_obj.get_object_name()
                          ))
 
 class CheckProcess(scan.ScannerCheck):

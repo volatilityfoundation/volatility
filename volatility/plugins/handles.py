@@ -68,7 +68,7 @@ class Handles(taskmods.DllList, filescan.FileScan):
                 continue
             if self._config.SILENT:
                 if len(name.replace("'", "")) == 0:
-                    continue 
+                    continue
             if not self._config.PHYSICAL_OFFSET:
                 offset = h.Body.obj_offset
             else:
@@ -79,19 +79,19 @@ class Handles(taskmods.DllList, filescan.FileScan):
 
     def calculate(self):
         ## Will need the kernel AS for later:
-        self.kernel_address_space = utils.load_as(self._config)
+        kernel_as = utils.load_as(self._config)
 
         for task in taskmods.DllList.calculate(self):
             pid = task.UniqueProcessId
             if task.ObjectTable.HandleTableList:
                 for h in task.ObjectTable.handles():
                     name = ""
-                    h.kas = self.kernel_address_space
+                    h.elevate_vm(kernel_as)
                     otype = h.get_object_type()
                     if otype == "File":
                         file_obj = obj.Object("_FILE_OBJECT", h.Body.obj_offset, h.obj_vm)
                         if file_obj.FileName:
-                            name = self.parse_string(file_obj.FileName)
+                            name = file_obj.FileName.v()
                     elif otype == "Key":
                         key_obj = obj.Object("_CM_KEY_BODY", h.Body.obj_offset, h.obj_vm)
                         name = self.full_key_name(key_obj)
