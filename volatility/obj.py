@@ -285,10 +285,7 @@ class BaseObject(object):
 
     @property
     def obj_vm(self):
-        vm = self._vol_vm
-        for _ in range(self._vol_offsetlayer):
-            vm = vm.base
-        return vm
+        return self._vol_vm
 
     @property
     def obj_offset(self):
@@ -301,6 +298,14 @@ class BaseObject(object):
     @property
     def obj_name(self):
         return self._vol_name
+
+    @property
+    def obj_nativevm(self):
+        return self._vol_nativevm or self._vol_vm
+
+    def set_nativevm(self, nativevm):
+        """Sets the nativevm """
+        self._vol_nativevm = nativevm
 
     def rebase(self, offset):
         # If it's needed, we should be using the __getstate__ and __setstate__ functions
@@ -375,7 +380,7 @@ class BaseObject(object):
         return NoneObject("Can't dereference {0}".format(self.obj_name), self.obj_vm.profile.strict)
 
     def dereference_as(self, derefType, **kwargs):
-        return Object(derefType, self.v(), self._vol_vm, parent = self, **kwargs)
+        return Object(derefType, self.v(), self.obj_nativevm, parent = self, **kwargs)
 
     def cast(self, castString):
         return Object(castString, self.obj_offset, self.obj_vm)
