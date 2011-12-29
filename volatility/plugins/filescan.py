@@ -78,17 +78,16 @@ class FileScan(commands.command):
             ## allocation (bottom up).
             file_obj = obj.Object("_FILE_OBJECT", vm = address_space,
                      offset = offset + pool_obj.BlockSize * self.pool_align - \
-                     address_space.profile.get_obj_size("_FILE_OBJECT")
+                     address_space.profile.get_obj_size("_FILE_OBJECT"),
+                     nativevm = kernel_as
                      )
 
             ## The _OBJECT_HEADER is immediately below the _FILE_OBJECT
             object_obj = obj.Object("_OBJECT_HEADER", vm = address_space,
                                    offset = file_obj.obj_offset - \
-                                   address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body')
+                                   address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body'),
+                                   nativevm = kernel_as
                                    )
-
-            object_obj.elevate_vm(kernel_as)
-            file_obj.elevate_vm(kernel_as)
 
             if object_obj.get_object_type() != "File":
                 continue
@@ -143,29 +142,28 @@ class DriverScan(FileScan):
             extension_obj = obj.Object(
                 "_DRIVER_EXTENSION", vm = address_space,
                 offset = offset + pool_obj.BlockSize * self.pool_align - 4 - \
-                address_space.profile.get_obj_size("_DRIVER_EXTENSION"))
+                address_space.profile.get_obj_size("_DRIVER_EXTENSION"),
+                nativevm = kernel_as)
 
             ## The _DRIVER_OBJECT is immediately below the _DRIVER_EXTENSION
             driver_obj = obj.Object(
                 "_DRIVER_OBJECT", vm = address_space,
                 offset = extension_obj.obj_offset - \
-                address_space.profile.get_obj_size("_DRIVER_OBJECT")
+                address_space.profile.get_obj_size("_DRIVER_OBJECT"),
+                nativevm = kernel_as
                 )
 
             ## The _OBJECT_HEADER is immediately below the _DRIVER_OBJECT
             object_obj = obj.Object(
                 "_OBJECT_HEADER", vm = address_space,
                 offset = driver_obj.obj_offset - \
-                address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body')
+                address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body'),
+                nativevm = kernel_as
                 )
 
             ## Skip unallocated objects
             #if object_obj.Type == 0xbad0b0b0:
             #    continue
-
-            object_obj.elevate_vm(kernel_as)
-            driver_obj.elevate_vm(kernel_as)
-            extension_obj.elevate_vm(kernel_as)
 
             if object_obj.get_object_type() != "Driver":
                 continue
@@ -217,18 +215,17 @@ class SymLinkScan(FileScan):
             ## allocation (bottom up).
             link_obj = obj.Object("_OBJECT_SYMBOLIC_LINK", vm = address_space,
                      offset = offset + pool_obj.BlockSize * self.pool_align - \
-                     address_space.profile.get_obj_size("_OBJECT_SYMBOLIC_LINK")
+                     address_space.profile.get_obj_size("_OBJECT_SYMBOLIC_LINK"),
+                     nativevm = kernel_as
                      )
 
             ## The _OBJECT_HEADER is immediately below the _OBJECT_SYMBOLIC_LINK
             object_obj = obj.Object(
                 "_OBJECT_HEADER", vm = address_space,
                 offset = link_obj.obj_offset - \
-                address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body')
+                address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body'),
+                nativevm = kernel_as
                 )
-
-            object_obj.elevate_vm(kernel_as)
-            link_obj.elevate_vm(kernel_as)
 
             if object_obj.get_object_type() != "SymbolicLink":
                 continue
@@ -279,17 +276,16 @@ class MutantScan(FileScan):
             mutant = obj.Object(
                 "_KMUTANT", vm = address_space,
                 offset = offset + pool_obj.BlockSize * self.pool_align - \
-                address_space.profile.get_obj_size("_KMUTANT"))
+                address_space.profile.get_obj_size("_KMUTANT"),
+                nativevm = kernel_as)
 
             ## The _OBJECT_HEADER is immediately below the _KMUTANT
             object_obj = obj.Object(
                 "_OBJECT_HEADER", vm = address_space,
                 offset = mutant.obj_offset - \
-                address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body')
+                address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body'),
+                nativevm = kernel_as
                 )
-
-            object_obj.elevate_vm(kernel_as)
-            mutant.elevate_vm(kernel_as)
 
             if object_obj.get_object_type() != "Mutant":
                 continue
@@ -313,7 +309,6 @@ class MutantScan(FileScan):
 
         for object_obj, mutant in data:
             if mutant.OwnerThread > 0x80000000:
-                print mutant.OwnerThread
                 thread = mutant.OwnerThread.dereference_as('_ETHREAD')
                 CID = "{0}:{1}".format(thread.Cid.UniqueProcess, thread.Cid.UniqueThread)
             else:

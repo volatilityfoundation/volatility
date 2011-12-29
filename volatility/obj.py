@@ -237,7 +237,7 @@ class InvalidOffsetError(utils.VolatilityException):
     """Simple placeholder to identify invalid offsets"""
     pass
 
-def Object(theType, offset, vm, parent = None, name = None, **kwargs):
+def Object(theType, offset, vm, name = None, **kwargs):
     """ A function which instantiates the object named in theType (as
     a string) from the type in profile passing optional args of
     kwargs.
@@ -247,15 +247,13 @@ def Object(theType, offset, vm, parent = None, name = None, **kwargs):
 
     try:
         if theType in vm.profile.types:
-            result = vm.profile.types[theType](offset = offset, vm = vm, name = name,
-                                               parent = parent)
+            result = vm.profile.types[theType](offset = offset, vm = vm, name = name, **kwargs)
             return result
 
         if theType in vm.profile.object_classes:
             result = vm.profile.object_classes[theType](theType = theType,
                                                         offset = offset,
                                                         vm = vm,
-                                                        parent = parent,
                                                         name = name,
                                                         **kwargs)
             return result
@@ -270,19 +268,27 @@ def Object(theType, offset, vm, parent = None, name = None, **kwargs):
     debug.warning("Cant find object {0} in profile {1}?".format(theType, vm.profile))
 
 class BaseObject(object):
-    def __init__(self, theType, offset, vm, parent = None, name = None):
-        self._vol_vm = vm
-        self._vol_parent = parent
-        self._vol_offset = offset
-        self._vol_name = name
-        self._vol_theType = theType
 
-        if not self._vol_vm.is_valid_address(self._vol_offset):
-            raise InvalidOffsetError("Invalid Address 0x{0:08X}, instantiating {1}".format(offset, name))
+    # We have **kwargs here, but it's unclear if it's a good idea
+    # Benefit is objects will never fail with duff parameters
+    # Downside is typos won't show up and be difficult to diagnose
+    def __init__(self, theType, offset, vm, nativevm = None, parent = None, name = None, **kwargs):
+        self._vol_theType = theType
+        self._vol_offset = offset
+        self._vol_vm = vm
+        self._vol_nativevm = nativevm
+        self._vol_parent = parent
+        self._vol_name = name
+
+        if not self.obj_vm.is_valid_address(self.obj_offset):
+            raise InvalidOffsetError("Invalid Address 0x{0:08X}, instantiating {1}".format(offset, self.obj_name))
 
     @property
     def obj_vm(self):
-        return self._vol_vm
+        vm = self._vol_vm
+        for _ in range(self._vol_offsetlayer):
+            vm = vm.base
+        return vm
 
     @property
     def obj_offset(self):
@@ -297,7 +303,8 @@ class BaseObject(object):
         return self._vol_name
 
     def rebase(self, offset):
-        return self.__class__(self._vol_theType, offset, vm = self._vol_vm)
+        # If it's needed, we should be using the __getstate__ and __setstate__ functions
+        raise DeprecationWarning("The rebase function has been deprecated and will be removed in future versions")
 
     def proxied(self, attr):
         return None
@@ -355,6 +362,7 @@ class BaseObject(object):
                                      (self.obj_offset == other.obj_offset) and (self.obj_vm == other.obj_vm))
 
     def __hash__(self):
+        # This should include the critical components of self.obj_vm
         return hash(self.obj_name) ^ hash(self.obj_offset)
 
     def m(self, memname):
@@ -398,8 +406,11 @@ class BaseObject(object):
         except AttributeError:
             thetype = self._vol_theType
 
+        # Note: we lose the parent attribute here
         result = dict(offset = self.obj_offset,
-                      name = self.obj_name, vm = self.obj_vm,
+                      name = self.obj_name,
+                      vm = self.obj_vm,
+                      nativevm = self._obj_nativevm,
                       theType = thetype)
 
         ## Introspect the kwargs for the constructor and store in the dict
@@ -476,9 +487,8 @@ class NumericProxyMixIn(object):
 CreateMixIn(NumericProxyMixIn)
 
 class NativeType(BaseObject, NumericProxyMixIn):
-    def __init__(self, theType, offset, vm, parent = None,
-                 format_string = None, name = None, **args):
-        BaseObject.__init__(self, theType, offset, vm, parent = parent, name = name)
+    def __init__(self, theType, offset, vm, format_string = None, **kwargs):
+        BaseObject.__init__(self, theType, offset, vm, **kwargs)
         NumericProxyMixIn.__init__(self)
         self.format_string = format_string
 
@@ -486,9 +496,6 @@ class NativeType(BaseObject, NumericProxyMixIn):
         """Writes the data back into the address space"""
         output = struct.pack(self.format_string, data)
         return self.obj_vm.write(self.obj_offset, output)
-
-    def rebase(self, offset):
-        return self.__class__(None, offset, self.obj_vm, format_string = self.format_string)
 
     def proxied(self, attr):
         return self.v()
@@ -517,11 +524,10 @@ class NativeType(BaseObject, NumericProxyMixIn):
 
 class BitField(NativeType):
     """ A class splitting an integer into a bunch of bit. """
-    def __init__(self, theType, offset, vm, parent = None,
-                 start_bit = 0, end_bit = 32, name = None, native_type = None, **args):
+    def __init__(self, theType, offset, vm, start_bit = 0, end_bit = 32, native_type = None, **kwargs):
         # Defaults to profile-endian address, but can be overridden by native_type
         format_string = vm.profile.native_types.get(native_type, vm.profile.native_types['address'])[1]
-        NativeType.__init__(self, theType, offset, vm, parent = parent, name = name, format_string = format_string)
+        NativeType.__init__(self, theType, offset, vm, format_string = format_string, **kwargs)
         self.start_bit = start_bit
         self.end_bit = end_bit
         self.native_type = native_type # Store this for proper caching
@@ -536,15 +542,13 @@ class BitField(NativeType):
 
 
 class Pointer(NativeType):
-    def __init__(self, theType, offset, vm, parent = None, profile = None, target = None, name = None):
+    def __init__(self, theType, offset, vm, target = None, **kwargs):
         # Default to profile-endian address
         # We don't allow native_type overriding for pointers since we can't dereference invalid pointers anyway
         # You can define a POINTER_64 in 32-bit windows, it becomes a signed pointer for use with special pointers like -1.
         # However, in that case it's unlikely to dereference properly either
-        # We can always change this later if it becomes necessary to handle such unusual circumstances 
-        format_string = vm.profile.native_types['address'][1]
-        NativeType.__init__(self, theType, offset = offset, vm = vm, name = name,
-                            parent = parent, profile = profile, format_string = format_string)
+        # We can always change this later if it becomes necessary to handle such unusual circumstances
+        NativeType.__init__(self, theType, offset, vm, format_string = vm.profile.native_types['address'][1], **kwargs)
 
         if theType:
             self.target = Curry(Object, theType)
@@ -561,8 +565,12 @@ class Pointer(NativeType):
 
     def dereference(self):
         offset = self.v()
-        if self.obj_vm.is_valid_address(offset):
-            result = self.target(offset = offset, vm = self.obj_vm, parent = self.obj_parent,
+        if self.obj_nativevm.is_valid_address(offset):
+            # Make sure we use self.obj_nativevm to automatically
+            # dereference from the highest available VM
+            result = self.target(offset = offset,
+                                 vm = self.obj_nativevm,
+                                 parent = self.obj_parent,
                                  name = self.obj_name)
             return result
         else:
@@ -594,11 +602,11 @@ class Pointer(NativeType):
             return result.__getattribute__(attr)
 
 class Void(NativeType):
-    def __init__(self, theType, offset, vm, parent = None, **args):
+    def __init__(self, theType, offset, vm, **kwargs):
         # Default to profile-endian unsigned long
-        # This should never need to be overridden, but can be by changing the 'Void' value in a profile's object_classes 
+        # This should never need to be overridden, but can be by changing the 'Void' value in a profile's object_classes
         format_string = vm.profile.native_types['unsigned long'][1]
-        NativeType.__init__(self, theType, offset, vm, parent = None, format_string = format_string)
+        NativeType.__init__(self, theType, offset, vm, format_string = format_string, **kwargs)
 
     def cdecl(self):
         return "0x{0:08X}".format(self.v())
@@ -613,19 +621,20 @@ class Void(NativeType):
         return bool(self.dereference())
 
     def dereference_as(self, derefType):
-        return Object(derefType, self.v(), self.obj_vm, parent = self)
+        # Make sure we use self._vol_vm to automatically
+        # dereference from the highest available VM
+        return Object(derefType, self.v(), self.obj_nativevm, parent = self)
 
 class Array(BaseObject):
     """ An array of objects of the same size """
-    def __init__(self, theType, offset, vm = None, parent = None,
-                 count = 1, targetType = None, target = None, name = None):
+    def __init__(self, theType, offset, vm, parent = None,
+                 count = 1, targetType = None, target = None, name = None, **kwargs):
         ## Instantiate the first object on the offset:
         BaseObject.__init__(self, theType, offset, vm,
-                        parent = parent, name = name)
-        try:
+                            parent = parent, name = name, **kwargs)
+
+        if callable(count):
             count = count(parent)
-        except TypeError, _e:
-            pass
 
         self.count = int(count)
 
@@ -635,8 +644,7 @@ class Array(BaseObject):
         else:
             self.target = target
 
-        self.current = self.target(offset = offset, vm = vm, parent = self,
-                                       name = name)
+        self.current = self.target(offset = offset, vm = vm, parent = self, name = name)
         if self.current.size() == 0:
             ## It is an error to have a zero sized element
             debug.debug("Array with 0 sized members???", level = 10)
@@ -663,16 +671,7 @@ class Array(BaseObject):
             if (self.current == None):
                 return
 
-            offset = self.original_offset + position * self.current.size()
-
-            ## Instantiate the target here:
-            if self.obj_vm.is_valid_address(offset):
-                yield self.target(offset = offset, vm = self.obj_vm,
-                                  parent = self,
-                                  name = "{0} {1}".format(self.obj_name, position))
-            else:
-                yield NoneObject("Array {0}, Invalid position {1}".format(self.obj_name, position),
-                                 self.obj_vm.profile.strict)
+            yield self[position]
 
     def __repr__(self):
         result = [ x.__str__() for x in self ]
@@ -699,18 +698,22 @@ class Array(BaseObject):
             return [self[i] for i in xrange(start, stop, step)]
 
         ## Check if the offset is valid
-        offset = self.original_offset + \
-                 pos * self.current.size()
+        offset = self.original_offset + pos * self.current.size()
+
         if pos <= self.count and self.obj_vm.is_valid_address(offset):
+            # Ensure both the true VM and offsetlayer are copied across
             return self.target(offset = offset,
-                               vm = self.obj_vm, parent = self)
+                               vm = self.obj_vm,
+                               nativevm = self.obj_nativevm,
+                               parent = self,
+                               name = "{0} {1}".format(self.obj_name, pos))
         else:
             return NoneObject("Array {0} invalid member {1}".format(self.obj_name, pos),
                               self.obj_vm.profile.strict)
 
 class CType(BaseObject):
     """ A CType is an object which represents a c struct """
-    def __init__(self, theType, offset, vm, parent = None, members = None, name = None, struct_size = 0):
+    def __init__(self, theType, offset, vm, name = None, members = None, struct_size = 0, **kwargs):
         """ This must be instantiated with a dict of members. The keys
         are the offsets, the values are Curried Object classes that
         will be instantiated when accessed.
@@ -722,7 +725,7 @@ class CType(BaseObject):
 
         self.members = members
         self.struct_size = struct_size
-        BaseObject.__init__(self, theType, offset, vm, parent = parent, name = name)
+        BaseObject.__init__(self, theType, offset, vm, name = name, **kwargs)
         self.__initialized = True
 
     def size(self):
@@ -761,8 +764,7 @@ class CType(BaseObject):
             ## Otherwise its relative to the start of our struct
             offset = int(offset) + int(self.obj_offset)
 
-        result = cls(offset = offset, vm = self.obj_vm, parent = self,
-                     name = attr)
+        result = cls(offset = offset, vm = self.obj_vm, parent = self, name = attr, nativevm = self.obj_nativevm)
 
         return result
 
@@ -770,6 +772,12 @@ class CType(BaseObject):
         try:
             return object.__getattribute__(self, attr)
         except AttributeError:
+            pass
+
+        # This must be a try/except, since callable may fire an attribute error 
+        try:
+            return object.__getattribute__(self, "_" + attr)(attr)
+        except (AttributeError, TypeError):
             pass
 
         return self.m(attr)
@@ -791,9 +799,9 @@ class CType(BaseObject):
 class VolatilityMagic(BaseObject):
     """Class to contain Volatility Magic value"""
 
-    def __init__(self, theType, offset, vm, parent = None, value = None, name = None, configname = None):
+    def __init__(self, theType, offset, vm, value = None, configname = None, **kwargs):
         try:
-            BaseObject.__init__(self, theType, offset, vm, parent, name)
+            BaseObject.__init__(self, theType, offset, vm, **kwargs)
         except InvalidOffsetError:
             pass
         # If we've been given a configname override,
@@ -940,12 +948,11 @@ class Profile(object):
         """
         ## This supports plugin memory objects:
         try:
-            args = typeList[1]
+            kwargs = typeList[1]
 
-            if type(args) == dict:
+            if type(kwargs) == dict:
                 ## We have a list of the form [ ClassName, dict(.. args ..) ]
-                return Curry(Object, theType = typeList[0], name = name,
-                             **args)
+                return Curry(Object, theType = typeList[0], name = name, **kwargs)
         except (TypeError, IndexError), _e:
             pass
 
