@@ -415,7 +415,7 @@ class BaseObject(object):
         result = dict(offset = self.obj_offset,
                       name = self.obj_name,
                       vm = self.obj_vm,
-                      nativevm = self._obj_nativevm,
+                      nativevm = self.obj_nativevm,
                       theType = thetype)
 
         ## Introspect the kwargs for the constructor and store in the dict
