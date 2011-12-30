@@ -84,7 +84,7 @@ class _LIST_ENTRY(obj.CType):
             item = obj.Object(type, offset = lst.obj_offset - offset,
                                     vm = self.obj_vm,
                                     parent = self.obj_parent,
-                                    nativevm = self.obj_nativevm,
+                                    native_vm = self.obj_native_vm,
                                     name = type)
 
 
@@ -230,7 +230,7 @@ class _HANDLE_TABLE(obj.CType):
     def get_item(self, offset):
         """Returns the OBJECT_HEADER of the associated handle at a particular offset"""
         return obj.Object("_OBJECT_HEADER", offset, vm = self.obj_vm,
-                                            nativevm = self.obj_nativevm,
+                                            native_vm = self.obj_native_vm,
                                             parent = self)
 
     def _make_handle_array(self, offset, level):
@@ -246,7 +246,7 @@ class _HANDLE_TABLE(obj.CType):
             targetType = "_HANDLE_TABLE_ENTRY"
 
         table = obj.Object("Array", offset = offset, vm = self.obj_vm, count = count,
-                           targetType = targetType, parent = self, nativevm = self.obj_nativevm)
+                           targetType = targetType, parent = self, native_vm = self.obj_native_vm)
 
         if table:
             for entry in table:
@@ -338,7 +338,7 @@ class _OBJECT_HEADER(obj.CType):
             ## Now work out the OBJECT_HEADER_NAME_INFORMATION object
             object_name_info_obj = obj.Object("_OBJECT_HEADER_NAME_INFORMATION",
                                               vm = self.obj_vm,
-                                              nativevm = self.obj_nativevm,
+                                              native_vm = self.obj_native_vm,
                                               offset = self.obj_offset - int(name_info_offset))
             object_name_string = object_name_info_obj.Name.v()
 
@@ -468,7 +468,7 @@ AbstractWindows.object_classes['_MMVAD_LONG'] = _MMVAD_LONG
 class _EX_FAST_REF(obj.CType):
     def dereference_as(self, theType):
         """Use the _EX_FAST_REF.Object pointer to resolve an object of the specified type"""
-        return obj.Object(theType, vm = self.obj_nativevm, parent = self, offset = self.Object.v() & ~7)
+        return obj.Object(theType, vm = self.obj_native_vm, parent = self, offset = self.Object.v() & ~7)
 
 AbstractWindows.object_classes['_EX_FAST_REF'] = _EX_FAST_REF
 
@@ -569,7 +569,7 @@ class _IMAGE_DOS_HEADER(obj.CType):
         nt_header = obj.Object("_IMAGE_NT_HEADERS",
                           offset = self.e_lfanew + self.obj_offset,
                           vm = self.obj_vm,
-                          nativevm = self.obj_nativevm)
+                          native_vm = self.obj_native_vm)
 
         if nt_header.Signature != 0x4550:
             raise ValueError('NT header signature {0:04X} is not a valid'.format(nt_header.Signature))
@@ -589,7 +589,7 @@ class _IMAGE_NT_HEADERS(obj.CType):
         for i in range(self.FileHeader.NumberOfSections):
             s_addr = start_addr + (i * sect_size)
             sect = obj.Object("_IMAGE_SECTION_HEADER", offset = s_addr, vm = self.obj_vm,
-                              parent = self, nativevm = self.obj_nativevm)
+                              parent = self, native_vm = self.obj_native_vm)
             if not unsafe:
                 sect.sanity_check_section()
             yield sect

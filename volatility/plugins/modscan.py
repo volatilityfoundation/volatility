@@ -68,7 +68,7 @@ class ModScan(filescan.FileScan):
         scanner = PoolScanModuleFast()
         for offset in scanner.scan(address_space):
             ldr_entry = obj.Object('_LDR_DATA_TABLE_ENTRY', vm = address_space,
-                                  offset = offset, nativevm = kernel_as)
+                                  offset = offset, native_vm = kernel_as)
             yield ldr_entry
 
     def render_text(self, outfd, data):

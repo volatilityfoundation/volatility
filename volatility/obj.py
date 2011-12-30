@@ -272,11 +272,11 @@ class BaseObject(object):
     # We have **kwargs here, but it's unclear if it's a good idea
     # Benefit is objects will never fail with duff parameters
     # Downside is typos won't show up and be difficult to diagnose
-    def __init__(self, theType, offset, vm, nativevm = None, parent = None, name = None, **kwargs):
+    def __init__(self, theType, offset, vm, native_vm = None, parent = None, name = None, **kwargs):
         self._vol_theType = theType
         self._vol_offset = offset
         self._vol_vm = vm
-        self._vol_nativevm = nativevm
+        self._vol_native_vm = native_vm
         self._vol_parent = parent
         self._vol_name = name
 
@@ -300,12 +300,12 @@ class BaseObject(object):
         return self._vol_name
 
     @property
-    def obj_nativevm(self):
-        return self._vol_nativevm or self._vol_vm
+    def obj_native_vm(self):
+        return self._vol_native_vm or self._vol_vm
 
-    def set_nativevm(self, nativevm):
-        """Sets the nativevm """
-        self._vol_nativevm = nativevm
+    def set_native_vm(self, native_vm):
+        """Sets the native_vm """
+        self._vol_native_vm = native_vm
 
     def rebase(self, offset):
         # If it's needed, we should be using the __getstate__ and __setstate__ functions
@@ -380,7 +380,7 @@ class BaseObject(object):
         return NoneObject("Can't dereference {0}".format(self.obj_name), self.obj_vm.profile.strict)
 
     def dereference_as(self, derefType, **kwargs):
-        return Object(derefType, self.v(), self.obj_nativevm, parent = self, **kwargs)
+        return Object(derefType, self.v(), self.obj_native_vm, parent = self, **kwargs)
 
     def cast(self, castString):
         return Object(castString, self.obj_offset, self.obj_vm)
@@ -415,7 +415,7 @@ class BaseObject(object):
         result = dict(offset = self.obj_offset,
                       name = self.obj_name,
                       vm = self.obj_vm,
-                      nativevm = self.obj_nativevm,
+                      native_vm = self.obj_native_vm,
                       theType = thetype)
 
         ## Introspect the kwargs for the constructor and store in the dict
@@ -570,11 +570,11 @@ class Pointer(NativeType):
 
     def dereference(self):
         offset = self.v()
-        if self.obj_nativevm.is_valid_address(offset):
-            # Make sure we use self.obj_nativevm to automatically
+        if self.obj_native_vm.is_valid_address(offset):
+            # Make sure we use self.obj_native_vm to automatically
             # dereference from the highest available VM
             result = self.target(offset = offset,
-                                 vm = self.obj_nativevm,
+                                 vm = self.obj_native_vm,
                                  parent = self.obj_parent,
                                  name = self.obj_name)
             return result
@@ -628,7 +628,7 @@ class Void(NativeType):
     def dereference_as(self, derefType):
         # Make sure we use self._vol_vm to automatically
         # dereference from the highest available VM
-        return Object(derefType, self.v(), self.obj_nativevm, parent = self)
+        return Object(derefType, self.v(), self.obj_native_vm, parent = self)
 
 class Array(BaseObject):
     """ An array of objects of the same size """
@@ -709,7 +709,7 @@ class Array(BaseObject):
             # Ensure both the true VM and offsetlayer are copied across
             return self.target(offset = offset,
                                vm = self.obj_vm,
-                               nativevm = self.obj_nativevm,
+                               native_vm = self.obj_native_vm,
                                parent = self,
                                name = "{0} {1}".format(self.obj_name, pos))
         else:
@@ -769,7 +769,7 @@ class CType(BaseObject):
             ## Otherwise its relative to the start of our struct
             offset = int(offset) + int(self.obj_offset)
 
-        result = cls(offset = offset, vm = self.obj_vm, parent = self, name = attr, nativevm = self.obj_nativevm)
+        result = cls(offset = offset, vm = self.obj_vm, parent = self, name = attr, native_vm = self.obj_native_vm)
 
         return result
 

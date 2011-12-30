@@ -86,7 +86,7 @@ class Handles(taskmods.DllList, filescan.FileScan):
             if task.ObjectTable.HandleTableList:
                 for h in task.ObjectTable.handles():
                     name = ""
-                    h.set_nativevm(kernel_as)
+                    h.set_native_vm(kernel_as)
                     otype = h.get_object_type()
                     if otype == "File":
                         file_obj = obj.Object("_FILE_OBJECT", h.Body.obj_offset, h.obj_vm)
