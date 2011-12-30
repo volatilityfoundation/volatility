@@ -386,7 +386,7 @@ class _MMVAD(obj.CType):
         result = obj.Object('_MMVAD_LONG', offset = offset, vm = vm, parent = parent, **args)
 
         # Get the tag and change the vad type if necessary
-        real_type = cls.tag_map.get(result.Tag, '_MMVAD_LONG')
+        real_type = cls.tag_map.get(str(result.Tag), '_MMVAD_LONG')
         if result.__class__.__name__ != real_type:
             result = obj.Object(real_type, offset = offset, vm = vm, parent = parent, **args)
 
