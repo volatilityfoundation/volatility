@@ -384,8 +384,8 @@ class _MMVAD(obj.CType):
 
         ## We must not polute Object's constructor by providing the
         ## members or struct_size we were instantiated with
-        del args['struct_size']
-        del args['members']
+        args.pop('struct_size', None)
+        args.pop('members', None)
 
         result = obj.Object(theType, offset = offset, vm = vm, parent = parent, **args)
         result.newattr('Tag', tag)
