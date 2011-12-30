@@ -27,11 +27,10 @@ import volatility.plugins.taskmods as taskmods
 import volatility.plugins.filescan as filescan
 
 # Inherit from Dlllist for command line options, FileScan for parse_string
-class Handles(taskmods.DllList, filescan.FileScan):
+class Handles(taskmods.DllList):
     """Print list of open handles for each process"""
 
     def __init__(self, config, *args):
-        filescan.FileScan.__init__(self, config, *args)
         taskmods.DllList.__init__(self, config, *args)
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
                           help = "Physical Offset", action = "store_true")
