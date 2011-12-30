@@ -220,6 +220,9 @@ xpsp2overlays = {
 
 
 xpsp2overlays['_MMVAD_SHORT'] = [ None, {
+    # This is the location of the MMVAD type which controls how to parse the
+    # node. It is located before the structure.
+    'Tag': [-4 , ['String', dict(length = 4)]],
     'Flags': [ None, ['Flags',
   {'bitmap': {
     'PhysicalMapping': 0x13,
@@ -240,7 +243,7 @@ xpsp2overlays['_MMVAD_SHORT'] = [ None, {
 
 xpsp2overlays['_MMVAD_LONG'] = [ None, {
     'Flags': xpsp2overlays['_MMVAD_SHORT'][1]['Flags'],
-
+    'Tag': [-4 , ['String', dict(length = 4)]],
     'Flags2': [ None, ['Flags',
   {'bitmap': {
     'SecNoChange' : 0x18,

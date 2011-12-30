@@ -349,33 +349,28 @@ AbstractWindows.object_classes['_OBJECT_HEADER'] = _OBJECT_HEADER
 ## This is an object which provides access to the VAD tree.
 class _MMVAD(obj.CType):
     """Class factory for _MMVAD objects"""
+
+    ## The actual type depends on this tag value.
+    tag_map = {'Vadl': '_MMVAD_LONG',
+               'VadS': '_MMVAD_SHORT',
+               'Vad ': '_MMVAD_LONG',
+               'VadF': '_MMVAD_SHORT',
+               'Vadm': '_MMVAD_LONG',
+              }
+
     ## parent is the containing _EPROCESS right now
-    def __new__(cls, theType, offset, vm, parent, **args):
-        ## Find the tag (4 bytes below the current offset). This can
-        ## not have ourselves as a target.
-        switch = {"Vadl": '_MMVAD_LONG',
-                  'VadS': '_MMVAD_SHORT',
-                  'Vad ': '_MMVAD_LONG',
-                  'VadF': '_MMVAD_SHORT',
-                  'Vadm': '_MMVAD_LONG',
-                  }
-
-        ## All VADs are done in the process AS - so we might need to
-        ## switch Address spaces now. We do this by instantiating an
-        ## _EPROCESS over our parent, and having it give us the
-        ## correct AS
+    def __new__(cls, theType, offset, vm, parent = None, **args):
+        ## All VADs are done in the process AS - so we might need to switch
+        ## Address spaces now. Find the eprocess we came from and switch
+        ## AS. Note that all child traversals will be in Process AS. 
         if vm.name.startswith("Kernel"):
-            eprocess = obj.Object("_EPROCESS", offset = parent.obj_offset, vm = vm)
+            # Find the next _EPROCESS along our parent list
+            eprocess = parent
+            while eprocess and eprocess.obj_name != "_EPROCESS":
+                eprocess = eprocess.obj_parent
+
+            # Switch to its process AS
             vm = eprocess.get_process_address_space()
-            if not vm:
-                return vm
-
-        ## What type is this struct?
-        tag = vm.read(offset - 4, 4)
-        theType = switch.get(tag)
-
-        if not theType:
-            return obj.NoneObject("Tag {0} not knowns".format(tag))
 
         ## Note that since we were called from __new__ we can return a
         ## completely different object here (including
@@ -387,8 +382,13 @@ class _MMVAD(obj.CType):
         args.pop('struct_size', None)
         args.pop('members', None)
 
-        result = obj.Object(theType, offset = offset, vm = vm, parent = parent, **args)
-        result.newattr('Tag', tag)
+        # Start off with an _MMVAD_LONG
+        result = obj.Object('_MMVAD_LONG', offset = offset, vm = vm, parent = parent, **args)
+
+        # Get the tag and change the vad type if necessary
+        real_type = cls.tag_map.get(result.Tag, '_MMVAD_LONG')
+        if result.__class__.__name__ != real_type:
+            result = obj.Object(real_type, offset = offset, vm = vm, parent = parent, **args)
 
         return result
 
