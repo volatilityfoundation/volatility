@@ -312,7 +312,7 @@ class _OBJECT_HEADER(obj.CType):
             type_map = dict((v, k) for k, v in obj.VolMagic(self.obj_vm).TypeIndexMap.v().items())
             return type_map.get(self.TypeIndex.v(), '')
         except AttributeError:
-            type_obj = obj.Object("_OBJECT_TYPE", self.Type, vm = self.obj_vm, nativevm = self.obj_nativevm)
+            type_obj = self.Type.dereference()
             return type_obj.Name.v()
 
     def get_object_name(self):
