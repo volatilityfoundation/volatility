@@ -411,17 +411,17 @@ class PSScan(commands.command):
 
     def __init__(self, config, *args):
         commands.command.__init__(self, config, *args)
-        self.kernel_address_space = None
 
     # Can't be cached until self.kernel_address_space is moved entirely
     # within calculate
     def calculate(self):
         ## Just grab the AS and scan it using our scanner
         address_space = utils.load_as(self._config, astype = 'physical')
+        kernel_as = utils.load_as(self._config)
 
         for offset in PoolScanProcess().scan(address_space):
             eprocess = obj.Object('_EPROCESS', vm = address_space,
-                               offset = offset)
+                                  native_vm = kernel_as, offset = offset)
             yield eprocess
 
 
