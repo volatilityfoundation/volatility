@@ -7,7 +7,7 @@ Created on 31 Dec 2010
 tcpip_vtypes = {
   '_ADDRESS_OBJECT' : [ 0x68, {
     'Next' : [ 0x0, ['pointer', ['_ADDRESS_OBJECT']]],
-    'LocalIpAddress' : [ 0x2c, ['unsigned long']],
+    'LocalIpAddress' : [ 0x2c, ['IpAddress']],
     'LocalPort' : [ 0x30, ['unsigned short']],
     'Protocol'  : [ 0x32, ['unsigned short']],
     'Pid' : [ 0x148, ['unsigned long']],
@@ -15,8 +15,8 @@ tcpip_vtypes = {
 } ],
   '_TCPT_OBJECT' : [ 0x20, {
   'Next' : [ 0x0, ['pointer', ['_TCPT_OBJECT']]],
-  'RemoteIpAddress' : [ 0xc, ['unsigned long']],
-  'LocalIpAddress' : [ 0x10, ['unsigned long']],
+  'RemoteIpAddress' : [ 0xc, ['IpAddress']],
+  'LocalIpAddress' : [ 0x10, ['IpAddress']],
   'RemotePort' : [ 0x14, ['unsigned short']],
   'LocalPort' : [ 0x16, ['unsigned short']],
   'Pid' : [ 0x18, ['unsigned long']],
@@ -30,7 +30,7 @@ tcpip_vtypes = {
 tcpip_vtypes_2k3_sp1_sp2 = {
   '_ADDRESS_OBJECT' : [ 0x68, {
     'Next' : [ 0x0, ['pointer', ['_ADDRESS_OBJECT']]],
-    'LocalIpAddress' : [ 0x30, ['unsigned long']],
+    'LocalIpAddress' : [ 0x30, ['IpAddress']],
     'LocalPort' : [ 0x34, ['unsigned short']],
     'Protocol'  : [ 0x36, ['unsigned short']],
     'Pid' : [ 0x14C, ['unsigned long']],
@@ -57,7 +57,7 @@ tcpip_vtypes_vista = {
     '_TCP_ENDPOINT': [ None, { # TcpE
         'InetAF' : [ 0xC, ['pointer', ['_INETAF']]],
         'AddrInfo' : [ 0x10, ['pointer', ['_ADDRINFO']]],
-        'ListEntry' : [ 0x14, ['_LIST_ENTRY']], 
+        'ListEntry' : [ 0x14, ['_LIST_ENTRY']],
         'State' : [ 0x28, ['unsigned int']],
         'LocalPort' : [ 0x2C, ['unsigned short']],
         'RemotePort' : [ 0x2E, ['unsigned short']],
@@ -85,7 +85,7 @@ tcpip_vtypes_7 = {
     '_TCP_ENDPOINT': [ None, { # TcpE
         'InetAF' : [ 0xC, ['pointer', ['_INETAF']]],
         'AddrInfo' : [ 0x10, ['pointer', ['_ADDRINFO']]],
-        'ListEntry' : [ 0x14, ['_LIST_ENTRY']], 
+        'ListEntry' : [ 0x14, ['_LIST_ENTRY']],
         'State' : [ 0x34, ['unsigned int']],
         'LocalPort' : [ 0x38, ['unsigned short']],
         'RemotePort' : [ 0x3A, ['unsigned short']],

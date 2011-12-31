@@ -487,24 +487,16 @@ class ThreadCreateTimeStamp(WinTimeStamp):
 
 AbstractWindows.object_classes['ThreadCreateTimeStamp'] = ThreadCreateTimeStamp
 
-class _TCPT_OBJECT(obj.CType):
-    """Provides additional functions for TCPT_OBJECTs"""
-    @property
-    def RemoteIpAddress(self):
-        return socket.inet_ntoa(struct.pack("<I", self.m('RemoteIpAddress').v()))
+class IpAddress(obj.NativeType):
+    """Provides proper output for IpAddress objects"""
 
-    @property
-    def LocalIpAddress(self):
-        return socket.inet_ntoa(struct.pack("<I", self.m('LocalIpAddress').v()))
+    def __init__(self, theType, offset, vm, **kwargs):
+        obj.NativeType.__init__(self, theType, offset, vm, format_string = vm.profile.native_types['unsigned long'][1], **kwargs)
 
-AbstractWindows.object_classes['_TCPT_OBJECT'] = _TCPT_OBJECT
+    def v(self):
+        return socket.inet_ntoa(struct.pack("<I", obj.NativeType.v(self)))
 
-class _ADDRESS_OBJECT(obj.CType):
-    @property
-    def LocalIpAddress(self):
-        return socket.inet_ntoa(struct.pack("<I", self.m('LocalIpAddress').v()))
-
-AbstractWindows.object_classes['_ADDRESS_OBJECT'] = _ADDRESS_OBJECT
+AbstractWindows.object_classes['IpAddress'] = IpAddress
 
 class VolatilityKPCR(obj.VolatilityMagic):
     """A scanner for KPCR data within an address space"""
