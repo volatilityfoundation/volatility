@@ -61,42 +61,42 @@ class Handles(taskmods.DllList):
         else:
             object_list = []
 
-        for pid, h, otype, name in data:
-            if object_list and otype not in object_list:
+        for pid, handle, object_type, name in data:
+            if object_list and object_type not in object_list:
                 continue
             if self._config.SILENT:
                 if len(name.replace("'", "")) == 0:
                     continue
             if not self._config.PHYSICAL_OFFSET:
-                offset = h.Body.obj_offset
+                offset = handle.Body.obj_offset
             else:
-                offset = h.obj_vm.vtop(h.Body.obj_offset)
+                offset = handle.obj_vm.vtop(handle.Body.obj_offset)
 
             outfd.write("{0:#010x}   {1:<6} {2:<#10x} {3:<16} {4}\n".format(
-                offset, pid, h.GrantedAccess, otype, name))
+                offset, pid, handle.GrantedAccess, object_type, name))
 
     def calculate(self):
 
         for task in taskmods.DllList.calculate(self):
             pid = task.UniqueProcessId
             if task.ObjectTable.HandleTableList:
-                for h in task.ObjectTable.handles():
+                for handle in task.ObjectTable.handles():
                     name = ""
-                    otype = h.get_object_type()
-                    if otype == "File":
-                        file_obj = h.dereference_as("_FILE_OBJECT")
+                    object_type = handle.get_object_type()
+                    if object_type == "File":
+                        file_obj = handle.dereference_as("_FILE_OBJECT")
                         if file_obj.FileName:
                             name = repr(file_obj.FileName.v())
-                    elif otype == "Key":
-                        key_obj = h.dereference_as("_CM_KEY_BODY")
+                    elif object_type == "Key":
+                        key_obj = handle.dereference_as("_CM_KEY_BODY")
                         name = self.full_key_name(key_obj)
-                    elif otype == "Process":
-                        proc_obj = h.dereference_as("_EPROCESS")
+                    elif object_type == "Process":
+                        proc_obj = handle.dereference_as("_EPROCESS")
                         name = "{0}({1})".format(proc_obj.ImageFileName, proc_obj.UniqueProcessId)
-                    elif otype == "Thread":
-                        thrd_obj = h.dereference_as("_ETHREAD")
+                    elif object_type == "Thread":
+                        thrd_obj = handle.dereference_as("_ETHREAD")
                         name = "TID {0} PID {1}".format(thrd_obj.Cid.UniqueThread, thrd_obj.Cid.UniqueProcess)
                     else:
-                        name = repr(h.get_object_name())
+                        name = repr(handle.get_object_name())
 
-                    yield pid, h, otype, name
+                    yield pid, handle, object_type, name
