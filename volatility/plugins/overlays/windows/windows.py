@@ -466,9 +466,9 @@ AbstractWindows.object_classes['_MMVAD_SHORT'] = _MMVAD_SHORT
 AbstractWindows.object_classes['_MMVAD_LONG'] = _MMVAD_LONG
 
 class _EX_FAST_REF(obj.CType):
-    def dereference_as(self, theType, **kwargs):
+    def dereference_as(self, theType, parent = None, **kwargs):
         """Use the _EX_FAST_REF.Object pointer to resolve an object of the specified type"""
-        return obj.Object(theType, self.Object.v() & ~7, self.obj_native_vm, **kwargs)
+        return obj.Object(theType, self.Object.v() & ~7, self.obj_native_vm, parent = parent or self, **kwargs)
 
 AbstractWindows.object_classes['_EX_FAST_REF'] = _EX_FAST_REF
 
