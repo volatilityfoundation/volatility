@@ -39,17 +39,6 @@ class Handles(taskmods.DllList):
         config.add_option("SILENT", short_option = 's', default = False,
                           action = 'store_true', help = 'Suppress less meaningful results')
 
-    def full_key_name(self, handle):
-        """Returns the full name of a registry key based on its CM_KEY_BODY handle"""
-        output = []
-        kcb = handle.KeyControlBlock
-        while kcb.ParentKcb:
-            if kcb.NameBlock.Name == None:
-                break
-            output.append(str(kcb.NameBlock.Name))
-            kcb = kcb.ParentKcb
-        return "\\".join(reversed(output))
-
     def render_text(self, outfd, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
 
@@ -89,7 +78,7 @@ class Handles(taskmods.DllList):
                             name = repr(file_obj.FileName.v())
                     elif object_type == "Key":
                         key_obj = handle.dereference_as("_CM_KEY_BODY")
-                        name = self.full_key_name(key_obj)
+                        name = key_obj.full_key_name()
                     elif object_type == "Process":
                         proc_obj = handle.dereference_as("_EPROCESS")
                         name = "{0}({1})".format(proc_obj.ImageFileName, proc_obj.UniqueProcessId)

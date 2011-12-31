@@ -608,3 +608,18 @@ class _IMAGE_SECTION_HEADER(obj.CType):
             raise ValueError('SizeOfRawData {0:08x} is larger than image size.'.format(self.SizeOfRawData))
 
 AbstractWindows.object_classes['_IMAGE_SECTION_HEADER'] = _IMAGE_SECTION_HEADER
+
+class _CM_KEY_BODY(obj.CType):
+    """Registry key"""
+
+    def full_key_name(self):
+        output = []
+        kcb = self.KeyControlBlock
+        while kcb.ParentKcb:
+            if kcb.NameBlock.Name == None:
+                break
+            output.append(str(kcb.NameBlock.Name))
+            kcb = kcb.ParentKcb
+        return "\\".join(reversed(output))
+
+AbstractWindows.object_classes['_CM_KEY_BODY'] = _CM_KEY_BODY
