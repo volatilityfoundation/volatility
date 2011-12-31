@@ -26,7 +26,7 @@ import volatility.utils as utils
 import volatility.plugins.taskmods as taskmods
 import volatility.plugins.filescan as filescan
 
-# Inherit from Dlllist for command line options, FileScan for parse_string
+# Inherit from Dlllist for command line options
 class Handles(taskmods.DllList):
     """Print list of open handles for each process"""
 
@@ -74,7 +74,7 @@ class Handles(taskmods.DllList):
                 offset = h.obj_vm.vtop(h.Body.obj_offset)
 
             outfd.write("{0:#010x}   {1:<6} {2:<#10x} {3:<16} {4}\n".format(
-                offset, pid, h.members['GrantedAccess'], otype, name))
+                offset, pid, h.GrantedAccess, otype, name))
 
     def calculate(self):
         ## Will need the kernel AS for later:

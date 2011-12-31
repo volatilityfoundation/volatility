@@ -227,11 +227,12 @@ class _HANDLE_TABLE(obj.CType):
     tables, such as the _KDDEBUGGER_DATA64.PspCidTable.
     """
 
-    def get_item(self, offset):
-        """Returns the OBJECT_HEADER of the associated handle at a particular offset"""
-        return obj.Object("_OBJECT_HEADER", offset, vm = self.obj_vm,
-                                            native_vm = self.obj_native_vm,
-                                            parent = self)
+    def get_item(self, entry):
+        """Returns the OBJECT_HEADER of the associated handle. The parent
+        is the _HANDLE_TABLE_ENTRY so that an object can be linked to its 
+        GrantedAccess.
+        """
+        return entry.Object.dereference_as("_OBJECT_HEADER", parent = entry)
 
     def _make_handle_array(self, offset, level):
         """ Returns an array of _HANDLE_TABLE_ENTRY rooted at offset,
@@ -260,16 +261,10 @@ class _HANDLE_TABLE(obj.CType):
                 else:
                     ## OK We got to the bottom table, we just resolve
                     ## objects here:
-                    obj_offset = int(entry.Object.v()) & ~0x00000007
-
-                    item = self.get_item(obj_offset)
+                    item = self.get_item(entry)
 
                     if item == None:
                         continue
-
-                    # carry over the access from _HANDLE_TABLE_ENTRY and make it  
-                    # an "fake" member of _OBJECT_HEADER. see Issue 135. 
-                    item.members['GrantedAccess'] = entry.GrantedAccess
 
                     try:
                         # New object header
@@ -305,6 +300,11 @@ AbstractWindows.object_classes['_HANDLE_TABLE'] = _HANDLE_TABLE
 
 class _OBJECT_HEADER(obj.CType):
     """A Volatility object to handle Windows object headers"""
+
+    @property
+    def GrantedAccess(self):
+        if self.obj_parent: return self.obj_parent.GrantedAccess
+        return obj.NoneObject("No parent known")
 
     def get_object_type(self):
         """Return the object's type as a string"""
@@ -466,9 +466,9 @@ AbstractWindows.object_classes['_MMVAD_SHORT'] = _MMVAD_SHORT
 AbstractWindows.object_classes['_MMVAD_LONG'] = _MMVAD_LONG
 
 class _EX_FAST_REF(obj.CType):
-    def dereference_as(self, theType):
+    def dereference_as(self, theType, **kwargs):
         """Use the _EX_FAST_REF.Object pointer to resolve an object of the specified type"""
-        return obj.Object(theType, vm = self.obj_native_vm, parent = self, offset = self.Object.v() & ~7)
+        return obj.Object(theType, self.Object.v() & ~7, self.obj_native_vm, **kwargs)
 
 AbstractWindows.object_classes['_EX_FAST_REF'] = _EX_FAST_REF
 

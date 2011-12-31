@@ -102,6 +102,10 @@ xpsp2overlays = {
     'Body' : [ None, ['unsigned int']],
     }],
 
+    '_HANDLE_TABLE_ENTRY' : [ None, {
+    'Object' : [ None, ['_EX_FAST_REF']], 
+    }], 
+
     '_IMAGE_SECTION_HEADER' : [ None, {
     'Name' : [ 0x0, ['String', dict(length = 8)]],
     }], 
