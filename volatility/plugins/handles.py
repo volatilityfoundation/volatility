@@ -84,17 +84,17 @@ class Handles(taskmods.DllList):
                     name = ""
                     otype = h.get_object_type()
                     if otype == "File":
-                        file_obj = obj.Object("_FILE_OBJECT", h.Body.obj_offset, h.obj_vm)
+                        file_obj = h.dereference_as("_FILE_OBJECT")
                         if file_obj.FileName:
                             name = repr(file_obj.FileName.v())
                     elif otype == "Key":
-                        key_obj = obj.Object("_CM_KEY_BODY", h.Body.obj_offset, h.obj_vm)
+                        key_obj = h.dereference_as("_CM_KEY_BODY")
                         name = self.full_key_name(key_obj)
                     elif otype == "Process":
-                        proc_obj = obj.Object("_EPROCESS", h.Body.obj_offset, h.obj_vm)
+                        proc_obj = h.dereference_as("_EPROCESS")
                         name = "{0}({1})".format(proc_obj.ImageFileName, proc_obj.UniqueProcessId)
                     elif otype == "Thread":
-                        thrd_obj = obj.Object("_ETHREAD", h.Body.obj_offset, h.obj_vm)
+                        thrd_obj = h.dereference_as("_ETHREAD")
                         name = "TID {0} PID {1}".format(thrd_obj.Cid.UniqueThread, thrd_obj.Cid.UniqueProcess)
                     else:
                         name = repr(h.get_object_name())
