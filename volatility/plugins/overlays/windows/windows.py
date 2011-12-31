@@ -306,6 +306,11 @@ class _OBJECT_HEADER(obj.CType):
         if self.obj_parent: return self.obj_parent.GrantedAccess
         return obj.NoneObject("No parent known")
 
+    def dereference_as(self, theType):
+        """Instantiate an object from the _OBJECT_HEADER.Body"""
+        return obj.Object(theType, offset = self.Body.obj_offset, vm = self.obj_vm, 
+                         native_vm = self.obj_native_vm, parent = self)
+
     def get_object_type(self):
         """Return the object's type as a string"""
         try:
