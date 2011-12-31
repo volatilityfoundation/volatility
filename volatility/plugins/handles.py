@@ -76,15 +76,12 @@ class Handles(taskmods.DllList):
                 offset, pid, h.GrantedAccess, otype, name))
 
     def calculate(self):
-        ## Will need the kernel AS for later:
-        kernel_as = utils.load_as(self._config)
 
         for task in taskmods.DllList.calculate(self):
             pid = task.UniqueProcessId
             if task.ObjectTable.HandleTableList:
                 for h in task.ObjectTable.handles():
                     name = ""
-                    h.set_native_vm(kernel_as)
                     otype = h.get_object_type()
                     if otype == "File":
                         file_obj = obj.Object("_FILE_OBJECT", h.Body.obj_offset, h.obj_vm)
