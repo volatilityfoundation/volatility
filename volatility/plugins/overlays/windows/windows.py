@@ -308,7 +308,7 @@ class _OBJECT_HEADER(obj.CType):
 
     def dereference_as(self, theType):
         """Instantiate an object from the _OBJECT_HEADER.Body"""
-        return obj.Object(theType, offset = self.Body.obj_offset, vm = self.obj_vm, 
+        return obj.Object(theType, offset = self.Body.obj_offset, vm = self.obj_vm,
                          native_vm = self.obj_native_vm, parent = self)
 
     def get_object_type(self):

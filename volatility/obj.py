@@ -625,11 +625,6 @@ class Void(NativeType):
     def __nonzero__(self):
         return bool(self.dereference())
 
-    def dereference_as(self, derefType):
-        # Make sure we use self._vol_vm to automatically
-        # dereference from the highest available VM
-        return Object(derefType, self.v(), self.obj_native_vm, parent = self)
-
 class Array(BaseObject):
     """ An array of objects of the same size """
     def __init__(self, theType, offset, vm, parent = None,
