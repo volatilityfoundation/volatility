@@ -377,6 +377,9 @@ class _MMVAD(obj.CType):
             # Switch to its process AS
             vm = eprocess.get_process_address_space()
 
+        if not vm:
+            return obj.NoneObject("Could not find address space for _MMVAD object")
+
         ## Note that since we were called from __new__ we can return a
         ## completely different object here (including
         ## NoneObject). This also means that we can not add any
