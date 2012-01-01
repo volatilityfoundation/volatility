@@ -380,7 +380,12 @@ class BaseObject(object):
         return NoneObject("Can't dereference {0}".format(self.obj_name), self.obj_vm.profile.strict)
 
     def dereference_as(self, derefType, **kwargs):
-        return Object(derefType, self.v(), self.obj_native_vm, parent = self, **kwargs)
+        # Make sure we use self.obj_native_vm to automatically
+        # dereference from the highest available VM
+        if self.obj_native_vm.is_valid_address(self.v()):
+            return Object(derefType, self.v(), self.obj_native_vm, parent = self, **kwargs)
+        else:
+            return NoneObject("Invalid offset {0} for dereferencing {1} as {2}", self.v(), self.obj_name, derefType)
 
     def cast(self, castString):
         return Object(castString, self.obj_offset, self.obj_vm)
