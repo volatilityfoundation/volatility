@@ -365,6 +365,11 @@ class _MMVAD(obj.CType):
 
     ## parent is the containing _EPROCESS right now
     def __new__(cls, theType, offset, vm, parent = None, **args):
+        # Don't waste time if we're based on a NULL pointer
+        # I can't think of a better check than this...
+        if offset < 4:
+            return obj.NoneObject("MMVAD probably instantiated from a NULL pointer, there is no tag to read")
+
         ## All VADs are done in the process AS - so we might need to switch
         ## Address spaces now. Find the eprocess we came from and switch
         ## AS. Note that all child traversals will be in Process AS. 
