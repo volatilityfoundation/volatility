@@ -158,3 +158,5 @@ class SSDT(commands.command):
                                                                        syscall_addr,
                                                                        syscall_name,
                                                                        syscall_modname))
+            else:
+                outfd.write("  [SSDT not resident at 0x{0:08X} ]\n".format(table))
