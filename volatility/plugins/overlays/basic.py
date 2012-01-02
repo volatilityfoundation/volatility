@@ -188,9 +188,8 @@ class VolatilityDTB(obj.VolatilityMagic):
                 found = data.find(str(self.obj_parent.DTBSignature), found + 1)
                 if found >= 0:
                     # (_type, _size) = unpack('=HH', data[found:found+4])
-                    proc = obj.Object("_EPROCESS",
-                                             offset = offset + found,
-                                             vm = self.obj_vm)
+                    proc = obj.Object("_EPROCESS", offset = offset + found,
+                                      vm = self.obj_vm)
                     if 'Idle' in proc.ImageFileName.v():
                         yield proc.Pcb.DirectoryTableBase.v()
                 else:

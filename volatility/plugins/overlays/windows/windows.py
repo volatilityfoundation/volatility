@@ -286,11 +286,11 @@ class _HANDLE_TABLE(obj.CType):
         yielding all handles. We take care of recursing into the
         nested tables automatically.
         """
+        # This should work equally for 32 and 64 bit systems
+        LEVEL_MASK = 7
 
-        LEVEL_MASK = 0xfffffff8
-
-        TableCode = self.TableCode.v() & LEVEL_MASK
-        table_levels = self.TableCode.v() & ~LEVEL_MASK
+        TableCode = self.TableCode.v() & ~LEVEL_MASK
+        table_levels = self.TableCode.v() & LEVEL_MASK
         offset = TableCode
 
         for h in self._make_handle_array(offset, table_levels):
