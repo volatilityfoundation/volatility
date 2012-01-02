@@ -59,6 +59,8 @@ xpsp2overlays = {
     'HiveListOffset' : [ 0x0, ['VolatilityMagic', dict(value = 0x224)]],
     'HiveListPoolSize': [ 0x0, ['VolatilityMagic', dict(value = 0x4a8)]],
     'IA32ValidAS': [ 0x0, ['VolatilityIA32ValidAS']],
+    # Pool allocations are aligned to this many bytes.
+    'PoolAlignment': [0x0, ['VolatilityMagic', dict(value = 8)]],
     }],
 
     '_EPROCESS' : [ None, { \
@@ -108,7 +110,7 @@ xpsp2overlays = {
 
     '_IMAGE_SECTION_HEADER' : [ None, {
     'Name' : [ 0x0, ['String', dict(length = 8)]],
-    }], 
+    }],
 
     '_DBGKD_GET_VERSION64' : [  None, {
     'DebuggerDataList' : [ None, ['pointer', ['unsigned long']]], \

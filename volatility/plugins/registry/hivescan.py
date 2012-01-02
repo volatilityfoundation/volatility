@@ -35,7 +35,15 @@ import volatility.cache as cache
 class CheckHiveSig(scan.ScannerCheck):
     """ Check for a registry hive signature """
     def check(self, offset):
-        sig = obj.Object('_HHIVE', vm = self.address_space, offset = offset + 4).Signature
+        # Round offset to the pool alignment
+        pool_align = obj.VolMagic(self.address_space).PoolAlignment.v()
+        offset += 4
+
+        extra = offset % pool_align
+        if extra:
+            offset += pool_align - extra
+
+        sig = obj.Object('_HHIVE', vm = self.address_space, offset = offset).Signature
         return sig == 0xbee0bee0
 
 class PoolScanHiveFast2(scan.PoolScanner):
