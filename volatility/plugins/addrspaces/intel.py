@@ -92,6 +92,9 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         #self.pagefile = config.PAGEFILE
         self.name = 'Kernel AS'
 
+    def is_valid_profile(self, profile):
+        return profile.metadata.get('memory_model', '32bit') == '32bit'
+
     @staticmethod
     def register_options(config):
         config.add_option("DTB", type = 'int', default = 0,

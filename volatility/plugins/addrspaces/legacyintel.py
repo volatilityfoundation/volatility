@@ -71,6 +71,9 @@ class IA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddres
 
         self.name = 'Kernel AS'
 
+    def is_valid_profile(self, profile):
+        return profile.metadata.get('memory_model', '32bit') == '32bit'
+
     @staticmethod
     def register_options(config):
         ## This module requires a filename to be passed by the user

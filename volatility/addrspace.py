@@ -91,7 +91,13 @@ class BaseAddressSpace(object):
                 PROFILES[profile_name] = ret
             except KeyError:
                 raise ASAssertionError, "Invalid profile " + profile_name + " selected"
+        if not self.is_valid_profile(ret):
+            raise ASAssertionError, "Incompatible profile " + profile_name + " selected"
         return ret
+
+    def is_valid_profile(self, profile):
+        """Determines whether a selected profile is compatible with this address space"""
+        return True
 
     def as_assert(self, assertion, error = None):
         """Duplicate for the assert command (so that optimizations don't disable them)
