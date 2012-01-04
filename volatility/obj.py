@@ -865,6 +865,7 @@ class Profile(object):
     _md_major = 0
     _md_minor = 0
     _md_build = 0
+    _md_memory_model = '32bit'
     native_types = {}
     abstract_types = {}
     overlay = {}
