@@ -22,6 +22,7 @@
 """ This file defines some basic types which might be useful for many
 OS's
 """
+import copy
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.constants as constants
@@ -46,6 +47,10 @@ x86_native_types_32bit = {
     'long long' : [8, '<q'],
     'unsigned long long' : [8, '<Q'],
     }
+
+x86_native_types_64bit = copy.deepcopy(x86_native_types_32bit)
+x86_native_types_64bit['address'] = [8, '<Q']
+x86_native_types_64bit['pointer64'] = [8, '<Q']
 
 class String(obj.NativeType):
     """Class for dealing with Strings"""
