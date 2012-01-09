@@ -385,7 +385,7 @@ class BaseObject(object):
         if self.obj_native_vm.is_valid_address(self.v()):
             return Object(derefType, self.v(), self.obj_native_vm, parent = self, **kwargs)
         else:
-            return NoneObject("Invalid offset {0} for dereferencing {1} as {2}", self.v(), self.obj_name, derefType)
+            return NoneObject("Invalid offset {0} for dereferencing {1} as {2}".format(self.v(), self.obj_name, derefType))
 
     def cast(self, castString):
         return Object(castString, self.obj_offset, self.obj_vm)
