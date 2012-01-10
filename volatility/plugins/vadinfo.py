@@ -144,7 +144,7 @@ class VADWalk(VADInfo):
         for task in data:
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
-            outfd.write("Address  Parent   Left     Right    Start    End      Tag  Flags\n")
+            outfd.write("Address  Parent   Left     Right    Start    End      Tag\n")
             for vad in task.VadRoot.traverse():
                 # Ignore Vads with bad tags (which we explicitly include as None)
                 if vad:
