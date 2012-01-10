@@ -82,7 +82,7 @@ class VADInfo(taskmods.DllList):
         outfd.write("NumberOfSectionReferences: {0:10} NumberOfPfnReferences:  {1:10}\n".format(CA.NumberOfSectionReferences, CA.NumberOfPfnReferences))
         outfd.write("NumberOfMappedViews:       {0:10} NumberOfUserReferences: {1:10}\n".format(CA.NumberOfMappedViews, CA.NumberOfUserReferences))
         outfd.write("WaitingForDeletion Event:  {0:08x}\n".format(CA.WaitingForDeletion))
-        outfd.write("Flags: {0}\n".format(CA.Flags))
+        outfd.write("Control Flags: {0}\n".format(CA.Flags))
 
         FO = vad.get_file_object()
 
