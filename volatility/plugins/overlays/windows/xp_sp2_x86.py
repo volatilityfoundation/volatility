@@ -182,95 +182,20 @@ xpsp2overlays = {
     '_CLIENT_ID': [ None, {
     'UniqueProcess' : [ None, ['unsigned int']], \
     'UniqueThread' : [ None, ['unsigned int']], \
-    } ],
-
-    '_CONTROL_AREA': [ None, {
-    'Flags': [ None, ['Flags',
-                      {'bitmap': {
-    'BeingDeleted' : 0x0,
-    'BeingCreated' : 0x1,
-    'BeingPurged'  : 0x2,
-    'NoModifiedWriting' :  0x3,
-    'FailAllIo' : 0x4,
-    'Image' : 0x5,
-    'Based' : 0x6,
-    'File'  : 0x7,
-    'Networked' : 0x8,
-    'NoCache' : 0x9,
-    'PhysicalMemory' : 0xa,
-    'CopyOnWrite' : 0xb,
-    'Reserve' : 0xc,
-    'Commit' : 0xd,
-    'FloppyMedia' : 0xe,
-    'WasPurged' : 0xf,
-    'UserReference' : 0x10,
-    'GlobalMemory' : 0x11,
-    'DeleteOnClose' : 0x12,
-    'FilePointerNull' : 0x13,
-    'DebugSymbolsLoaded' : 0x14,
-    'SetMappedFileIoComplete' : 0x15,
-    'CollidedFlush' : 0x16,
-    'NoChange' : 0x17,
-    'HadUserReference' : 0x18,
-    'ImageMappedInSystemSpace' : 0x19,
-    'UserWritable' : 0x1a,
-    'Accessed' : 0x1b,
-    'GlobalOnlyPerSession' : 0x1c,
-    'Rom' : 0x1d,
-    },
-                       }
-                      ]
-               ],
-    } ]
-}
-
-
-xpsp2overlays['_MMVAD_SHORT'] = [ None, {
+    } ],    
+    
+    '_MMVAD_SHORT': [ None, {
     # This is the location of the MMVAD type which controls how to parse the
     # node. It is located before the structure.
     'Tag': [-4 , ['String', dict(length = 4)]],
-    'Flags': [ None, ['Flags',
-  {'bitmap': {
-    'PhysicalMapping': 0x13,
-    'ImageMap': 0x14,
-    'UserPhysicalPages': 0x15,
-    'NoChange': 0x16,
-    'WriteWatch': 0x17,
-    'LargePages': 0x1D,
-    'MemCommit': 0x1E,
-    'PrivateMemory': 0x1f,
-    },
-  'maskmap': {
-    'CommitCharge' : [0x0, 0x13],
-    'Protection' : [0x18, 0x5],
-    }
-  } ] ],
-    } ]
-
-xpsp2overlays['_MMVAD_LONG'] = [ None, {
-    'Flags': xpsp2overlays['_MMVAD_SHORT'][1]['Flags'],
+    } ], 
+    
+    '_MMVAD_LONG': [ None, {
+    # This is the location of the MMVAD type which controls how to parse the
+    # node. It is located before the structure.
     'Tag': [-4 , ['String', dict(length = 4)]],
-    'Flags2': [ None, ['Flags',
-  {'bitmap': {
-    'SecNoChange' : 0x18,
-    'OneSecured' : 0x19,
-    'MultipleSecured' : 0x1a,
-    'ReadOnly' : 0x1b,
-    'LongVad' : 0x1c,
-    'ExtendableFile' : 0x1d,
-    'Inherit' : 0x1e,
-    'CopyOnWrite' : 0x1f,
-    },
-  'maskmap': {
-    'FileOffset' : [0x0, 0x18],
-    }
-  } ] ],
-    } ]
-
-xpsp2overlays['_MMVAD_SHORT'][1]['Flags'][0] = lambda x: x.u.obj_offset
-xpsp2overlays['_CONTROL_AREA'][1]['Flags'][0] = lambda x: x.u.obj_offset
-xpsp2overlays['_MMVAD_LONG'][1]['Flags'][0] = lambda x: x.u.obj_offset
-xpsp2overlays['_MMVAD_LONG'][1]['Flags2'][0] = lambda x: x.u2.obj_offset
+    } ], 
+}
 
 class WinXPSP2x86(windows.AbstractWindows):
     """ A Profile for Windows XP SP2 """

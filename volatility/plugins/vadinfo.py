@@ -59,10 +59,7 @@ class VADInfo(taskmods.DllList):
         """Renders a text version of a Short Vad"""
         outfd.write("VAD node @{0:08x} Start {1:08x} End {2:08x} Tag {3:4}\n".format(
             vad.obj_offset, vad.get_start(), vad.get_end(), vad.Tag))
-        outfd.write("Flags: {0}\n".format(vad.Flags))
-        outfd.write("Commit Charge: {0} Protection: {1:x}\n".format(
-            vad.Flags.CommitCharge,
-            vad.Flags.Protection >> 24))
+        outfd.write("Flags: {0}\n".format(str(vad.u.VadFlags)))
 
     def write_vad_control(self, outfd, vad):
         """Renders a text version of a (non-short) Vad's control information"""
@@ -82,25 +79,17 @@ class VADInfo(taskmods.DllList):
         outfd.write("NumberOfSectionReferences: {0:10} NumberOfPfnReferences:  {1:10}\n".format(CA.NumberOfSectionReferences, CA.NumberOfPfnReferences))
         outfd.write("NumberOfMappedViews:       {0:10} NumberOfUserReferences: {1:10}\n".format(CA.NumberOfMappedViews, CA.NumberOfUserReferences))
         outfd.write("WaitingForDeletion Event:  {0:08x}\n".format(CA.WaitingForDeletion))
-        outfd.write("Control Flags: {0}\n".format(CA.Flags))
+        outfd.write("Control Flags: {0}\n".format(str(CA.u.Flags)))
 
         FO = vad.get_file_object()
 
         if FO:
             outfd.write("FileObject @{0:08x} FileBuffer @ {1:08x}          , Name: {2}\n".format(FO.obj_offset, FO.FileName.Buffer, FO.FileName))
-        else:
-            outfd.write("FileObject: none\n")
 
     def write_vad_ext(self, outfd, vad):
         """Renders a text version of a Long Vad"""
         outfd.write("First prototype PTE: {0:08x} Last contiguous PTE: {1:08x}\n".format(vad.FirstPrototypePte, vad.LastContiguousPte))
-
-        outfd.write("Flags2: {0}\n".format(vad.Flags2))
-        outfd.write("File offset: {0:08x}\n".format(vad.Flags2.FileOffset))
-
-        if (vad.Flags2.v() and vad.Flags2.LongVad):
-            # FIXME: Add in the extra bits, after deciding on names for u3 and u4
-            outfd.write("Extended information available\n")
+        outfd.write("Flags2: {0}\n".format(str(vad.u2.VadFlags2)))
 
 class VADTree(VADInfo):
     """Walk the VAD tree and display in tree format"""

@@ -43,11 +43,6 @@ win2k3sp0x86overlays = copy.deepcopy(xp_sp2_x86.xpsp2overlays)
 
 win2k3sp0x86overlays['_EPROCESS'][1]['VadRoot'][1] = ['_MM_AVL_TABLE']
 
-win2k3sp0x86overlays['_MMVAD_SHORT'][1]['Flags'][0] = lambda x: x.u.obj_offset
-win2k3sp0x86overlays['_CONTROL_AREA'][1]['Flags'][0] = lambda x: x.u.obj_offset
-win2k3sp0x86overlays['_MMVAD_LONG'][1]['Flags'][0] = lambda x: x.u.obj_offset
-win2k3sp0x86overlays['_MMVAD_LONG'][1]['Flags2'][0] = lambda x: x.u2.obj_offset
-
 win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x1B\x00")]
 win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['KPCR'][1] = ['VolatilityKPCR', dict(value = 0xffdff000, configname = 'KPCR')]
 win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x18\x03')]
