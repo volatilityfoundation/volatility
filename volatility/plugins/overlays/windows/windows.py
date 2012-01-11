@@ -634,3 +634,19 @@ class _CM_KEY_BODY(obj.CType):
         return "\\".join(reversed(output))
 
 AbstractWindows.object_classes['_CM_KEY_BODY'] = _CM_KEY_BODY
+
+class _MMVAD_FLAGS(obj.CType):
+    def __str__(self):
+        return ", ".join(["%s: %s" % (name, self.m(name)) for name in sorted(self.members.keys()) if self.m(name) != 0])
+       
+AbstractWindows.object_classes['_MMVAD_FLAGS'] = _MMVAD_FLAGS
+
+class _MMVAD_FLAGS2(_MMVAD_FLAGS):
+    pass
+    
+AbstractWindows.object_classes['_MMVAD_FLAGS2'] = _MMVAD_FLAGS2
+
+class _MMSECTION_FLAGS(_MMVAD_FLAGS):
+    pass
+    
+AbstractWindows.object_classes['_MMSECTION_FLAGS'] = _MMSECTION_FLAGS
