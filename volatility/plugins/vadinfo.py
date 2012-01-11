@@ -31,6 +31,58 @@ import os.path
 import volatility.plugins.taskmods as taskmods
 import volatility.debug as debug #pylint: disable-msg=W0611
 
+# Vad Protections. Also known as page protections. _MMVAD_FLAGS.Protection,
+# 3-bits, is an index into nt!MmProtectToValue (the following list). 
+PROTECT_FLAGS = dict(enumerate([
+    'PAGE_NOACCESS',
+    'PAGE_READONLY',
+    'PAGE_EXECUTE',
+    'PAGE_EXECUTE_READ',
+    'PAGE_READWRITE',
+    'PAGE_WRITECOPY',
+    'PAGE_EXECUTE_READWRITE',
+    'PAGE_EXECUTE_WRITECOPY',
+    'PAGE_NOACCESS',
+    'PAGE_NOCACHE | PAGE_READONLY',
+    'PAGE_NOCACHE | PAGE_EXECUTE',
+    'PAGE_NOCACHE | PAGE_EXECUTE_READ',
+    'PAGE_NOCACHE | PAGE_READWRITE',
+    'PAGE_NOCACHE | PAGE_WRITECOPY',
+    'PAGE_NOCACHE | PAGE_EXECUTE_READWRITE',
+    'PAGE_NOCACHE | PAGE_EXECUTE_WRITECOPY',
+    'PAGE_NOACCESS',
+    'PAGE_GUARD | PAGE_READONLY',
+    'PAGE_GUARD | PAGE_EXECUTE',
+    'PAGE_GUARD | PAGE_EXECUTE_READ',
+    'PAGE_GUARD | PAGE_READWRITE',
+    'PAGE_GUARD | PAGE_WRITECOPY',
+    'PAGE_GUARD | PAGE_EXECUTE_READWRITE',
+    'PAGE_GUARD | PAGE_EXECUTE_WRITECOPY',
+    'PAGE_NOACCESS',
+    'PAGE_WRITECOMBINE | PAGE_READONLY',
+    'PAGE_WRITECOMBINE | PAGE_EXECUTE',
+    'PAGE_WRITECOMBINE | PAGE_EXECUTE_READ',
+    'PAGE_WRITECOMBINE | PAGE_READWRITE',
+    'PAGE_WRITECOMBINE | PAGE_WRITECOPY',
+    'PAGE_WRITECOMBINE | PAGE_EXECUTE_READWRITE',
+    'PAGE_WRITECOMBINE | PAGE_EXECUTE_WRITECOPY',
+]))
+
+# Vad Types. The _MMVAD_SHORT.u.VadFlags (_MMVAD_FLAGS) struct on XP has  
+# individual flags, 1-bit each, for these types. The _MMVAD_FLAGS for all
+# OS after XP has a member _MMVAD_FLAGS.VadType, 3-bits, which is an index
+# into the following enumeration. 
+MI_VAD_TYPE = dict(enumerate([
+    'VadNone', 
+    'VadDevicePhysicalMemory', 
+    'VadImageMap', 
+    'VadAwe',
+    'VadWriteWatch', 
+    'VadLargePages', 
+    'VadRotatePhysical', 
+    'VadLargePageSection',
+]))
+
 # Inherit from dlllist just for the config options (__init__)
 class VADInfo(taskmods.DllList):
     """Dump the VAD info"""
@@ -60,6 +112,12 @@ class VADInfo(taskmods.DllList):
         outfd.write("VAD node @{0:08x} Start {1:08x} End {2:08x} Tag {3:4}\n".format(
             vad.obj_offset, vad.get_start(), vad.get_end(), vad.Tag))
         outfd.write("Flags: {0}\n".format(str(vad.u.VadFlags)))
+        # although the numeric value of Protection is printed above with VadFlags,
+        # let's show the user a human-readable translation of the protection 
+        outfd.write("Protection: {0}\n".format(PROTECT_FLAGS.get(vad.u.VadFlags.Protection.v(), hex(vad.u.VadFlags.Protection))))
+        # translate the vad type if its available (> XP)
+        if hasattr(vad.u.VadFlags, "VadType"):
+            outfd.write("Vad Type: {0}\n".format(MI_VAD_TYPE.get(vad.u.VadFlags.VadType.v(), hex(vad.u.VadFlags.VadType))))
 
     def write_vad_control(self, outfd, vad):
         """Renders a text version of a (non-short) Vad's control information"""
