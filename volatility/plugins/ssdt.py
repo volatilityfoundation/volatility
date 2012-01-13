@@ -90,9 +90,13 @@ class SSDT(commands.command):
     @CacheDecorator("tests/ssdt")
     def calculate(self):
         addr_space = utils.load_as(self._config)
+
+        if addr_space.profile.metadata.get('memory_model', '') != '32bit':
+            raise StopIteration
+
         addr_space.profile.add_types(sde_types)
 
-        if addr_space.profile.metadata.get('major', 0) == 5 and addr_space.profile.metadata.get('minor',0) == 2:
+        if addr_space.profile.metadata.get('major', 0) == 5 and addr_space.profile.metadata.get('minor', 0) == 2:
             addr_space.profile.add_types(sdt_types_2k3)
         else:
             addr_space.profile.add_types(sdt_types)
@@ -135,6 +139,11 @@ class SSDT(commands.command):
     def render_text(self, outfd, data):
 
         addr_space = utils.load_as(self._config)
+
+        if addr_space.profile.metadata.get('memory_model', '') != '32bit':
+            outfd.write("The SSDT plugin only supports 32bit systems\n  Please see issue 82 at volatility.googlecode.com for more details\n")
+            return
+
         syscalls = addr_space.profile.syscalls
 
         # Print out the entries for each table
