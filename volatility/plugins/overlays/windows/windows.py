@@ -27,7 +27,7 @@ import volatility.debug as debug
 import volatility.obj as obj
 import volatility.addrspace as addrspace
 
-class AbstractWindows(obj.Profile):
+class AbstractWindowsX86(obj.Profile):
     """ A Profile for Windows systems """
     _md_os = 'windows'
     native_types = basic.x86_native_types
@@ -60,7 +60,7 @@ class _UNICODE_STRING(obj.CType):
     def __str__(self):
         return self.v()
 
-AbstractWindows.object_classes['_UNICODE_STRING'] = _UNICODE_STRING
+AbstractWindowsX86.object_classes['_UNICODE_STRING'] = _UNICODE_STRING
 
 class _LIST_ENTRY(obj.CType):
     """ Adds iterators for _LIST_ENTRY types """
@@ -106,7 +106,7 @@ class _LIST_ENTRY(obj.CType):
     def __iter__(self):
         return self.list_of_type(self.obj_parent.obj_name, self.obj_name)
 
-AbstractWindows.object_classes['_LIST_ENTRY'] = _LIST_ENTRY
+AbstractWindowsX86.object_classes['_LIST_ENTRY'] = _LIST_ENTRY
 
 class WinTimeStamp(obj.NativeType):
     """Class for handling Windows Time Stamps"""
@@ -166,7 +166,7 @@ class WinTimeStamp(obj.NativeType):
             return format(timefmt.display_datetime(dt), formatspec)
         return "-"
 
-AbstractWindows.object_classes['WinTimeStamp'] = WinTimeStamp
+AbstractWindowsX86.object_classes['WinTimeStamp'] = WinTimeStamp
 
 class _EPROCESS(obj.CType):
     """ An extensive _EPROCESS with bells and whistles """
@@ -217,7 +217,7 @@ class _EPROCESS(obj.CType):
     def get_load_modules(self):
         return self._get_modules(self.Peb.Ldr.InLoadOrderModuleList, "InLoadOrderLinks")
 
-AbstractWindows.object_classes['_EPROCESS'] = _EPROCESS
+AbstractWindowsX86.object_classes['_EPROCESS'] = _EPROCESS
 
 class _HANDLE_TABLE(obj.CType):
     """ A class for _HANDLE_TABLE. 
@@ -296,7 +296,7 @@ class _HANDLE_TABLE(obj.CType):
         for h in self._make_handle_array(offset, table_levels):
             yield h
 
-AbstractWindows.object_classes['_HANDLE_TABLE'] = _HANDLE_TABLE
+AbstractWindowsX86.object_classes['_HANDLE_TABLE'] = _HANDLE_TABLE
 
 class _OBJECT_HEADER(obj.CType):
     """A Volatility object to handle Windows object headers"""
@@ -349,7 +349,7 @@ class _OBJECT_HEADER(obj.CType):
 
         return object_name_string
 
-AbstractWindows.object_classes['_OBJECT_HEADER'] = _OBJECT_HEADER
+AbstractWindowsX86.object_classes['_OBJECT_HEADER'] = _OBJECT_HEADER
 
 ## This is an object which provides access to the VAD tree.
 class _MMVAD(obj.CType):
@@ -408,7 +408,7 @@ class _MMVAD(obj.CType):
 
         return result
 
-AbstractWindows.object_classes['_MMVAD'] = _MMVAD
+AbstractWindowsX86.object_classes['_MMVAD'] = _MMVAD
 
 class _MMVAD_SHORT(obj.CType):
     """Class with convenience functions for _MMVAD_SHORT functions"""
@@ -478,15 +478,15 @@ class _MMVAD_LONG(_MMVAD_SHORT):
     """Subclasses _MMVAD_LONG based on _MMVAD_SHORT"""
     pass
 
-AbstractWindows.object_classes['_MMVAD_SHORT'] = _MMVAD_SHORT
-AbstractWindows.object_classes['_MMVAD_LONG'] = _MMVAD_LONG
+AbstractWindowsX86.object_classes['_MMVAD_SHORT'] = _MMVAD_SHORT
+AbstractWindowsX86.object_classes['_MMVAD_LONG'] = _MMVAD_LONG
 
 class _EX_FAST_REF(obj.CType):
     def dereference_as(self, theType, parent = None, **kwargs):
         """Use the _EX_FAST_REF.Object pointer to resolve an object of the specified type"""
         return obj.Object(theType, self.Object.v() & ~7, self.obj_native_vm, parent = parent or self, **kwargs)
 
-AbstractWindows.object_classes['_EX_FAST_REF'] = _EX_FAST_REF
+AbstractWindowsX86.object_classes['_EX_FAST_REF'] = _EX_FAST_REF
 
 class ThreadCreateTimeStamp(WinTimeStamp):
     """Handles ThreadCreateTimeStamps which are bit shifted WinTimeStamps"""
@@ -496,7 +496,7 @@ class ThreadCreateTimeStamp(WinTimeStamp):
     def as_windows_timestamp(self):
         return obj.NativeType.v(self) >> 3
 
-AbstractWindows.object_classes['ThreadCreateTimeStamp'] = ThreadCreateTimeStamp
+AbstractWindowsX86.object_classes['ThreadCreateTimeStamp'] = ThreadCreateTimeStamp
 
 class IpAddress(obj.NativeType):
     """Provides proper output for IpAddress objects"""
@@ -507,7 +507,7 @@ class IpAddress(obj.NativeType):
     def v(self):
         return socket.inet_ntoa(struct.pack("<I", obj.NativeType.v(self)))
 
-AbstractWindows.object_classes['IpAddress'] = IpAddress
+AbstractWindowsX86.object_classes['IpAddress'] = IpAddress
 
 class VolatilityKPCR(obj.VolatilityMagic):
     """A scanner for KPCR data within an address space"""
@@ -518,7 +518,7 @@ class VolatilityKPCR(obj.VolatilityMagic):
         for val in scanner.scan(self.obj_vm):
             yield val
 
-AbstractWindows.object_classes['VolatilityKPCR'] = VolatilityKPCR
+AbstractWindowsX86.object_classes['VolatilityKPCR'] = VolatilityKPCR
 
 class VolatilityKDBG(obj.VolatilityMagic):
     """A Scanner for KDBG data within an address space"""
@@ -529,7 +529,7 @@ class VolatilityKDBG(obj.VolatilityMagic):
         for val in scanner.scan(self.obj_vm):
             yield val
 
-AbstractWindows.object_classes['VolatilityKDBG'] = VolatilityKDBG
+AbstractWindowsX86.object_classes['VolatilityKDBG'] = VolatilityKDBG
 
 class VolatilityIA32ValidAS(obj.VolatilityMagic):
     """An object to check that an address space is a valid IA32 Paged space"""
@@ -563,7 +563,7 @@ class VolatilityIA32ValidAS(obj.VolatilityMagic):
 
         yield False
 
-AbstractWindows.object_classes['VolatilityIA32ValidAS'] = VolatilityIA32ValidAS
+AbstractWindowsX86.object_classes['VolatilityIA32ValidAS'] = VolatilityIA32ValidAS
 
 class _IMAGE_DOS_HEADER(obj.CType):
     """DOS header"""
@@ -584,7 +584,7 @@ class _IMAGE_DOS_HEADER(obj.CType):
 
         return nt_header
 
-AbstractWindows.object_classes['_IMAGE_DOS_HEADER'] = _IMAGE_DOS_HEADER
+AbstractWindowsX86.object_classes['_IMAGE_DOS_HEADER'] = _IMAGE_DOS_HEADER
 
 class _IMAGE_NT_HEADERS(obj.CType):
     """PE header"""
@@ -602,7 +602,7 @@ class _IMAGE_NT_HEADERS(obj.CType):
                 sect.sanity_check_section()
             yield sect
 
-AbstractWindows.object_classes['_IMAGE_NT_HEADERS'] = _IMAGE_NT_HEADERS
+AbstractWindowsX86.object_classes['_IMAGE_NT_HEADERS'] = _IMAGE_NT_HEADERS
 
 class _IMAGE_SECTION_HEADER(obj.CType):
     """PE section"""
@@ -618,7 +618,7 @@ class _IMAGE_SECTION_HEADER(obj.CType):
         if self.SizeOfRawData > image_size:
             raise ValueError('SizeOfRawData {0:08x} is larger than image size.'.format(self.SizeOfRawData))
 
-AbstractWindows.object_classes['_IMAGE_SECTION_HEADER'] = _IMAGE_SECTION_HEADER
+AbstractWindowsX86.object_classes['_IMAGE_SECTION_HEADER'] = _IMAGE_SECTION_HEADER
 
 class _CM_KEY_BODY(obj.CType):
     """Registry key"""
@@ -633,23 +633,32 @@ class _CM_KEY_BODY(obj.CType):
             kcb = kcb.ParentKcb
         return "\\".join(reversed(output))
 
-AbstractWindows.object_classes['_CM_KEY_BODY'] = _CM_KEY_BODY
+AbstractWindowsX86.object_classes['_CM_KEY_BODY'] = _CM_KEY_BODY
 
 class _MMVAD_FLAGS(obj.CType):
     """This is for _MMVAD_SHORT.u.VadFlags"""
     def __str__(self):
         return ", ".join(["%s: %s" % (name, self.m(name)) for name in sorted(self.members.keys()) if self.m(name) != 0])
 
-AbstractWindows.object_classes['_MMVAD_FLAGS'] = _MMVAD_FLAGS
+AbstractWindowsX86.object_classes['_MMVAD_FLAGS'] = _MMVAD_FLAGS
 
 class _MMVAD_FLAGS2(_MMVAD_FLAGS):
     """This is for _MMVAD_LONG.u2.VadFlags2"""
     pass
 
-AbstractWindows.object_classes['_MMVAD_FLAGS2'] = _MMVAD_FLAGS2
+AbstractWindowsX86.object_classes['_MMVAD_FLAGS2'] = _MMVAD_FLAGS2
 
 class _MMSECTION_FLAGS(_MMVAD_FLAGS):
     """This is for _CONTROL_AREA.u.Flags"""
     pass
 
-AbstractWindows.object_classes['_MMSECTION_FLAGS'] = _MMSECTION_FLAGS
+AbstractWindowsX86.object_classes['_MMSECTION_FLAGS'] = _MMSECTION_FLAGS
+
+
+
+### DEPRECATED FEATURES ###
+#
+# These are due from removal after version 2.2,
+# please do not rely upon them
+
+AbstractWindows = AbstractWindowsX86

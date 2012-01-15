@@ -197,7 +197,7 @@ xpsp2overlays = {
     } ], 
 }
 
-class WinXPSP2x86(windows.AbstractWindows):
+class WinXPSP2x86(windows.AbstractWindowsX86):
     """ A Profile for Windows XP SP2 """
     _md_major = 5
     _md_minor = 1

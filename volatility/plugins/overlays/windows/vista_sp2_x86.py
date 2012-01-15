@@ -49,7 +49,7 @@ vista_sp2_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
 vista_sp2_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 vista_sp2_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
 
-class VistaSP2x86(windows.AbstractWindows):
+class VistaSP2x86(windows.AbstractWindowsX86):
     """ A Profile for Windows Vista SP2 x86 """
     _md_major = 6
     _md_minor = 0

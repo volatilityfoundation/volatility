@@ -47,7 +47,7 @@ xp_sp3_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
 xp_sp3_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
 xp_sp3_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 
-class WinXPSP3x86(windows.AbstractWindows):
+class WinXPSP3x86(windows.AbstractWindowsX86):
     """ A Profile for windows XP SP3 """
     _md_major = 5
     _md_minor = 1

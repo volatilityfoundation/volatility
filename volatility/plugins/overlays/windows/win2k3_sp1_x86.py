@@ -50,7 +50,7 @@ win2k3_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 win2k3_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_2k3_sp1_sp2)
 win2k3_sp1_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
 
-class Win2K3SP1x86(windows.AbstractWindows):
+class Win2K3SP1x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 2003 SP1 x86 """
     _md_major = 5
     _md_minor = 2

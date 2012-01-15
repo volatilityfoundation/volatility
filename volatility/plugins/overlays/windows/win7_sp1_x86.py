@@ -56,7 +56,7 @@ win7_sp1_x86_vtypes.nt_types.update({\
 } ], \
 })
 
-class Win7SP1x86(windows.AbstractWindows):
+class Win7SP1x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 7 SP1 x86 """
     _md_major = 6
     _md_minor = 1
@@ -65,6 +65,6 @@ class Win7SP1x86(windows.AbstractWindows):
     object_classes = copy.deepcopy(win7_sp0_x86.Win7SP0x86.object_classes)
     syscalls = win7_sp0_x86_syscalls.syscalls
     # FIXME: Temporary fix for issue 105
-    native_types = copy.deepcopy(windows.AbstractWindows.native_types)
-    native_types['pointer64'] = windows.AbstractWindows.native_types['unsigned long long']
+    native_types = copy.deepcopy(windows.AbstractWindowsX86.native_types)
+    native_types['pointer64'] = windows.AbstractWindowsX86.native_types['unsigned long long']
 

@@ -46,7 +46,7 @@ win2k8_sp2_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 win2k8_sp2_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
 win2k8_sp2_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
 
-class Win2K8SP2x86(windows.AbstractWindows):
+class Win2K8SP2x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 2008 SP2 x86 """
     _md_major = 6
     _md_minor = 0
