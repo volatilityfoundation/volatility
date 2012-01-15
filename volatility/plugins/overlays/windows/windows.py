@@ -30,7 +30,7 @@ import volatility.addrspace as addrspace
 class AbstractWindows(obj.Profile):
     """ A Profile for Windows systems """
     _md_os = 'windows'
-    native_types = basic.x86_native_types_32bit
+    native_types = basic.x86_native_types
 
 class _UNICODE_STRING(obj.CType):
     """Class representing a _UNICODE_STRING
@@ -639,17 +639,17 @@ class _MMVAD_FLAGS(obj.CType):
     """This is for _MMVAD_SHORT.u.VadFlags"""
     def __str__(self):
         return ", ".join(["%s: %s" % (name, self.m(name)) for name in sorted(self.members.keys()) if self.m(name) != 0])
-       
+
 AbstractWindows.object_classes['_MMVAD_FLAGS'] = _MMVAD_FLAGS
 
 class _MMVAD_FLAGS2(_MMVAD_FLAGS):
     """This is for _MMVAD_LONG.u2.VadFlags2"""
     pass
-    
+
 AbstractWindows.object_classes['_MMVAD_FLAGS2'] = _MMVAD_FLAGS2
 
 class _MMSECTION_FLAGS(_MMVAD_FLAGS):
     """This is for _CONTROL_AREA.u.Flags"""
     pass
-    
+
 AbstractWindows.object_classes['_MMSECTION_FLAGS'] = _MMSECTION_FLAGS

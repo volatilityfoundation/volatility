@@ -32,7 +32,7 @@ import volatility.constants as constants
 ## are not necessarily the same bit size as the currently running
 ## platform you may not use platform specific format specifiers here
 ## like l or L - you must use i or I.
-x86_native_types_32bit = {
+x86_native_types = {
     'int' : [4, '<i'],
     'long': [4, '<i'],
     'unsigned long' : [4, '<I'],
@@ -48,9 +48,9 @@ x86_native_types_32bit = {
     'unsigned long long' : [8, '<Q'],
     }
 
-x86_native_types_64bit = copy.deepcopy(x86_native_types_32bit)
-x86_native_types_64bit['address'] = [8, '<Q']
-x86_native_types_64bit['pointer64'] = [8, '<Q']
+x64_native_types = copy.deepcopy(x86_native_types)
+x64_native_types['address'] = [8, '<Q']
+x64_native_types['pointer64'] = [8, '<Q']
 
 class String(obj.NativeType):
     """Class for dealing with Strings"""
@@ -203,3 +203,13 @@ class VolatilityDTB(obj.VolatilityMagic):
             offset += len(data)
 
 obj.Profile.object_classes['VolatilityDTB'] = VolatilityDTB
+
+
+
+### DEPRECATED FEATURES ###
+#
+# These are due from removal after version 2.2,
+# please do not rely upon them
+
+x86_native_types_32bit = x86_native_types
+x86_native_types_64bit = x64_native_types
