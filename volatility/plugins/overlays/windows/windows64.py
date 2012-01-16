@@ -27,3 +27,9 @@ class AbstractWindowsX64(windows.AbstractWindowsX86):
     _md_memory_model = '64bit'
     native_types = basic.x64_native_types
     object_classes = copy.deepcopy(windows.AbstractWindows.object_classes)
+
+    def list_to_type(self, name, typeList, typeDict = None):
+        """Handle pointer64 types as if they were pointer types on 64-bit systems"""
+        if typeList[0] == 'pointer64':
+            typeList[0] = 'pointer'
+        return super(AbstractWindowsX64, self).list_to_type(name, typeList, typeDict)
