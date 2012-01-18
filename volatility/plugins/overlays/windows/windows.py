@@ -655,7 +655,6 @@ class _MMSECTION_FLAGS(_MMVAD_FLAGS):
 AbstractWindowsX86.object_classes['_MMSECTION_FLAGS'] = _MMSECTION_FLAGS
 
 
-
 ### DEPRECATED FEATURES ###
 #
 # These are due from removal after version 2.2,

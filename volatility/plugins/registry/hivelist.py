@@ -76,10 +76,9 @@ class HiveList(hs.HiveScan):
         ## the first hive in virtual address space. hmm I wish we
         ## could go from physical to virtual memory easier.
         for offset in hives:
-            hive = obj.Object("_CMHIVE", int(offset), flat)
-            o = obj.VolMagic(flat).HiveListOffset
+            hive = obj.Object("_CMHIVE", int(offset), flat, native_vm = addr_space)
             if hive.HiveList.Flink.v():
-                start_hive_offset = hive.HiveList.Flink.v() - o.v()
+                start_hive_offset = hive.HiveList.Flink.v() - addr_space.profile.get_obj_offset('_CMHIVE', 'HiveList')
 
                 ## Now instantiate the first hive in virtual address space as normal
                 start_hive = obj.Object("_CMHIVE", start_hive_offset, addr_space)

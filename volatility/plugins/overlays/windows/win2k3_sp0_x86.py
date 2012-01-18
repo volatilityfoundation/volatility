@@ -46,8 +46,6 @@ win2k3sp0x86overlays['_EPROCESS'][1]['VadRoot'][1] = ['_MM_AVL_TABLE']
 win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x1B\x00")]
 win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['KPCR'][1] = ['VolatilityKPCR', dict(value = 0xffdff000, configname = 'KPCR')]
 win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x18\x03')]
-win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['HiveListOffset'][1] = ['VolatilityMagic', dict(value = 0x2e4)]
-win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['HiveListPoolSize'][1] = ['VolatilityMagic', dict(value = 0x578)]
 
 win2k3_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
 win2k3_sp0_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)

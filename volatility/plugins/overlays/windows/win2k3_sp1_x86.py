@@ -41,7 +41,6 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 win2k3sp1x86overlays = copy.deepcopy(win2k3_sp0_x86.win2k3sp0x86overlays)
 
 win2k3sp1x86overlays['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x1e\x00")]
-win2k3sp1x86overlays['VOLATILITY_MAGIC'][1]['HiveListPoolSize'][1] = ['VolatilityMagic', dict(value = 0x588)]
 win2k3sp1x86overlays['_ETHREAD'][1]['CreateTime'][1] = ['WinTimeStamp', {}]
 
 win2k3_sp1_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)

@@ -44,8 +44,6 @@ vistasp0x86overlays = copy.deepcopy(win2k3_sp2_x86.win2k3sp2x86overlays)
 vistasp0x86overlays['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x20\x00")]
 vistasp0x86overlays['VOLATILITY_MAGIC'][1]['KPCR'][1] = ['VolatilityKPCR', dict(configname = 'KPCR')]
 vistasp0x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x28\x03')]
-vistasp0x86overlays['VOLATILITY_MAGIC'][1]['HiveListOffset'][1] = ['VolatilityMagic', dict(value = 0x308)]
-vistasp0x86overlays['VOLATILITY_MAGIC'][1]['HiveListPoolSize'][1] = ['VolatilityMagic', dict(value = 0x5d8)]
 
 vista_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
 vista_sp0_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)

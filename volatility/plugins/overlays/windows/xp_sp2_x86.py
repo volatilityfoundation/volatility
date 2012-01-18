@@ -56,8 +56,6 @@ xpsp2overlays = {
     'KUSER_SHARED_DATA' : [ 0x0, ['VolatilityMagic', dict(value = 0xFFDF0000)]],
     'KDBG' : [ 0x0, ['VolatilityKDBG', dict(configname = "KDBG")]],
     'KDBGHeader' : [ 0x0, ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x90\x02')]],
-    'HiveListOffset' : [ 0x0, ['VolatilityMagic', dict(value = 0x224)]],
-    'HiveListPoolSize': [ 0x0, ['VolatilityMagic', dict(value = 0x4a8)]],
     'IA32ValidAS': [ 0x0, ['VolatilityIA32ValidAS']],
     # Pool allocations are aligned to this many bytes.
     'PoolAlignment': [0x0, ['VolatilityMagic', dict(value = 8)]],

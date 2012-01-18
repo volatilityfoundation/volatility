@@ -80,9 +80,7 @@ class HiveScan(commands.command):
     def calculate(self):
         ## Just grab the AS and scan it using our scanner
         pspace = utils.load_as(self._config, astype = 'physical')
-        o = obj.VolMagic(pspace).HiveListPoolSize
-
-        poolsize = o.v()
+        poolsize = pspace.profile.get_obj_size('_CMHIVE')
 
         return PoolScanHiveFast2(poolsize).scan(pspace)
 
