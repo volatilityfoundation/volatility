@@ -28,7 +28,7 @@ This file provides support for Windows 2008 SP1.
 #pylint: disable-msg=C0111
 
 import copy
-import win2k8_sp1_x86_vtypes
+import vista_sp1_x86_vtypes
 import vista_sp1_x86
 import vista_sp12_x86_syscalls
 import windows
@@ -40,17 +40,19 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 
 win2k8sp1x86overlays = copy.deepcopy(vista_sp1_x86.vistasp1x86overlays)
 
-win2k8_sp1_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
-win2k8_sp1_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
-win2k8_sp1_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
-win2k8_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
-win2k8_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
+vtypes = copy.deepcopy(vista_sp1_x86_vtypes.nt_types)
+
+vtypes.update(crash_vtypes.crash_vtypes)
+vtypes.update(hibernate_vtypes.hibernate_vtypes)
+vtypes.update(kdbg_vtypes.kdbg_vtypes)
+vtypes.update(tcpip_vtypes.tcpip_vtypes)
+vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
 
 class Win2K8SP1x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 2008 SP1 x86 """
     _md_major = 6
     _md_minor = 0
-    abstract_types = win2k8_sp1_x86_vtypes.nt_types
+    abstract_types = vtypes
     overlay = win2k8sp1x86overlays
     object_classes = copy.deepcopy(vista_sp1_x86.VistaSP1x86.object_classes)
     syscalls = vista_sp12_x86_syscalls.syscalls
