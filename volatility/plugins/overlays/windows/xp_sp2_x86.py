@@ -103,8 +103,8 @@ xpsp2overlays = {
     }],
 
     '_HANDLE_TABLE_ENTRY' : [ None, {
-    'Object' : [ None, ['_EX_FAST_REF']], 
-    }], 
+    'Object' : [ None, ['_EX_FAST_REF']],
+    }],
 
     '_IMAGE_SECTION_HEADER' : [ None, {
     'Name' : [ 0x0, ['String', dict(length = 8)]],
@@ -165,14 +165,6 @@ xpsp2overlays = {
     'SubAuthority' : [ None, ['array', lambda x: x.SubAuthorityCount, ['unsigned long']]], \
     } ], \
 
-    ## This is different between Windows 2000 and WinXP. This overlay
-    ## is for xp.
-    '_POOL_HEADER' : [ None, { \
-    'PoolIndex': [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 16)]],
-    'BlockSize': [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 9)]],
-    'PoolType': [ 0x2, [ 'BitField', dict(start_bit = 9, end_bit = 16)]],
-    } ], \
-
     '_TCPT_OBJECT': [ None, {
     'RemotePort': [ None, [ 'unsigned be short']],
     'LocalPort': [ None, [ 'unsigned be short']],
@@ -180,19 +172,19 @@ xpsp2overlays = {
     '_CLIENT_ID': [ None, {
     'UniqueProcess' : [ None, ['unsigned int']], \
     'UniqueThread' : [ None, ['unsigned int']], \
-    } ],    
-    
+    } ],
+
     '_MMVAD_SHORT': [ None, {
     # This is the location of the MMVAD type which controls how to parse the
     # node. It is located before the structure.
     'Tag': [-4 , ['String', dict(length = 4)]],
-    } ], 
-    
+    } ],
+
     '_MMVAD_LONG': [ None, {
     # This is the location of the MMVAD type which controls how to parse the
     # node. It is located before the structure.
     'Tag': [-4 , ['String', dict(length = 4)]],
-    } ], 
+    } ],
 }
 
 class WinXPSP2x86(windows.AbstractWindowsX86):
