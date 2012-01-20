@@ -95,12 +95,6 @@ class _MMVAD_SHORT(windows._MMVAD_SHORT):
     def get_parent(self):
         return self.u1.Parent
 
-    def get_control_area(self):
-        return self.ControlArea
-
-    def get_file_object(self):
-        return self.ControlArea.FilePointer
-
 class _MMVAD_LONG(_MMVAD_SHORT):
     pass
 
