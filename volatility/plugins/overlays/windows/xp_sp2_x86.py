@@ -98,11 +98,6 @@ xpsp2overlays = {
     'BaseHigh' : [ 0x7, ['unsigned char']],
     }],
 
-    '_ADDRESS_OBJECT' : [ None, {
-    'LocalPort': [ None, ['unsigned be short']],
-    'CreateTime' : [ None, ['WinTimeStamp', {}]],
-    }],
-
     '_OBJECT_HEADER' : [ None, {
     'Body' : [ None, ['unsigned int']],
     }],
@@ -168,11 +163,6 @@ xpsp2overlays = {
     'SubAuthorityCount' : [ None, ['unsigned char']],
     'IdentifierAuthority' : [ None, ['_SID_IDENTIFIER_AUTHORITY']],
     'SubAuthority' : [ None, ['array', lambda x: x.SubAuthorityCount, ['unsigned long']]],
-    }],
-
-    '_TCPT_OBJECT': [ None, {
-    'RemotePort': [ None, [ 'unsigned be short']],
-    'LocalPort': [ None, [ 'unsigned be short']],
     }],
 
     '_CLIENT_ID': [ None, {

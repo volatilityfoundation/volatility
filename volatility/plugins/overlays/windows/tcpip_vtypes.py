@@ -11,26 +11,26 @@ tcpip_vtypes = {
     'LocalPort' : [ 0x30, ['unsigned short']],
     'Protocol'  : [ 0x32, ['unsigned short']],
     'Pid' : [ 0x148, ['unsigned long']],
-    'CreateTime' : [ 0x158, ['_LARGE_INTEGER']],
-    }],
-    '_TCPT_OBJECT' : [ 0x20, {
-    'Next' : [ 0x0, ['pointer', ['_TCPT_OBJECT']]],
-    'RemoteIpAddress' : [ 0xc, ['IpAddress']],
-    'LocalIpAddress' : [ 0x10, ['IpAddress']],
-    'RemotePort' : [ 0x14, ['unsigned short']],
-    'LocalPort' : [ 0x16, ['unsigned short']],
-    'Pid' : [ 0x18, ['unsigned long']],
-    }],
+    'CreateTime' : [ 0x158, ['WinTimeStamp', {}]],
+  }],
+  '_TCPT_OBJECT' : [ 0x20, {
+  'Next' : [ 0x0, ['pointer', ['_TCPT_OBJECT']]],
+  'RemoteIpAddress' : [ 0xc, ['IpAddress']],
+  'LocalIpAddress' : [ 0x10, ['IpAddress']],
+  'RemotePort' : [ 0x14, ['unsigned be short']],
+  'LocalPort' : [ 0x16, ['unsigned be short']],
+  'Pid' : [ 0x18, ['unsigned long']],
+  }],
 }
 
 tcpip_vtypes_2k3_sp1_sp2 = {
     '_ADDRESS_OBJECT' : [ 0x68, {
     'Next' : [ 0x0, ['pointer', ['_ADDRESS_OBJECT']]],
     'LocalIpAddress' : [ 0x30, ['IpAddress']],
-    'LocalPort' : [ 0x34, ['unsigned short']],
+    'LocalPort' : [ 0x34, ['unsigned be short']],
     'Protocol'  : [ 0x36, ['unsigned short']],
     'Pid' : [ 0x14C, ['unsigned long']],
-    'CreateTime' : [ 0x158, ['_LARGE_INTEGER']],
+    'CreateTime' : [ 0x158, ['WinTimeStamp', {}]],
     }],
 }
 
