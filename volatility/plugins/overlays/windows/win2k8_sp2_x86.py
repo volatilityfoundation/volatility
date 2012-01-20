@@ -36,6 +36,7 @@ import tcpip_vtypes
 import crash_vtypes
 import hibernate_vtypes
 import kdbg_vtypes
+import ssdt_vtypes
 import volatility.debug as debug #pylint: disable-msg=W0611
 
 win2k8sp2x86overlays = copy.deepcopy(vista_sp2_x86.vistasp2x86overlays)
@@ -47,6 +48,7 @@ vtypes.update(hibernate_vtypes.hibernate_vtypes)
 vtypes.update(tcpip_vtypes.tcpip_vtypes)
 vtypes.update(kdbg_vtypes.kdbg_vtypes)
 vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
+vtypes.update(ssdt_vtypes.ssdt_vtypes)
 
 class Win2K8SP2x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 2008 SP2 x86 """

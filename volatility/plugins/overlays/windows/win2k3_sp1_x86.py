@@ -36,6 +36,7 @@ import tcpip_vtypes
 import crash_vtypes
 import hibernate_vtypes
 import kdbg_vtypes
+import ssdt_vtypes
 import volatility.debug as debug #pylint: disable-msg=W0611
 
 win2k3sp1x86overlays = copy.deepcopy(win2k3_sp0_x86.win2k3sp0x86overlays)
@@ -48,6 +49,8 @@ win2k3_sp1_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
 win2k3_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 win2k3_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_2k3_sp1_sp2)
 win2k3_sp1_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
+win2k3_sp1_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)
+win2k3_sp1_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes_2k3)
 
 class Win2K3SP1x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 2003 SP1 x86 """

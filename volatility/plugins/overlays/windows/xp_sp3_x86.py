@@ -37,6 +37,7 @@ import crash_vtypes
 import hibernate_vtypes
 import kdbg_vtypes
 import tcpip_vtypes
+import ssdt_vtypes
 import copy
 import volatility.debug as debug #pylint: disable-msg=W0611
 
@@ -46,6 +47,7 @@ xp_sp3_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
 xp_sp3_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
 xp_sp3_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
 xp_sp3_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
+xp_sp3_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)
 
 class WinXPSP3x86(windows.AbstractWindowsX86):
     """ A Profile for windows XP SP3 """

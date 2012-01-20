@@ -35,6 +35,7 @@ import crash_vtypes
 import hibernate_vtypes
 import kdbg_vtypes
 import tcpip_vtypes
+import ssdt_vtypes
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 
@@ -53,6 +54,7 @@ win7_sp0_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
 win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
 win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_7)
+win7_sp0_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)
 
 win7_object_classes = copy.deepcopy(vista_sp0_x86.VistaSP0x86.object_classes)
 
