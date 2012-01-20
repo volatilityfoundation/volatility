@@ -48,14 +48,6 @@ win7_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 win7_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
 win7_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_7)
 
-
-win7_sp1_x86_vtypes.nt_types.update({\
-  '_OBJECT_HEADER_NAME_INFORMATION' : [ 0xc, {
-  'Directory' : [ 0x0, ['pointer', ['_OBJECT_DIRECTORY']]],
-  'Name' : [ 0x04, ['_UNICODE_STRING']],
-} ], \
-})
-
 class Win7SP1x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 7 SP1 x86 """
     _md_major = 6

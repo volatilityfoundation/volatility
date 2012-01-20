@@ -21,8 +21,6 @@
 
 #pylint: disable-msg=C0111
 
-import volatility.obj as obj
-import volatility.utils as utils
 import volatility.plugins.taskmods as taskmods
 
 # Inherit from Dlllist for command line options
@@ -85,7 +83,9 @@ class Handles(taskmods.DllList):
                     elif object_type == "Thread":
                         thrd_obj = handle.dereference_as("_ETHREAD")
                         name = "TID {0} PID {1}".format(thrd_obj.Cid.UniqueThread, thrd_obj.Cid.UniqueProcess)
+                    elif handle.NameInfo.Name == None:
+                        name = repr('')
                     else:
-                        name = repr(handle.get_object_name())
+                        name = repr(str(handle.NameInfo.Name.v()))
 
                     yield pid, handle, object_type, name

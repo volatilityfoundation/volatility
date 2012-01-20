@@ -299,11 +299,38 @@ class _HANDLE_TABLE(obj.CType):
 AbstractWindowsX86.object_classes['_HANDLE_TABLE'] = _HANDLE_TABLE
 
 class _OBJECT_HEADER(obj.CType):
-    """A Volatility object to handle Windows object headers"""
+    """A Volatility object to handle Windows object headers.
+
+    This object applies only to versions below windows 7.
+    """
+
+    optional_headers = [('NameInfo', '_OBJECT_HEADER_NAME_INFO'),
+                        ('HandleInfo', '_OBJECT_HEADER_HANDLE_INFO'),
+                        ('QuotaInfo', '_OBJECT_HEADER_QUOTA_INFO')]
+
+    def __init__(self, *args, **kwargs):
+        obj.CType.__init__(self, *args, **kwargs)
+        # Create accessors for optional headers
+        self.find_optional_headers()
+
+    def find_optional_headers(self):
+        """Find this object's optional headers."""
+        offset = self.obj_offset
+
+        for name, objtype in self.optional_headers:
+            if self.obj_vm.profile.has_type(objtype):
+                header_offset = self.m(name + 'Offset').v()
+                if header_offset:
+                    o = obj.Object(objtype, offset - header_offset, vm = self.obj_vm, native_vm = self.obj_native_vm)
+                else:
+                    o = obj.NoneObject("Header not set")
+
+                self.newattr(name, o)
 
     @property
     def GrantedAccess(self):
-        if self.obj_parent: return self.obj_parent.GrantedAccess
+        if self.obj_parent:
+            return self.obj_parent.GrantedAccess
         return obj.NoneObject("No parent known")
 
     def dereference_as(self, theType):
@@ -313,41 +340,10 @@ class _OBJECT_HEADER(obj.CType):
 
     def get_object_type(self):
         """Return the object's type as a string"""
-        try:
-            type_map = dict((v, k) for k, v in obj.VolMagic(self.obj_vm).TypeIndexMap.v().items())
-            return type_map.get(self.TypeIndex.v(), '')
-        except AttributeError:
-            type_obj = self.Type.dereference()
-            return type_obj.Name.v()
+        type_obj = obj.Object("_OBJECT_TYPE", self.Type, self.obj_native_vm)
 
-    def get_object_name(self):
-        """Return the name of the object from the name info header"""
+        return type_obj.Name.v()
 
-        ## Account for changes to the object header for Windows 7
-        volmagic = obj.VolMagic(self.obj_vm)
-        try:
-            info_mask_to_offset = volmagic.InfoMaskToOffset.v()
-            OBJECT_HEADER_NAME_INFO = volmagic.InfoMaskMap.v()['_OBJECT_HEADER_NAME_INFO']
-            info_mask_to_offset_index = self.InfoMask & (OBJECT_HEADER_NAME_INFO | (OBJECT_HEADER_NAME_INFO - 1))
-            if info_mask_to_offset_index in info_mask_to_offset:
-                name_info_offset = info_mask_to_offset[info_mask_to_offset_index]
-            else:
-                name_info_offset = 0
-        except AttributeError:
-            # Default to old Object header
-            name_info_offset = self.NameInfoOffset
-
-        object_name_string = ""
-
-        if name_info_offset:
-            ## Now work out the OBJECT_HEADER_NAME_INFORMATION object
-            object_name_info_obj = obj.Object("_OBJECT_HEADER_NAME_INFORMATION",
-                                              vm = self.obj_vm,
-                                              native_vm = self.obj_native_vm,
-                                              offset = self.obj_offset - int(name_info_offset))
-            object_name_string = object_name_info_obj.Name.v()
-
-        return object_name_string
 
 AbstractWindowsX86.object_classes['_OBJECT_HEADER'] = _OBJECT_HEADER
 

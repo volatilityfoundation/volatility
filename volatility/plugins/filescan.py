@@ -197,7 +197,7 @@ class DriverScan(FileScan):
                          object_obj.HandleCount,
                          driver_obj.DriverStart, driver_obj.DriverSize,
                          repr(extension_obj.ServiceKeyName.v()),
-                         repr(object_obj.get_object_name()),
+                         repr(object_obj.NameInfo.Name.v() if object_obj.NameInfo.Name.v() else ''),
                          repr(driver_obj.DriverName.v())))
 
 class PoolScanSymlink(PoolScanFile):
@@ -256,7 +256,8 @@ class SymLinkScan(FileScan):
             outfd.write("{0:#010x} {1:4} {2:4} {3:<24} {4:<20} {5}\n".format(
                         link.obj_offset, objct.PointerCount,
                         objct.HandleCount, link.CreationTime or '',
-                        repr(objct.get_object_name()), repr(link.LinkTarget.v())))
+                        repr(objct.NameInfo.Name.v() if objct.NameInfo.Name.v() else ''),
+                        repr(link.LinkTarget.v())))
 
 class PoolScanMutant(PoolScanDriver):
     """ Scanner for Mutants _KMUTANT """
@@ -311,7 +312,7 @@ class MutantScan(FileScan):
             ##   continue
 
             if self._config.SILENT:
-                if len(object_obj.get_object_name()) == 0:
+                if len(object_obj.NameInfo.Name.v()) == 0:
                     continue
 
             yield (object_obj, mutant)
@@ -334,7 +335,7 @@ class MutantScan(FileScan):
                          mutant.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount, mutant.Header.SignalState,
                          mutant.OwnerThread, CID,
-                         repr(object_obj.get_object_name())
+                         repr(object_obj.NameInfo.Name.v() if object_obj.NameInfo.Name.v() else '')
                          ))
 
 class CheckProcess(scan.ScannerCheck):

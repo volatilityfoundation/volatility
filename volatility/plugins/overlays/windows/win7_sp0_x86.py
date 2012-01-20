@@ -35,6 +35,7 @@ import crash_vtypes
 import hibernate_vtypes
 import kdbg_vtypes
 import tcpip_vtypes
+import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 
 win7sp0x86overlays = copy.deepcopy(vista_sp0_x86.vistasp0x86overlays)
@@ -46,70 +47,6 @@ win7sp0x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic',
 # Add a new member to the VOLATILIY_MAGIC type
 win7sp0x86overlays['VOLATILITY_MAGIC'][1]['ObjectPreamble'] = [ 0x0, ['VolatilityMagic', dict(value = '_OBJECT_HEADER_CREATOR_INFO')]]
 
-win7sp0x86overlays['VOLATILITY_MAGIC'][1]['InfoMaskToOffset'] = [ 0x0, ['VolatilityMagic', \
-      dict(value = { 0x1 : 0x10, 0x2 : 0x10, 0x3 : 0x20, \
-                      0x4 : 0x8, 0x5 : 0x18, 0x6 : 0x20, \
-                      0x7 : 0x28, 0x8 : 0x10, 0x9 : 0x20, \
-                      0xa : 0x20, 0xb : 0x30, 0xc : 0x18, \
-                      0xd : 0x28, 0xe : 0x28, 0xf : 0x38, \
-                      0x10: 0x8, 0x11: 0x18, 0x12: 0x18, \
-                      0x13: 0x28, 0x14: 0x10, 0x15: 0x20, \
-                      0x16: 0x20, 0x17: 0x30, 0x18: 0x18, \
-                      0x19: 0x28, 0x1A: 0x28, 0x1b: 0x38, \
-                      0x1c: 0x20, 0x1d: 0x30, 0x1e: 0x30, \
-                      0x1f: 0x40 })]]
-
-win7sp0x86overlays['VOLATILITY_MAGIC'][1]['InfoMaskMap'] = [ 0x0, ['VolatilityMagic', \
-      dict(value = { '_OBJECT_HEADER_CREATOR_INFO' : 0x01, \
-                      '_OBJECT_HEADER_NAME_INFO' : 0x02, \
-                      '_OBJECT_HEADER_HANDLE_INFO' : 0x04, \
-                      '_OBJECT_HEADER_QUOTA_INFO' : 0x08, \
-                      '_OBJECT_HEADER_PROCESS_INFO': 0x10 })]]
-
-win7sp0x86overlays['VOLATILITY_MAGIC'][1]['TypeIndexMap'] = [ 0x0, ['VolatilityMagic', \
-      dict(value = { 'Type' : 0x2, \
-                    'Directory' : 0x3, \
-                    'SymbolicLink' : 0x4, \
-                    'Token' : 0x5, \
-                    'Job' : 0x6, \
-                    'Process' : 0x7, \
-                    'Thread' : 0x8, \
-                    'UserApcReserve' : 0x9, \
-                    'IoCompletionReserve' : 0xa, \
-                    'DebugObject' : 0xb, \
-                    'Event' : 0xc, \
-                    'EventPair' : 0xd, \
-                    'Mutant' : 0xe, \
-                    'Callback' : 0xf, \
-                    'Semaphore' : 0x10, \
-                    'Timer' : 0x11, \
-                    'Profile' : 0x12, \
-                    'KeyedEvent' : 0x13, \
-                    'WindowStation' : 0x14, \
-                    'Desktop' : 0x15, \
-                    'TpWorkerFactory' : 0x16, \
-                    'Adapter' : 0x17, \
-                    'Controller' : 0x18, \
-                    'Device' : 0x19, \
-                    'Driver' : 0x1a, \
-                    'IoCompletion' : 0x1b, \
-                    'File' : 0x1c, \
-                    'TmTm' : 0x1d, \
-                    'TmTx' : 0x1e, \
-                    'TmRm' : 0x1f, \
-                    'TmEn' : 0x20, \
-                    'Section' : 0x21, \
-                    'Session' : 0x22, \
-                    'Key' : 0x23, \
-                    'ALPC Port' : 0x24, \
-                    'PowerRequest' : 0x25, \
-                    'WmiGuid' : 0x26, \
-                    'EtwRegistration' : 0x27, \
-                    'EtwConsumer' : 0x28, \
-                    'FilterConnectionPort' : 0x29, \
-                    'FilterCommunicationPort' : 0x2a, \
-                    'PcwObject' : 0x2b })]]
-
 win7_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
 win7_sp0_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
 win7_sp0_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
@@ -117,12 +54,87 @@ win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
 win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_7)
 
-win7_sp0_x86_vtypes.nt_types.update({\
-  '_OBJECT_HEADER_NAME_INFORMATION' : [ 0xc, {
-  'Directory' : [ 0x0, ['pointer', ['_OBJECT_DIRECTORY']]],
-  'Name' : [ 0x04, ['_UNICODE_STRING']],
-} ], \
-})
+win7_object_classes = copy.deepcopy(vista_sp0_x86.VistaSP0x86.object_classes)
+
+
+class _OBJECT_HEADER(windows._OBJECT_HEADER):
+    """A Volatility object to handle Windows 7 object headers.
+
+    Windows 7 changes the way objects are handled:
+    References: http://www.codemachine.com/article_objectheader.html
+    """
+
+    type_map = { 2: 'Type',
+                3: 'Directory',
+                4: 'SymbolicLink',
+                5: 'Token',
+                6: 'Job',
+                7: 'Process',
+                8: 'Thread',
+                9: 'UserApcReserve',
+                10: 'IoCompletionReserve',
+                11: 'DebugObject',
+                12: 'Event',
+                13: 'EventPair',
+                14: 'Mutant',
+                15: 'Callback',
+                16: 'Semaphore',
+                17: 'Timer',
+                18: 'Profile',
+                19: 'KeyedEvent',
+                20: 'WindowStation',
+                21: 'Desktop',
+                22: 'TpWorkerFactory',
+                23: 'Adapter',
+                24: 'Controller',
+                25: 'Device',
+                26: 'Driver',
+                27: 'IoCompletion',
+                28: 'File',
+                29: 'TmTm',
+                30: 'TmTx',
+                31: 'TmRm',
+                32: 'TmEn',
+                33: 'Section',
+                34: 'Session',
+                35: 'Key',
+                36: 'ALPC Port',
+                37: 'PowerRequest',
+                38: 'WmiGuid',
+                39: 'EtwRegistration',
+                40: 'EtwConsumer',
+                41: 'FilterConnectionPort',
+                42: 'FilterCommunicationPort',
+                43: 'PcwObject',
+            }
+
+    # This specifies the order the headers are found below the _OBJECT_HEADER
+    optional_header_mask = (('CreatorInfo', '_OBJECT_HEADER_CREATOR_INFO', 0x01),
+                            ('NameInfo', '_OBJECT_HEADER_NAME_INFO', 0x02),
+                            ('HandleInfo', '_OBJECT_HEADER_HANDLE_INFO', 0x04),
+                            ('QuotaInfo', '_OBJECT_HEADER_QUOTA_INFO', 0x08),
+                            ('ProcessInfo', '_OBJECT_HEADER_PROCESS_INFO', 0x10))
+
+    def find_optional_headers(self):
+        """Find this object's optional headers."""
+        offset = self.obj_offset
+        info_mask = int(self.InfoMask)
+
+        for name, struct, mask in self.optional_header_mask:
+            if info_mask & mask:
+                offset -= self.obj_vm.profile.get_obj_size(struct)
+                o = obj.Object(struct, offset, self.obj_vm, native_vm = self.obj_native_vm)
+            else:
+                o = obj.NoneObject("Header not set")
+
+            self.newattr(name, o)
+
+    def get_object_type(self):
+        """Return the object's type as a string"""
+        return self.type_map.get(self.TypeIndex.v(), '')
+
+# Update the win7 implementation
+win7_object_classes["_OBJECT_HEADER"] = _OBJECT_HEADER
 
 class Win7SP0x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 7 SP0 x86 """
@@ -130,7 +142,7 @@ class Win7SP0x86(windows.AbstractWindowsX86):
     _md_minor = 1
     abstract_types = win7_sp0_x86_vtypes.nt_types
     overlay = win7sp0x86overlays
-    object_classes = copy.deepcopy(vista_sp0_x86.VistaSP0x86.object_classes)
+    object_classes = win7_object_classes
     syscalls = win7_sp0_x86_syscalls.syscalls
     # FIXME: Temporary fix for issue 105
     native_types = copy.deepcopy(windows.AbstractWindowsX86.native_types)

@@ -1005,8 +1005,15 @@ class Profile(object):
         class dummy(object):
             profile = self
             name = 'dummy'
+
             def is_valid_address(self, _offset):
+                """States that every address is valid, since we tend not to care"""
                 return True
+
+            def read(self, _addr, _length):
+                """Returns no data when reading"""
+                return None
+
         tmp = self.types[name](offset = 0, name = name, vm = dummy(), parent = None)
         return tmp
 

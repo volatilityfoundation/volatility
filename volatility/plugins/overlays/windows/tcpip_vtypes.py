@@ -21,10 +21,6 @@ tcpip_vtypes = {
   'LocalPort' : [ 0x16, ['unsigned short']],
   'Pid' : [ 0x18, ['unsigned long']],
 } ],
-  '_OBJECT_HEADER_NAME_INFORMATION' : [ 0xc, {
-  'Directory' : [ 0x0, ['pointer', ['_OBJECT_DIRECTORY']]],
-  'Name' : [ 0x04, ['_UNICODE_STRING']],
-} ],
 }
 
 tcpip_vtypes_2k3_sp1_sp2 = {
