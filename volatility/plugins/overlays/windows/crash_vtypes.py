@@ -16,7 +16,7 @@ crash_vtypes = {
     'VersionUser' : [ 0x3c, ['array', 32, ['unsigned char']]],
     'PaeEnabled' : [ 0x5c, ['unsigned char']],
     'KdSecondaryVersion' : [ 0x5d, ['unsigned char']],
-    'VersionUser' : [ 0x5e, ['array', 2, ['unsigned char']]],
+    'VersionUser2' : [ 0x5e, ['array', 2, ['unsigned char']]],
     'KdDebuggerDataBlock' : [ 0x60, ['unsigned long']],
     'PhysicalMemoryBlockBuffer' : [ 0x64, ['_PHYSICAL_MEMORY_DESCRIPTOR']],
     'ContextRecord' : [ 0x320, ['array', 1200, ['unsigned char']]],

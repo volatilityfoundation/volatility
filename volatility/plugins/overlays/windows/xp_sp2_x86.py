@@ -111,10 +111,6 @@ xpsp2overlays = {
     'DebuggerDataList' : [ None, ['pointer', ['unsigned long']]],
     }],
 
-    '_DMP_HEADER' : [ None, {
-    'PsActiveProcessHead' : [ None, ['pointer' , ['unsigned long']]],
-    }],
-
     '_CM_KEY_NODE' : [ None, {
     'Signature' : [ None, ['String', dict(length = 2)]],
     'LastWriteTime' : [ None, ['WinTimeStamp', {}]],
