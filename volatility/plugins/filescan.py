@@ -355,10 +355,10 @@ class CheckProcess(scan.ScannerCheck):
         ## We work out the _EPROCESS from the end of the
         ## allocation (bottom up).
         pool_align = obj.VolMagic(self.address_space).PoolAlignment.v()
+        esize = self.address_space.profile.get_obj_size("_EPROCESS")
         eprocess = obj.Object("_EPROCESS", vm = self.address_space,
                   offset = pool_base + pool_obj.BlockSize * pool_align - \
-                  self.address_space.profile.get_obj_size("_EPROCESS")
-                  )
+                  (esize + esize % pool_align))
 
         if (eprocess.Pcb.DirectoryTableBase == 0):
             return False
@@ -398,13 +398,13 @@ class PoolScanProcess(scan.PoolScanner):
         ## allocation (bottom up).
         pool_align = obj.VolMagic(address_space).PoolAlignment.v()
 
-        object_base = (pool_base + pool_obj.BlockSize * pool_align -
-                       self.buffer.profile.get_obj_size("_EPROCESS"))
+        esize = self.buffer.profile.get_obj_size("_EPROCESS")
+        object_base = (pool_base + pool_obj.BlockSize * pool_align - (esize + esize % pool_align))
 
         return object_base
 
     checks = [ ('PoolTagCheck', dict(tag = '\x50\x72\x6F\xe3')),
-               ('CheckPoolSize', dict(condition = lambda x: x >= 0x280)),
+               ('CheckPoolSize', dict(condition = lambda x: x >= 0x1ae)),
                ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
                ('CheckPoolIndex', dict(value = 0)),
                ('CheckProcess', {}),
