@@ -93,11 +93,6 @@ xpsp2overlays = {
     'DirectoryTableBase' : [ None, ['unsigned long']],
     }],
 
-    '_KGDTENTRY' : [  None , {
-    'BaseMid' : [ 0x4, ['unsigned char']],
-    'BaseHigh' : [ 0x7, ['unsigned char']],
-    }],
-
     '_OBJECT_HEADER' : [ None, {
     'Body' : [ None, ['unsigned int']],
     }],
