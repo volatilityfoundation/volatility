@@ -54,10 +54,10 @@ xpsp2overlays = {
     'VOLATILITY_MAGIC' : [None, {
     # Profile specific values
     'DTBSignature' : [ 0x0, ['VolatilityMagic', dict(value = "\x03\x00\x1b\x00")]],
-    'KUSER_SHARED_DATA' : [ 0x0, ['VolatilityMagic', dict(value = 0xFFDF0000)]],
     'KDBGHeader' : [ 0x0, ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x90\x02')]],
     # Configuration options
     'DTB' : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],
+    'KUSER_SHARED_DATA' : [ 0x0, ['VolatilityMagic', dict(value = 0xffdf0000)]],
     'KPCR' : [ 0x0, ['VolatilityMagic', dict(value = 0xffdff000, configname = "KPCR")]],
     'KDBG' : [ 0x0, ['VolatilityKDBG', dict(configname = "KDBG")]],
     'IA32ValidAS': [ 0x0, ['VolatilityIA32ValidAS']],
