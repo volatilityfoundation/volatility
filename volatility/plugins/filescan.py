@@ -338,7 +338,7 @@ class MutantScan(FileScan):
                          repr(object_obj.NameInfo.Name.v() if object_obj.NameInfo.Name.v() else '')
                          ))
 
-class CheckProcess(scan.ScannerCheck):
+class CheckProcess(scan.ScannerCheck, FileScan):
     """ Check sanity of _EPROCESS """
     kernel = 0x80000000
 
@@ -355,10 +355,9 @@ class CheckProcess(scan.ScannerCheck):
         ## We work out the _EPROCESS from the end of the
         ## allocation (bottom up).
         pool_align = obj.VolMagic(self.address_space).PoolAlignment.v()
-        esize = self.address_space.profile.get_obj_size("_EPROCESS")
         eprocess = obj.Object("_EPROCESS", vm = self.address_space,
-                  offset = pool_base + pool_obj.BlockSize * pool_align - \
-                  (esize + esize % pool_align))
+                  offset = pool_base + pool_obj.BlockSize * pool_align -
+                  self.get_rounded_size(self.address_space, '_EPROCESS', pool_align))
 
         if (eprocess.Pcb.DirectoryTableBase == 0):
             return False
@@ -374,7 +373,7 @@ class CheckProcess(scan.ScannerCheck):
         return True
 
 
-class PoolScanProcess(scan.PoolScanner):
+class PoolScanProcess(scan.PoolScanner, FileScan):
     """PoolScanner for File objects"""
     ## We are not using a preamble for this plugin since we are walking back
     preamble = []
@@ -398,8 +397,8 @@ class PoolScanProcess(scan.PoolScanner):
         ## allocation (bottom up).
         pool_align = obj.VolMagic(address_space).PoolAlignment.v()
 
-        esize = self.buffer.profile.get_obj_size("_EPROCESS")
-        object_base = (pool_base + pool_obj.BlockSize * pool_align - (esize + esize % pool_align))
+        object_base = (pool_base + pool_obj.BlockSize * pool_align -
+                       self.get_rounded_size(address_space, '_EPROCESS', pool_align))
 
         return object_base
 
