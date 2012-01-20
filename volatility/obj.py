@@ -753,7 +753,13 @@ class CType(BaseObject):
 
     def m(self, attr):
         if attr in self.members:
-            offset, cls = self.members[attr]
+            # Allow the element to be a callable rather than a list - this is
+            # useful for aliasing member names
+            element = self.members[attr]
+            if callable(element):
+                return element(self)
+
+            offset, cls = element
         elif attr.find('__') > 0 and attr[attr.find('__'):] in self.members:
             offset, cls = self.members[attr[attr.find('__'):]]
         else:
@@ -1086,9 +1092,12 @@ class Profile(object):
         members = {}
         size = ctype[0]
         for k, v in ctype[1].items():
-            if v[0] == None:
+            if callable(v):
+              members[k] = v
+            elif v[0] == None:
                 debug.warning("{0} has no offset in object {1}. Check that vtypes has a concrete definition for it.".format(k, cname))
-            members[k] = (v[0], self.list_to_type(k, v[1], typeDict))
+            else:
+                members[k] = (v[0], self.list_to_type(k, v[1], typeDict))
 
         ## Allow the plugins to over ride the class constructor here
         if self.object_classes and cname in self.object_classes:
