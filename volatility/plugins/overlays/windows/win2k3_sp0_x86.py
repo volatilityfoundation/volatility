@@ -75,8 +75,13 @@ class _MM_AVL_TABLE(obj.CType):
         will always be 0. However, we can't call get_obj_offset("_MMADDRESS_NODE", "RightChild") or it will 
         result in a TypeError: __new__() takes exactly 5 non-keyword arguments (4 given). Therefore, we hard-code
         the offset to the RightChild and treat it as a pointer to the first real _MMADDRESS_NODE. 
+
+        Update: hard-coding the offset to RightChild breaks x64 (since the offset is 8 on x86 and 16 on x64). 
+        Thus to fix the vad plugins for x64 we assume that the offset of RightChild in _MMVAD_SHORT is the 
+        same as the offset of RightChild in _MMADDRESS_NODE. We can call get_obj_offset on _MMVAD_SHORT since
+        it isn't in the _MMVAD factory like _MMADDRESS_NODE; and we won't get the above TypeError. 
         """
-        right_child_offset = 8 # self.obj_vm.profile.get_obj_offset("_MMADDRESS_NODE", "RightChild")
+        right_child_offset = self.obj_vm.profile.get_obj_offset("_MMVAD_SHORT", "RightChild")
 
         rc = obj.Object("Pointer", vm = self.obj_vm, offset = self.obj_offset + right_child_offset)
 
