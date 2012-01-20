@@ -41,18 +41,20 @@ import ssdt_vtypes
 import copy
 import volatility.debug as debug #pylint: disable-msg=W0611
 
-xpsp3overlays = copy.deepcopy(xp_sp2_x86.xpsp2overlays)
+overlay = copy.deepcopy(xp_sp2_x86.overlay)
 
-xp_sp3_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
-xp_sp3_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
-xp_sp3_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
-xp_sp3_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
-xp_sp3_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)
+vtypes = copy.deepcopy(xp_sp3_x86_vtypes.nt_types)
+
+vtypes.update(crash_vtypes.crash_vtypes)
+vtypes.update(kdbg_vtypes.kdbg_vtypes)
+vtypes.update(hibernate_vtypes.hibernate_vtypes)
+vtypes.update(tcpip_vtypes.tcpip_vtypes)
+vtypes.update(ssdt_vtypes.ssdt_vtypes)
 
 class WinXPSP3x86(windows.AbstractWindowsX86):
-    """ A Profile for windows XP SP3 """
+    """ A Profile for Windows XP SP3 x86 """
     _md_major = 5
     _md_minor = 1
-    abstract_types = xp_sp3_x86_vtypes.nt_types
-    overlay = xpsp3overlays
+    overlay = overlay
+    abstract_types = vtypes
     syscalls = xp_sp2_x86_syscalls.syscalls

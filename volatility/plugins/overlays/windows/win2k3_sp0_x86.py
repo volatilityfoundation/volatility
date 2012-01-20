@@ -30,7 +30,6 @@ This file provides support for Windows 2003 SP0.
 import copy
 import win2k3_sp0_x86_vtypes
 import win2k3_sp0_x86_syscalls
-import xp_sp2_x86
 import windows
 import tcpip_vtypes
 import crash_vtypes
@@ -40,25 +39,30 @@ import ssdt_vtypes
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.obj as obj
 
-win2k3sp0x86overlays = copy.deepcopy(xp_sp2_x86.xpsp2overlays)
+overlay = copy.deepcopy(windows.AbstractWindowsX86.overlay)
 
-win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x18\x03')]
+object_classes = copy.deepcopy(windows.AbstractWindowsX86.object_classes)
 
-win2k3_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
-win2k3_sp0_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
-win2k3_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
-win2k3_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
-win2k3_sp0_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
-win2k3_sp0_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)
-win2k3_sp0_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes_2k3)
+vtypes = copy.deepcopy(win2k3_sp0_x86_vtypes.nt_types)
+
+overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x1b\x00")]
+overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x18\x03')]
+
+vtypes.update(crash_vtypes.crash_vtypes)
+vtypes.update(hibernate_vtypes.hibernate_vtypes)
+vtypes.update(tcpip_vtypes.tcpip_vtypes)
+vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
+vtypes.update(kdbg_vtypes.kdbg_vtypes)
+vtypes.update(ssdt_vtypes.ssdt_vtypes)
+vtypes.update(ssdt_vtypes.ssdt_vtypes_2k3)
 
 class Win2K3SP0x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 2003 SP0 x86 """
     _md_major = 5
     _md_minor = 2
-    abstract_types = win2k3_sp0_x86_vtypes.nt_types
-    overlay = win2k3sp0x86overlays
-    object_classes = windows.AbstractWindowsX86.object_classes.copy()
+    abstract_types = vtypes
+    overlay = overlay
+    object_classes = object_classes
     syscalls = win2k3_sp0_x86_syscalls.syscalls
 
 class _MM_AVL_TABLE(obj.CType):
@@ -96,7 +100,7 @@ class _MMVAD_SHORT(windows._MMVAD_SHORT):
 class _MMVAD_LONG(_MMVAD_SHORT):
     pass
 
-Win2K3SP0x86.object_classes['_MM_AVL_TABLE'] = _MM_AVL_TABLE
-Win2K3SP0x86.object_classes['_MMADDRESS_NODE'] = windows._MMVAD
-Win2K3SP0x86.object_classes['_MMVAD_SHORT'] = _MMVAD_SHORT
-Win2K3SP0x86.object_classes['_MMVAD_LONG'] = _MMVAD_LONG
+object_classes['_MM_AVL_TABLE'] = _MM_AVL_TABLE
+object_classes['_MMADDRESS_NODE'] = windows._MMVAD
+object_classes['_MMVAD_SHORT'] = _MMVAD_SHORT
+object_classes['_MMVAD_LONG'] = _MMVAD_LONG

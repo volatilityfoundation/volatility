@@ -40,25 +40,28 @@ import kdbg_vtypes
 import ssdt_vtypes
 import volatility.debug as debug #pylint: disable-msg=W0611
 
-vistasp0x86overlays = copy.deepcopy(win2k3_sp2_x86.win2k3sp2x86overlays)
+overlay = copy.deepcopy(win2k3_sp2_x86.overlay)
 
-vistasp0x86overlays['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x20\x00")]
-vistasp0x86overlays['VOLATILITY_MAGIC'][1]['KPCR'][1] = ['VolatilityKPCR', dict(configname = 'KPCR')]
-vistasp0x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x28\x03')]
+object_classes = copy.deepcopy(win2k3_sp2_x86.object_classes)
 
-vista_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
-vista_sp0_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
-vista_sp0_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
-vista_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
-vista_sp0_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)
+vtypes = copy.deepcopy(vista_sp0_x86_vtypes.nt_types)
+
+overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x20\x00")]
+overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x28\x03')]
+
+vtypes.update(crash_vtypes.crash_vtypes)
+vtypes.update(hibernate_vtypes.hibernate_vtypes)
+vtypes.update(kdbg_vtypes.kdbg_vtypes)
+vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
+vtypes.update(ssdt_vtypes.ssdt_vtypes)
 
 class VistaSP0x86(windows.AbstractWindowsX86):
     """ A Profile for Windows Vista SP0 x86 """
     _md_major = 6
     _md_minor = 0
-    abstract_types = vista_sp0_x86_vtypes.nt_types
-    overlay = vistasp0x86overlays
-    object_classes = copy.deepcopy(win2k3_sp2_x86.Win2K3SP2x86.object_classes)
+    overlay = overlay
+    abstract_types = vtypes
+    object_classes = object_classes
     syscalls = vista_sp0_x86_syscalls.syscalls
 
 class _MMVAD_SHORT(windows._MMVAD_SHORT):

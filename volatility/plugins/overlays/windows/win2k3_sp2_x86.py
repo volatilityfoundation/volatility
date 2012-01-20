@@ -39,22 +39,26 @@ import kdbg_vtypes
 import ssdt_vtypes
 import volatility.debug as debug #pylint: disable-msg=W0611
 
-win2k3sp2x86overlays = copy.deepcopy(win2k3_sp1_x86.win2k3sp1x86overlays)
+overlay = copy.deepcopy(win2k3_sp1_x86.overlay)
 
-win2k3_sp2_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
-win2k3_sp2_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
-win2k3_sp2_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
-win2k3_sp2_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_2k3_sp1_sp2)
-win2k3_sp2_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
-win2k3_sp2_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)
-win2k3_sp2_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes_2k3)
+object_classes = copy.deepcopy(win2k3_sp1_x86.object_classes)
+
+vtypes = copy.deepcopy(win2k3_sp2_x86_vtypes.nt_types)
+
+vtypes.update(crash_vtypes.crash_vtypes)
+vtypes.update(hibernate_vtypes.hibernate_vtypes)
+vtypes.update(tcpip_vtypes.tcpip_vtypes)
+vtypes.update(tcpip_vtypes.tcpip_vtypes_2k3_sp1_sp2)
+vtypes.update(kdbg_vtypes.kdbg_vtypes)
+vtypes.update(ssdt_vtypes.ssdt_vtypes)
+vtypes.update(ssdt_vtypes.ssdt_vtypes_2k3)
 
 class Win2K3SP2x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 2003 SP2 x86 """
     _md_major = 5
     _md_minor = 2
-    abstract_types = win2k3_sp2_x86_vtypes.nt_types
-    overlay = win2k3sp2x86overlays
-    object_classes = copy.deepcopy(win2k3_sp1_x86.Win2K3SP1x86.object_classes)
+    abstract_types = vtypes
+    overlay = overlay
+    object_classes = object_classes
     syscalls = win2k3_sp12_x86_syscalls.syscalls
 

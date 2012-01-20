@@ -39,24 +39,26 @@ import ssdt_vtypes
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 
-win7sp0x86overlays = copy.deepcopy(vista_sp0_x86.vistasp0x86overlays)
+overlay = copy.deepcopy(vista_sp0_x86.overlay)
 
-win7sp0x86overlays['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x26\x00")]
-win7sp0x86overlays['VOLATILITY_MAGIC'][1]['KPCR'][1] = ['VolatilityKPCR', dict(configname = 'KPCR')]
-win7sp0x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x40\x03')]
+object_classes = copy.deepcopy(vista_sp0_x86.object_classes)
+
+native_types = copy.deepcopy(windows.AbstractWindowsX86.native_types)
+
+vtypes = copy.deepcopy(win7_sp0_x86_vtypes.nt_types)
+
+overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x26\x00")]
+overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x40\x03')]
 
 # Add a new member to the VOLATILIY_MAGIC type
-win7sp0x86overlays['VOLATILITY_MAGIC'][1]['ObjectPreamble'] = [ 0x0, ['VolatilityMagic', dict(value = '_OBJECT_HEADER_CREATOR_INFO')]]
+overlay['VOLATILITY_MAGIC'][1]['ObjectPreamble'] = [ 0x0, ['VolatilityMagic', dict(value = '_OBJECT_HEADER_CREATOR_INFO')]]
 
-win7_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
-win7_sp0_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
-win7_sp0_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
-win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
-win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_7)
-win7_sp0_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)
-
-win7_object_classes = copy.deepcopy(vista_sp0_x86.VistaSP0x86.object_classes)
-
+vtypes.update(crash_vtypes.crash_vtypes)
+vtypes.update(hibernate_vtypes.hibernate_vtypes)
+vtypes.update(kdbg_vtypes.kdbg_vtypes)
+vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
+vtypes.update(tcpip_vtypes.tcpip_vtypes_7)
+vtypes.update(ssdt_vtypes.ssdt_vtypes)
 
 class _OBJECT_HEADER(windows._OBJECT_HEADER):
     """A Volatility object to handle Windows 7 object headers.
@@ -135,16 +137,17 @@ class _OBJECT_HEADER(windows._OBJECT_HEADER):
         return self.type_map.get(self.TypeIndex.v(), '')
 
 # Update the win7 implementation
-win7_object_classes["_OBJECT_HEADER"] = _OBJECT_HEADER
+object_classes["_OBJECT_HEADER"] = _OBJECT_HEADER
+
+native_types['pointer64'] = windows.AbstractWindowsX86.native_types['unsigned long long']
 
 class Win7SP0x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 7 SP0 x86 """
     _md_major = 6
     _md_minor = 1
-    abstract_types = win7_sp0_x86_vtypes.nt_types
-    overlay = win7sp0x86overlays
-    object_classes = win7_object_classes
+    overlay = overlay
+    abstract_types = vtypes
+    object_classes = object_classes
     syscalls = win7_sp0_x86_syscalls.syscalls
     # FIXME: Temporary fix for issue 105
-    native_types = copy.deepcopy(windows.AbstractWindowsX86.native_types)
-    native_types['pointer64'] = windows.AbstractWindowsX86.native_types['unsigned long long']
+    native_types = native_types

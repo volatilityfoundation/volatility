@@ -40,24 +40,29 @@ import kdbg_vtypes
 import ssdt_vtypes
 import volatility.debug as debug #pylint: disable-msg=W0611
 
-win7sp1x86overlays = copy.deepcopy(win7_sp0_x86.win7sp0x86overlays)
+overlay = copy.deepcopy(win7_sp0_x86.overlay)
 
-win7_sp1_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
-win7_sp1_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
-win7_sp1_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
-win7_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
-win7_sp1_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_7)
-win7_sp1_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)
+object_classes = copy.deepcopy(win7_sp0_x86.object_classes)
+
+vtypes = copy.deepcopy(win7_sp1_x86_vtypes.nt_types)
+
+vtypes.update(crash_vtypes.crash_vtypes)
+vtypes.update(hibernate_vtypes.hibernate_vtypes)
+vtypes.update(kdbg_vtypes.kdbg_vtypes)
+vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
+vtypes.update(tcpip_vtypes.tcpip_vtypes_7)
+vtypes.update(ssdt_vtypes.ssdt_vtypes)
+
+native_types = copy.deepcopy(win7_sp0_x86.native_types)
 
 class Win7SP1x86(windows.AbstractWindowsX86):
     """ A Profile for Windows 7 SP1 x86 """
     _md_major = 6
     _md_minor = 1
-    abstract_types = win7_sp1_x86_vtypes.nt_types
-    overlay = win7sp1x86overlays
-    object_classes = copy.deepcopy(win7_sp0_x86.Win7SP0x86.object_classes)
+    overlay = overlay
+    abstract_types = vtypes
+    object_classes = object_classes
     syscalls = win7_sp0_x86_syscalls.syscalls
     # FIXME: Temporary fix for issue 105
-    native_types = copy.deepcopy(windows.AbstractWindowsX86.native_types)
-    native_types['pointer64'] = windows.AbstractWindowsX86.native_types['unsigned long long']
+    native_types = native_types
 

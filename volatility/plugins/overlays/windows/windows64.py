@@ -21,12 +21,22 @@ import copy
 import volatility.plugins.overlays.basic as basic
 import volatility.plugins.overlays.windows.windows as windows
 
+windows_overlay = copy.deepcopy(windows.windows_overlay)
+
+windows_overlay['VOLATILITY_MAGIC'][1]['PoolAlignment'][1] = ['VolatilityMagic', dict(value = 16)]
+
+# This is the location of the MMVAD type which controls how to parse the
+# node. It is located before the structure.
+windows_overlay['_MMVAD_SHORT'][1]['Tag'][0] = -12
+windows_overlay['_MMVAD_LONG'][1]['Tag'][0] = -12
+
 class AbstractWindowsX64(windows.AbstractWindowsX86):
     """ A Profile for Windows systems """
     _md_os = 'windows'
     _md_memory_model = '64bit'
+    overlay = windows_overlay
     native_types = basic.x64_native_types
-    object_classes = copy.deepcopy(windows.AbstractWindows.object_classes)
+    object_classes = copy.deepcopy(windows.AbstractWindowsX86.object_classes)
 
     def list_to_type(self, name, typeList, typeDict = None):
         """Handle pointer64 types as if they were pointer types on 64-bit systems"""
