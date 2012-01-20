@@ -21,6 +21,11 @@ import copy
 import volatility.plugins.overlays.basic as basic
 import volatility.plugins.overlays.windows.windows as windows
 
+# This is the location of the MMVAD type which controls how to parse the
+# node. It is located before the structure.
+windows_overlay['VOLATILITY_MAGIC'][0]['_MMVAD_SHORT'][1]['Tag'][0] = -12
+windows_overlay['VOLATILITY_MAGIC'][0]['_MMVAD_LONG'][1]['Tag'][0] = -12
+
 class AbstractWindowsX64(windows.AbstractWindowsX86):
     """ A Profile for Windows systems """
     _md_os = 'windows'
