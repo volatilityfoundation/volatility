@@ -153,15 +153,11 @@ xpsp2overlays = {
     }],
 
     '_TOKEN' : [ None, {
-    'UserAndGroupCount' : [ None, ['unsigned long']],
     'UserAndGroups' : [ None, ['pointer', ['array', lambda x: x.UserAndGroupCount,
                                  ['_SID_AND_ATTRIBUTES']]]],
     }],
 
     '_SID' : [ None, {
-    'Revision' : [ None, ['unsigned char']],
-    'SubAuthorityCount' : [ None, ['unsigned char']],
-    'IdentifierAuthority' : [ None, ['_SID_IDENTIFIER_AUTHORITY']],
     'SubAuthority' : [ None, ['array', lambda x: x.SubAuthorityCount, ['unsigned long']]],
     }],
 
