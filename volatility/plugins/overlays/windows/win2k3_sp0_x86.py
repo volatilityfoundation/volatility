@@ -42,8 +42,6 @@ import volatility.obj as obj
 
 win2k3sp0x86overlays = copy.deepcopy(xp_sp2_x86.xpsp2overlays)
 
-win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x1B\x00")]
-win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['KPCR'][1] = ['VolatilityKPCR', dict(value = 0xffdff000, configname = 'KPCR')]
 win2k3sp0x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x18\x03')]
 
 win2k3_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
