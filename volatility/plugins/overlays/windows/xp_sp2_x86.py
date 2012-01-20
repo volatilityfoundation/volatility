@@ -86,6 +86,9 @@ xpsp2overlays = {
     'TimeZoneBias' : [ None, ['WinTimeStamp', {}]],
     }],
 
+    # The DTB is really an array of 2 ULONG_PTR but we only need the first one 
+    # which is the value loaded into CR3. The second one, according to procobj.c 
+    # of the wrk-v1.2, contaisn the PTE that maps something called hyper space. 
     '_KPROCESS' : [ None, {
     'DirectoryTableBase' : [ None, ['unsigned long']],
     }],
