@@ -200,7 +200,11 @@ class MemDump(MemMap):
             if pagedata:
                 for p in pagedata:
                     data = task_space.read(p[0], p[1])
-                    f.write(data)
+                    if data == None:
+                        if self._config.verbose:
+                            outfd.write("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(p[0], task.obj_offset, p[1]))
+                    else:
+                        f.write(data)
             else:
                 outfd.write("Unable to read pages for task.\n")
             f.close()
