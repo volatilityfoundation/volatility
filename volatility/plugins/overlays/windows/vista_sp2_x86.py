@@ -60,3 +60,5 @@ class VistaSP2x86(windows.AbstractWindowsX86):
     object_classes = copy.deepcopy(vista_sp1_x86.VistaSP1x86.object_classes)
     syscalls = vista_sp12_x86_syscalls.syscalls
 
+class Win2K8SP2x86(VistaSP2x86):
+    """ A Profile for Windows 2008 SP2 x86 """
