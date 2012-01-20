@@ -138,55 +138,56 @@ xpsp2overlays = {
     '_CM_KEY_VALUE' : [ None, {
     'Signature' : [ None, ['String', dict(length = 2)]],
     'Name' : [ None, ['String', dict(length = lambda x: x.NameLength)]],
-    } ],
+    }],
 
     '_CM_KEY_INDEX' : [ None, {
     'Signature' : [ None, ['String', dict(length = 2)]],
     'List' : [ None, ['array', lambda x: x.Count.v() * 2, ['pointer', ['_CM_KEY_NODE']]]],
-    } ],
+    }],
 
     '_IMAGE_HIBER_HEADER' : [ None, {
     'Signature':   [ None, ['String', dict(length = 4)]],
     'SystemTime' : [ None, ['WinTimeStamp', {}]],
-    } ],
+    }],
 
     '_PHYSICAL_MEMORY_DESCRIPTOR' : [ None, {
     'Run' : [ None, ['array', lambda x: x.NumberOfRuns, ['_PHYSICAL_MEMORY_RUN']]],
-    } ],
+    }],
 
     '_TOKEN' : [ None, {
     'UserAndGroupCount' : [ None, ['unsigned long']],
     'UserAndGroups' : [ None, ['pointer', ['array', lambda x: x.UserAndGroupCount,
                                  ['_SID_AND_ATTRIBUTES']]]],
-    } ],
+    }],
 
     '_SID' : [ None, {
     'Revision' : [ None, ['unsigned char']],
     'SubAuthorityCount' : [ None, ['unsigned char']],
     'IdentifierAuthority' : [ None, ['_SID_IDENTIFIER_AUTHORITY']],
     'SubAuthority' : [ None, ['array', lambda x: x.SubAuthorityCount, ['unsigned long']]],
-    } ],
+    }],
 
     '_TCPT_OBJECT': [ None, {
     'RemotePort': [ None, [ 'unsigned be short']],
     'LocalPort': [ None, [ 'unsigned be short']],
-    } ],
+    }],
+
     '_CLIENT_ID': [ None, {
     'UniqueProcess' : [ None, ['unsigned int']],
     'UniqueThread' : [ None, ['unsigned int']],
-    } ],
+    }],
 
     '_MMVAD_SHORT': [ None, {
     # This is the location of the MMVAD type which controls how to parse the
     # node. It is located before the structure.
     'Tag': [-4 , ['String', dict(length = 4)]],
-    } ],
+    }],
 
     '_MMVAD_LONG': [ None, {
     # This is the location of the MMVAD type which controls how to parse the
     # node. It is located before the structure.
     'Tag': [-4 , ['String', dict(length = 4)]],
-    } ],
+    }],
 }
 
 class WinXPSP2x86(windows.AbstractWindowsX86):
