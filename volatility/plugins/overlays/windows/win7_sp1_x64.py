@@ -50,8 +50,9 @@ vtypes.update(hibernate_vtypes.hibernate_vtypes)
 # vtypes.update(hibernate_vtypes.hibernate_win7_vtypes)
 #vtypes.update(hibernate_vtypes.hibernate_win7_x64_vtypes)
 vtypes.update(kdbg_vtypes.kdbg_vtypes)
+# Apply tcpip_vtypes_vista only for _IN_ADDR 
 vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
-vtypes.update(tcpip_vtypes.tcpip_vtypes_7)
+vtypes.update(tcpip_vtypes.tcpip_vtypes_7_64)
 
 class Win7SP1x64(windows64.AbstractWindowsX64):
     """ A Profile for Windows 7 SP1 x64 """
