@@ -51,7 +51,6 @@ win7sp0x86overlays['VOLATILITY_MAGIC'][1]['ObjectPreamble'] = [ 0x0, ['Volatilit
 win7_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
 win7_sp0_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
 win7_sp0_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
-win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
 win7_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_7)
 win7_sp0_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)

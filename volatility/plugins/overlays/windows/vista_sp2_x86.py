@@ -47,7 +47,6 @@ vtypes = copy.deepcopy(vista_sp2_x86_vtypes.nt_types)
 vtypes.update(crash_vtypes.crash_vtypes)
 vtypes.update(hibernate_vtypes.hibernate_vtypes)
 vtypes.update(kdbg_vtypes.kdbg_vtypes)
-vtypes.update(tcpip_vtypes.tcpip_vtypes)
 vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
 vtypes.update(ssdt_vtypes.ssdt_vtypes)
 

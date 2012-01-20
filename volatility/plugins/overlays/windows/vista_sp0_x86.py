@@ -49,7 +49,6 @@ vistasp0x86overlays['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic'
 vista_sp0_x86_vtypes.nt_types.update(crash_vtypes.crash_vtypes)
 vista_sp0_x86_vtypes.nt_types.update(hibernate_vtypes.hibernate_vtypes)
 vista_sp0_x86_vtypes.nt_types.update(kdbg_vtypes.kdbg_vtypes)
-vista_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 vista_sp0_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes_vista)
 vista_sp0_x86_vtypes.nt_types.update(ssdt_vtypes.ssdt_vtypes)
 
