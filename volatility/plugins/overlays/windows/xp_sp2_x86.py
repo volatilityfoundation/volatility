@@ -49,53 +49,55 @@ xp_sp2_x86_vtypes.nt_types.update(tcpip_vtypes.tcpip_vtypes)
 # files, collecting debugging symbol data etc. This file defines
 # fixups and improvements to the standard types.
 xpsp2overlays = {
-    'VOLATILITY_MAGIC' : [None, { \
-    'DTB' : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],
+    'VOLATILITY_MAGIC' : [None, {
+    # Profile specific values
     'DTBSignature' : [ 0x0, ['VolatilityMagic', dict(value = "\x03\x00\x1b\x00")]],
-    'KPCR' : [ 0x0, ['VolatilityMagic', dict(value = 0xffdff000, configname = "KPCR")]],
     'KUSER_SHARED_DATA' : [ 0x0, ['VolatilityMagic', dict(value = 0xFFDF0000)]],
-    'KDBG' : [ 0x0, ['VolatilityKDBG', dict(configname = "KDBG")]],
     'KDBGHeader' : [ 0x0, ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x90\x02')]],
+    # Configuration options
+    'DTB' : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],
+    'KPCR' : [ 0x0, ['VolatilityMagic', dict(value = 0xffdff000, configname = "KPCR")]],
+    'KDBG' : [ 0x0, ['VolatilityKDBG', dict(configname = "KDBG")]],
     'IA32ValidAS': [ 0x0, ['VolatilityIA32ValidAS']],
     # Pool allocations are aligned to this many bytes.
     'PoolAlignment': [0x0, ['VolatilityMagic', dict(value = 8)]],
     }],
 
-    '_EPROCESS' : [ None, { \
+    '_EPROCESS' : [ None, {
     'CreateTime' : [ None, ['WinTimeStamp', {}]],
     'ExitTime' : [ None, ['WinTimeStamp', {}]],
     'InheritedFromUniqueProcessId' : [ None, ['unsigned int']],
     'ImageFileName' : [ None, ['String', dict(length = 16)]],
-    'UniqueProcessId' : [ None, ['unsigned int']], \
-    'VadRoot': [ None, ['pointer', ['_MMVAD']]], \
+    'UniqueProcessId' : [ None, ['unsigned int']],
+    'VadRoot': [ None, ['pointer', ['_MMVAD']]],
     }],
 
-    '_ETHREAD' : [ None, { \
+    '_ETHREAD' : [ None, {
     'CreateTime' : [ None, ['ThreadCreateTimeStamp', {}]],
     'ExitTime' : [ None, ['WinTimeStamp', {}]],
     }],
 
-    '_OBJECT_SYMBOLIC_LINK' : [ None, { \
+    '_OBJECT_SYMBOLIC_LINK' : [ None, {
     'CreationTime' : [ None, ['WinTimeStamp', {}]],
     }],
 
-    '_KUSER_SHARED_DATA' : [ None, { \
-    'SystemTime' : [ None, ['WinTimeStamp', {}]], \
-    'TimeZoneBias' : [ None, ['WinTimeStamp', {}]], \
+    '_KUSER_SHARED_DATA' : [ None, {
+    'SystemTime' : [ None, ['WinTimeStamp', {}]],
+    'TimeZoneBias' : [ None, ['WinTimeStamp', {}]],
     }],
 
-    '_KPROCESS' : [ None, { \
-    'DirectoryTableBase' : [ None, ['unsigned long']], \
+    '_KPROCESS' : [ None, {
+    'DirectoryTableBase' : [ None, ['unsigned long']],
     }],
 
-    '_KGDTENTRY' : [  None , { \
-    'BaseMid' : [ 0x4, ['unsigned char']], \
-    'BaseHigh' : [ 0x7, ['unsigned char']], \
+    '_KGDTENTRY' : [  None , {
+    'BaseMid' : [ 0x4, ['unsigned char']],
+    'BaseHigh' : [ 0x7, ['unsigned char']],
     }],
 
-    '_ADDRESS_OBJECT' : [ None, { \
-    'LocalPort': [ None, ['unsigned be short']], \
-    'CreateTime' : [ None, ['WinTimeStamp', {}]], \
+    '_ADDRESS_OBJECT' : [ None, {
+    'LocalPort': [ None, ['unsigned be short']],
+    'CreateTime' : [ None, ['WinTimeStamp', {}]],
     }],
 
     '_OBJECT_HEADER' : [ None, {
@@ -111,11 +113,11 @@ xpsp2overlays = {
     }],
 
     '_DBGKD_GET_VERSION64' : [  None, {
-    'DebuggerDataList' : [ None, ['pointer', ['unsigned long']]], \
+    'DebuggerDataList' : [ None, ['pointer', ['unsigned long']]],
     }],
 
     '_DMP_HEADER' : [ None, {
-    'PsActiveProcessHead' : [ None, ['pointer' , ['unsigned long']]], \
+    'PsActiveProcessHead' : [ None, ['pointer' , ['unsigned long']]],
     }],
 
     '_CM_KEY_NODE' : [ None, {
@@ -125,7 +127,7 @@ xpsp2overlays = {
     }],
 
     '_CM_NAME_CONTROL_BLOCK' : [ None, {
-    'Name' : [ None, ['String', dict(length = lambda x: x.NameLength)]], \
+    'Name' : [ None, ['String', dict(length = lambda x: x.NameLength)]],
     }],
 
     '_CHILD_LIST' : [ None, {
@@ -143,35 +145,35 @@ xpsp2overlays = {
     'List' : [ None, ['array', lambda x: x.Count.v() * 2, ['pointer', ['_CM_KEY_NODE']]]],
     } ],
 
-    '_IMAGE_HIBER_HEADER' : [ None, { \
+    '_IMAGE_HIBER_HEADER' : [ None, {
     'Signature':   [ None, ['String', dict(length = 4)]],
-    'SystemTime' : [ None, ['WinTimeStamp', {}]], \
-    } ], \
+    'SystemTime' : [ None, ['WinTimeStamp', {}]],
+    } ],
 
-    '_PHYSICAL_MEMORY_DESCRIPTOR' : [ None, { \
-    'Run' : [ None, ['array', lambda x: x.NumberOfRuns, ['_PHYSICAL_MEMORY_RUN']]], \
-    } ], \
+    '_PHYSICAL_MEMORY_DESCRIPTOR' : [ None, {
+    'Run' : [ None, ['array', lambda x: x.NumberOfRuns, ['_PHYSICAL_MEMORY_RUN']]],
+    } ],
 
-    '_TOKEN' : [ None, { \
-    'UserAndGroupCount' : [ None, ['unsigned long']], \
-    'UserAndGroups' : [ None, ['pointer', ['array', lambda x: x.UserAndGroupCount, \
-                                 ['_SID_AND_ATTRIBUTES']]]], \
-    } ], \
+    '_TOKEN' : [ None, {
+    'UserAndGroupCount' : [ None, ['unsigned long']],
+    'UserAndGroups' : [ None, ['pointer', ['array', lambda x: x.UserAndGroupCount,
+                                 ['_SID_AND_ATTRIBUTES']]]],
+    } ],
 
-    '_SID' : [ None, {\
-    'Revision' : [ None, ['unsigned char']], \
-    'SubAuthorityCount' : [ None, ['unsigned char']], \
-    'IdentifierAuthority' : [ None, ['_SID_IDENTIFIER_AUTHORITY']], \
-    'SubAuthority' : [ None, ['array', lambda x: x.SubAuthorityCount, ['unsigned long']]], \
-    } ], \
+    '_SID' : [ None, {
+    'Revision' : [ None, ['unsigned char']],
+    'SubAuthorityCount' : [ None, ['unsigned char']],
+    'IdentifierAuthority' : [ None, ['_SID_IDENTIFIER_AUTHORITY']],
+    'SubAuthority' : [ None, ['array', lambda x: x.SubAuthorityCount, ['unsigned long']]],
+    } ],
 
     '_TCPT_OBJECT': [ None, {
     'RemotePort': [ None, [ 'unsigned be short']],
     'LocalPort': [ None, [ 'unsigned be short']],
     } ],
     '_CLIENT_ID': [ None, {
-    'UniqueProcess' : [ None, ['unsigned int']], \
-    'UniqueThread' : [ None, ['unsigned int']], \
+    'UniqueProcess' : [ None, ['unsigned int']],
+    'UniqueThread' : [ None, ['unsigned int']],
     } ],
 
     '_MMVAD_SHORT': [ None, {
