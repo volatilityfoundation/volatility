@@ -51,7 +51,6 @@ class AMD64PagedMemory(intel.JKIA32PagedMemoryPae):
     cache = False
     pae = True
     checkname = 'AMD64ValidAS'
-    supported_memory_models = '64bit'
     paging_address_space = True
 
     def _cache_values(self):
