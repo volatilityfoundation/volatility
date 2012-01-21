@@ -25,6 +25,17 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 
 #pylint: disable-msg=C0111
 
+def pool_align(vm, object_name, align):
+    """Returns the size of the object accounting for pool alignment."""
+    size_of_obj = vm.profile.get_obj_size(object_name)
+
+    # Size is rounded to pool alignment
+    extra = size_of_obj % align
+    if extra:
+        size_of_obj += align - extra
+
+    return size_of_obj
+
 ## The following are checks for pool scanners.
 
 class PoolTagCheck(scan.ScannerCheck):

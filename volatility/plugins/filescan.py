@@ -26,6 +26,7 @@
 @organization: http://computer.forensikblog.de/en/
 """
 
+import common
 import volatility.scan as scan
 import volatility.commands as commands
 import volatility.debug as debug #pylint: disable-msg=W0611
@@ -59,17 +60,6 @@ class FileScan(commands.command):
     def __init__(self, config, *args):
         commands.command.__init__(self, config, *args)
 
-    def get_rounded_size(self, vm, object_name, pool_align):
-        """Returns the size of the object accounting for pool alignment."""
-        size_of_obj = vm.profile.get_obj_size(object_name)
-
-        # Size is rounded to pool alignment
-        extra = size_of_obj % pool_align
-        if extra:
-            size_of_obj += pool_align - extra
-
-        return size_of_obj
-
     # Can't be cached until self.kernel_address_space is moved entirely within calculate
     def calculate(self):
         ## Just grab the AS and scan it using our scanner
@@ -85,11 +75,11 @@ class FileScan(commands.command):
 
             ## We work out the _FILE_OBJECT from the end of the
             ## allocation (bottom up).
-            pool_align = obj.VolMagic(address_space).PoolAlignment.v()
+            pool_alignment = obj.VolMagic(address_space).PoolAlignment.v()
 
             file_obj = obj.Object("_FILE_OBJECT", vm = address_space,
-                     offset = (offset + pool_obj.BlockSize * pool_align -
-                     self.get_rounded_size(kernel_as, "_FILE_OBJECT", pool_align)),
+                     offset = (offset + pool_obj.BlockSize * pool_alignment -
+                     common.pool_align(kernel_as, "_FILE_OBJECT", pool_alignment)),
                      native_vm = kernel_as
                      )
 
@@ -150,19 +140,19 @@ class DriverScan(FileScan):
 
             ## We work out the _DRIVER_OBJECT from the end of the
             ## allocation (bottom up).
-            pool_align = obj.VolMagic(address_space).PoolAlignment.v()
+            pool_alignment = obj.VolMagic(address_space).PoolAlignment.v()
 
             extension_obj = obj.Object(
                 "_DRIVER_EXTENSION", vm = address_space,
-                offset = (offset + pool_obj.BlockSize * pool_align -
-                          self.get_rounded_size(kernel_as, "_DRIVER_EXTENSION", pool_align)),
+                offset = (offset + pool_obj.BlockSize * pool_alignment -
+                          common.pool_align(kernel_as, "_DRIVER_EXTENSION", pool_alignment)),
                 native_vm = kernel_as)
 
             ## The _DRIVER_OBJECT is immediately below the _DRIVER_EXTENSION
             driver_obj = obj.Object(
                 "_DRIVER_OBJECT", vm = address_space,
                 offset = extension_obj.obj_offset - \
-                    self.get_rounded_size(kernel_as, "_DRIVER_OBJECT", pool_align),
+                    common.pool_align(kernel_as, "_DRIVER_OBJECT", pool_alignment),
                 native_vm = kernel_as
                 )
 
@@ -226,11 +216,11 @@ class SymLinkScan(FileScan):
 
             ## We work out the object from the end of the
             ## allocation (bottom up).
-            pool_align = obj.VolMagic(address_space).PoolAlignment.v()
+            pool_alignment = obj.VolMagic(address_space).PoolAlignment.v()
 
             link_obj = obj.Object("_OBJECT_SYMBOLIC_LINK", vm = address_space,
-                     offset = (offset + pool_obj.BlockSize * pool_align -
-                               self.get_rounded_size(kernel_as, "_OBJECT_SYMBOLIC_LINK", pool_align)),
+                     offset = (offset + pool_obj.BlockSize * pool_alignment -
+                               common.pool_align(kernel_as, "_OBJECT_SYMBOLIC_LINK", pool_alignment)),
                      native_vm = kernel_as)
 
             ## The _OBJECT_HEADER is immediately below the _OBJECT_SYMBOLIC_LINK
@@ -288,12 +278,12 @@ class MutantScan(FileScan):
 
             ## We work out the _DRIVER_OBJECT from the end of the
             ## allocation (bottom up).
-            pool_align = obj.VolMagic(address_space).PoolAlignment.v()
+            pool_alignment = obj.VolMagic(address_space).PoolAlignment.v()
 
             mutant = obj.Object(
                 "_KMUTANT", vm = address_space,
-                offset = (offset + pool_obj.BlockSize * pool_align -
-                          self.get_rounded_size(kernel_as, "_KMUTANT", pool_align)),
+                offset = (offset + pool_obj.BlockSize * pool_alignment -
+                          common.pool_align(kernel_as, "_KMUTANT", pool_alignment)),
                 native_vm = kernel_as)
 
             ## The _OBJECT_HEADER is immediately below the _KMUTANT
@@ -338,7 +328,7 @@ class MutantScan(FileScan):
                          repr(object_obj.NameInfo.Name.v() if object_obj.NameInfo.Name.v() else '')
                          ))
 
-class CheckProcess(scan.ScannerCheck, FileScan):
+class CheckProcess(scan.ScannerCheck):
     """ Check sanity of _EPROCESS """
     kernel = 0x80000000
 
@@ -354,10 +344,10 @@ class CheckProcess(scan.ScannerCheck, FileScan):
 
         ## We work out the _EPROCESS from the end of the
         ## allocation (bottom up).
-        pool_align = obj.VolMagic(self.address_space).PoolAlignment.v()
+        pool_alignment = obj.VolMagic(self.address_space).PoolAlignment.v()
         eprocess = obj.Object("_EPROCESS", vm = self.address_space,
-                  offset = pool_base + pool_obj.BlockSize * pool_align -
-                  self.get_rounded_size(self.address_space, '_EPROCESS', pool_align))
+                  offset = pool_base + pool_obj.BlockSize * pool_alignment -
+                  common.pool_align(self.address_space, '_EPROCESS', pool_alignment))
 
         if (eprocess.Pcb.DirectoryTableBase == 0):
             return False
@@ -373,7 +363,7 @@ class CheckProcess(scan.ScannerCheck, FileScan):
         return True
 
 
-class PoolScanProcess(scan.PoolScanner, FileScan):
+class PoolScanProcess(scan.PoolScanner):
     """PoolScanner for File objects"""
     ## We are not using a preamble for this plugin since we are walking back
     preamble = []
@@ -395,10 +385,10 @@ class PoolScanProcess(scan.PoolScanner, FileScan):
 
         ## We work out the _EPROCESS from the end of the
         ## allocation (bottom up).
-        pool_align = obj.VolMagic(address_space).PoolAlignment.v()
+        pool_alignment = obj.VolMagic(address_space).PoolAlignment.v()
 
-        object_base = (pool_base + pool_obj.BlockSize * pool_align -
-                       self.get_rounded_size(address_space, '_EPROCESS', pool_align))
+        object_base = (pool_base + pool_obj.BlockSize * pool_alignment -
+                       common.pool_align(address_space, '_EPROCESS', pool_alignment))
 
         return object_base
 
