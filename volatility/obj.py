@@ -1093,7 +1093,7 @@ class Profile(object):
         size = ctype[0]
         for k, v in ctype[1].items():
             if callable(v):
-              members[k] = v
+                members[k] = v
             elif v[0] == None:
                 debug.warning("{0} has no offset in object {1}. Check that vtypes has a concrete definition for it.".format(k, cname))
             else:
