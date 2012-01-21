@@ -75,10 +75,6 @@ windows_overlay = {
     'DirectoryTableBase' : [ None, ['unsigned long']],
     }],
 
-    '_OBJECT_HEADER' : [ None, {
-    'Body' : [ None, ['unsigned int']],
-    }],
-
     '_HANDLE_TABLE_ENTRY' : [ None, {
     'Object' : [ None, ['_EX_FAST_REF']],
     }],
