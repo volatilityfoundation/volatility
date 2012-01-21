@@ -45,7 +45,7 @@ object_classes = copy.deepcopy(vista_sp0_x64.object_classes)
 
 vtypes = copy.deepcopy(vista_sp1_x64_vtypes.ntkrnlmp_types)
 
-overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = '\x00\xf8\xff\xffKDBG\x30\x03')]
+overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\xf8\xff\xffKDBG\x30\x03')]
 
 vtypes.update(crash_vtypes.crash_vtypes)
 vtypes.update(hibernate_vtypes.hibernate_vtypes)

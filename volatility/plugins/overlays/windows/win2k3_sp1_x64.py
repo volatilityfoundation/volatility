@@ -48,8 +48,8 @@ vtypes = copy.deepcopy(win2k3_sp1_x86_vtypes.nt_types)
 
 # Starting with Windows 2003 SP1 _ETHREAD.CreateTime is a WinTimeStamp, not a ThreadCreateTimeStamp
 overlay['_ETHREAD'][1]['CreateTime'][1] = ['WinTimeStamp', {}]
-overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x1e\x00")]
-overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x18\x03')]
+overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x2e\x00")]
+overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\xf8\xff\xffKDBG\x18\x03')]
 
 vtypes.update(crash_vtypes.crash_vtypes)
 vtypes.update(hibernate_vtypes.hibernate_vtypes)

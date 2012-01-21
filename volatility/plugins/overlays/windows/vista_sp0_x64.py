@@ -47,8 +47,8 @@ object_classes = copy.deepcopy(win2k3_sp2_x64.object_classes)
 
 vtypes = copy.deepcopy(vista_sp0_x64_vtypes.ntkrnlmp_types)
 
-overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x20\x00")]
-overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x28\x03')]
+overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x30\x00")]
+overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\xf8\xff\xffKDBG\x28\x03')]
 
 vtypes.update(crash_vtypes.crash_vtypes)
 vtypes.update(hibernate_vtypes.hibernate_vtypes)
