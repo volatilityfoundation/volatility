@@ -92,7 +92,7 @@ class KPCRScannerCheck(scan.ScannerCheck):
 
         return False
 
-    # make the scan DWROD aligned
+    # make the scan DWORD aligned
     def skip(self, data, offset):
         return 4
 
