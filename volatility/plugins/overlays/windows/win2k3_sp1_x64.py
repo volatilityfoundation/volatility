@@ -28,7 +28,7 @@ This file provides support for Windows 2003 SP1.
 #pylint: disable-msg=C0111
 
 import copy
-import win2k3_sp1_x86_vtypes
+import win2k3_sp1_x64_vtypes
 import win2k3_sp12_x86_syscalls
 import win2k3_sp0_x86
 import windows
@@ -44,7 +44,7 @@ overlay = copy.deepcopy(windows64.AbstractWindowsX64.overlay)
 
 object_classes = copy.deepcopy(windows64.AbstractWindowsX64.object_classes)
 
-vtypes = copy.deepcopy(win2k3_sp1_x86_vtypes.nt_types)
+vtypes = copy.deepcopy(win2k3_sp1_x64_vtypes.ntkrnlmp_types)
 
 # Starting with Windows 2003 SP1 _ETHREAD.CreateTime is a WinTimeStamp, not a ThreadCreateTimeStamp
 overlay['_ETHREAD'][1]['CreateTime'][1] = ['WinTimeStamp', {}]
