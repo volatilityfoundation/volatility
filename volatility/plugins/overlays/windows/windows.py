@@ -359,13 +359,16 @@ class _HANDLE_TABLE(obj.CType):
     def _make_handle_array(self, offset, level):
         """ Returns an array of _HANDLE_TABLE_ENTRY rooted at offset,
         and iterates over them.
-
         """
+
+        # The counts below are calculated by taking the size of a page and dividing 
+        # by the size of the data type contained within the page. For more information
+        # see http://blogs.technet.com/b/markrussinovich/archive/2009/09/29/3283844.aspx
         if level > 0:
-            count = 0x400
-            targetType = "unsigned int"
+            count = 0x1000 / self.obj_vm.profile.get_obj_size("address")
+            targetType = "address"
         else:
-            count = 0x200
+            count = 0x1000 / self.obj_vm.profile.get_obj_size("_HANDLE_TABLE_ENTRY")
             targetType = "_HANDLE_TABLE_ENTRY"
 
         table = obj.Object("Array", offset = offset, vm = self.obj_vm, count = count,
