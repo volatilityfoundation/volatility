@@ -163,13 +163,11 @@ class _UNICODE_STRING(obj.CType):
       * The __str__ method returns the value of the Buffer.
     """
     def v(self):
-        try:
-            length = self.Length.v()
-            if length > 1024:
-                length = 0
+        length = self.Length.v()
+        if length > 0 and length <= 1024:
             data = self.Buffer.dereference_as('String', length = length)
             return data.v().decode("utf16", "ignore").encode("ascii", 'backslashreplace')
-        except Exception, _e:
+        else:
             return ''
 
     def __nonzero__(self):
