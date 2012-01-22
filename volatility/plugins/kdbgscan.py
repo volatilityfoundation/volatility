@@ -95,12 +95,6 @@ class KDBGScan(commands.command):
             maxlen = max(maxlen, len(proflens[p]))
         self._config.update('PROFILE', origprofile)
 
-        proflens.update({'WinXPSP0x64':'\x00\xf8\xff\xffKDBG\x90\x02',
-                         'Win7SP0x64':'\x00\xf8\xff\xffKDBG\x40\x03',
-                         'Win2003SP0x64':'\x00\xf8\xff\xffKDBG\x18\x03',
-                         'Win2008SP0x64':'\x00\xf8\xff\xffKDBG\x30\x03',
-                         'VistaSP0x64':'\x00\xf8\xff\xffKDBG\x28\x03'})
-
         scanner = KDBGScanner(needles = proflens.values())
 
         aspace = utils.load_as(self._config, astype = 'any')
