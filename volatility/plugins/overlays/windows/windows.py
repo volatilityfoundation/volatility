@@ -347,14 +347,14 @@ class _HANDLE_TABLE(obj.CType):
     tables, such as the _KDDEBUGGER_DATA64.PspCidTable.
     """
 
-    def get_item(self, entry):
+    def get_item(self, entry, handle_value = 0):
         """Returns the OBJECT_HEADER of the associated handle. The parent
         is the _HANDLE_TABLE_ENTRY so that an object can be linked to its 
         GrantedAccess.
         """
-        return entry.Object.dereference_as("_OBJECT_HEADER", parent = entry)
+        return entry.Object.dereference_as("_OBJECT_HEADER", parent = entry, handle_value = handle_value)
 
-    def _make_handle_array(self, offset, level):
+    def _make_handle_array(self, offset, level, depth = 0):
         """ Returns an array of _HANDLE_TABLE_ENTRY rooted at offset,
         and iterates over them.
         """
@@ -379,12 +379,24 @@ class _HANDLE_TABLE(obj.CType):
 
                 if level > 0:
                     ## We need to go deeper:
-                    for h in self._make_handle_array(entry, level - 1):
+                    for h in self._make_handle_array(entry, level - 1, depth):
                         yield h
+                    depth += 1
                 else:
+
+                    # All handle values are multiples of four, on both x86 and x64. 
+                    handle_multiplier = 4
+                    # Calculate the starting handle value for this level. 
+                    handle_level_base = depth * count * handle_multiplier
+                    # The size of a handle table entry.
+                    handle_entry_size = self.obj_vm.profile.get_obj_size("_HANDLE_TABLE_ENTRY")
+                    # Finally, compute the handle value for this object. 
+                    handle_value = ((entry.obj_offset - offset) / 
+                                   (handle_entry_size / handle_multiplier)) + handle_level_base
+
                     ## OK We got to the bottom table, we just resolve
                     ## objects here:
-                    item = self.get_item(entry)
+                    item = self.get_item(entry, handle_value)
 
                     if item == None:
                         continue
@@ -432,6 +444,9 @@ class _OBJECT_HEADER(obj.CType):
                         ('QuotaInfo', '_OBJECT_HEADER_QUOTA_INFO')]
 
     def __init__(self, *args, **kwargs):
+        # Usually we don't add members to objects like this, but its an
+        # exception due to lack of better options. See Issue #135. 
+        self.HandleValue = kwargs.get("handle_value", 0)
         obj.CType.__init__(self, *args, **kwargs)
         # Create accessors for optional headers
         self.find_optional_headers()
