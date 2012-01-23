@@ -59,6 +59,9 @@ vtypes.update(kdbg_vtypes.kdbg_vtypes)
 vtypes.update(ssdt_vtypes.ssdt_vtypes)
 vtypes.update(ssdt_vtypes.ssdt_vtypes_2k3)
 
+# Alias _IMAGE_NT_HEADERS for 64-bit systems
+vtypes["_IMAGE_NT_HEADERS"] = vtypes["_IMAGE_NT_HEADERS64"]
+
 object_classes['_MM_AVL_TABLE'] = win2k3_sp0_x86._MM_AVL_TABLE
 object_classes['_MMADDRESS_NODE'] = windows._MMVAD
 object_classes['_MMVAD_SHORT'] = win2k3_sp0_x86._MMVAD_SHORT

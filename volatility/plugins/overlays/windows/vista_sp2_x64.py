@@ -50,6 +50,9 @@ vtypes.update(hibernate_vtypes.hibernate_vtypes)
 vtypes.update(kdbg_vtypes.kdbg_vtypes)
 #vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
 
+# Alias _IMAGE_NT_HEADERS for 64-bit systems
+vtypes["_IMAGE_NT_HEADERS"] = vtypes["_IMAGE_NT_HEADERS64"]
+
 class VistaSP2x64(windows64.AbstractWindowsX64):
     """ A Profile for Windows Vista SP2 x64 """
     _md_major = 6

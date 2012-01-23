@@ -57,8 +57,11 @@ vtypes.update(hibernate_vtypes.hibernate_vtypes)
 #vtypes.update(hibernate_vtypes.hibernate_win7_x64_vtypes)
 vtypes.update(kdbg_vtypes.kdbg_vtypes)
 # Apply tcpip_vtypes_vista only for _IN_ADDR 
-vtypes.update(tcpip_vtypes.tcpip_vtypes_vista) 
+vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
 vtypes.update(tcpip_vtypes.tcpip_vtypes_7_64)
+
+# Alias _IMAGE_NT_HEADERS for 64-bit systems
+vtypes["_IMAGE_NT_HEADERS"] = vtypes["_IMAGE_NT_HEADERS64"]
 
 object_classes["_OBJECT_HEADER"] = win7_sp0_x86._OBJECT_HEADER
 

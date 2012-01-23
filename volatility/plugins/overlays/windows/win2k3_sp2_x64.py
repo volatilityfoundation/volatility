@@ -50,6 +50,9 @@ vtypes.update(hibernate_vtypes.hibernate_vtypes)
 # win2k3_sp2_x64_vtypes.ntkrnlmp_types.update(tcpip_vtypes.tcpip_vtypes_2k3_sp1_sp2)
 vtypes.update(kdbg_vtypes.kdbg_vtypes)
 
+# Alias _IMAGE_NT_HEADERS for 64-bit systems
+vtypes["_IMAGE_NT_HEADERS"] = vtypes["_IMAGE_NT_HEADERS64"]
+
 class Win2K3SP2x64(windows64.AbstractWindowsX64):
     """ A Profile for Windows 2003 SP2 x64 """
     _md_major = 5
