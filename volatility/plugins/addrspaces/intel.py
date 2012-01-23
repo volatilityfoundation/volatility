@@ -116,10 +116,10 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         holding the four byte PDE. 0x1000 / 4 = 0x400 entries
         '''
         buf = self.base.read(self.dtb, 0x1000)
-        if buf is None:
-            self.cache = False
-        else:
+        if buf:
             self.pde_cache = struct.unpack('<' + 'I' * 0x400, buf)
+        else:
+            self.cache = False
 
     def load_dtb(self):
         """Loads the DTB as quickly as possible from the config, then the base, then searching for it"""
@@ -274,7 +274,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
             chunk_len = min(length, 0x1000 - (vaddr % 0x1000))
 
             buf = self.__read_chunk(vaddr, chunk_len)
-            if buf is None:
+            if not buf:
                 if pad:
                     buf = '\x00' * chunk_len
                 else:
@@ -360,10 +360,10 @@ class JKIA32PagedMemoryPae(JKIA32PagedMemory):
 
     def _cache_values(self):
         buf = self.base.read(self.dtb, 0x20)
-        if buf is None:
-            self.cache = False
-        else:
+        if buf:
             self.pdpte_cache = struct.unpack('<' + 'Q' * 4, buf)
+        else:
+            self.cache = False
 
     def pdpte_index(self, vaddr):
         '''

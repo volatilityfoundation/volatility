@@ -61,10 +61,10 @@ class AMD64PagedMemory(intel.JKIA32PagedMemoryPae):
         '''
         buf = self.base.read(self.dtb, 0x1000)
         self.cache = False
-        if buf is None:
-            self.cache = False
-        else:
+        if buf:
             self.pml4e_cache = struct.unpack('<' + 'Q' * 0x200, buf)
+        else:
+            self.cache = False
 
     def is_valid_profile(self, profile):
         return profile.metadata.get('memory_model', '32bit') == '64bit'
