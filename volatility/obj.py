@@ -172,14 +172,11 @@ class NoneObject(object):
     def next(self):
         raise StopIteration()
 
-    def __getattribute__(self, attr):
+    def __getattr__(self, attr):
         # By returning self for any unknown attribute
         # and ensuring the self is callable, we cover both properties and methods
         # Override NotImplemented functions in object with self
-        try:
-            return object.__getattribute__(self, attr)
-        except AttributeError:
-            return self
+        return self
 
     def __bool__(self):
         return False
@@ -600,16 +597,13 @@ class Pointer(NativeType):
         target = self.dereference()
         return "<{0} {1} pointer to [0x{2:08X}]>".format(target.__class__.__name__, self.obj_name or '', self.v())
 
-    def __getattribute__(self, attr):
-        try:
-            return super(Pointer, self).__getattribute__(attr)
-        except AttributeError:
-            ## We just dereference ourself
-            result = self.dereference()
+    def __getattr__(self, attr):
+        ## We just dereference ourself
+        result = self.dereference()
 
-            #if isinstance(result, CType):
-            #    return result.m(attr)
-            return result.__getattribute__(attr)
+        #if isinstance(result, CType):
+        #    return result.m(attr)
+        return getattr(result, attr)
 
 class Void(NativeType):
     def __init__(self, theType, offset, vm, **kwargs):
@@ -779,12 +773,7 @@ class CType(BaseObject):
 
         return result
 
-    def __getattribute__(self, attr):
-        try:
-            return object.__getattribute__(self, attr)
-        except AttributeError:
-            pass
-
+    def __getattr__(self, attr):
         return self.m(attr)
 
     def __setattr__(self, attr, value):
