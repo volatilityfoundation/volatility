@@ -32,7 +32,7 @@ import copy
 import vista_sp2_x64
 import win7_sp0_x86
 import win7_sp0_x64_vtypes
-import win7_sp0_x86_syscalls
+import win7_sp01_x64_syscalls
 import windows64
 import tcpip_vtypes
 import crash_vtypes
@@ -72,4 +72,4 @@ class Win7SP0x64(windows64.AbstractWindowsX64):
     overlay = overlay
     abstract_types = vtypes
     object_classes = object_classes
-    syscalls = win7_sp0_x86_syscalls.syscalls
+    syscalls = win7_sp01_x64_syscalls.syscalls

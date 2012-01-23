@@ -30,7 +30,7 @@ for SP3.
 
 import copy
 import vista_sp0_x64_vtypes
-import vista_sp0_x86_syscalls
+import vista_sp0_x64_syscalls
 import win2k3_sp2_x64
 import windows
 import windows64
@@ -66,7 +66,7 @@ class VistaSP0x64(windows64.AbstractWindowsX64):
     overlay = overlay
     abstract_types = vtypes
     object_classes = object_classes
-    syscalls = vista_sp0_x86_syscalls.syscalls
+    syscalls = vista_sp0_x64_syscalls.syscalls
 
 class _MMVAD_SHORT(windows._MMVAD_SHORT):
     def get_parent(self):

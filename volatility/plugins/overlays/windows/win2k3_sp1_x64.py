@@ -29,7 +29,7 @@ This file provides support for Windows 2003 SP1.
 
 import copy
 import win2k3_sp1_x64_vtypes
-import win2k3_sp12_x86_syscalls
+import win2k3_sp12_x64_syscalls
 import win2k3_sp0_x86
 import windows
 import windows64
@@ -74,7 +74,7 @@ class Win2K3SP1x64(windows64.AbstractWindowsX64):
     overlay = overlay
     abstract_types = vtypes
     object_classes = object_classes
-    syscalls = win2k3_sp12_x86_syscalls.syscalls
+    syscalls = win2k3_sp12_x64_syscalls.syscalls
 
 class WinXPSP1x64(Win2K3SP1x64):
     """ A Profile for Windows XP SP1 x64 """

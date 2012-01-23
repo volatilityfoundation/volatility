@@ -31,7 +31,7 @@ for SP1.
 import copy
 import vista_sp0_x64
 import vista_sp1_x64_vtypes
-import vista_sp12_x86_syscalls
+import vista_sp12_x64_syscalls
 import windows64
 import tcpip_vtypes
 import crash_vtypes
@@ -63,7 +63,7 @@ class VistaSP1x64(windows64.AbstractWindowsX64):
     abstract_types = vista_sp1_x64_vtypes.ntkrnlmp_types
     overlay = overlay
     object_classes = object_classes
-    syscalls = vista_sp12_x86_syscalls.syscalls
+    syscalls = vista_sp12_x64_syscalls.syscalls
 
 class Win2K8SP1x64(VistaSP1x64):
     """ A Profile for Windows 2008 SP1 x64 """

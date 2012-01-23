@@ -31,7 +31,7 @@ for SP1.
 import copy
 import win7_sp0_x86
 import win7_sp1_x86_vtypes
-import win7_sp0_x86_syscalls
+import win7_sp01_x86_syscalls
 import windows
 import tcpip_vtypes
 import crash_vtypes
@@ -62,7 +62,7 @@ class Win7SP1x86(windows.AbstractWindowsX86):
     overlay = overlay
     abstract_types = vtypes
     object_classes = object_classes
-    syscalls = win7_sp0_x86_syscalls.syscalls
+    syscalls = win7_sp01_x86_syscalls.syscalls
     # FIXME: Temporary fix for issue 105
     native_types = native_types
 

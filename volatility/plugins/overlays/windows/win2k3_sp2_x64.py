@@ -28,6 +28,7 @@ This file provides support for Windows 2003 SP2.
 #pylint: disable-msg=C0111
 
 import copy
+import win2k3_sp12_x64_syscalls
 import win2k3_sp2_x64_vtypes
 import win2k3_sp1_x64
 import windows64
@@ -60,7 +61,7 @@ class Win2K3SP2x64(windows64.AbstractWindowsX64):
     overlay = overlay
     abstract_types = vtypes
     object_classes = object_classes
-    syscalls = None
+    syscalls = win2k3_sp12_x64_syscalls.syscalls
 
 class WinXPSP2x64(Win2K3SP2x64):
     """ A Profile for Windows XP SP2 x64 """
