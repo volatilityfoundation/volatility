@@ -68,7 +68,7 @@ class ModDump(procdump.ProcExeDump):
             if mods.has_key(self._config.OFFSET):
                 mod_name = mods[self._config.OFFSET].BaseDllName
             else:
-                mod_name = "Unknown"
+                mod_name = "UNKNOWN"
             yield addr_space, procs, int(self._config.OFFSET), mod_name
         else:
             for mod in mods.values():

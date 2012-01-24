@@ -76,7 +76,7 @@ class DLLDump(procdump.ProcExeDump):
                 if mods.has_key(self._config.BASE):
                     mod_name = mods[self._config.BASE].BaseDllName
                 else:
-                    mod_name = "Unknown"
+                    mod_name = "UNKNOWN"
                 yield proc, ps_ad, int(self._config.BASE), mod_name
             else:
                 for mod in mods.values():

@@ -127,7 +127,7 @@ class SSDT(commands.command):
                     try:
                         syscall_name = syscalls[idx][i]
                     except IndexError:
-                        syscall_name = "Unknown"
+                        syscall_name = "UNKNOWN"
 
                     syscall_mod = find_module(mods, mod_addrs, syscall_addr)
                     if syscall_mod:
