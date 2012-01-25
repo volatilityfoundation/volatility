@@ -106,23 +106,21 @@ class SSDT(commands.command):
         # Print out the entries for each table
         for idx, table, n, vm, mods, mod_addrs in data:
             outfd.write("SSDT[{0}] at {1:x} with {2} entries\n".format(idx, table, n))
-            if vm.is_valid_address(table):
-                for i in range(n):
-                    syscall_addr = obj.Object('unsigned long', table + (i * 4), vm).v()
-                    try:
-                        syscall_name = syscalls[idx][i]
-                    except IndexError:
-                        syscall_name = "UNKNOWN"
+            for i in range(n):
+                syscall_addr = obj.Object('unsigned long', table + (i * 4), vm).v()
+                try:
+                    syscall_name = syscalls[idx][i]
+                except IndexError:
+                    syscall_name = "UNKNOWN"
 
-                    syscall_mod = tasks.find_module(mods, mod_addrs, syscall_addr)
-                    if syscall_mod:
-                        syscall_modname = syscall_mod.BaseDllName
-                    else:
-                        syscall_modname = "UNKNOWN"
+                syscall_mod = tasks.find_module(mods, mod_addrs, syscall_addr)
+                if syscall_mod:
+                    syscall_modname = syscall_mod.BaseDllName
+                else:
+                    syscall_modname = "UNKNOWN"
 
-                    outfd.write("  Entry {0:#06x}: {1:#x} ({2}) owned by {3}\n".format(idx * 0x1000 + i,
-                                                                       syscall_addr,
-                                                                       syscall_name,
-                                                                       syscall_modname))
-            else:
-                outfd.write("  [SSDT not resident at 0x{0:08X} ]\n".format(table))
+                outfd.write("  Entry {0:#06x}: {1:#x} ({2}) owned by {3}\n".format(idx * 0x1000 + i,
+                                                                   syscall_addr,
+                                                                   syscall_name,
+                                                                   syscall_modname))
+
