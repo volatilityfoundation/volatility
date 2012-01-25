@@ -31,6 +31,7 @@
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.utils as utils
+from bisect import bisect_right
 
 class TasksNotFound(utils.VolatilityException):
     """Thrown when a tasklist cannot be determined"""
@@ -87,3 +88,21 @@ def find_space(addr_space, procs, mod_base):
             if ps_ad.is_valid_address(mod_base):
                 return ps_ad
     return None
+
+def find_module(modlist, mod_addrs, addr):
+    """Uses binary search to find what module a given address resides in.
+
+    This is much faster than a series of linear checks if you have
+    to do it many times. Note that modlist and mod_addrs must be sorted
+    in order of the module base address."""
+
+    pos = bisect_right(mod_addrs, addr) - 1
+    if pos == -1:
+        return None
+    mod = modlist[mod_addrs[pos]]
+
+    if (addr >= mod.DllBase.v() and
+        addr < mod.DllBase.v() + mod.SizeOfImage.v()):
+        return mod
+    else:
+        return None

@@ -24,7 +24,6 @@
 """
 
 from operator import itemgetter
-from bisect import bisect_right
 
 import volatility.obj as obj
 import volatility.win32.tasks as tasks
@@ -36,23 +35,9 @@ from volatility.cache import CacheDecorator
 
 #pylint: disable-msg=C0111
 
-def find_module(modlist, mod_addrs, addr):
-    """Uses binary search to find what module a given address resides in.
-
-    This is much faster than a series of linear checks if you have
-    to do it many times. Note that modlist and mod_addrs must be sorted
-    in order of the module base address."""
-
-    pos = bisect_right(mod_addrs, addr) - 1
-    if pos == -1:
-        return None
-    mod = modlist[mod_addrs[pos]]
-
-    if (addr >= mod.DllBase.v() and
-        addr < mod.DllBase.v() + mod.SizeOfImage.v()):
-        return mod
-    else:
-        return None
+# for backward compatibility, remove after 2.2 or so
+# see Issue 191 on google code 
+find_module = tasks.find_module
 
 class SSDT(commands.command):
     "Display SSDT entries"
@@ -129,7 +114,7 @@ class SSDT(commands.command):
                     except IndexError:
                         syscall_name = "UNKNOWN"
 
-                    syscall_mod = find_module(mods, mod_addrs, syscall_addr)
+                    syscall_mod = tasks.find_module(mods, mod_addrs, syscall_addr)
                     if syscall_mod:
                         syscall_modname = syscall_mod.BaseDllName
                     else:
