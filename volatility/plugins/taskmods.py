@@ -87,12 +87,16 @@ class DllList(commands.command, cache.Testable):
         # (Note: the addr_space and flat_addr_space use the same config, so should have the same profile)
         tleoffset = addr_space.profile.get_obj_offset("_ETHREAD", "ThreadListEntry")
         ethread = obj.Object("_ETHREAD", offset = flateproc.ThreadListHead.Flink.v() - tleoffset, vm = addr_space)
+        virtual_process = None
         # and ask for the thread's process to get an _EPROCESS with a virtual address space
         # For Vista/windows 7
         if hasattr(ethread.Tcb, 'Process'):
-            return ethread.Tcb.Process.dereference_as('_EPROCESS')
+            virtual_process = ethread.Tcb.Process.dereference_as('_EPROCESS')
         elif hasattr(ethread, 'ThreadsProcess'):
-            return ethread.ThreadsProcess.dereference()
+            virtual_process = ethread.ThreadsProcess.dereference()
+        # Sanity check the bounce. See Issue 154. 
+        if virtual_process and offset == addr_space.vtop(virtual_process.obj_offset):
+            return virtual_process
         return obj.NoneObject("Unable to bounce back from virtual _ETHREAD to virtual _EPROCESS")
 
     @cache.CacheDecorator(lambda self: "tests/pslist/pid={0}/offset={1}".format(self._config.PID, self._config.OFFSET))
