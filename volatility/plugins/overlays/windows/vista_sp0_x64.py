@@ -54,7 +54,7 @@ vtypes.update(crash_vtypes.crash_vtypes)
 vtypes.update(hibernate_vtypes.hibernate_vtypes)
 vtypes.update(kdbg_vtypes.kdbg_vtypes)
 vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
-vtypes.update(ssdt_vtypes.ssdt_vtypes)
+vtypes.update(ssdt_vtypes.ssdt_vtypes_64)
 
 # Alias _IMAGE_NT_HEADERS for 64-bit systems
 vtypes["_IMAGE_NT_HEADERS"] = vtypes["_IMAGE_NT_HEADERS64"]
