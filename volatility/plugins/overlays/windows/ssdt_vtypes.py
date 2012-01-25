@@ -17,3 +17,16 @@ ssdt_vtypes_2k3 = {
     'Descriptors' : [0x0, ['array', 2, ['_SERVICE_DESCRIPTOR_ENTRY']]],
     }],
 }
+
+# SSDT structures for x64
+ssdt_vtypes_64 = { 
+    '_SERVICE_DESCRIPTOR_TABLE' : [ 0x40, {
+    'Descriptors' : [0x0, ['array', 2, ['_SERVICE_DESCRIPTOR_ENTRY']]],
+    }],
+    '_SERVICE_DESCRIPTOR_ENTRY' : [ 0x20, {
+    'KiServiceTable' : [0x0, ['pointer64', ['void']]],
+    'CounterBaseTable' : [0x8, ['pointer64', ['unsigned long']]],
+    'ServiceLimit' : [0x10, ['unsigned long long']],
+    'ArgumentTable' : [0x18, ['pointer64', ['unsigned char']]],
+    }],
+}
