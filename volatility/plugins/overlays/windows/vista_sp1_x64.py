@@ -60,7 +60,7 @@ class VistaSP1x64(windows64.AbstractWindowsX64):
     """ A Profile for Windows Vista SP1 x64 """
     _md_major = 6
     _md_minor = 0
-    abstract_types = vista_sp1_x64_vtypes.ntkrnlmp_types
+    abstract_types = vtypes
     overlay = overlay
     object_classes = object_classes
     syscalls = vista_sp12_x64_syscalls.syscalls
