@@ -482,8 +482,26 @@ class _OBJECT_HEADER(obj.CType):
 
         return type_obj.Name.v()
 
-
 AbstractWindowsX86.object_classes['_OBJECT_HEADER'] = _OBJECT_HEADER
+
+class _FILE_OBJECT(obj.CType):
+    """Class for file objects"""
+
+    def file_name_with_device(self):
+        """Return the name of the file, prefixed with the name
+        of the device object to which the file belongs"""
+        name = ""
+        if self.DeviceObject:
+            object_hdr = obj.Object("_OBJECT_HEADER", 
+                            self.DeviceObject - self.obj_vm.profile.get_obj_offset("_OBJECT_HEADER", "Body"), 
+                            self.obj_native_vm)
+            if object_hdr:
+                name = "\\Device\\{0}".format(object_hdr.NameInfo.Name.v())
+        if self.FileName:
+            name += self.FileName.v()
+        return name
+
+AbstractWindowsX86.object_classes['_FILE_OBJECT'] = _FILE_OBJECT
 
 ## This is an object which provides access to the VAD tree.
 class _MMVAD(obj.CType):

@@ -72,8 +72,7 @@ class Handles(taskmods.DllList):
                     object_type = handle.get_object_type()
                     if object_type == "File":
                         file_obj = handle.dereference_as("_FILE_OBJECT")
-                        if file_obj.FileName:
-                            name = repr(file_obj.FileName.v())
+                        name = repr(file_obj.file_name_with_device())
                     elif object_type == "Key":
                         key_obj = handle.dereference_as("_CM_KEY_BODY")
                         name = key_obj.full_key_name()
