@@ -213,6 +213,10 @@ class VolatilityCommandRegistry(MemoryRegistry):
         """ Return the command objects by name """
         return self.commands[command_name]
 
+    def __contains__(self, item):
+        """ Return whether the item is present in the registry """
+        return item in self.commands
+
     def __init__(self, ParentClass):
         MemoryRegistry.__init__(self, ParentClass)
         self.commands = {}
@@ -231,6 +235,10 @@ class VolatilityObjectRegistry(MemoryRegistry):
         """ Return the objects by name """
         return self.objects[object_name]
 
+    def __contains__(self, item):
+        """ Return whether the item is present in the registry """
+        return item in self.objects
+
     def __init__(self, ParentClass):
         MemoryRegistry.__init__(self, ParentClass)
         self.objects = {}
@@ -248,7 +256,7 @@ class VolatilityObjectRegistry(MemoryRegistry):
                 b = 10
 
             if a < b:
-                return - 1
+                return -1
             elif a == b:
                 return 0
             return 1

@@ -83,13 +83,13 @@ class BaseAddressSpace(object):
 
     def _set_profile(self, profile_name):
         ## Load the required profile
-        try:
+        if profile_name in PROFILES:
             ret = PROFILES[profile_name]
-        except KeyError:
-            try:
+        else:
+            if profile_name in registry.PROFILES:
                 ret = registry.PROFILES[profile_name]()
                 PROFILES[profile_name] = ret
-            except KeyError:
+            else:
                 raise ASAssertionError, "Invalid profile " + profile_name + " selected"
         if not self.is_valid_profile(ret):
             raise ASAssertionError, "Incompatible profile " + profile_name + " selected"
