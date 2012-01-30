@@ -38,6 +38,7 @@ import crash_vtypes
 import hibernate_vtypes
 import kdbg_vtypes
 import ssdt_vtypes
+import pe_vtypes
 import volatility.debug as debug #pylint: disable-msg=W0611
 
 overlay = copy.deepcopy(win7_sp0_x86.overlay)
@@ -52,6 +53,7 @@ vtypes.update(kdbg_vtypes.kdbg_vtypes)
 vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
 vtypes.update(tcpip_vtypes.tcpip_vtypes_7)
 vtypes.update(ssdt_vtypes.ssdt_vtypes)
+vtypes.update(pe_vtypes.pe_vtypes)
 
 native_types = copy.deepcopy(win7_sp0_x86.native_types)
 
