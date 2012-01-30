@@ -37,6 +37,7 @@ import windows64
 import crash_vtypes
 import hibernate_vtypes
 import kdbg_vtypes
+import ssdt_vtypes
 import volatility.debug as debug #pylint: disable-msg=W0611
 
 overlay = copy.deepcopy(vista_sp1_x64.overlay)
@@ -49,6 +50,7 @@ vtypes.update(crash_vtypes.crash_vtypes)
 vtypes.update(hibernate_vtypes.hibernate_vtypes)
 vtypes.update(kdbg_vtypes.kdbg_vtypes)
 #vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
+vtypes.update(ssdt_vtypes.ssdt_vtypes_64)
 
 # Alias _IMAGE_NT_HEADERS for 64-bit systems
 vtypes["_IMAGE_NT_HEADERS"] = vtypes["_IMAGE_NT_HEADERS64"]
