@@ -391,7 +391,7 @@ class _HANDLE_TABLE(obj.CType):
                     # The size of a handle table entry.
                     handle_entry_size = self.obj_vm.profile.get_obj_size("_HANDLE_TABLE_ENTRY")
                     # Finally, compute the handle value for this object. 
-                    handle_value = ((entry.obj_offset - offset) / 
+                    handle_value = ((entry.obj_offset - offset) /
                                    (handle_entry_size / handle_multiplier)) + handle_level_base
 
                     ## OK We got to the bottom table, we just resolve
@@ -492,8 +492,8 @@ class _FILE_OBJECT(obj.CType):
         of the device object to which the file belongs"""
         name = ""
         if self.DeviceObject:
-            object_hdr = obj.Object("_OBJECT_HEADER", 
-                            self.DeviceObject - self.obj_vm.profile.get_obj_offset("_OBJECT_HEADER", "Body"), 
+            object_hdr = obj.Object("_OBJECT_HEADER",
+                            self.DeviceObject - self.obj_vm.profile.get_obj_offset("_OBJECT_HEADER", "Body"),
                             self.obj_native_vm)
             if object_hdr:
                 name = "\\Device\\{0}".format(object_hdr.NameInfo.Name.v())
