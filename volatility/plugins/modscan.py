@@ -28,6 +28,7 @@ This module implements the fast module scanning
 
 #pylint: disable-msg=C0111
 
+import common
 import volatility.plugins.filescan as filescan
 import volatility.scan as scan
 import volatility.utils as utils
@@ -35,7 +36,6 @@ import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 
 class PoolScanModuleFast(scan.PoolScanner):
-    preamble = ['_POOL_HEADER', ]
 
     checks = [ ('PoolTagCheck', dict(tag = 'MmLd')),
                ('CheckPoolSize', dict(condition = lambda x: x > 0x4c)),
@@ -87,19 +87,18 @@ class CheckThreads(scan.ScannerCheck):
 
     def check(self, found):
 
-        start_of_object = self.address_space.profile.get_obj_size("_POOL_HEADER") + \
-                          self.address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body') - \
-                          self.address_space.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
+        pool_base = found - self.address_space.profile.get_obj_offset(
+            '_POOL_HEADER', 'PoolTag')
 
-        ## The preamble needs to be augmented for Windows7
-        try:
-            ObjectPreamble = obj.VolMagic(self.address_space).ObjectPreamble.v()
-            offsetupdate = self.address_space.profile.get_obj_size(ObjectPreamble)
-        except AttributeError:
-            offsetupdate = 0
+        pool_obj = obj.Object("_POOL_HEADER", vm = self.address_space,
+                              offset = pool_base)
 
-        thread = obj.Object('_ETHREAD', vm = self.address_space,
-                           offset = found + start_of_object + offsetupdate)
+        ## We work out the _ETHREAD from the end of the
+        ## allocation (bottom up).
+        pool_alignment = obj.VolMagic(self.address_space).PoolAlignment.v()
+        thread = obj.Object("_ETHREAD", vm = self.address_space,
+                  offset = pool_base + pool_obj.BlockSize * pool_alignment -
+                  common.pool_align(self.address_space, '_ETHREAD', pool_alignment))
 
         #if thread.Cid.UniqueProcess.v() != 0 and \
         #   thread.ThreadsProcess.v() <= self.kernel:
@@ -122,8 +121,7 @@ class CheckThreads(scan.ScannerCheck):
         return True
 
 class PoolScanThreadFast(scan.PoolScanner):
-    """ Carve out threat objects using the pool tag """
-    preamble = ['_POOL_HEADER', '_OBJECT_HEADER' ]
+    """ Carve out thread objects using the pool tag """
 
     def object_offset(self, found, address_space):
         """ This returns the offset of the object contained within
@@ -131,27 +129,19 @@ class PoolScanThreadFast(scan.PoolScanner):
         """
 
         ## The offset of the object is determined by subtracting the offset
-        ## of the PoolTag member to get the start of Pool Object and then
-        ## adding the size of the preamble data structures. This done
-        ## because PoolScanners search for the PoolTag. 
+        ## of the PoolTag member to get the start of Pool Object 
 
         pool_base = found - self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
 
-        ## Another data structure is added to the preamble for Win7.
-        volmagic = obj.VolMagic(self.buffer)
-        try:
-            if not volmagic.ObjectPreamble.v() in self.preamble:
-                self.preamble.append(volmagic.ObjectPreamble.v())
-        except AttributeError:
-            pass
+        pool_obj = obj.Object("_POOL_HEADER", vm = address_space,
+                                 offset = pool_base)
 
-        ## Next we add the size of the preamble data structures
-        object_base = pool_base + \
-               sum([self.buffer.profile.get_obj_size(c) for c in self.preamble])
+        ## We work out the _ETHREAD from the end of the
+        ## allocation (bottom up).
+        pool_alignment = obj.VolMagic(address_space).PoolAlignment.v()
 
-        object_base = object_base - \
-               (self.buffer.profile.get_obj_size('_OBJECT_HEADER') - \
-               self.buffer.profile.get_obj_offset('_OBJECT_HEADER', 'Body'))
+        object_base = (pool_base + pool_obj.BlockSize * pool_alignment -
+                       common.pool_align(address_space, '_ETHREAD', pool_alignment))
 
         return object_base
 

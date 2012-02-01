@@ -51,9 +51,6 @@ vtypes = copy.deepcopy(win7_sp0_x86_vtypes.nt_types)
 overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x26\x00")]
 overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x40\x03')]
 
-# Add a new member to the VOLATILIY_MAGIC type
-overlay['VOLATILITY_MAGIC'][1]['ObjectPreamble'] = [ 0x0, ['VolatilityMagic', dict(value = '_OBJECT_HEADER_CREATOR_INFO')]]
-
 vtypes.update(crash_vtypes.crash_vtypes)
 vtypes.update(hibernate_vtypes.hibernate_vtypes)
 vtypes.update(kdbg_vtypes.kdbg_vtypes)

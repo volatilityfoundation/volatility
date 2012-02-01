@@ -35,9 +35,6 @@ import volatility.obj as obj
 
 class PoolScanFile(scan.PoolScanner):
     """PoolScanner for File objects"""
-    ## We dont want any preamble - the offsets should be those of the
-    ## _POOL_HEADER directly.
-    preamble = []
     checks = [ ('PoolTagCheck', dict(tag = "Fil\xe5")),
                ('CheckPoolSize', dict(condition = lambda x: x >= 0x98)),
                ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
@@ -118,7 +115,6 @@ class FileScan(commands.command):
 
 class PoolScanDriver(PoolScanFile):
     """ Scanner for _DRIVER_OBJECT """
-    ## No preamble
     checks = [ ('PoolTagCheck', dict(tag = "Dri\xf6")),
                ('CheckPoolSize', dict(condition = lambda x: x >= 0xf8)),
                ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
@@ -365,8 +361,6 @@ class CheckProcess(scan.ScannerCheck):
 
 class PoolScanProcess(scan.PoolScanner):
     """PoolScanner for File objects"""
-    ## We are not using a preamble for this plugin since we are walking back
-    preamble = []
 
     def object_offset(self, found, address_space):
         """ This returns the offset of the object contained within
@@ -374,8 +368,7 @@ class PoolScanProcess(scan.PoolScanner):
         """
         ## The offset of the object is determined by subtracting the offset
         ## of the PoolTag member to get the start of Pool Object and then
-        ## adding the size of the preamble data structures. This done
-        ## because PoolScanners search for the PoolTag. 
+        ## walking backwards based on pool alignment and pool size. 
 
         pool_base = found - self.buffer.profile.get_obj_offset(
             '_POOL_HEADER', 'PoolTag')

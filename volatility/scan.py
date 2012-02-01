@@ -171,8 +171,6 @@ class ScannerCheck(object):
     #    return -1
 
 class PoolScanner(DiscontigScanner):
-    ## These are the objects that follow the pool tags
-    preamble = [ '_POOL_HEADER', ]
 
     def object_offset(self, found, address_space):
         """ This returns the offset of the object contained within
@@ -180,10 +178,9 @@ class PoolScanner(DiscontigScanner):
         """
 
         ## The offset of the object is determined by subtracting the offset
-        ## of the PoolTag member to get the start of Pool Object and then
-        ## adding the size of the preamble data structures. This done 
+        ## of the PoolTag member to get the start of Pool Object. This is done 
         ## because PoolScanners search for the PoolTag.
-        return found + sum([self.buffer.profile.get_obj_size(c) for c in self.preamble]) - self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
+        return found + self.buffer.profile.get_obj_size('_POOL_HEADER') - self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
 
     def scan(self, address_space, offset = 0, maxlen = None):
         for i in DiscontigScanner.scan(self, address_space, offset, maxlen):
