@@ -35,7 +35,6 @@ import volatility.utils as utils
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 
-
 class PoolScanConnFast(scan.PoolScanner):
     checks = [ ('PoolTagCheck', dict(tag = "TCPT")),
                ('CheckPoolSize', dict(condition = lambda x: x >= 0x198)),
@@ -72,7 +71,6 @@ class ConnScan(commands.command):
         outfd.write(" Offset(P)  Local Address             Remote Address            Pid   \n" + \
                     "---------- ------------------------- ------------------------- ------ \n")
 
-        ## We make a new scanner
         for tcp_obj in data:
             local = "{0}:{1}".format(tcp_obj.LocalIpAddress, tcp_obj.LocalPort)
             remote = "{0}:{1}".format(tcp_obj.RemoteIpAddress, tcp_obj.RemotePort)
