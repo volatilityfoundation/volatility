@@ -180,7 +180,7 @@ class PoolScanner(DiscontigScanner):
         ## The offset of the object is determined by subtracting the offset
         ## of the PoolTag member to get the start of Pool Object. This is done 
         ## because PoolScanners search for the PoolTag.
-        return found + self.buffer.profile.get_obj_size('_POOL_HEADER') - self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
+        return found - self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
 
     def scan(self, address_space, offset = 0, maxlen = None):
         for i in DiscontigScanner.scan(self, address_space, offset, maxlen):
