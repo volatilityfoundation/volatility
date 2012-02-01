@@ -44,7 +44,6 @@ class CheckSocketCreateTime(scan.ScannerCheck):
 
     def check(self, offset):
         start_of_object = self.address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag")
-        print hex(start_of_object)
         address_obj = obj.Object('_ADDRESS_OBJECT', vm = self.address_space,
                                 offset = offset + start_of_object)
 
