@@ -35,7 +35,7 @@ windows_overlay = {
     'VOLATILITY_MAGIC' : [None, {
     # Profile specific values
     'DTBSignature' : [ 0x0, ['VolatilityMagic', dict(value = "Volatility DTBSignature unspecified")]],
-    'KUSER_SHARED_DATA' : [ 0x0, ['VolatilityMagic', dict(value = 0x0)]],
+    'KUSER_SHARED_DATA' : [ 0x0, ['VolatilityMagic', dict(value = 0xFFDF0000)]],
     'KDBGHeader' : [ 0x0, ['VolatilityMagic', dict(value = 'Volatility KDBGHeader unspecified')]],
     # Configuration options
     'DTB' : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],

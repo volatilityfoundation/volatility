@@ -24,6 +24,7 @@ import volatility.plugins.overlays.windows.windows as windows
 windows_overlay = copy.deepcopy(windows.windows_overlay)
 
 windows_overlay['VOLATILITY_MAGIC'][1]['PoolAlignment'][1] = ['VolatilityMagic', dict(value = 16)]
+windows_overlay['VOLATILITY_MAGIC'][1]['KUSER_SHARED_DATA'][1] = ['VolatilityMagic', dict(value = 0xFFFFF78000000000)]
 
 # This is the location of the MMVAD type which controls how to parse the
 # node. It is located before the structure.
