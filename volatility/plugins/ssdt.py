@@ -39,6 +39,77 @@ from volatility.cache import CacheDecorator
 # see Issue 191 on google code 
 find_module = tasks.find_module
 
+def find_tables(start_addr, vm):
+    """
+    This function finds the RVAs to KeServiceDescriptorTable
+    and KeServiceDescriptorTableShadow in the NT module. 
+
+    @param start_addr: virtual address of KeAddSystemServiceTable
+    @param vm: kernel address space 
+
+    We're looking for two instructions like this:
+
+    //if (KeServiceDescriptorTable[i].Base)
+    4B 83 BC 1A 40 88 2A 00 00    cmp qword ptr [r10+r11+2A8840h], 0 
+    //if (KeServiceDescriptorTableShadow[i].Base)
+    4B 83 BC 1A 80 88 2A 00 00    cmp qword ptr [r10+r11+2A8880h], 0
+
+    In the example, 2A8840h is the RVA of KeServiceDescriptorTable 
+    and 2A8880h is the RVA of KeServiceDescriptorTableShadow. The
+    exported KeAddSystemServiceTable is a very small function (about
+    120 bytes at the most) and the two instructions appear very 
+    early, which reduces the possibility of false positives. 
+
+    If distorm3 is installed, we use it to decompose instructions 
+    in x64 format. If distorm3 is not available, we use Volatility's
+    object model as a very simple and generic instruction parser. 
+    """
+    service_tables = []
+
+    try:
+        import distorm3
+        use_distorm = True
+    except ImportError:
+        use_distorm = False
+
+    function_size = 120
+
+    if use_distorm:
+        data = vm.zread(start_addr, function_size)
+        for op in distorm3.Decompose(start_addr, data, distorm3.Decode64Bits):
+            # Stop decomposing if we reach the function end 
+            if op.flowControl == 'FC_RET':
+                break
+            # Looking for a 9-byte CMP instruction whose first operand
+            # has a 32-bit displacement and second operand is zero 
+            if op.mnemonic == 'CMP' and op.size == 9 and op.operands[0].dispSize == 32 and op.operands[0].value == 0:
+                # The displacement is the RVA we want 
+                service_tables.append(op.operands[0].disp)
+    else:
+        vm.profile.add_types({
+            '_INSTRUCTION' : [ 9, {
+            'opcode' : [ 0, ['String', dict(length = 4)]], 
+            'disp'   : [ 4, ['int']], 
+            'value'  : [ 8, ['unsigned char']],
+        }]})
+        # The variations assume (which happens to be correct on all OS)
+        # that volatile registers are used in the CMP QWORD instruction.
+        # All combinations of volatile registers (rax, rcx, rdx, r8-r11)
+        # will result in one of the variations in this list. 
+        ops_list = [
+            "\x4B\x83\xBC", # r10, r11
+            "\x48\x83\xBC", # rax, rcx
+            "\x4A\x83\xBC", # rax, r8
+        ]
+        for i in range(function_size):
+            op = obj.Object("_INSTRUCTION", offset = start_addr + i, vm = vm)
+            if op.value == 0:
+                for s in ops_list:
+                    if op.opcode.v().startswith(s): 
+                        service_tables.append(op.disp)
+
+    return service_tables
+
 class SSDT(commands.command):
     "Display SSDT entries"
     # Declare meta information associated with this plugin
@@ -55,19 +126,29 @@ class SSDT(commands.command):
     def calculate(self):
         addr_space = utils.load_as(self._config)
 
-        if addr_space.profile.metadata.get('memory_model', '') != '32bit':
-            raise StopIteration
-
         ## Get a sorted list of module addresses
         mods = dict((mod.DllBase.v(), mod) for mod in modules.lsmod(addr_space))
         mod_addrs = sorted(mods.keys())
 
-        # Gather up all SSDTs referenced by threads
-        print "Gathering all referenced SSDTs from KTHREADs..."
         ssdts = set()
-        for proc in tasks.pslist(addr_space):
-            for thread in proc.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
-                ssdt_obj = thread.Tcb.ServiceTable.dereference_as('_SERVICE_DESCRIPTOR_TABLE')
+
+        if addr_space.profile.metadata.get('memory_model', '32bit') == '32bit':
+            # Gather up all SSDTs referenced by threads
+            print "[x86] Gathering all referenced SSDTs from KTHREADs..."
+            for proc in tasks.pslist(addr_space):
+                for thread in proc.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
+                    ssdt_obj = thread.Tcb.ServiceTable.dereference_as('_SERVICE_DESCRIPTOR_TABLE')
+                    ssdts.add(ssdt_obj)
+        else:
+            print "[x64] Gathering all referenced SSDTs from KeAddSystemServiceTable..."
+            # The NT module always loads first 
+            ntos = list(modules.lsmod(addr_space))[0]
+            func_rva = ntos.getprocaddress("KeAddSystemServiceTable")
+            if func_rva == None:
+                raise StopIteration("Cannot locate KeAddSystemServiceTable")
+            KeAddSystemServiceTable = ntos.DllBase + func_rva
+            for table_rva in find_tables(KeAddSystemServiceTable, addr_space):
+                ssdt_obj = obj.Object("_SERVICE_DESCRIPTOR_TABLE", ntos.DllBase + table_rva, addr_space)
                 ssdts.add(ssdt_obj)
 
         # Get a list of *unique* SSDT entries. Typically we see only two.
@@ -96,18 +177,22 @@ class SSDT(commands.command):
     def render_text(self, outfd, data):
 
         addr_space = utils.load_as(self._config)
-
-        if addr_space.profile.metadata.get('memory_model', '') != '32bit':
-            outfd.write("The SSDT plugin only supports 32bit systems\n  Please see issue 82 at volatility.googlecode.com for more details\n")
-            return
-
         syscalls = addr_space.profile.syscalls
+        bits32 = addr_space.profile.metadata.get('memory_model', '32bit') == '32bit'
 
         # Print out the entries for each table
         for idx, table, n, vm, mods, mod_addrs in data:
             outfd.write("SSDT[{0}] at {1:x} with {2} entries\n".format(idx, table, n))
             for i in range(n):
-                syscall_addr = obj.Object('unsigned long', table + (i * 4), vm).v()
+                if bits32:
+                    # These are absolute function addresses in kernel memory. 
+                    syscall_addr = obj.Object('address', table + (i * 4), vm).v()
+                else:
+                    # These must be signed long for x64 because they are RVAs relative
+                    # to the base of the table and can be negative. 
+                    offset = obj.Object('long', table + (i * 4), vm).v()
+                    # The offset is the top 20 bits of the 32 bit number. 
+                    syscall_addr = table + (offset >> 4)
                 try:
                     syscall_name = syscalls[idx][i]
                 except IndexError:
