@@ -104,6 +104,11 @@ inaddr6_any = inet_ntop(socket.AF_INET6, '\0' * 16)
 
 class PoolScanUdpEndpoint(scan.PoolScanner):
     """PoolScanner for Udp Endpoints"""
+
+    def object_offset(self, found, address_space):
+        return found + (address_space.profile.get_obj_size("_POOL_HEADER") -
+                        address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
+
     checks = [ ('PoolTagCheck', dict(tag = "UdpA")),
                # Seen as 0xa8 on Vista SP0, 0xb0 on Vista SP2, and 0xb8 on 7
                # Seen as 0x150 on Win7 SP0 x64
@@ -114,6 +119,11 @@ class PoolScanUdpEndpoint(scan.PoolScanner):
 
 class PoolScanTcpListener(scan.PoolScanner):
     """PoolScanner for Tcp Listeners"""
+
+    def object_offset(self, found, address_space):
+        return found + (address_space.profile.get_obj_size("_POOL_HEADER") -
+                        address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
+
     checks = [ ('PoolTagCheck', dict(tag = "TcpL")),
                # Seen as 0x120 on Win7 SP0 x64
                ('CheckPoolSize', dict(condition = lambda x: x >= 0xa8)),
@@ -131,6 +141,11 @@ class PoolScanTcpListener(scan.PoolScanner):
 
 class PoolScanTcpEndpoint(scan.PoolScanner):
     """PoolScanner for TCP Endpoints"""
+
+    def object_offset(self, found, address_space):
+        return found + (address_space.profile.get_obj_size("_POOL_HEADER") -
+                        address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
+
     checks = [ ('PoolTagCheck', dict(tag = "TcpE")),
                # Seen as 0x1f0 on Vista SP0, 0x1f8 on Vista SP2 and 0x210 on 7
                # Seen as 0x320 on Win7 SP0 x64
