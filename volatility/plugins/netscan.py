@@ -157,11 +157,9 @@ class PoolScanTcpEndpoint(scan.PoolScanner):
 class Netscan(commands.command):
     """Scan a Vista, 2008 or Windows 7 image for connections and sockets"""
 
-    def enumerate_listeners(self, theObject, vspace = None):
+    def enumerate_listeners(self, theObject):
         """
-        Enumerate the listening IPv4 and IPv6 information. If vspace is
-        provided, then it is assumed that theObject is in physical space, in
-        which case we convert into the virtual space for handling pointers.
+        Enumerate the listening IPv4 and IPv6 information. 
 
         Unlike XP, where you needed to create two sockets (one for IPv4 and
         one for IPv4), starting with Vista, Windows supports dual-stack sockets
@@ -171,14 +169,11 @@ class Netscan(commands.command):
         to create an IPv6 only socket by calling setsockopt with IPV6_V6ONLY.
         """
 
-        if vspace != None:
-            LocalAddr = obj.Object('_LOCAL_ADDRESS', theObject.LocalAddr, vspace)
-            InetAF = obj.Object('_INETAF', theObject.InetAF, vspace)
-            Owner = obj.Object('_EPROCESS', theObject.Owner, vspace)
-        else:
-            LocalAddr = theObject.LocalAddr
-            InetAF = theObject.InetAF
-            Owner = theObject.Owner
+        # These pointers are dereferenced in kernel space since we set
+        # native_vm when the objects were created. 
+        LocalAddr = theObject.LocalAddr.dereference()
+        InetAF = theObject.InetAF.dereference()
+        Owner = theObject.Owner.dereference()
 
         # We only handle IPv4 and IPv6 sockets at the moment
         if InetAF.AddressFamily != AF_INET and InetAF.AddressFamily != AF_INET6:
@@ -187,10 +182,10 @@ class Netscan(commands.command):
         if LocalAddr != None:
             inaddr = LocalAddr.pData.dereference().dereference().v()
             if InetAF.AddressFamily == AF_INET:
-                laddr = inet_ntop(socket.AF_INET, vspace.zread(inaddr, 4))
+                laddr = inet_ntop(socket.AF_INET, theObject.obj_native_vm.zread(inaddr, 4))
                 yield "v4", laddr, inaddr_any, Owner
             else:
-                laddr = inet_ntop(socket.AF_INET6, vspace.zread(inaddr, 16))
+                laddr = inet_ntop(socket.AF_INET6, theObject.obj_native_vm.zread(inaddr, 16))
                 yield "v6", laddr, inaddr6_any, Owner
         else:
             yield "v4", inaddr_any, inaddr_any, Owner
@@ -199,11 +194,14 @@ class Netscan(commands.command):
 
     @cache.CacheDecorator("tests/netscan")
     def calculate(self):
+        # Virtual kernel space for dereferencing pointers
         vspace = utils.load_as(self._config)
+        # Physical space for scanning 
         pspace = utils.load_as(self._config, astype = 'physical')
 
         for offset in PoolScanTcpListener().scan(pspace):
-            tcpentry = obj.Object('_TCP_LISTENER', offset, pspace)
+            tcpentry = obj.Object('_TCP_LISTENER', offset = offset, 
+                                  vm = pspace, native_vm = vspace)
 
             lport = socket.ntohs(tcpentry.Port)
 
@@ -211,15 +209,19 @@ class Netscan(commands.command):
             state = "LISTENING"
             rport = 0
 
-            for ver, laddr, raddr, owner in self.enumerate_listeners(tcpentry, vspace):
+            for ver, laddr, raddr, owner in self.enumerate_listeners(tcpentry):
                 yield tcpentry.obj_offset, "TCP" + ver, laddr, lport, \
                     raddr, rport, state, owner, tcpentry.CreateTime
 
         for offset in PoolScanTcpEndpoint().scan(pspace):
-            tcpentry = obj.Object('_TCP_ENDPOINT', offset, pspace)
-            AddrInfo = obj.Object('_ADDRINFO', tcpentry.AddrInfo, vspace)
-            InetAF = obj.Object('_INETAF', tcpentry.InetAF, vspace)
-            Owner = obj.Object('_EPROCESS', tcpentry.Owner, vspace)
+            tcpentry = obj.Object('_TCP_ENDPOINT', offset = offset, 
+                                  vm = pspace, native_vm = vspace)
+
+            # These pointers are dereferenced in kernel space since we set
+            # native_vm when the objects were created. 
+            AddrInfo = tcpentry.AddrInfo.dereference()
+            InetAF = tcpentry.InetAF.dereference()
+            Owner = tcpentry.Owner.dereference()
 
             lport = socket.ntohs(tcpentry.LocalPort)
             rport = socket.ntohs(tcpentry.RemotePort)
@@ -247,7 +249,8 @@ class Netscan(commands.command):
                 rport, state, Owner, tcpentry.CreateTime
 
         for offset in PoolScanUdpEndpoint().scan(pspace):
-            udpentry = obj.Object('_UDP_ENDPOINT', offset, pspace)
+            udpentry = obj.Object('_UDP_ENDPOINT', offset = offset, 
+                                  vm = pspace, native_vm = vspace)
 
             lport = socket.ntohs(udpentry.Port)
 
@@ -255,7 +258,7 @@ class Netscan(commands.command):
             state = ""
             raddr = rport = "*"
 
-            for ver, laddr, _, owner in self.enumerate_listeners(udpentry, vspace):
+            for ver, laddr, _, owner in self.enumerate_listeners(udpentry):
                 yield udpentry.obj_offset, "UDP" + ver, laddr, lport, \
                     raddr, rport, state, owner, udpentry.CreateTime
 
