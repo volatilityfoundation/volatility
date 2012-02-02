@@ -37,6 +37,10 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 
 class PoolScanModuleFast(scan.PoolScanner):
 
+    def object_offset(self, found, address_space):
+        return found + (address_space.profile.get_obj_size("_POOL_HEADER") -
+                        address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
+
     checks = [ ('PoolTagCheck', dict(tag = 'MmLd')),
                ('CheckPoolSize', dict(condition = lambda x: x > 0x4c)),
                ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
