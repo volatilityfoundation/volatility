@@ -36,6 +36,12 @@ import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 
 class PoolScanConnFast(scan.PoolScanner):
+
+    def object_offset(self, found, address_space):
+        """ Return the offset of _TCPT_OBJECT """
+        return found + (address_space.profile.get_obj_size("_POOL_HEADER") - 
+                        address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
+
     checks = [ ('PoolTagCheck', dict(tag = "TCPT")),
                ('CheckPoolSize', dict(condition = lambda x: x >= 0x198)),
                ('CheckPoolType', dict(non_paged = True, free = True)),

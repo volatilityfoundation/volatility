@@ -43,13 +43,26 @@ class CheckSocketCreateTime(scan.ScannerCheck):
         self.condition = condition
 
     def check(self, offset):
-        start_of_object = self.address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag")
+        """ The offset parameter here is the start of PoolTag as yielded   
+        by BaseScanner.scan. Unlike other objects, _ADDRESS_OBJECT do not
+        have an _OBJECT_HEADER or any optional headers. Thus to find the 
+        _ADDRESS_OBJECT from the PoolTag we just have to calculate the 
+        distance from PoolTag to the end of _POOL_HEADER.
+        """
+        start_of_object = (self.address_space.profile.get_obj_size("_POOL_HEADER") - 
+                          self.address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
         address_obj = obj.Object('_ADDRESS_OBJECT', vm = self.address_space,
                                 offset = offset + start_of_object)
 
         return self.condition(address_obj.CreateTime.v())
 
 class PoolScanSockFast(scan.PoolScanner):
+
+    def object_offset(self, found, address_space):
+        """ Return the offset of _ADDRESS_OBJECT """
+        return found + (address_space.profile.get_obj_size("_POOL_HEADER") - 
+                        address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
+
     checks = [ ('PoolTagCheck', dict(tag = "TCPA")),
                ('CheckPoolSize', dict(condition = lambda x: x >= 0x15C)),
                ('CheckPoolType', dict(non_paged = True, free = True)),
