@@ -35,18 +35,25 @@ import volatility.cache as cache
 class CheckHiveSig(scan.ScannerCheck):
     """ Check for a registry hive signature """
     def check(self, offset):
-        # Round offset to the pool alignment
-        pool_align = obj.VolMagic(self.address_space).PoolAlignment.v()
-        offset += 4
 
-        extra = offset % pool_align
-        if extra:
-            offset += pool_align - extra
+        # Instead of hard-coding 4 here, calculate it safely in case 
+        # additional fields are added to _POOL_HEADER after the pool tag. 
+        offset += (self.address_space.profile.get_obj_size("_POOL_HEADER") -
+                   self.address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
+
+        # We don't need to use pool alignment here because we're not 
+        # carving from the bottom-up like other objects. There is no
+        # object header or optional headers for _HHIVE. 
 
         sig = obj.Object('_HHIVE', vm = self.address_space, offset = offset).Signature
         return sig == 0xbee0bee0
 
 class PoolScanHiveFast2(scan.PoolScanner):
+
+    def object_offset(self, found, address_space):
+        return found + (address_space.profile.get_obj_size("_POOL_HEADER") -
+                        address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
+
     checks = [ ('PoolTagCheck', dict(tag = "CM10")),
                # Dummy condition, since this will be changed during initialization
                ('CheckPoolSize', dict(condition = lambda x: x == 0x638)),
