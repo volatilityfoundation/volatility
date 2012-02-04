@@ -27,6 +27,8 @@ import volatility.registry as registry
 import volatility.utils as utils
 
 class MultiStringFinderCheck(scan.ScannerCheck):
+    """ Checks for multiple strings per page """
+
     def __init__(self, address_space, needles = None):
         scan.ScannerCheck.__init__(self, address_space)
         if not needles:
