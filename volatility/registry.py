@@ -320,7 +320,7 @@ def Init():
     ## Register all shell commands:
     import volatility.commands as commands
     global PLUGIN_COMMANDS
-    PLUGIN_COMMANDS = VolatilityCommandRegistry(commands.command)
+    PLUGIN_COMMANDS = VolatilityCommandRegistry(commands.Command)
 
     import volatility.addrspace as addrspace
     global AS_CLASSES

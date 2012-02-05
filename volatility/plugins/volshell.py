@@ -35,7 +35,7 @@ try:
 except ImportError:
     pass
 
-class volshell(commands.command):
+class volshell(commands.Command):
     """Shell in the memory image"""
 
     # Declare meta information associated with this plugin
@@ -50,7 +50,7 @@ class volshell(commands.command):
     meta_info['version'] = '1.3'
 
     def __init__(self, config):
-        commands.command.__init__(self, config)
+        commands.Command.__init__(self, config)
 
         config.add_option('OFFSET', short_option = 'o', default = None,
                           help = 'EPROCESS Offset (in hex) in kernel address space',

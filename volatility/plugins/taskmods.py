@@ -30,11 +30,11 @@ import volatility.debug as debug
 import volatility.utils as utils
 import volatility.cache as cache
 
-class DllList(commands.command, cache.Testable):
+class DllList(commands.Command, cache.Testable):
     """Print list of loaded dlls for each process"""
 
     def __init__(self, config, *args):
-        commands.command.__init__(self, config, *args)
+        commands.Command.__init__(self, config, *args)
         cache.Testable.__init__(self)
         config.add_option('OFFSET', short_option = 'o', default = None,
                           help = 'EPROCESS offset (in hex) in the physical address space',

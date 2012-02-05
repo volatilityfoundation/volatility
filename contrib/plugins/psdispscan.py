@@ -116,7 +116,7 @@ class PSDispScanner(scan.DiscontigScanner):
                ("CheckSynchronization", {})
                ]
 
-class PSDispScan(commands.command, cache.Testable):
+class PSDispScan(commands.Command, cache.Testable):
     """ Scan Physical memory for _EPROCESS objects based on their Dispatch Headers"""
 
     # Declare meta information associated with this plugin

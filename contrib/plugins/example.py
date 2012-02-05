@@ -25,7 +25,7 @@ import volatility.commands as commands
 
 #pylint: disable-msg=C0111
 
-class DateTime(commands.command):
+class DateTime(commands.Command):
     """A simple example plugin that gets the date/time information from a Windows image"""
     def calculate(self):
         """Calculate and carry out any processing that may take time upon the image"""

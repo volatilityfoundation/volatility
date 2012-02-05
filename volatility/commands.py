@@ -19,7 +19,7 @@
 
 import sys, textwrap
 
-class command(object):
+class Command(object):
     """ Base class for each plugin command """
     op = ""
     opts = ""
@@ -99,3 +99,11 @@ class command(object):
             return
 
         func(outfd, data)
+
+
+### Deprecated components
+#
+# This is for removal after 2.2 has been released
+#
+
+command = Command

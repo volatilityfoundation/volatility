@@ -41,7 +41,7 @@ class PrintKey(hivelist.HiveList):
     "Print a registry key, and its subkeys and values"
     # Declare meta information associated with this plugin
 
-    meta_info = commands.command.meta_info
+    meta_info = commands.Command.meta_info
     meta_info['author'] = 'Brendan Dolan-Gavitt'
     meta_info['copyright'] = 'Copyright (c) 2007,2008 Brendan Dolan-Gavitt'
     meta_info['contact'] = 'bdolangavitt@wesleyan.edu'

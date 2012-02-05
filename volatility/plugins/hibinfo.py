@@ -25,7 +25,7 @@ import volatility.commands as commands
 import volatility.debug as debug
 import volatility.cache as cache
 
-class HibInfo(commands.command):
+class HibInfo(commands.Command):
     """Dump hibernation file information"""
 
     @cache.CacheDecorator("tests/hibinfo")

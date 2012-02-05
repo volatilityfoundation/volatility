@@ -25,10 +25,10 @@ import volatility.cache as cache
 import volatility.win32 as win32
 import volatility.utils as utils
 
-class Modules(commands.command):
+class Modules(commands.Command):
     """Print list of loaded modules"""
     def __init__(self, config, *args):
-        commands.command.__init__(self, config, *args)
+        commands.Command.__init__(self, config, *args)
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
                           cache_invalidator = False, help = "Physical Offset", action = "store_true")
 

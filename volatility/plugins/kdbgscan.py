@@ -74,7 +74,7 @@ class KDBGScanner(scan.DiscontigScanner):
             offset = offset + val.find('KDBG') - 0x10
             yield offset
 
-class KDBGScan(commands.command):
+class KDBGScan(commands.Command):
     """Search for and dump potential KDBG values"""
 
     @staticmethod

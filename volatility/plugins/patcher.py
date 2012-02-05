@@ -145,10 +145,10 @@ class PatcherObject(object):
         """Returns the name of the patcher"""
         return self.name
 
-class Patcher(commands.command):
+class Patcher(commands.Command):
     """Patches memory based on page scans"""
     def __init__(self, config, *args):
-        commands.command.__init__(self, config, *args)
+        commands.Command.__init__(self, config, *args)
         config.add_option('XML-INPUT', short_option = 'x',
                   help = 'Input XML file for patching binaries')
 

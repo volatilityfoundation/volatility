@@ -25,7 +25,7 @@ import volatility.win32.network as network
 import volatility.cache as cache
 import volatility.utils as utils
 
-class Connections(commands.command):
+class Connections(commands.Command):
     """
     Print list of open connections [Windows XP Only]
     ---------------------------------------------
@@ -38,7 +38,7 @@ class Connections(commands.command):
     find it more effective to do conscan instead.
     """
     def __init__(self, config, *args):
-        commands.command.__init__(self, config, *args)
+        commands.Command.__init__(self, config, *args)
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
                           cache_invalidator = False,
                           help = "Physical Offset", action = "store_true")

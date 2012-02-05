@@ -24,7 +24,7 @@ import volatility.commands as commands
 import volatility.cache as cache
 import volatility.debug as debug
 
-class CrashInfo(commands.command):
+class CrashInfo(commands.Command):
     """Dump crash-dump information"""
 
     @cache.CacheDecorator("tests/crashinfo")

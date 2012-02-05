@@ -41,7 +41,7 @@ class PoolScanFile(scan.PoolScanner):
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
-class FileScan(commands.command):
+class FileScan(commands.Command):
     """ Scan Physical memory for _FILE_OBJECT pool allocations
     """
     # Declare meta information associated with this plugin
@@ -55,7 +55,7 @@ class FileScan(commands.command):
     meta_info['version'] = '0.1'
 
     def __init__(self, config, *args):
-        commands.command.__init__(self, config, *args)
+        commands.Command.__init__(self, config, *args)
 
     # Can't be cached until self.kernel_address_space is moved entirely within calculate
     def calculate(self):
@@ -393,7 +393,7 @@ class PoolScanProcess(scan.PoolScanner):
                ]
 
 
-class PSScan(commands.command):
+class PSScan(commands.Command):
     """ Scan Physical memory for _EPROCESS pool allocations
     """
     # Declare meta information associated with this plugin
@@ -407,7 +407,7 @@ class PSScan(commands.command):
     meta_info['version'] = '0.1'
 
     def __init__(self, config, *args):
-        commands.command.__init__(self, config, *args)
+        commands.Command.__init__(self, config, *args)
 
     # Can't be cached until self.kernel_address_space is moved entirely
     # within calculate

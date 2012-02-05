@@ -25,7 +25,7 @@ import volatility.commands as commands
 import volatility.utils as utils
 import volatility.debug as debug
 
-class BiosKbd(commands.command):
+class BiosKbd(commands.Command):
     """Reads the keyboard buffer from Real Mode memory"""
     BASE = 0x400
     OFFSET = 0x17

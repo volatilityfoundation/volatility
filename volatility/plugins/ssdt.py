@@ -110,7 +110,7 @@ def find_tables(start_addr, vm):
 
     return service_tables
 
-class SSDT(commands.command):
+class SSDT(commands.Command):
     "Display SSDT entries"
     # Declare meta information associated with this plugin
     meta_info = {

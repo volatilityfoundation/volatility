@@ -65,7 +65,7 @@ class PoolScanHiveFast2(scan.PoolScanner):
         self.checks[1] = ('CheckPoolSize', dict(condition = lambda x: x >= poolsize))
         scan.PoolScanner.__init__(self)
 
-class HiveScan(commands.command):
+class HiveScan(commands.Command):
     """ Scan Physical memory for _CMHIVE objects (registry hives)
 
     You will need to obtain these offsets to feed into the hivelist command.

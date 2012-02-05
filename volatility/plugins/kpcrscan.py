@@ -30,7 +30,7 @@ import volatility.cache as cache
 import volatility.commands as commands
 import volatility.obj as obj
 
-class KPCRScan(commands.command):
+class KPCRScan(commands.Command):
     """Search for and dump potential KPCR values"""
 
     meta_info = dict(

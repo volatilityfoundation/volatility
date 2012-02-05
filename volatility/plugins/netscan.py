@@ -154,7 +154,7 @@ class PoolScanTcpEndpoint(scan.PoolScanner):
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
-class Netscan(commands.command):
+class Netscan(commands.Command):
     """Scan a Vista, 2008 or Windows 7 image for connections and sockets"""
 
     def enumerate_listeners(self, theObject):
