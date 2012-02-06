@@ -298,7 +298,7 @@ class volshell(commands.Command):
                         o = o(objct) - objct.obj_offset
 
                     offsets.append((o, m, val))
-                
+
                 # Deal with potentially out of order offsets
                 offsets.sort(key = lambda x: x[0])
 
@@ -358,7 +358,7 @@ class volshell(commands.Command):
         banner = "Welcome to volshell! Current memory image is:\n{0}\n".format(self._config.LOCATION)
         banner += "To get help, type 'hh()'"
         try:
-            from IPython.Shell import IPShellEmbed
+            from IPython.Shell import IPShellEmbed #pylint: disable-msg=W0611,F0401
             shell = IPShellEmbed([], banner = banner)
             shell()
         except ImportError:
