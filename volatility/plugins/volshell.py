@@ -251,7 +251,7 @@ class volshell(commands.Command):
                 else:
                     seen.add(lst)
 
-                nobj = obj.Object(objname, lst.offset - offset, vm)
+                nobj = obj.Object(objname, lst.obj_offset - offset, vm)
                 yield nobj
 
         def dt(objct, address = None, address_space = None):
