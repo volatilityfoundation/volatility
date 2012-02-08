@@ -92,6 +92,7 @@ class EWFAddressSpace(standard.FileAddressSpace):
     """
     order = 20
     def __init__(self, base, config, **kwargs):
+        self.as_assert(libewf, "No libEWF implementation found")
         standard.FileAddressSpace.__init__(self, base, config, layered = True)
         self.as_assert(base, "No base address space provided")
         self.as_assert(base.read(0, 6) == "\x45\x56\x46\x09\x0D\x0A", "EWF signature not present")
@@ -104,6 +105,3 @@ class EWFAddressSpace(standard.FileAddressSpace):
         if not self._config.WRITE:
             return False
         raise NotImplementedError("Write support is not yet implemented for EWF files")
-
-if not libewf:
-    del EWFAddressSpace
