@@ -106,8 +106,9 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
         return longval
 
     def get_available_addresses(self):
-        # TODO: Explain why this is always fsize - 1?
-        yield (0, self.fsize - 1)
+        # Since the second parameter is the length of the run
+        # not the end location, it must be set to fsize, not fsize - 1
+        yield (0, self.fsize)
 
     def is_valid_address(self, addr):
         if addr == None:
