@@ -47,6 +47,7 @@ object_classes = copy.deepcopy(win2k3_sp2_x86.object_classes)
 
 vtypes = copy.deepcopy(vista_sp0_x86_vtypes.nt_types)
 
+overlay['VOLATILITY_MAGIC'][1]['KPCR'][1] = ['VolatilityKPCR', dict(configname = "KPCR")]
 overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x20\x00")]
 overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x28\x03')]
 
