@@ -161,11 +161,12 @@ class ThrdScan(ModScan):
     def calculate(self):
         ## Here we scan the physical address space
         address_space = utils.load_as(self._config, astype = 'physical')
+        kernel_as = utils.load_as(self._config)
 
         scanner = PoolScanThreadFast()
         for found in scanner.scan(address_space):
             thread = obj.Object('_ETHREAD', vm = address_space,
-                               offset = found)
+                               native_vm = kernel_as, offset = found)
 
             yield thread
 
