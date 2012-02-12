@@ -178,6 +178,8 @@ class _UNICODE_STRING(obj.CType):
         return format(self.v(), formatspec)
 
     def __str__(self):
+        if not self.v():
+            return ''
         return self.v()
 
 AbstractWindowsX86.object_classes['_UNICODE_STRING'] = _UNICODE_STRING
@@ -819,8 +821,8 @@ class _IMAGE_EXPORT_DIRECTORY(obj.CType):
         try:
             return (self.AddressOfFunctions < nt_header.OptionalHeader.SizeOfImage and
                     self.AddressOfNameOrdinals < nt_header.OptionalHeader.SizeOfImage and
-                    self.AddressOfNames < nt_header.OptionalHeader.SizeOfImage and 
-                    self.NumberOfFunctions < 0x7FFF and 
+                    self.AddressOfNames < nt_header.OptionalHeader.SizeOfImage and
+                    self.NumberOfFunctions < 0x7FFF and
                     self.NumberOfNames < 0x7FFF)
         except obj.InvalidOffsetError:
             return False
@@ -835,8 +837,8 @@ class _IMAGE_EXPORT_DIRECTORY(obj.CType):
         a larger value which frequently causes us to cross page 
         boundaries and return a NoneObject anyway.  
         """
-        return obj.Object("String", 
-                      offset = self.obj_parent.DllBase + name_rva, 
+        return obj.Object("String",
+                      offset = self.obj_parent.DllBase + name_rva,
                       vm = self.obj_native_vm, length = 128)
 
     def _exported_functions(self):
@@ -854,7 +856,7 @@ class _IMAGE_EXPORT_DIRECTORY(obj.CType):
         """
 
         mod_base = self.obj_parent.DllBase
-        exp_dir  = self.obj_parent.export_dir()
+        exp_dir = self.obj_parent.export_dir()
 
         # PE files with a large number of functions will have arrays
         # that spans multiple pages. Thus the first entries may be valid, 
@@ -863,22 +865,22 @@ class _IMAGE_EXPORT_DIRECTORY(obj.CType):
         # and zero (non-paged but invalid RVA). 
 
         # Array of RVAs to function code 
-        address_of_functions = obj.Object('Array', 
-                                    offset = mod_base + self.AddressOfFunctions, 
-                                    targetType = 'unsigned int', 
-                                    count = self.NumberOfFunctions, 
+        address_of_functions = obj.Object('Array',
+                                    offset = mod_base + self.AddressOfFunctions,
+                                    targetType = 'unsigned int',
+                                    count = self.NumberOfFunctions,
                                     vm = self.obj_native_vm)
         # Array of RVAs to function names 
-        address_of_names = obj.Object('Array', 
-                                    offset = mod_base + self.AddressOfNames, 
-                                    targetType = 'unsigned int', 
-                                    count = self.NumberOfNames, 
+        address_of_names = obj.Object('Array',
+                                    offset = mod_base + self.AddressOfNames,
+                                    targetType = 'unsigned int',
+                                    count = self.NumberOfNames,
                                     vm = self.obj_native_vm)
         # Array of RVAs to function ordinals 
-        address_of_name_ordinals = obj.Object('Array', 
-                                    offset = mod_base + self.AddressOfNameOrdinals, 
-                                    targetType = 'unsigned short', 
-                                    count = self.NumberOfNames, 
+        address_of_name_ordinals = obj.Object('Array',
+                                    offset = mod_base + self.AddressOfNameOrdinals,
+                                    targetType = 'unsigned short',
+                                    count = self.NumberOfNames,
                                     vm = self.obj_native_vm)
 
         # When functions are exported by Name, it will increase
@@ -913,13 +915,13 @@ class _IMAGE_EXPORT_DIRECTORY(obj.CType):
             # DataDirectory), the symbol is forwarded. Return the name of the 
             # forwarded function and None as the function address. 
 
-            if (func_rva >= exp_dir.VirtualAddress and 
+            if (func_rva >= exp_dir.VirtualAddress and
                     func_rva < exp_dir.VirtualAddress + exp_dir.Size):
                 n = self._name(func_rva)
                 f = obj.NoneObject("This function is forwarded")
             else:
                 n = self._name(name_rva)
-                f = func_rva 
+                f = func_rva
 
             # Add the ordinal base and save it 
             ordinal += self.Base
@@ -953,10 +955,10 @@ class _IMAGE_IMPORT_DESCRIPTOR(obj.CType):
     def valid(self, nt_header):
         """Check the validity of some fields"""
         try:
-            return (self.OriginalFirstThunk != 0 and 
-                    self.OriginalFirstThunk < nt_header.OptionalHeader.SizeOfImage and 
-                    self.FirstThunk != 0 and 
-                    self.FirstThunk < nt_header.OptionalHeader.SizeOfImage and 
+            return (self.OriginalFirstThunk != 0 and
+                    self.OriginalFirstThunk < nt_header.OptionalHeader.SizeOfImage and
+                    self.FirstThunk != 0 and
+                    self.FirstThunk < nt_header.OptionalHeader.SizeOfImage and
                     self.Name < nt_header.OptionalHeader.SizeOfImage)
         except obj.InvalidOffsetError:
             return False
@@ -964,8 +966,8 @@ class _IMAGE_IMPORT_DESCRIPTOR(obj.CType):
     def _name(self, name_rva):
         """Return a String object for the name at the given RVA"""
 
-        return obj.Object("String", 
-                      offset = self.obj_parent.DllBase + name_rva, 
+        return obj.Object("String",
+                      offset = self.obj_parent.DllBase + name_rva,
                       vm = self.obj_native_vm, length = 128)
 
     def dll_name(self):
@@ -992,8 +994,8 @@ class _IMAGE_IMPORT_DESCRIPTOR(obj.CType):
 
         i = 0
         while 1:
-            thunk = obj.Object('_IMAGE_THUNK_DATA', 
-                       offset = self.obj_parent.DllBase + self.OriginalFirstThunk + 
+            thunk = obj.Object('_IMAGE_THUNK_DATA',
+                       offset = self.obj_parent.DllBase + self.OriginalFirstThunk +
                        i * self.obj_vm.profile.get_obj_size('_IMAGE_THUNK_DATA'),
                        vm = self.obj_native_vm)
 
@@ -1001,8 +1003,8 @@ class _IMAGE_IMPORT_DESCRIPTOR(obj.CType):
             if thunk == None or thunk.AddressOfData == 0:
                 break
 
-            o = obj.NoneObject("Ordinal not accessible?") 
-            n = obj.NoneObject("Imported by ordinal?") 
+            o = obj.NoneObject("Ordinal not accessible?")
+            n = obj.NoneObject("Imported by ordinal?")
             f = obj.NoneObject("FirstThunk not accessible")
 
             # If the highest bit (32 for x86 and 64 for x64) is set, the function is 
@@ -1012,17 +1014,17 @@ class _IMAGE_IMPORT_DESCRIPTOR(obj.CType):
             if thunk.OrdinalBit == 1:
                 o = thunk.Ordinal & 0xFFFF
             else:
-                iibn = obj.Object("_IMAGE_IMPORT_BY_NAME", 
-                                  offset = self.obj_parent.DllBase + 
-                                  thunk.AddressOfData, 
+                iibn = obj.Object("_IMAGE_IMPORT_BY_NAME",
+                                  offset = self.obj_parent.DllBase +
+                                  thunk.AddressOfData,
                                   vm = self.obj_native_vm)
-                o = iibn.Hint 
+                o = iibn.Hint
                 n = iibn.Name
 
             # See if the import is bound (i.e. resolved)
-            first_thunk = obj.Object('_IMAGE_THUNK_DATA', 
-                            offset = self.obj_parent.DllBase + self.FirstThunk + 
-                            i * self.obj_vm.profile.get_obj_size('_IMAGE_THUNK_DATA'), 
+            first_thunk = obj.Object('_IMAGE_THUNK_DATA',
+                            offset = self.obj_parent.DllBase + self.FirstThunk +
+                            i * self.obj_vm.profile.get_obj_size('_IMAGE_THUNK_DATA'),
                             vm = self.obj_native_vm)
             if first_thunk:
                 f = first_thunk.Function.v()
@@ -1033,7 +1035,7 @@ class _IMAGE_IMPORT_DESCRIPTOR(obj.CType):
     def is_list_end(self):
         """Returns True if we've reached the list end"""
         data = self.obj_vm.zread(
-                        self.obj_offset, 
+                        self.obj_offset,
                         self.obj_vm.profile.get_obj_size('_IMAGE_IMPORT_DESCRIPTOR')
                         )
         return data.count(chr(0)) == len(data)
@@ -1054,7 +1056,7 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
     def _nt_header(self):
         """Return the _IMAGE_NT_HEADERS object"""
 
-        dos_header = obj.Object("_IMAGE_DOS_HEADER", offset = self.DllBase, 
+        dos_header = obj.Object("_IMAGE_DOS_HEADER", offset = self.DllBase,
                                 vm = self.obj_native_vm)
 
         return dos_header.get_nt_header()
@@ -1103,15 +1105,15 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
             data_dir = self.import_dir()
         except ValueError, why:
             raise StopIteration(why)
-        
-        i = 0 
+
+        i = 0
 
         desc_size = self.obj_vm.profile.get_obj_size('_IMAGE_IMPORT_DESCRIPTOR')
 
-        while 1: 
-            desc = obj.Object('_IMAGE_IMPORT_DESCRIPTOR', 
-                      vm = self.obj_native_vm, 
-                      offset = self.DllBase + data_dir.VirtualAddress + (i * desc_size), 
+        while 1:
+            desc = obj.Object('_IMAGE_IMPORT_DESCRIPTOR',
+                      vm = self.obj_native_vm,
+                      offset = self.DllBase + data_dir.VirtualAddress + (i * desc_size),
                       parent = self)
 
             # Stop if the IID is paged or all zeros
@@ -1137,14 +1139,14 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
         except ValueError, why:
             raise StopIteration(why)
 
-        expdir = obj.Object('_IMAGE_EXPORT_DIRECTORY', 
-                            offset = self.DllBase + data_dir.VirtualAddress, 
-                            vm = self.obj_native_vm, 
+        expdir = obj.Object('_IMAGE_EXPORT_DIRECTORY',
+                            offset = self.DllBase + data_dir.VirtualAddress,
+                            vm = self.obj_native_vm,
                             parent = self)
 
         if expdir.valid(self._nt_header()):
             # Ordinal, Function RVA, and Name Object 
-            for o, f, n in expdir._exported_functions():        
+            for o, f, n in expdir._exported_functions():
                 yield o, f, n
 
 AbstractWindowsX86.object_classes['_LDR_DATA_TABLE_ENTRY'] = _LDR_DATA_TABLE_ENTRY
