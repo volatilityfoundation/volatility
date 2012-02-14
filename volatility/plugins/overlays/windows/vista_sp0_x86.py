@@ -80,5 +80,13 @@ class _MMVAD_SHORT(windows._MMVAD_SHORT):
 class _MMVAD_LONG(_MMVAD_SHORT):
     pass
 
+class _ETHREAD(windows._ETHREAD):
+    """A class for Windows 7 ETHREAD objects"""
+
+    def owning_process(self):
+        """Return the EPROCESS that owns this thread"""
+        return self.Tcb.Process.dereference_as("_EPROCESS")
+
 VistaSP0x86.object_classes['_MMVAD_SHORT'] = _MMVAD_SHORT
 VistaSP0x86.object_classes['_MMVAD_LONG'] = _MMVAD_LONG
+VistaSP0x86.object_classes['_ETHREAD'] = _ETHREAD

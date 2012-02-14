@@ -341,6 +341,20 @@ class _EPROCESS(obj.CType):
 
 AbstractWindowsX86.object_classes['_EPROCESS'] = _EPROCESS
 
+class _ETHREAD(obj.CType):
+    """ A class for threads """
+
+    def owning_process(self):
+        """Return the EPROCESS that owns this thread"""
+        return self.ThreadsProcess.dereference()
+
+    def attached_process(self):
+        """Return the EPROCESS that this thread is currently
+        attached to."""
+        return self.Tcb.ApcState.Process.dereference_as("_EPROCESS")
+
+AbstractWindowsX86.object_classes['_ETHREAD'] = _ETHREAD
+
 class _HANDLE_TABLE(obj.CType):
     """ A class for _HANDLE_TABLE. 
     

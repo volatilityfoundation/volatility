@@ -87,13 +87,8 @@ class DllList(commands.Command, cache.Testable):
         # (Note: the addr_space and flat_addr_space use the same config, so should have the same profile)
         tleoffset = addr_space.profile.get_obj_offset("_ETHREAD", "ThreadListEntry")
         ethread = obj.Object("_ETHREAD", offset = flateproc.ThreadListHead.Flink.v() - tleoffset, vm = addr_space)
-        virtual_process = None
         # and ask for the thread's process to get an _EPROCESS with a virtual address space
-        # For Vista/windows 7
-        if hasattr(ethread.Tcb, 'Process'):
-            virtual_process = ethread.Tcb.Process.dereference_as('_EPROCESS')
-        elif hasattr(ethread, 'ThreadsProcess'):
-            virtual_process = ethread.ThreadsProcess.dereference()
+        virtual_process = ethread.owning_process()
         # Sanity check the bounce. See Issue 154. 
         if virtual_process and offset == addr_space.vtop(virtual_process.obj_offset):
             return virtual_process
