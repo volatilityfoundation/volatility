@@ -479,22 +479,22 @@ class CacheStorage(object):
             debug.debug("NOT Dumping filename {0} - contained a non-picklable class".format(filename))
 
 ## This is the central cache object
-CACHE = CacheTree(CacheStorage(), invalidator = Invalidator())
+CACHE = CacheTree(CacheStorage(), BlockingNode, invalidator = Invalidator())
 
-def disable_caching(_option, _opt_str, _value, _parser):
+def enable_caching(_option, _opt_str, _value, _parser):
     """Turns off caching by replacing the tree with one that only takes BlockingNodes"""
-    debug.debug("Disabling Caching")
+    debug.debug("Enabling Caching")
     # Feels filthy using the global keyword,
     # but I can't figure another way to ensure that
     # the code gets called and overwrites the outer scope
     global CACHE
-    CACHE = CacheTree(CacheStorage(), BlockingNode, invalidator = Invalidator())
-    config.NO_CACHE = True
+    CACHE = CacheTree(CacheStorage(), invalidator = Invalidator())
+    config.CACHE = True
 
-config.add_option("NO-CACHE", default = False, action = 'callback',
+config.add_option("CACHE", default = False, action = 'callback',
                   cache_invalidator = False,
-                  callback = disable_caching,
-                  help = "Disable caching")
+                  callback = enable_caching,
+                  help = "Use caching")
 
 class CacheDecorator(object):
     """ This decorator will memoise a function in the cache """
@@ -571,10 +571,10 @@ class CacheDecorator(object):
 
     def __call__(self, f):
         def wrapper(s, *args, **kwargs):
-            if config.NO_CACHE:
-                return f(s, *args, **kwargs)
+            if config.CACHE:
+                return self._cachewrapper(f, s, *args, **kwargs)
 
-            return self._cachewrapper(f, s, *args, **kwargs)
+            return f(s, *args, **kwargs)
 
         return wrapper
 
@@ -617,6 +617,6 @@ class Testable(object):
     def test(self):
         ## This forces iteration over all keys - this is required in order
         ## to flatten the full list for the cache
-        ## We must ensure config.NO_CACHE is set here, otherwise the change isn't registered in this module
-        config.NO_CACHE = True
+        ## We must ensure config.CACHE is False here, otherwise the change isn't registered in this module
+        config.CACHE = False
         return self._flatten(self.calculate())
