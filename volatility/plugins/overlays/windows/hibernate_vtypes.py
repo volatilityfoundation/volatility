@@ -17,11 +17,6 @@ hibernate_vtypes = {
     'RangeTable': [ 0x10, ['array', lambda x: x.MemArrayLink.EntryCount,
                            ['MEMORY_RANGE_ARRAY_RANGE']]],
 } ],
-  '_KGDTENTRY' : [  0x8 , {
-  'BaseLow' : [ 0x2 , ['unsigned short']],
-  'BaseMid' : [ 0x4, ['unsigned char']],
-  'BaseHigh' : [ 0x7, ['unsigned char']],
-} ],
 '_IMAGE_XPRESS_HEADER' : [  0x20 , {
   'u09' : [ 0x9, ['unsigned char']],
   'u0A' : [ 0xA, ['unsigned char']],

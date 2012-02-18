@@ -18,12 +18,12 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
-import os
 import volatility.utils as utils
 import volatility.obj as obj
 import volatility.commands as commands
 import volatility.debug as debug
 import volatility.cache as cache
+import volatility.win32.tasks as tasks
 
 class HibInfo(commands.Command):
     """Dump hibernation file information"""
@@ -39,17 +39,18 @@ class HibInfo(commands.Command):
             if adrs.__class__.__name__ == 'WindowsHiberFileSpace32':
                 sr = adrs.ProcState.SpecialRegisters
 
-                entrysize = adrs.profile.get_obj_size("_KGDTENTRY")
-                entry = obj.Object("_KGDTENTRY", sr.Gdtr.Base + ((0x3B >> 3) * entrysize), addr_space)
-                NtTibAddress = (entry.BaseLow) | (entry.BaseMid << (2 * 8)) | (entry.BaseHigh << (3 * 8))
+                peb = obj.NoneObject("Cannot locate a valid PEB")
 
-                teb = obj.NoneObject("NtTibAddress out of range")
-                if not ((NtTibAddress == 0) or (NtTibAddress > 0x80000000)):
-                    teb = obj.Object("_TEB", NtTibAddress, addr_space)
+                # Find the PEB by cycling through processes. This method works 
+                # on all versions of Windows x86 and x64. 
+                for task in tasks.pslist(addr_space):
+                    if task.Peb:
+                        peb = task.Peb
+                        break
 
                 result = {'header': adrs.get_header(),
                           'sr': sr,
-                          'peb': teb.ProcessEnvironmentBlock,
+                          'peb': peb,
                           'adrs': adrs }
             adrs = adrs.base
 
