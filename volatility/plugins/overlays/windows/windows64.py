@@ -18,29 +18,43 @@
 #
 
 import copy
-import volatility.plugins.overlays.basic as basic
-import volatility.plugins.overlays.windows.windows as windows
+import volatility.obj as obj
 
-windows_overlay = copy.deepcopy(windows.windows_overlay)
+class Pointer64Decorator(object):
+    def __init__(self, f):
+        self.f = f
 
-windows_overlay['VOLATILITY_MAGIC'][1]['PoolAlignment'][1] = ['VolatilityMagic', dict(value = 16)]
-windows_overlay['VOLATILITY_MAGIC'][1]['KUSER_SHARED_DATA'][1] = ['VolatilityMagic', dict(value = 0xFFFFF78000000000)]
-
-# This is the location of the MMVAD type which controls how to parse the
-# node. It is located before the structure.
-windows_overlay['_MMVAD_SHORT'][1]['Tag'][0] = -12
-windows_overlay['_MMVAD_LONG'][1]['Tag'][0] = -12
-
-class AbstractWindowsX64(windows.AbstractWindowsX86):
-    """ A Profile for Windows systems """
-    _md_os = 'windows'
-    _md_memory_model = '64bit'
-    overlay = windows_overlay
-    native_types = basic.x64_native_types
-    object_classes = copy.deepcopy(windows.AbstractWindowsX86.object_classes)
-
-    def list_to_type(self, name, typeList, typeDict = None):
-        """Handle pointer64 types as if they were pointer types on 64-bit systems"""
-        if typeList[0] == 'pointer64':
+    def __call__(self, name, typeList, typeDict = None):
+        if len(typeList) and typeList[0] == 'pointer64':
+            typeList = copy.deepcopy(typeList)
             typeList[0] = 'pointer'
-        return super(AbstractWindowsX64, self).list_to_type(name, typeList, typeDict)
+        return self.f(name, typeList, typeDict)
+
+class Windows64Overlay(obj.ProfileModification):
+    before = ['WindowsOverlay', 'WindowsObjectClasses']
+    conditions = {'memory_model': lambda x: x == '64bit',
+                  'os': lambda x: x == 'windows'}
+
+    def modification(self, profile):
+        profile.merge_overlay({'VOLATILITY_MAGIC': [ 0x0, {
+                                    'PoolAlignment': [ 0x0, ['VolatilityMagic', dict(value = 16)] ],
+                                    'KUSER_SHARED_DATA': [ 0x0, ['VolatilityMagic', dict(value = 0xFFFFF78000000000)]]
+                                                           }
+                                                    ]})
+        # This is the location of the MMVAD type which controls how to parse the
+        # node. It is located before the structure.
+        profile.merge_overlay({'_MMVAD_SHORT': [None, {
+                                    'Tag' : [-12, None],
+                                  }],
+                               '_MMVAD_LONG' : [None, {
+                                    'Tag' : [-12, None],
+                                                       }]
+                               })
+        profile.vtypes["_IMAGE_NT_HEADERS"] = profile.vtypes["_IMAGE_NT_HEADERS64"]
+
+        # Note: the following method of profile modification is strongly discouraged
+        #
+        # Nasty hack because pointer64 has a special structure,
+        # and therefore can't just be instantiated in object_classes
+        # using profile.object_classes.update({'pointer64': obj.Pointer})
+        profile._list_to_type = Pointer64Decorator(profile._list_to_type)

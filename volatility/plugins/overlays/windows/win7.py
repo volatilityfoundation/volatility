@@ -26,39 +26,53 @@ This file provides support for windows Windows 7 SP 0.
 
 #pylint: disable-msg=C0111
 
-import copy
-import win7_sp0_x86_vtypes
-import win7_sp01_x86_syscalls
-import vista_sp0_x86
 import windows
-import crash_vtypes
-import hibernate_vtypes
-import kdbg_vtypes
-import tcpip_vtypes
-import ssdt_vtypes
-import pe_vtypes
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 
-overlay = copy.deepcopy(vista_sp0_x86.overlay)
+class Win7Pointer64(obj.ProfileModification):
+    before = ['WindowsOverlay', 'WindowsVTypes']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x >= 6,
+                  'memory_model': lambda x: x == '32bit'}
 
-object_classes = copy.deepcopy(vista_sp0_x86.object_classes)
+    def modification(self, profile):
+        profile.native_types.update({'pointer64': [8, '<Q']})
 
-native_types = copy.deepcopy(windows.AbstractWindowsX86.native_types)
+class Win7KDBG(windows.AbstractKDBGMod):
+    before = ['WindowsOverlay', 'VistaKDBG']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 1}
+    kdbgsize = 0x340
 
-vtypes = copy.deepcopy(win7_sp0_x86_vtypes.nt_types)
+class Win7x86DTB(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 1,
+                  'memory_model': lambda x: x == '32bit',
+                  }
 
-overlay['VOLATILITY_MAGIC'][1]['KPCR'][1] = ['VolatilityKPCR', dict(configname = "KPCR")]
-overlay['VOLATILITY_MAGIC'][1]['DTBSignature'][1] = ['VolatilityMagic', dict(value = "\x03\x00\x26\x00")]
-overlay['VOLATILITY_MAGIC'][1]['KDBGHeader'][1] = ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x40\x03')]
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                    'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\x26\x00")]],
+                                          }]}
+        profile.merge_overlay(overlay)
 
-vtypes.update(crash_vtypes.crash_vtypes)
-vtypes.update(hibernate_vtypes.hibernate_vtypes)
-vtypes.update(kdbg_vtypes.kdbg_vtypes)
-vtypes.update(tcpip_vtypes.tcpip_vtypes_vista)
-vtypes.update(tcpip_vtypes.tcpip_vtypes_7)
-vtypes.update(ssdt_vtypes.ssdt_vtypes)
-vtypes.update(pe_vtypes.pe_vtypes)
+class Win7x64DTB(obj.ProfileModification):
+    before = ['WindowsOverlay', 'Windows64Overlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 1,
+                  'memory_model': lambda x: x == '64bit',
+                  }
+
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                    'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\x58\x00")]],
+                                          }]}
+        profile.merge_overlay(overlay)
 
 class _OBJECT_HEADER(windows._OBJECT_HEADER):
     """A Volatility object to handle Windows 7 object headers.
@@ -136,18 +150,43 @@ class _OBJECT_HEADER(windows._OBJECT_HEADER):
         """Return the object's type as a string"""
         return self.type_map.get(self.TypeIndex.v(), '')
 
-# Update the win7 implementation
-object_classes["_OBJECT_HEADER"] = _OBJECT_HEADER
+class Win7ObjectClasses(obj.ProfileModification):
+    before = ['WindowsOverlay', 'WindowsObjectClasses']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x >= 1}
 
-native_types['pointer64'] = windows.AbstractWindowsX86.native_types['unsigned long long']
+    def modification(self, profile):
+        profile.object_classes.update({'_OBJECT_HEADER': _OBJECT_HEADER})
 
-class Win7SP0x86(windows.AbstractWindowsX86):
+class Win7SP0x86(obj.Profile):
     """ A Profile for Windows 7 SP0 x86 """
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
     _md_major = 6
     _md_minor = 1
-    overlay = overlay
-    abstract_types = vtypes
-    object_classes = object_classes
-    syscalls = win7_sp01_x86_syscalls.syscalls
-    # FIXME: Temporary fix for issue 105
-    native_types = native_types
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp0_x86_vtypes'
+
+class Win7SP1x86(obj.Profile):
+    """ A Profile for Windows 7 SP1 x86 """
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 1
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x86_vtypes'
+
+class Win7SP0x64(obj.Profile):
+    """ A Profile for Windows 7 SP0 x64 """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 1
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp0_x64_vtypes'
+
+class Win7SP1x64(obj.Profile):
+    """ A Profile for Windows 7 SP1 x64 """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 1
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x64_vtypes'

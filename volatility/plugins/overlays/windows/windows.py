@@ -19,7 +19,6 @@
 
 import datetime
 import socket, struct
-import volatility.plugins.overlays.basic as basic
 import volatility.plugins.kpcrscan as kpcr
 import volatility.plugins.kdbgscan as kdbg
 import volatility.timefmt as timefmt
@@ -148,12 +147,6 @@ windows_overlay = {
     }],
 }
 
-class AbstractWindowsX86(obj.Profile):
-    """ A Profile for Windows systems """
-    _md_os = 'windows'
-    overlay = windows_overlay
-    native_types = basic.x86_native_types
-
 class _UNICODE_STRING(obj.CType):
     """Class representing a _UNICODE_STRING
 
@@ -181,8 +174,6 @@ class _UNICODE_STRING(obj.CType):
         if not self.v():
             return ''
         return self.v()
-
-AbstractWindowsX86.object_classes['_UNICODE_STRING'] = _UNICODE_STRING
 
 class _LIST_ENTRY(obj.CType):
     """ Adds iterators for _LIST_ENTRY types """
@@ -227,8 +218,6 @@ class _LIST_ENTRY(obj.CType):
 
     def __iter__(self):
         return self.list_of_type(self.obj_parent.obj_name, self.obj_name)
-
-AbstractWindowsX86.object_classes['_LIST_ENTRY'] = _LIST_ENTRY
 
 class WinTimeStamp(obj.NativeType):
     """Class for handling Windows Time Stamps"""
@@ -288,8 +277,6 @@ class WinTimeStamp(obj.NativeType):
             return format(timefmt.display_datetime(dt), formatspec)
         return "-"
 
-AbstractWindowsX86.object_classes['WinTimeStamp'] = WinTimeStamp
-
 class _EPROCESS(obj.CType):
     """ An extensive _EPROCESS with bells and whistles """
     @property
@@ -339,8 +326,6 @@ class _EPROCESS(obj.CType):
     def get_load_modules(self):
         return self._get_modules(self.Peb.Ldr.InLoadOrderModuleList, "InLoadOrderLinks")
 
-AbstractWindowsX86.object_classes['_EPROCESS'] = _EPROCESS
-
 class _ETHREAD(obj.CType):
     """ A class for threads """
 
@@ -352,8 +337,6 @@ class _ETHREAD(obj.CType):
         """Return the EPROCESS that this thread is currently
         attached to."""
         return self.Tcb.ApcState.Process.dereference_as("_EPROCESS")
-
-AbstractWindowsX86.object_classes['_ETHREAD'] = _ETHREAD
 
 class _HANDLE_TABLE(obj.CType):
     """ A class for _HANDLE_TABLE. 
@@ -447,8 +430,6 @@ class _HANDLE_TABLE(obj.CType):
         for h in self._make_handle_array(offset, table_levels):
             yield h
 
-AbstractWindowsX86.object_classes['_HANDLE_TABLE'] = _HANDLE_TABLE
-
 class _OBJECT_HEADER(obj.CType):
     """A Volatility object to handle Windows object headers.
 
@@ -498,8 +479,6 @@ class _OBJECT_HEADER(obj.CType):
 
         return type_obj.Name.v()
 
-AbstractWindowsX86.object_classes['_OBJECT_HEADER'] = _OBJECT_HEADER
-
 class _FILE_OBJECT(obj.CType):
     """Class for file objects"""
 
@@ -516,8 +495,6 @@ class _FILE_OBJECT(obj.CType):
         if self.FileName:
             name += self.FileName.v()
         return name
-
-AbstractWindowsX86.object_classes['_FILE_OBJECT'] = _FILE_OBJECT
 
 ## This is an object which provides access to the VAD tree.
 class _MMVAD(obj.CType):
@@ -575,8 +552,6 @@ class _MMVAD(obj.CType):
             result = obj.Object(real_type, offset = offset, vm = vm, parent = parent, **args)
 
         return result
-
-AbstractWindowsX86.object_classes['_MMVAD'] = _MMVAD
 
 class _MMVAD_SHORT(obj.CType):
     """Class with convenience functions for _MMVAD_SHORT functions"""
@@ -646,15 +621,10 @@ class _MMVAD_LONG(_MMVAD_SHORT):
     """Subclasses _MMVAD_LONG based on _MMVAD_SHORT"""
     pass
 
-AbstractWindowsX86.object_classes['_MMVAD_SHORT'] = _MMVAD_SHORT
-AbstractWindowsX86.object_classes['_MMVAD_LONG'] = _MMVAD_LONG
-
 class _EX_FAST_REF(obj.CType):
     def dereference_as(self, theType, parent = None, **kwargs):
         """Use the _EX_FAST_REF.Object pointer to resolve an object of the specified type"""
         return obj.Object(theType, self.Object.v() & ~7, self.obj_native_vm, parent = parent or self, **kwargs)
-
-AbstractWindowsX86.object_classes['_EX_FAST_REF'] = _EX_FAST_REF
 
 class ThreadCreateTimeStamp(WinTimeStamp):
     """Handles ThreadCreateTimeStamps which are bit shifted WinTimeStamps"""
@@ -663,8 +633,6 @@ class ThreadCreateTimeStamp(WinTimeStamp):
 
     def as_windows_timestamp(self):
         return obj.NativeType.v(self) >> 3
-
-AbstractWindowsX86.object_classes['ThreadCreateTimeStamp'] = ThreadCreateTimeStamp
 
 class IpAddress(obj.NativeType):
     """Provides proper output for IpAddress objects"""
@@ -675,8 +643,6 @@ class IpAddress(obj.NativeType):
     def v(self):
         return socket.inet_ntoa(struct.pack("<I", obj.NativeType.v(self)))
 
-AbstractWindowsX86.object_classes['IpAddress'] = IpAddress
-
 class VolatilityKPCR(obj.VolatilityMagic):
     """A scanner for KPCR data within an address space"""
 
@@ -686,8 +652,6 @@ class VolatilityKPCR(obj.VolatilityMagic):
         for val in scanner.scan(self.obj_vm):
             yield val
 
-AbstractWindowsX86.object_classes['VolatilityKPCR'] = VolatilityKPCR
-
 class VolatilityKDBG(obj.VolatilityMagic):
     """A Scanner for KDBG data within an address space"""
 
@@ -696,8 +660,6 @@ class VolatilityKDBG(obj.VolatilityMagic):
         scanner = kdbg.KDBGScanner(needles = [obj.VolMagic(self.obj_vm).KDBGHeader.v()])
         for val in scanner.scan(self.obj_vm):
             yield val
-
-AbstractWindowsX86.object_classes['VolatilityKDBG'] = VolatilityKDBG
 
 class VolatilityIA32ValidAS(obj.VolatilityMagic):
     """An object to check that an address space is a valid IA32 Paged space"""
@@ -731,8 +693,6 @@ class VolatilityIA32ValidAS(obj.VolatilityMagic):
 
         yield False
 
-AbstractWindowsX86.object_classes['VolatilityIA32ValidAS'] = VolatilityIA32ValidAS
-
 class _IMAGE_DOS_HEADER(obj.CType):
     """DOS header"""
 
@@ -752,8 +712,6 @@ class _IMAGE_DOS_HEADER(obj.CType):
 
         return nt_header
 
-AbstractWindowsX86.object_classes['_IMAGE_DOS_HEADER'] = _IMAGE_DOS_HEADER
-
 class _IMAGE_NT_HEADERS(obj.CType):
     """PE header"""
 
@@ -770,8 +728,6 @@ class _IMAGE_NT_HEADERS(obj.CType):
                 sect.sanity_check_section()
             yield sect
 
-AbstractWindowsX86.object_classes['_IMAGE_NT_HEADERS'] = _IMAGE_NT_HEADERS
-
 class _IMAGE_SECTION_HEADER(obj.CType):
     """PE section"""
 
@@ -786,8 +742,6 @@ class _IMAGE_SECTION_HEADER(obj.CType):
         if self.SizeOfRawData > image_size:
             raise ValueError('SizeOfRawData {0:08x} is larger than image size.'.format(self.SizeOfRawData))
 
-AbstractWindowsX86.object_classes['_IMAGE_SECTION_HEADER'] = _IMAGE_SECTION_HEADER
-
 class _CM_KEY_BODY(obj.CType):
     """Registry key"""
 
@@ -801,373 +755,92 @@ class _CM_KEY_BODY(obj.CType):
             kcb = kcb.ParentKcb
         return "\\".join(reversed(output))
 
-AbstractWindowsX86.object_classes['_CM_KEY_BODY'] = _CM_KEY_BODY
-
 class _MMVAD_FLAGS(obj.CType):
     """This is for _MMVAD_SHORT.u.VadFlags"""
     def __str__(self):
         return ", ".join(["%s: %s" % (name, self.m(name)) for name in sorted(self.members.keys()) if self.m(name) != 0])
 
-AbstractWindowsX86.object_classes['_MMVAD_FLAGS'] = _MMVAD_FLAGS
-
 class _MMVAD_FLAGS2(_MMVAD_FLAGS):
     """This is for _MMVAD_LONG.u2.VadFlags2"""
     pass
-
-AbstractWindowsX86.object_classes['_MMVAD_FLAGS2'] = _MMVAD_FLAGS2
 
 class _MMSECTION_FLAGS(_MMVAD_FLAGS):
     """This is for _CONTROL_AREA.u.Flags"""
     pass
 
-AbstractWindowsX86.object_classes['_MMSECTION_FLAGS'] = _MMSECTION_FLAGS
 
-class _IMAGE_EXPORT_DIRECTORY(obj.CType):
-    """Class for PE export directory"""
-
-    def valid(self, nt_header):
-        """
-        Check the sanity of export table fields.
-
-        The RVAs cannot be larger than the module size. The function
-        and name counts cannot be larger than 32K. 
-        """
-        try:
-            return (self.AddressOfFunctions < nt_header.OptionalHeader.SizeOfImage and
-                    self.AddressOfNameOrdinals < nt_header.OptionalHeader.SizeOfImage and
-                    self.AddressOfNames < nt_header.OptionalHeader.SizeOfImage and
-                    self.NumberOfFunctions < 0x7FFF and
-                    self.NumberOfNames < 0x7FFF)
-        except obj.InvalidOffsetError:
-            return False
-
-    def _name(self, name_rva):
-        """
-        Return a String object for the function name.
-
-        Names are truncated at 128 characters although its possible 
-        they may be longer. Thus, infrequently a function name will
-        be missing some data. However, that's better than hard-coding
-        a larger value which frequently causes us to cross page 
-        boundaries and return a NoneObject anyway.  
-        """
-        return obj.Object("String",
-                      offset = self.obj_parent.DllBase + name_rva,
-                      vm = self.obj_native_vm, length = 128)
-
-    def _exported_functions(self):
-        """
-        Generator for exported functions.
-
-        @return: tuple (Ordinal, FunctionRVA, Name)
-
-        Ordinal is an integer and should never be None. If the function 
-        is forwarded, FunctionRVA is None. Otherwise, FunctionRVA is an
-        RVA to the function's code (relative to module base). Name is a
-        String containing the exported function's name. If the Name is 
-        paged, it will be None. If the function is forwarded, Name is the
-        forwarded function name including the DLL (ntdll.EtwLogTraceEvent). 
-        """
-
-        mod_base = self.obj_parent.DllBase
-        exp_dir = self.obj_parent.export_dir()
-
-        # PE files with a large number of functions will have arrays
-        # that spans multiple pages. Thus the first entries may be valid, 
-        # last entries may be valid, but middle entries may be invalid
-        # (paged). In the various checks below, we test for None (paged)
-        # and zero (non-paged but invalid RVA). 
-
-        # Array of RVAs to function code 
-        address_of_functions = obj.Object('Array',
-                                    offset = mod_base + self.AddressOfFunctions,
-                                    targetType = 'unsigned int',
-                                    count = self.NumberOfFunctions,
-                                    vm = self.obj_native_vm)
-        # Array of RVAs to function names 
-        address_of_names = obj.Object('Array',
-                                    offset = mod_base + self.AddressOfNames,
-                                    targetType = 'unsigned int',
-                                    count = self.NumberOfNames,
-                                    vm = self.obj_native_vm)
-        # Array of RVAs to function ordinals 
-        address_of_name_ordinals = obj.Object('Array',
-                                    offset = mod_base + self.AddressOfNameOrdinals,
-                                    targetType = 'unsigned short',
-                                    count = self.NumberOfNames,
-                                    vm = self.obj_native_vm)
-
-        # When functions are exported by Name, it will increase
-        # NumberOfNames by 1 and NumberOfFunctions by 1. When 
-        # functions are exported by Ordinal, only the NumberOfFunctions
-        # will increase. First we enum functions exported by Name 
-        # and track their corresponding Ordinals, so that when we enum
-        # functions exported by Ordinal only, we don't duplicate. 
-
-        seen_ordinals = []
-
-        # Handle functions exported by name *and* ordinal 
-        for i in range(self.NumberOfNames):
-
-            name_rva = address_of_names[i]
-            ordinal = address_of_name_ordinals[i]
-
-            if name_rva in (0, None):
-                continue
-
-            # Check the sanity of ordinal values before using it as an index
-            if ordinal == None or ordinal >= self.NumberOfFunctions:
-                continue
-
-            func_rva = address_of_functions[ordinal]
-
-            if func_rva in (0, None):
-                continue
-
-            # Handle forwarded exports. If the function's RVA is inside the exports 
-            # section (as given by the VirtualAddress and Size fields in the 
-            # DataDirectory), the symbol is forwarded. Return the name of the 
-            # forwarded function and None as the function address. 
-
-            if (func_rva >= exp_dir.VirtualAddress and
-                    func_rva < exp_dir.VirtualAddress + exp_dir.Size):
-                n = self._name(func_rva)
-                f = obj.NoneObject("This function is forwarded")
-            else:
-                n = self._name(name_rva)
-                f = func_rva
-
-            # Add the ordinal base and save it 
-            ordinal += self.Base
-            seen_ordinals.append(ordinal)
-
-            yield ordinal, f, n
-
-        # Handle functions exported by ordinal only 
-        for i in range(self.NumberOfFunctions):
-
-            ordinal = self.Base + i
-
-            # Skip functions already enumberated above 
-            if ordinal not in seen_ordinals:
-
-                func_rva = address_of_functions[i]
-
-                if func_rva in (0, None):
-                    continue
-
-                seen_ordinals.append(ordinal)
-
-                # There is no name RVA 
-                yield ordinal, func_rva, obj.NoneObject("Name RVA not accessible")
-
-AbstractWindowsX86.object_classes['_IMAGE_EXPORT_DIRECTORY'] = _IMAGE_EXPORT_DIRECTORY
-
-class _IMAGE_IMPORT_DESCRIPTOR(obj.CType):
-    """Handles IID entries for imported functions"""
-
-    def valid(self, nt_header):
-        """Check the validity of some fields"""
-        try:
-            return (self.OriginalFirstThunk != 0 and
-                    self.OriginalFirstThunk < nt_header.OptionalHeader.SizeOfImage and
-                    self.FirstThunk != 0 and
-                    self.FirstThunk < nt_header.OptionalHeader.SizeOfImage and
-                    self.Name < nt_header.OptionalHeader.SizeOfImage)
-        except obj.InvalidOffsetError:
-            return False
-
-    def _name(self, name_rva):
-        """Return a String object for the name at the given RVA"""
-
-        return obj.Object("String",
-                      offset = self.obj_parent.DllBase + name_rva,
-                      vm = self.obj_native_vm, length = 128)
-
-    def dll_name(self):
-        """Returns the name of the DLL for this IID"""
-        return self._name(self.Name)
-
-    def _imported_functions(self):
-        """
-        Generator for imported functions. 
-
-        @return: tuple (Ordinal, FunctionVA, Name)
-
-        If the function is imported by ordinal, then Ordinal is the 
-        ordinal value and Name is None. 
-
-        If the function is imported by name, then Ordinal is the
-        hint and Name is the imported function name (or None if its
-        paged). 
-
-        FunctionVA is the virtual address of the imported function,
-        as applied to the IAT by the Windows loader. If the FirstThunk
-        is paged, then FunctionVA will be None. 
-        """
-
-        i = 0
-        while 1:
-            thunk = obj.Object('_IMAGE_THUNK_DATA',
-                       offset = self.obj_parent.DllBase + self.OriginalFirstThunk +
-                       i * self.obj_vm.profile.get_obj_size('_IMAGE_THUNK_DATA'),
-                       vm = self.obj_native_vm)
-
-            # We've reached the end when the element is zero 
-            if thunk == None or thunk.AddressOfData == 0:
-                break
-
-            o = obj.NoneObject("Ordinal not accessible?")
-            n = obj.NoneObject("Imported by ordinal?")
-            f = obj.NoneObject("FirstThunk not accessible")
-
-            # If the highest bit (32 for x86 and 64 for x64) is set, the function is 
-            # imported by ordinal and the lowest 16-bits contain the ordinal value. 
-            # Otherwise, the lowest bits (0-31 for x86 and 0-63 for x64) contain an 
-            # RVA to an _IMAGE_IMPORT_BY_NAME struct. 
-            if thunk.OrdinalBit == 1:
-                o = thunk.Ordinal & 0xFFFF
-            else:
-                iibn = obj.Object("_IMAGE_IMPORT_BY_NAME",
-                                  offset = self.obj_parent.DllBase +
-                                  thunk.AddressOfData,
-                                  vm = self.obj_native_vm)
-                o = iibn.Hint
-                n = iibn.Name
-
-            # See if the import is bound (i.e. resolved)
-            first_thunk = obj.Object('_IMAGE_THUNK_DATA',
-                            offset = self.obj_parent.DllBase + self.FirstThunk +
-                            i * self.obj_vm.profile.get_obj_size('_IMAGE_THUNK_DATA'),
-                            vm = self.obj_native_vm)
-            if first_thunk:
-                f = first_thunk.Function.v()
-
-            yield o, f, n
-            i += 1
-
-    def is_list_end(self):
-        """Returns True if we've reached the list end"""
-        data = self.obj_vm.zread(
-                        self.obj_offset,
-                        self.obj_vm.profile.get_obj_size('_IMAGE_IMPORT_DESCRIPTOR')
-                        )
-        return data.count(chr(0)) == len(data)
-
-AbstractWindowsX86.object_classes['_IMAGE_IMPORT_DESCRIPTOR'] = _IMAGE_IMPORT_DESCRIPTOR
-
-class _LDR_DATA_TABLE_ENTRY(obj.CType):
-    """
-    Class for PE file / modules
-
-    If these classes are instantiated by _EPROCESS.list_*_modules() 
-    then its guaranteed to be in the process address space. 
-
-    FIXME: If these classes are found by modscan, ensure we can
-    dereference properly with obj_native_vm. 
-    """
-
-    def _nt_header(self):
-        """Return the _IMAGE_NT_HEADERS object"""
-
-        dos_header = obj.Object("_IMAGE_DOS_HEADER", offset = self.DllBase,
-                                vm = self.obj_native_vm)
-
-        return dos_header.get_nt_header()
-
-    def _directory(self, dir_index):
-        """Return the requested IMAGE_DATA_DIRECTORY"""
-        nt_header = self._nt_header()
-
-        data_dir = nt_header.OptionalHeader.DataDirectory[dir_index]
-
-        # Make sure the directory exists 
-        if data_dir.VirtualAddress == 0 or data_dir.Size == 0:
-            raise ValueError('No export directory')
-
-        # Make sure the directory VA and Size are sane 
-        if data_dir.VirtualAddress + data_dir.Size > nt_header.OptionalHeader.SizeOfImage:
-            raise ValueError('Invalid Export directory')
-
-        return data_dir
-
-    def export_dir(self):
-        """Return the IMAGE_DATA_DIRECTORY for exports"""
-        return self._directory(0) # DIRECTORY_ENTRY_EXPORT
-
-    def import_dir(self):
-        """Return the IMAGE_DATA_DIRECTORY for imports"""
-        return self._directory(1) # DIRECTORY_ENTRY_IMPORT
-
-    def getprocaddress(self, func):
-        """Return the RVA of func"""
-        for o, f, n in self.exports():
-            if str(n) == func:
-                return f
-        return None
-
-    def imports(self):
-        """
-        Generator for the PE's imported functions.
-
-        The _DIRECTORY_ENTRY_IMPORT.VirtualAddress points to an array 
-        of _IMAGE_IMPORT_DESCRIPTOR structures. The end is reached when 
-        the IID structure is all zeros. 
-        """
-
-        try:
-            data_dir = self.import_dir()
-        except ValueError, why:
-            raise StopIteration(why)
-
-        i = 0
-
-        desc_size = self.obj_vm.profile.get_obj_size('_IMAGE_IMPORT_DESCRIPTOR')
-
-        while 1:
-            desc = obj.Object('_IMAGE_IMPORT_DESCRIPTOR',
-                      vm = self.obj_native_vm,
-                      offset = self.DllBase + data_dir.VirtualAddress + (i * desc_size),
-                      parent = self)
-
-            # Stop if the IID is paged or all zeros
-            if desc == None or desc.is_list_end():
-                break
-
-            # Stop if the IID contains invalid fields 
-            if not desc.valid(self._nt_header()):
-                break
-
-            dll_name = desc.dll_name()
-
-            for o, f, n in desc._imported_functions():
-                yield dll_name, o, f, n
-
-            i += 1
-
-    def exports(self):
-        """Generator for the PE's exported functions"""
-
-        try:
-            data_dir = self.export_dir()
-        except ValueError, why:
-            raise StopIteration(why)
-
-        expdir = obj.Object('_IMAGE_EXPORT_DIRECTORY',
-                            offset = self.DllBase + data_dir.VirtualAddress,
-                            vm = self.obj_native_vm,
-                            parent = self)
-
-        if expdir.valid(self._nt_header()):
-            # Ordinal, Function RVA, and Name Object 
-            for o, f, n in expdir._exported_functions():
-                yield o, f, n
-
-AbstractWindowsX86.object_classes['_LDR_DATA_TABLE_ENTRY'] = _LDR_DATA_TABLE_ENTRY
+import crash_vtypes
+import hibernate_vtypes
+import kdbg_vtypes
+import tcpip_vtypes
+import ssdt_vtypes
+
+class WindowsOverlay(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'windows'}
+    before = ['BasicObjectClasses', 'WindowsVTypes']
+
+    def modification(self, profile):
+        profile.merge_overlay(windows_overlay)
+
+class WindowsVTypes(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'windows'}
+    before = ['BasicObjectClasses']
+
+    def modification(self, profile):
+        profile.vtypes.update(crash_vtypes.crash_vtypes)
+        profile.vtypes.update(hibernate_vtypes.hibernate_vtypes)
+        profile.vtypes.update(kdbg_vtypes.kdbg_vtypes)
+        profile.vtypes.update(tcpip_vtypes.tcpip_vtypes)
+        profile.vtypes.update(ssdt_vtypes.ssdt_vtypes)
+
+class WindowsObjectClasses(obj.ProfileModification):
+    constratints = {'os': lambda x: x == 'windows'}
+    before = ['BasicObjectClasses', 'WindowsVTypes', 'WindowsOverlay']
+
+    def modification(self, profile):
+        profile.object_classes.update({
+            '_UNICODE_STRING': _UNICODE_STRING,
+            '_LIST_ENTRY': _LIST_ENTRY,
+            'WinTimeStamp': WinTimeStamp,
+            '_EPROCESS': _EPROCESS,
+            '_ETHREAD': _ETHREAD,
+            '_HANDLE_TABLE': _HANDLE_TABLE,
+            '_OBJECT_HEADER': _OBJECT_HEADER,
+            '_FILE_OBJECT': _FILE_OBJECT,
+            '_MMVAD': _MMVAD,
+            '_MMVAD_SHORT': _MMVAD_SHORT,
+            '_MMVAD_LONG': _MMVAD_LONG,
+            '_EX_FAST_REF': _EX_FAST_REF,
+            'ThreadCreateTimeStamp': ThreadCreateTimeStamp,
+            'IpAddress': IpAddress,
+            'VolatilityKPCR': VolatilityKPCR,
+            'VolatilityKDBG': VolatilityKDBG,
+            'VolatilityIA32ValidAS': VolatilityIA32ValidAS,
+            '_IMAGE_DOS_HEADER': _IMAGE_DOS_HEADER,
+            '_IMAGE_NT_HEADERS': _IMAGE_NT_HEADERS,
+            '_IMAGE_SECTION_HEADER': _IMAGE_SECTION_HEADER,
+            '_CM_KEY_BODY': _CM_KEY_BODY,
+            '_MMVAD_FLAGS': _MMVAD_FLAGS,
+            '_MMVAD_FLAGS2': _MMVAD_FLAGS2,
+            '_MMSECTION_FLAGS': _MMSECTION_FLAGS,
+            })
+
+class AbstractKDBGMod(obj.ProfileModification):
+    kdbgsize = 0x290
+
+    def modification(self, profile):
+        signature = '\x00\x00\x00\x00\x00\x00\x00\x00' if profile.metadata.get('memory_model', '32bit') == '32bit' else '\x00\xf8\xff\xff'
+        signature += 'KDBG' + struct.pack('<H', self.kdbgsize)
+        profile.merge_overlay({'VOLATILITY_MAGIC': [ None, {
+                                'KDBGHeader': [ None, ['VolatilityMagic', dict(value = signature)]]
+                                                            }
+                                                    ]})
 
 ### DEPRECATED FEATURES ###
 #
 # These are due from removal after version 2.2,
 # please do not rely upon them
 
-AbstractWindows = AbstractWindowsX86
+class AbstractWindows(obj.Profile):
+    """ A Profile for Windows systems """
+    _md_os = 'windows'

@@ -37,6 +37,7 @@ import cPickle as pickle # pickle implementation must match that in volatility.c
 import struct, copy, operator
 import volatility.debug as debug
 import volatility.utils as utils
+import volatility.plugins.overlays.native_types as native_types
 
 ## Curry is now a standard python feature
 import functools
@@ -243,18 +244,9 @@ def Object(theType, offset, vm, name = None, **kwargs):
     offset = int(offset)
 
     try:
-        if theType in vm.profile.types:
+        if vm.profile.has_type(theType):
             result = vm.profile.types[theType](offset = offset, vm = vm, name = name, **kwargs)
             return result
-
-        if theType in vm.profile.object_classes:
-            result = vm.profile.object_classes[theType](theType = theType,
-                                                        offset = offset,
-                                                        vm = vm,
-                                                        name = name,
-                                                        **kwargs)
-            return result
-
     except InvalidOffsetError:
         ## If we cant instantiate the object here, we just error out:
         return NoneObject("Invalid Address 0x{0:08X}, instantiating {1}".format(offset, name),
@@ -848,79 +840,123 @@ def VolMagic(vm):
     """Convenience function to save people typing out an actual obj.Object call"""
     return Object("VOLATILITY_MAGIC", 0x0, vm = vm)
 
+
+#### This must live here, otherwise there are circular dependency issues
+
 ## Profiles are the interface for creating/interpreting
 ## objects
 
 class Profile(object):
-    """ A profile is a collection of types relating to a certain
-    system. We parse the abstract_types and join them with
-    native_types to make everything work together.
-    """
-    _md_os = 'undefined'
-    _md_major = 0
-    _md_minor = 0
-    _md_build = 0
-    _md_memory_model = '32bit'
-    native_types = {}
-    abstract_types = {}
-    overlay = {}
-    # We initially populate this with objects in this module that will be used everywhere
-    object_classes = {'BitField': BitField,
-                      'Pointer':Pointer,
-                      'Void':Void,
-                      'Array':Array,
-                      'CType':CType,
-                      'VolatilityMagic':VolatilityMagic}
+
+    native_mapping = {'32bit': native_types.x86_native_types,
+                      '64bit': native_types.x64_native_types}
 
     def __init__(self, strict = False):
-        self.types = {}
-        self.typeDict = {}
-        self.overlayDict = {}
         self.strict = strict
+        self._mods = []
 
-        # Ensure VOLATILITY_MAGIC is always present in every profile
-        # That way, we can still autogenerate types, and put VOLATILITY_MAGIC in overlays
-        # Otherwise the overlay won't have anything to, well, over lay.
-        if 'VOLATILITY_MAGIC' not in self.abstract_types:
-            self.abstract_types['VOLATILITY_MAGIC'] = [0x0, {}]
+        # The "output" variables
+        self.types = {}
+        self.object_classes = {}
+        self.native_types = {}
 
-        self.add_types(self.abstract_types, self.overlay)
+        # Place for modifications to extend profiles with additional (profile-specific) information
+        self.additional = {}
 
-    @utils.classproperty
-    @classmethod
-    def metadata(cls):
-        prefix = '_md_'
-        result = {}
-        for i in dir(cls):
-            if i.startswith(prefix):
-                result[i[len(prefix):]] = getattr(cls, i)
-        return result
+        # Set up the "input" data
+        self.vtypes = {}
 
-    def has_type(self, theType):
-        return theType in self.object_classes or theType in self.types
+        # Carry out the inital setup
+        self.reset()
 
-    def add_types(self, abstract_types, overlay = None):
-        overlay = overlay or {}
+    @property
+    def applied_modifications(self):
+        return self._mods
 
-        ## we merge the abstract_types with self.typeDict and then recompile
-        ## the whole thing again. This is essential because
-        ## definitions may have changed as a result of this call, and
-        ## we store curried objects (which might keep their previous
-        ## definitions).
-        for k, v in abstract_types.items():
-            original = self.typeDict.get(k, [0, {}])
-            original[1].update(v[1])
-            if v[0]:
-                original[0] = v[0]
-            self.typeDict[k] = original
+    def clear(self):
+        """ Clears out the input vtypes and object_classes, and only the base object types """
+        # Prepopulate object_classes with base classes
+        self.object_classes = {'BitField': BitField,
+                               'Pointer': Pointer,
+                               'Void': Void,
+                               'Array': Array,
+                               'CType': CType,
+                               'VolatilityMagic': VolatilityMagic}
+        # Ensure VOLATILITY_MAGIC is always present in vtypes
+        self.vtypes = {'VOLATILITY_MAGIC' : [0x0, {}]}
+        # Clear out the ordering that modifications were applied (since now, none were)
+        self._mods = []
 
-        for k, v in overlay.items():
-            original = self.overlayDict.get(k, [None, {}])
-            original[1].update(v[1])
-            if v[0]:
-                original[0] = v[0]
+    def reset(self):
+        """ Resets the profile's vtypes to those automatically loaded """
+        # Clear everything out
+        self.clear()
+        # Setup the initial vtypes and native_types
+        self.load_vtypes()
+        # Run through any modifications (new vtypes/overlays, object_classes)
+        self.load_modifications()
+        # Recompile
+        self.compile()
 
-            self.overlayDict[k] = original
+    def load_vtypes(self):
+        """ Identifies the module from which to load the vtypes 
+        
+            Eventually this could do the importing directly, and avoid having
+            the profiles loaded in memory all at once.
+        """
+        ntvar = self.metadata.get('memory_model', '32bit')
+        self.native_types = copy.deepcopy(self.native_mapping.get(ntvar))
+
+        vtype_module = self.metadata.get('vtype_module', None)
+        if not vtype_module:
+            debug.warning("No vtypes specified for this profile")
+        else:
+            module = sys.modules.get(vtype_module, None)
+
+            # Try to locate the _types dictionary
+            for i in dir(module):
+                if i.endswith('_types'):
+                    self.vtypes.update(getattr(module, i))
+
+    def load_modifications(self):
+        """ Find all subclasses of the modification type and applies them
+
+            Each modification object can specify the metadata with which it can work
+            Allowing the overlay to decide which profile it should act on
+        """
+
+        # Collect together all the applicable modifications
+        mods = {}
+        for i in self._get_subclasses(ProfileModification):
+            modname = i.__name__
+            instance = i()
+            # Leave abstract modifications out of the dependency tree
+            # Also don't consider the base ProfileModification object
+            if not modname.startswith("Abstract") and i != ProfileModification:
+                if modname in mods:
+                    raise RuntimeError("Duplicate profile modification name {0} found".format(modname))
+                mods[instance.__class__.__name__] = instance
+
+        # Run through the modifications in dependency order 
+        self._mods = []
+        for modname in self._resolve_mod_dependencies(mods.values()):
+            mod = mods.get(modname, None)
+            # We check for invalid/mistyped modification names, AbstractModifications should be caught by this too
+            if not mod:
+                # Note, this does not allow for optional dependencies
+                raise RuntimeError("No concrete ProfileModification found for " + modname)
+            if mod.check(self):
+                debug.debug("Applying modification from " + mod.__class__.__name__)
+                self._mods.append(mod.__class__.__name__)
+                mod.modification(self)
+
+    def compile(self):
+        """ Compiles the vtypes, overlays, object_classes, etc into a types dictionary 
+        
+            We populate as we go, so that _list_to_type can refer to existing classes 
+            rather than Curry everything.  If the compile fails, the profile will be 
+            left in a bad/unusable state
+        """
 
         # Load the native types
         self.types = {}
@@ -928,75 +964,40 @@ class Profile(object):
             if type(value) == list:
                 self.types[nt] = Curry(NativeType, nt, format_string = value[1])
 
-        for name in self.typeDict.keys():
-            ## We need to protect our virgin overlay dict here - since
-            ## the following functions modify it, we need to make a
-            ## deep copy:
-            self.types[name] = self.convert_members(
-                name, self.typeDict, copy.deepcopy(self.overlayDict))
+        # Go through the vtypes, creating the stubs for object creation at
+        # a later point by the Object factory
+        for name in self.vtypes.keys():
+            self.types[name] = self._convert_members(name)
 
-    def list_to_type(self, name, typeList, typeDict = None):
-        """ Parses a specification list and returns a VType object.
+        # Add in any object_classes that had no defined members, for completeness
+        for name in self.object_classes.keys():
+            if name not in self.types:
+                self.types[name] = Curry(self.object_classes[name], name)
 
-        This function is a bit complex because we support lots of
-        different list types for backwards compatibility.
-        """
-        ## This supports plugin memory objects:
-        try:
-            kwargs = typeList[1]
+    @utils.classproperty
+    @classmethod
+    def metadata(cls):
+        """ Returns a read-only dictionary copy of the metadata associated with a profile """
+        prefix = '_md_'
+        result = {}
+        for i in dir(cls):
+            if i.startswith(prefix):
+                result[i[len(prefix):]] = getattr(cls, i)
+        return result
 
-            if type(kwargs) == dict:
-                ## We have a list of the form [ ClassName, dict(.. args ..) ]
-                return Curry(Object, theType = typeList[0], name = name, **kwargs)
-        except (TypeError, IndexError), _e:
-            pass
-
-        ## This is of the form [ 'void' ]
-        if typeList[0] == 'void':
-            return Curry(Void, Void, name = name)
-
-        ## This is of the form [ 'pointer' , [ 'foobar' ]]
-        if typeList[0] == 'pointer':
-            try:
-                target = typeList[1]
-            except IndexError:
-                raise RuntimeError("Syntax Error in pointer type defintion for name {0}".format(name))
-
-            return Curry(Pointer, None,
-                         name = name,
-                         target = self.list_to_type(name, target, typeDict))
-
-        ## This is an array: [ 'array', count, ['foobar'] ]
-        if typeList[0] == 'array':
-            return Curry(Array, None,
-                         name = name, count = typeList[1],
-                         target = self.list_to_type(name, typeList[2], typeDict))
-
-        ## This is a list which refers to a type which is already defined
-        if typeList[0] in self.types:
-            return Curry(self.types[typeList[0]], name = name)
-
-        ## Does it refer to a type which will be defined in future? in
-        ## this case we just curry the Object function to provide
-        ## it on demand. This allows us to define structures
-        ## recursively.
-        ##if typeList[0] in typeDict:
-        if 1:
-            try:
-                tlargs = typeList[1]
-            except IndexError:
-                tlargs = {}
-
-            obj_name = typeList[0]
-            if type(tlargs) == dict:
-                return Curry(Object, obj_name, name = name, **tlargs)
-
-        ## If we get here we have no idea what this list is
-        #raise RuntimeError("Error in parsing list {0}".format(typeList))
-        debug.warning("Unable to find a type for {0}, assuming int".format(typeList[0]))
-        return Curry(self.types['int'], name = name)
+    def _get_subclasses(self, cls):
+        """Returns a list of all subclasses"""
+        for i in cls.__subclasses__():
+            for c in self._get_subclasses(i):
+                yield c
+        yield cls
 
     def _get_dummy_obj(self, name):
+        """ Returns a dummy object/profile for use in determining size 
+            and offset of substructures.  This is done since profile are
+            effectively a compiled language, so reading the value from
+            self.vtypes may not be accurate. 
+        """
         class dummy(object):
             profile = self
             name = 'dummy'
@@ -1011,6 +1012,10 @@ class Profile(object):
 
         tmp = self.types[name](offset = 0, name = name, vm = dummy(), parent = None)
         return tmp
+
+    def has_type(self, theType):
+        """ Returns a simple check of whether the type is in the profile """
+        return theType in self.types
 
     def get_obj_offset(self, name, member):
         """ Returns a members offset within the struct """
@@ -1029,64 +1034,204 @@ class Profile(object):
         tmp = self._get_dummy_obj(name)
         return hasattr(tmp, member)
 
-    def apply_overlay(self, type_member, overlay):
+    def merge_overlay(self, overlay):
+        """Applies an overlay to the profile's vtypes"""
+        for k, v in overlay.items():
+            if k not in self.vtypes:
+                debug.warning("Overlay structure {0} not present in vtypes".format(k))
+            else:
+                self.vtypes[k] = self._apply_overlay(self.vtypes[k], v)
+
+    def add_types(self, vtypes, overlay = None):
+        """ Add in a deprecated function that mimics the previous add_types function """
+        debug.warning("Deprecation warning: A plugin is making use of profile.add_types")
+        self.merge_overlay(vtypes)
+        if overlay:
+            self.merge_overlay(overlay)
+        self.compile()
+
+    def apply_overlay(self, *args, **kwargs):
+        """ Calls the old apply_overlay function with a deprecation warning """
+        debug.warning("Deprecation warning: A plugin is making use of profile.apply_overlay")
+        return self._apply_overlay(*args, **kwargs)
+
+    def _apply_overlay(self, type_member, overlay):
         """ Update the overlay with the missing information from type.
 
-        Basically if overlay has None in any slot it gets applied from vtype.
+            Basically if overlay has None in any slot it gets applied from vtype.
+
+            We make extensive use of copy.deepcopy to ensure we don't modify the 
+            original variables.  Some of the calls may not be necessary (specifically
+            the return of type_member and overlay) but this saves us the concern that
+            things will get changed later and have a difficult-to-track down knock-on
+            effect.
         """
+        # If we've been called without an overlay, 
+        # the end result should be a complete copy of the type_member
         if not overlay:
-            return type_member
+            return copy.deepcopy(type_member)
 
-        if type(type_member) == dict:
-            for k, v in type_member.items():
-                if k not in overlay:
-                    overlay[k] = v
+        if isinstance(type_member, dict):
+            result = copy.deepcopy(type_member)
+            for k, v in overlay.items():
+                if k not in type_member:
+                    result[k] = v
                 else:
-                    overlay[k] = self.apply_overlay(v, overlay[k])
+                    result[k] = self._apply_overlay(type_member[k], v)
 
-        elif type(overlay) == list:
+        elif isinstance(overlay, list):
+            # If we're changing the underlying type, skip looking any further
             if len(overlay) != len(type_member):
-                return overlay
+                return copy.deepcopy(overlay)
 
+            result = []
+            # Otherwise go through every item
             for i in range(len(overlay)):
                 if overlay[i] == None:
-                    overlay[i] = type_member[i]
+                    result.append(type_member[i])
                 else:
-                    overlay[i] = self.apply_overlay(type_member[i], overlay[i])
+                    result.append(self._apply_overlay(type_member[i], overlay[i]))
+        else:
+            return copy.deepcopy(overlay)
 
-        return overlay
+        return result
 
-    def convert_members(self, cname, typeDict, overlay):
-        """ Convert the member named by cname from the c description
-        provided by typeDict into a list of members that can be used
-        for later parsing.
-
-        cname is the name of the struct.
-        
-        We expect typeDict[cname] to be a list of the following format
-
-        [ Size of struct, members_dict ]
-
-        members_dict is a dict of all members (fields) in this
-        struct. The key is the member name, and the value is a list of
-        this form:
-
-        [ offset_from_start_of_struct, specification_list ]
-
-        The specification list has the form specified by self.list_to_type() above.
-
-        We return a list of CTypeMember objects. 
+    def _resolve_mod_dependencies(self, mods):
+        """ Resolves the modification dependencies, providing an ordered list 
+            of all modifications whose only dependencies are in earlier lists
         """
-        ctype = self.apply_overlay(typeDict[cname], overlay.get(cname))
+        # Convert the before/after to a directed graph
+        result = []
+        data = {}
+        for mod in mods:
+            before, after = mod.dependencies(self)
+            data[mod.__class__.__name__] = data.get(mod.__class__.__name__, set([])).union(set(before))
+            for a in after:
+                data[a] = data.get(a, set([])).union(set(mod.__class__.__name__))
+
+        # Ignore self dependencies
+        for k, v in data.items():
+            v.discard(k)
+
+        # Fill out any items not in the original data list, as having no dependencies
+        extra_items_in_deps = reduce(set.union, data.values()) - set(data.keys())
+        for item in extra_items_in_deps:
+            data.update({item:set()})
+
+        while True:
+            # Pull out all the items with no dependencies
+            nodeps = set([item for item, dep in data.items() if not dep])
+            # If there's none left then we're done
+            if not nodeps:
+                break
+            result.append(sorted(nodeps))
+            # Any items we just returned, remove from all dependencies
+            for item, dep in data.items():
+                if item not in nodeps:
+                    data[item] = (dep - nodeps)
+                else:
+                    data.pop(item)
+
+        # Check there's no dependencies left, if there are we've got a cycle
+        if data:
+            debug.warning("A cyclic dependency exists amongst {0}".format(data))
+            raise StopIteration
+
+        # Finally, after having checked for no cycles, flatten and return the results
+        for s in result:
+            for i in s:
+                yield i
+
+    def _list_to_type(self, name, typeList, typeDict = None):
+        """ Parses a specification list and returns a VType object.
+
+            This function is a bit complex because we support lots of
+            different list types for backwards compatibility.
+        """
+        ## This supports plugin memory objects:
+        try:
+            kwargs = typeList[1]
+
+            if type(kwargs) == dict:
+                ## We have a list of the form [ ClassName, dict(.. args ..) ]
+                return Curry(Object, theType = typeList[0], name = name, **kwargs)
+        except (TypeError, IndexError), _e:
+            pass
+
+        ## This is of the form [ 'void' ]
+        if typeList[0] == 'void':
+            return Curry(Void, None, name = name)
+
+        ## This is of the form [ 'pointer' , [ 'foobar' ]]
+        if typeList[0] == 'pointer':
+            try:
+                target = typeList[1]
+            except IndexError:
+                raise RuntimeError("Syntax Error in pointer type defintion for name {0}".format(name))
+
+            return Curry(Pointer, None,
+                         name = name,
+                         target = self._list_to_type(name, target, typeDict))
+
+        ## This is an array: [ 'array', count, ['foobar'] ]
+        if typeList[0] == 'array':
+            return Curry(Array, None,
+                         name = name, count = typeList[1],
+                         target = self._list_to_type(name, typeList[2], typeDict))
+
+        ## This is a list which refers to a type which is already defined
+        if typeList[0] in self.types:
+            return Curry(self.types[typeList[0]], name = name)
+
+        ## Does it refer to a type which will be defined in future? in
+        ## this case we just curry the Object function to provide
+        ## it on demand. This allows us to define structures
+        ## recursively.
+        ##if typeList[0] in typeDict:
+        try:
+            tlargs = typeList[1]
+        except IndexError:
+            tlargs = {}
+
+        obj_name = typeList[0]
+        if type(tlargs) == dict:
+            return Curry(Object, obj_name, name = name, **tlargs)
+
+        ## If we get here we have no idea what this list is
+        #raise RuntimeError("Error in parsing list {0}".format(typeList))
+        debug.warning("Unable to find a type for {0}, assuming int".format(typeList[0]))
+        return Curry(self.types['int'], name = name)
+
+    def _convert_members(self, cname):
+        """ Convert the structure named by cname from the c description
+            present in vtypes into a list of members that can be used
+            for later parsing.
+
+            cname is the name of the struct.
+
+            We expect the vtypes value to be a list of the following format
+
+            [ Size of struct, members_dict ]
+
+            members_dict is a dict of all members (fields) in this
+            struct. The key is the member name, and the value is a list of
+            this form:
+
+            [ offset_from_start_of_struct, specification_list ]
+
+            The specification list has the form specified by self._list_to_type() above.
+
+            We return an object that is a CType or has been overridden by object_classes. 
+        """
+        size, raw_members = self.vtypes.get(cname)
         members = {}
-        size = ctype[0]
-        for k, v in ctype[1].items():
+        for k, v in raw_members.items():
             if callable(v):
                 members[k] = v
             elif v[0] == None:
                 debug.warning("{0} has no offset in object {1}. Check that vtypes has a concrete definition for it.".format(k, cname))
             else:
-                members[k] = (v[0], self.list_to_type(k, v[1], typeDict))
+                members[k] = (v[0], self._list_to_type(k, v[1], self.vtypes))
 
         ## Allow the plugins to over ride the class constructor here
         if self.object_classes and cname in self.object_classes:
@@ -1095,3 +1240,22 @@ class Profile(object):
             cls = CType
 
         return Curry(cls, cname, members = members, struct_size = size)
+
+class ProfileModification(object):
+    """ Class for modifying profiles for additional functionality """
+    before = []
+    after = []
+    conditions = {}
+
+    def check(self, profile):
+        """ Returns True or False as to whether the Modification should be applied """
+        result = True
+        for k, v in self.conditions.items():
+            result = result and v(profile.metadata.get(k, None))
+        return result
+
+    def dependencies(self, profile):
+        """ Returns a list of modifications that should go before this, 
+            and modifications that need to be after this 
+        """
+        return self.before, self.after

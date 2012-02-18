@@ -4,6 +4,8 @@ Created on 31 Dec 2010
 @author: mike
 '''
 
+import volatility.obj as obj
+
 # Structures used by connections, connscan, sockets, sockscan.
 # Used by x86 XP and Win2K3 profiles. 
 tcpip_vtypes = {
@@ -94,16 +96,16 @@ tcpip_vtypes_7 = {
 # Structures for netscan on x64 Windows 7. These may also apply 
 # to x64 Vista and 2008 but that has not yet been determined. Naming
 # will be updated accordingly once we figure out the rest. 
-tcpip_vtypes_7_64 = { 
+tcpip_vtypes_7_64 = {
     '_TCP_LISTENER': [ None, { # TcpL
-    'Owner' : [ 0x28, ['pointer', ['_EPROCESS']]], 
-    'CreateTime' : [ 0x20, ['WinTimeStamp', {}]], 
-    'LocalAddr' : [ 0x58, ['pointer', ['_LOCAL_ADDRESS']]], 
-    'InetAF' : [ 0x60, ['pointer', ['_INETAF']]], 
-    'Port' : [ 0x6a, ['unsigned short']], 
+    'Owner' : [ 0x28, ['pointer', ['_EPROCESS']]],
+    'CreateTime' : [ 0x20, ['WinTimeStamp', {}]],
+    'LocalAddr' : [ 0x58, ['pointer', ['_LOCAL_ADDRESS']]],
+    'InetAF' : [ 0x60, ['pointer', ['_INETAF']]],
+    'Port' : [ 0x6a, ['unsigned short']],
     }],
     '_INETAF' : [ None, {
-    'AddressFamily' : [ 0x14, ['unsigned short']], 
+    'AddressFamily' : [ 0x14, ['unsigned short']],
     }],
     '_LOCAL_ADDRESS' : [ None, {
     'pData' : [ 0x10, ['pointer', ['pointer', ['_IN_ADDR']]]],
@@ -113,19 +115,54 @@ tcpip_vtypes_7_64 = {
     'Remote' : [ 0x10, ['pointer', ['_IN_ADDR']]],
     }],
     '_TCP_ENDPOINT': [ None, { # TcpE
-    'InetAF' : [ 0x18, ['pointer', ['_INETAF']]], 
-    'AddrInfo' : [ 0x20, ['pointer', ['_ADDRINFO']]], 
-    'State' : [ 0x68, ['unsigned int']], 
-    'LocalPort' : [ 0x6c, ['unsigned short']], 
-    'RemotePort' : [ 0x6e, ['unsigned short']], 
-    'Owner' : [ 0x20, ['pointer', ['_EPROCESS']]], 
-    'CreateTime' : [ 0x1c, ['WinTimeStamp', {}]], 
+    'InetAF' : [ 0x18, ['pointer', ['_INETAF']]],
+    'AddrInfo' : [ 0x20, ['pointer', ['_ADDRINFO']]],
+    'State' : [ 0x68, ['unsigned int']],
+    'LocalPort' : [ 0x6c, ['unsigned short']],
+    'RemotePort' : [ 0x6e, ['unsigned short']],
+    'Owner' : [ 0x20, ['pointer', ['_EPROCESS']]],
+    'CreateTime' : [ 0x1c, ['WinTimeStamp', {}]],
     }],
     '_UDP_ENDPOINT': [ None, { # UdpA
-    'Owner' : [ 0x28, ['pointer', ['_EPROCESS']]], 
-    'CreateTime' : [ 0x58, ['WinTimeStamp', {}]], 
-    'LocalAddr' : [ 0x60, ['pointer', ['_LOCAL_ADDRESS']]], 
+    'Owner' : [ 0x28, ['pointer', ['_EPROCESS']]],
+    'CreateTime' : [ 0x58, ['WinTimeStamp', {}]],
+    'LocalAddr' : [ 0x60, ['pointer', ['_LOCAL_ADDRESS']]],
     'InetAF' : [ 0x20, ['pointer', ['_INETAF']]],
-    'Port' : [ 0x80, ['unsigned short']], 
+    'Port' : [ 0x80, ['unsigned short']],
     }],
 }
+
+class Win2K3SP12Tcpip(obj.ProfileModification):
+    before = ['WindowsVTypes']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 5,
+                  'minor': lambda x : x == 2,
+                  'build': lambda x : x != 3789}
+    def modification(self, profile):
+        profile.vtypes.update(tcpip_vtypes_2k3_sp1_sp2)
+
+class Vista2K8Tcpip(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x >= 0}
+    def modification(self, profile):
+        profile.vtypes.update(tcpip_vtypes_vista)
+
+class Win7Tcpip(obj.ProfileModification):
+    before = ['Vista2K8Tcpip']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 1}
+    def modification(self, profile):
+        profile.vtypes.update(tcpip_vtypes_7)
+
+class Win7x64Tcpip(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 1}
+    def modification(self, profile):
+        profile.vtypes.update(tcpip_vtypes_7_64)

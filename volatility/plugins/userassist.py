@@ -55,6 +55,20 @@ ua_vtypes = {
 } ],
 }
 
+class UserAssistVTypes(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x : x == 'windows'}
+    def modification(self, profile):
+        profile.vtypes.update(ua_vtypes)
+
+class UserAssistWin7VTypes(obj.ProfileModification):
+    before = ['UserAssistVTypes']
+    conditions = {'os': lambda x : x == 'windows',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 1}
+    def modification(self, profile):
+        profile.vtypes.update(ua_win7_vtypes)
+
 # taken from http://msdn.microsoft.com/en-us/library/dd378457%28v=vs.85%29.aspx
 folder_guids = {
     "{de61d971-5ebc-4f02-a3a9-6c82895e5c04}":"Add or Remove Programs (Control Panel)",
@@ -171,12 +185,7 @@ class UserAssist(printkey.PrintKey, hivelist.HiveList):
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
-        win7 = False
-        if addr_space.profile.metadata.get('major', 0) == 6 and addr_space.profile.metadata.get('minor', 0) == 1:
-            win7 = True
-            addr_space.profile.add_types(ua_win7_vtypes)
-        else:
-            addr_space.profile.add_types(ua_vtypes)
+        win7 = addr_space.profile.metadata.get('major', 0) == 6 and addr_space.profile.metadata.get('minor', 0) == 1
 
         if not self._config.HIVE_OFFSET:
             hive_offsets = [(self.hive_name(h), h.obj_offset) for h in hivelist.HiveList.calculate(self)]
