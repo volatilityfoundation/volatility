@@ -842,6 +842,11 @@ def VolMagic(vm):
 
 
 #### This must live here, otherwise there are circular dependency issues
+##
+## The Profile relies on several classes in obj.py, because  
+## it needs to parse legacy list formats into appropriate types
+## Leaving a deprecated obj.Profile object would create a circular dependency
+##
 
 ## Profiles are the interface for creating/interpreting
 ## objects
