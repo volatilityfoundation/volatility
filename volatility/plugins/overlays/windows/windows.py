@@ -519,9 +519,12 @@ class _MMVAD(obj.CType):
         ## Address spaces now. Find the eprocess we came from and switch
         ## AS. Note that all child traversals will be in Process AS. 
         if vm.name.startswith("Kernel"):
-            # Find the next _EPROCESS along our parent list
+            # Find the next _EPROCESS along our parent list. To account for 
+            # cases when _EPROCESS is instantiated by dereferencing _ETHREAD.Tcb.Process
+            # or _ETHREAD.ThreadsProcess, we need the alternate obj_name fields. 
+            # For more information see Issue #216. 
             eprocess = parent
-            while eprocess and eprocess.obj_name != "_EPROCESS":
+            while eprocess and (eprocess.obj_name not in ["_EPROCESS", "ThreadsProcess", "Process"]):
                 eprocess = eprocess.obj_parent
 
             # Switch to its process AS
