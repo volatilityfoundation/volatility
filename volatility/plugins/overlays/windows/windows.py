@@ -524,7 +524,7 @@ class _MMVAD(obj.CType):
             # or _ETHREAD.ThreadsProcess, we need the alternate obj_name fields. 
             # For more information see Issue #216. 
             eprocess = parent
-            while eprocess and (eprocess.obj_name not in ["_EPROCESS", "ThreadsProcess", "Process"]):
+            while eprocess and eprocess.obj_type != "_EPROCESS":
                 eprocess = eprocess.obj_parent
 
             # Switch to its process AS
