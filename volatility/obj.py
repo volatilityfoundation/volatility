@@ -273,6 +273,10 @@ class BaseObject(object):
             raise InvalidOffsetError("Invalid Address 0x{0:08X}, instantiating {1}".format(offset, self.obj_name))
 
     @property
+    def obj_type(self):
+        return self._vol_theType
+
+    @property
     def obj_vm(self):
         return self._vol_vm
 
