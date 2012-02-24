@@ -189,6 +189,12 @@ class FirewireAddressSpace(addrspace.BaseAddressSpace):
         self.as_assert(len(output) == length, "Firewire read lengths failed to match")
         return output
 
+    def zread(self, offset, length):
+        """ Delegate padded reads to normal read, since errors reading 
+            the physical address should probably be reported back to the user
+        """
+        return self.read(offset, length)
+
     def write(self, offset, data):
         """Writes a specified size in bytes"""
         if not self._config.WRITE:

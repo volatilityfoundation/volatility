@@ -117,7 +117,10 @@ class BaseAddressSpace(object):
         return not self == other
 
     def read(self, addr, length):
-        """ Read some date from a certain offset """
+        """ Read some data from a certain offset """
+
+    def zread(self, addr, length):
+        """ Read data from a certain offset padded with \x00 where data is not available """
 
     def get_available_addresses(self):
         """ Return a generator of address ranges as (offset, size) covered by this AS """
@@ -170,6 +173,9 @@ class BufferAddressSpace(BaseAddressSpace):
     def read(self, addr, length):
         offset = addr - self.base_offset
         return self.data[offset: offset + length]
+
+    def zread(self, addr, length):
+        return self.read(addr, length)
 
     def write(self, addr, data):
         if not self._config.WRITE:
