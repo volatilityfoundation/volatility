@@ -19,6 +19,7 @@
 
 import copy
 import volatility.obj as obj
+import volatility.plugins.overlays.windows.windows as windows
 
 class Pointer64Decorator(object):
     def __init__(self, f):
@@ -29,6 +30,17 @@ class Pointer64Decorator(object):
             typeList = copy.deepcopy(typeList)
             typeList[0] = 'pointer'
         return self.f(name, typeList, typeDict)
+
+class _EX_FAST_REF(windows._EX_FAST_REF):
+    MAX_FAST_REF = 15
+
+class ExFastRefx64(obj.ProfileModification):
+    before = ['WindowsOverlay', 'WindowsObjectClasses']
+    conditions = {'os': lambda x : x == 'windows',
+                  'memory_model': lambda x: x == '64bit'}
+    def modification(self, profile):
+        profile.object_classes.update({'_EX_FAST_REF': _EX_FAST_REF})
+
 
 class Windows64Overlay(obj.ProfileModification):
     before = ['WindowsOverlay', 'WindowsObjectClasses']

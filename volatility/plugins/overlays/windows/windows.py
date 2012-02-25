@@ -625,9 +625,12 @@ class _MMVAD_LONG(_MMVAD_SHORT):
     pass
 
 class _EX_FAST_REF(obj.CType):
+
+    MAX_FAST_REF = 7
+
     def dereference_as(self, theType, parent = None, **kwargs):
         """Use the _EX_FAST_REF.Object pointer to resolve an object of the specified type"""
-        return obj.Object(theType, self.Object.v() & ~7, self.obj_native_vm, parent = parent or self, **kwargs)
+        return obj.Object(theType, self.Object.v() & ~self.MAX_FAST_REF, self.obj_native_vm, parent = parent or self, **kwargs)
 
 class ThreadCreateTimeStamp(WinTimeStamp):
     """Handles ThreadCreateTimeStamps which are bit shifted WinTimeStamps"""
