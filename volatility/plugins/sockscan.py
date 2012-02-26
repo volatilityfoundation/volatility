@@ -49,7 +49,7 @@ class CheckSocketCreateTime(scan.ScannerCheck):
         _ADDRESS_OBJECT from the PoolTag we just have to calculate the 
         distance from PoolTag to the end of _POOL_HEADER.
         """
-        start_of_object = (self.address_space.profile.get_obj_size("_POOL_HEADER") - 
+        start_of_object = (self.address_space.profile.get_obj_size("_POOL_HEADER") -
                           self.address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
         address_obj = obj.Object('_ADDRESS_OBJECT', vm = self.address_space,
                                 offset = offset + start_of_object)
@@ -60,7 +60,7 @@ class PoolScanSockFast(scan.PoolScanner):
 
     def object_offset(self, found, address_space):
         """ Return the offset of _ADDRESS_OBJECT """
-        return found + (address_space.profile.get_obj_size("_POOL_HEADER") - 
+        return found + (address_space.profile.get_obj_size("_POOL_HEADER") -
                         address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
 
     checks = [ ('PoolTagCheck', dict(tag = "TCPA")),
@@ -97,7 +97,7 @@ class SockScan(commands.Command):
 
     def render_text(self, outfd, data):
 
-        outfd.write(" Offset(P)  PID    Port   Proto               Address        Create Time               \n" + \
+        outfd.write(" Offset(P)  PID    Port   Proto               Address        Create Time               \n" +
                     "---------- ------ ------ ------------------- -------------- -------------------------- \n")
 
         for sock_obj in data:

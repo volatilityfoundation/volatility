@@ -200,7 +200,7 @@ class Netscan(commands.Command):
         pspace = utils.load_as(self._config, astype = 'physical')
 
         for offset in PoolScanTcpListener().scan(pspace):
-            tcpentry = obj.Object('_TCP_LISTENER', offset = offset, 
+            tcpentry = obj.Object('_TCP_LISTENER', offset = offset,
                                   vm = pspace, native_vm = vspace)
 
             lport = socket.ntohs(tcpentry.Port)
@@ -210,11 +210,10 @@ class Netscan(commands.Command):
             rport = 0
 
             for ver, laddr, raddr, owner in self.enumerate_listeners(tcpentry):
-                yield tcpentry.obj_offset, "TCP" + ver, laddr, lport, \
-                    raddr, rport, state, owner, tcpentry.CreateTime
+                yield tcpentry.obj_offset, "TCP" + ver, laddr, lport, raddr, rport, state, owner, tcpentry.CreateTime
 
         for offset in PoolScanTcpEndpoint().scan(pspace):
-            tcpentry = obj.Object('_TCP_ENDPOINT', offset = offset, 
+            tcpentry = obj.Object('_TCP_ENDPOINT', offset = offset,
                                   vm = pspace, native_vm = vspace)
 
             # These pointers are dereferenced in kernel space since we set
@@ -245,11 +244,10 @@ class Netscan(commands.Command):
             else:
                 continue
 
-            yield tcpentry.obj_offset, proto, laddr, lport, raddr, \
-                rport, state, Owner, tcpentry.CreateTime
+            yield tcpentry.obj_offset, proto, laddr, lport, raddr, rport, state, Owner, tcpentry.CreateTime
 
         for offset in PoolScanUdpEndpoint().scan(pspace):
-            udpentry = obj.Object('_UDP_ENDPOINT', offset = offset, 
+            udpentry = obj.Object('_UDP_ENDPOINT', offset = offset,
                                   vm = pspace, native_vm = vspace)
 
             lport = socket.ntohs(udpentry.Port)
@@ -259,8 +257,7 @@ class Netscan(commands.Command):
             raddr = rport = "*"
 
             for ver, laddr, _, owner in self.enumerate_listeners(udpentry):
-                yield udpentry.obj_offset, "UDP" + ver, laddr, lport, \
-                    raddr, rport, state, owner, udpentry.CreateTime
+                yield udpentry.obj_offset, "UDP" + ver, laddr, lport, raddr, rport, state, owner, udpentry.CreateTime
 
     def render_text(self, outfd, data):
         outfd.write("{0:<10} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(

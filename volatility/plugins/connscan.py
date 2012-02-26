@@ -39,7 +39,7 @@ class PoolScanConnFast(scan.PoolScanner):
 
     def object_offset(self, found, address_space):
         """ Return the offset of _TCPT_OBJECT """
-        return found + (address_space.profile.get_obj_size("_POOL_HEADER") - 
+        return found + (address_space.profile.get_obj_size("_POOL_HEADER") -
                         address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
 
     checks = [ ('PoolTagCheck', dict(tag = "TCPT")),
@@ -74,7 +74,7 @@ class ConnScan(commands.Command):
             yield tcp_obj
 
     def render_text(self, outfd, data):
-        outfd.write(" Offset(P)  Local Address             Remote Address            Pid   \n" + \
+        outfd.write(" Offset(P)  Local Address             Remote Address            Pid   \n" +
                     "---------- ------------------------- ------------------------- ------ \n")
 
         for tcp_obj in data:

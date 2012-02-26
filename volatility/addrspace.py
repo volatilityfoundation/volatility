@@ -110,8 +110,8 @@ class BaseAddressSpace(object):
             raise ASAssertionError, error
 
     def __eq__(self, other):
-        return self.__class__ == other.__class__ and \
-               self.profile == other.profile and self.base == other.base
+        return (self.__class__ == other.__class__ and
+                self.profile == other.profile and self.base == other.base)
 
     def __ne__(self, other):
         return not self == other

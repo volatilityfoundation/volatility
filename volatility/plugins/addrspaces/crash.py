@@ -49,7 +49,7 @@ class WindowsCrashDumpSpace32(standard.FileAddressSpace):
         self.as_assert(self.profile.has_type("_DMP_HEADER"), "_DMP_HEADER not available in profile")
         self.header = obj.Object("_DMP_HEADER", self.offset, base)
 
-        self.runs = [ (x.BasePage.v(), x.PageCount.v()) \
+        self.runs = [ (x.BasePage.v(), x.PageCount.v())
                       for x in self.header.PhysicalMemoryBlockBuffer.Run ]
 
         self.dtb = self.header.DirectoryTableBase.v()

@@ -35,7 +35,7 @@ class Sockets(volatility.commands.Command):
 
     def render_text(self, outfd, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        outfd.write(" Offset{0}  PID    Port   Proto               Address        Create Time               \n".format(offsettype) + \
+        outfd.write(" Offset{0}  PID    Port   Proto               Address        Create Time               \n".format(offsettype) +
                     "---------- ------ ------ ------------------- -------------- -------------------------- \n")
 
         for sock in data:
@@ -44,7 +44,7 @@ class Sockets(volatility.commands.Command):
             else:
                 offset = sock.obj_vm.vtop(sock.obj_offset)
 
-            outfd.write("{0:#010x} {1:6} {2:6} {3:6} {4:14} {5:18} {6:26}\n".format(offset, sock.Pid, \
+            outfd.write("{0:#010x} {1:6} {2:6} {3:6} {4:14} {5:18} {6:26}\n".format(offset, sock.Pid,
                 sock.LocalPort, sock.Protocol, protos.protos.get(sock.Protocol.v(), "-"), sock.LocalIpAddress, sock.CreateTime))
 
     def calculate(self):

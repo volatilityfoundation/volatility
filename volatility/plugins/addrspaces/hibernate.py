@@ -146,8 +146,7 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
 
                 for j in range(0, LocalPageCnt):
                     if (XpressIndex and ((XpressIndex % 0x10) == 0)):
-                        XpressHeader, XpressBlockSize = \
-                                      self.next_xpress(XpressHeader, XpressBlockSize)
+                        XpressHeader, XpressBlockSize = self.next_xpress(XpressHeader, XpressBlockSize)
 
                     PageNumber = start + j
                     XpressPage = XpressIndex % 0x10
@@ -171,8 +170,7 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
             if (NextTable and (EntryCount == 0xFF)):
                 MemoryArrayOffset = NextTable * 0x1000
                 self.MemRangeCnt += 1
-                XpressHeader, XpressBlockSize = \
-                                             self.next_xpress(XpressHeader, XpressBlockSize)
+                XpressHeader, XpressBlockSize = self.next_xpress(XpressHeader, XpressBlockSize)
 
                 XpressIndex = 0
             else:
@@ -195,8 +193,7 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
             yield page_count
 
     def next_xpress(self, XpressHeader, XpressBlockSize):
-        XpressHeaderOffset = XpressBlockSize + XpressHeader.obj_offset + \
-                             XpressHeader.size()
+        XpressHeaderOffset = XpressBlockSize + XpressHeader.obj_offset + XpressHeader.size()
 
         ## We only search this far
         BLOCKSIZE = 1024

@@ -77,8 +77,7 @@ class CheckThreadList(scan.ScannerCheck):
 
         list_head = eprocess.ThreadListHead
 
-        if list_head.Flink > kernel and \
-               list_head.Blink > kernel:
+        if list_head.Flink > kernel and list_head.Blink > kernel:
             return True
 
 class CheckDTBAligned(scan.ScannerCheck):
@@ -168,7 +167,7 @@ class PSDispScan(commands.Command, cache.Testable):
 
     def render_text(self, outfd, data):
         ## Just grab the AS and scan it using our scanner
-        outfd.write(" Offset     Name             PID    PPID   PDB        Time created             Time exited             \n" + \
+        outfd.write(" Offset     Name             PID    PPID   PDB        Time created             Time exited             \n" +
                     "---------- ---------------- ------ ------ ---------- ------------------------ ------------------------ \n")
 
         for eprocess in data:

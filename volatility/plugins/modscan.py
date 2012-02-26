@@ -104,22 +104,21 @@ class CheckThreads(scan.ScannerCheck):
                   offset = pool_base + pool_obj.BlockSize * pool_alignment -
                   common.pool_align(self.address_space, '_ETHREAD', pool_alignment))
 
-        #if thread.Cid.UniqueProcess.v() != 0 and \
-        #   thread.ThreadsProcess.v() <= self.kernel:
+        #if (thread.Cid.UniqueProcess.v() != 0 and 
+        #    thread.ThreadsProcess.v() <= self.kernel):
         #    return False
 
         ## check the start address
-        if thread.Cid.UniqueProcess.v() != 0 and \
-           thread.StartAddress == 0:
+        if thread.Cid.UniqueProcess.v() != 0 and thread.StartAddress == 0:
             return False
 
         ## Check the Semaphores
-        if thread.Tcb.SuspendSemaphore.Header.Size != 0x05 and \
-               thread.Tcb.SuspendSemaphore.Header.Type != 0x05:
+        if (thread.Tcb.SuspendSemaphore.Header.Size != 0x05 and
+               thread.Tcb.SuspendSemaphore.Header.Type != 0x05):
             return False
 
-        if thread.KeyedWaitSemaphore.Header.Size != 0x05 and \
-               thread.KeyedWaitSemaphore.Header.Type != 0x05:
+        if (thread.KeyedWaitSemaphore.Header.Size != 0x05 and
+               thread.KeyedWaitSemaphore.Header.Type != 0x05):
             return False
 
         return True
@@ -171,7 +170,7 @@ class ThrdScan(ModScan):
             yield thread
 
     def render_text(self, outfd, data):
-        outfd.write("Offset(P)  PID    TID    Create Time               Exit Time                 StartAddr\n" + \
+        outfd.write("Offset(P)  PID    TID    Create Time               Exit Time                 StartAddr\n" +
                     "---------- ------ ------ ------------------------- ------------------------- ----------\n")
 
         for thread in data:

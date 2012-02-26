@@ -82,7 +82,7 @@ class FileScan(commands.Command):
 
             ## The _OBJECT_HEADER is immediately below the _FILE_OBJECT
             object_obj = obj.Object("_OBJECT_HEADER", vm = address_space,
-                                   offset = file_obj.obj_offset - \
+                                   offset = file_obj.obj_offset -
                                    address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body'),
                                    native_vm = kernel_as
                                    )
@@ -102,12 +102,12 @@ class FileScan(commands.Command):
 
         for object_obj, file_obj in data:
             ## Make a nicely formatted ACL string
-            AccessStr = ((file_obj.ReadAccess > 0 and "R") or '-') + \
-                        ((file_obj.WriteAccess > 0  and "W") or '-') + \
-                        ((file_obj.DeleteAccess > 0 and "D") or '-') + \
-                        ((file_obj.SharedRead > 0 and "r") or '-') + \
-                        ((file_obj.SharedWrite > 0 and "w") or '-') + \
-                        ((file_obj.SharedDelete > 0 and "d") or '-')
+            AccessStr = (((file_obj.ReadAccess > 0 and "R") or '-') +
+                         ((file_obj.WriteAccess > 0  and "W") or '-') +
+                         ((file_obj.DeleteAccess > 0 and "D") or '-') +
+                         ((file_obj.SharedRead > 0 and "r") or '-') +
+                         ((file_obj.SharedWrite > 0 and "w") or '-') +
+                         ((file_obj.SharedDelete > 0 and "d") or '-'))
 
             outfd.write("{0:#010x} {1:4} {2:4} {3:6} {4}\n".format(
                          file_obj.obj_offset, object_obj.PointerCount,
@@ -147,7 +147,7 @@ class DriverScan(FileScan):
             ## The _DRIVER_OBJECT is immediately below the _DRIVER_EXTENSION
             driver_obj = obj.Object(
                 "_DRIVER_OBJECT", vm = address_space,
-                offset = extension_obj.obj_offset - \
+                offset = extension_obj.obj_offset -
                     common.pool_align(kernel_as, "_DRIVER_OBJECT", pool_alignment),
                 native_vm = kernel_as
                 )
@@ -155,7 +155,7 @@ class DriverScan(FileScan):
             ## The _OBJECT_HEADER is immediately below the _DRIVER_OBJECT
             object_obj = obj.Object(
                 "_OBJECT_HEADER", vm = address_space,
-                offset = driver_obj.obj_offset - \
+                offset = driver_obj.obj_offset -
                 address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body'),
                 native_vm = kernel_as
                 )
@@ -222,7 +222,7 @@ class SymLinkScan(FileScan):
             ## The _OBJECT_HEADER is immediately below the _OBJECT_SYMBOLIC_LINK
             object_obj = obj.Object(
                 "_OBJECT_HEADER", vm = address_space,
-                offset = link_obj.obj_offset - \
+                offset = link_obj.obj_offset -
                 address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body'),
                 native_vm = kernel_as
                 )
@@ -285,7 +285,7 @@ class MutantScan(FileScan):
             ## The _OBJECT_HEADER is immediately below the _KMUTANT
             object_obj = obj.Object(
                 "_OBJECT_HEADER", vm = address_space,
-                offset = mutant.obj_offset - \
+                offset = mutant.obj_offset -
                 address_space.profile.get_obj_offset('_OBJECT_HEADER', 'Body'),
                 native_vm = kernel_as
                 )
@@ -423,7 +423,7 @@ class PSScan(commands.Command):
 
 
     def render_text(self, outfd, data):
-        outfd.write(" Offset(P)  Name             PID    PPID   PDB        Time created             Time exited             \n" + \
+        outfd.write(" Offset(P)  Name             PID    PPID   PDB        Time created             Time exited             \n" +
                     "---------- ---------------- ------ ------ ---------- ------------------------ ------------------------ \n")
 
         for eprocess in data:

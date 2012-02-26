@@ -116,7 +116,7 @@ class PSList(DllList):
     def render_text(self, outfd, data):
 
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        outfd.write(" Offset{0}  Name                 PID    PPID   Thds   Hnds   Time \n".format(offsettype) + \
+        outfd.write(" Offset{0}  Name                 PID    PPID   Thds   Hnds   Time \n".format(offsettype) +
                     "---------- -------------------- ------ ------ ------ ------ ------------------- \n")
 
         for task in data:

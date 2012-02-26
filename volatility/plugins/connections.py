@@ -45,7 +45,7 @@ class Connections(commands.Command):
 
     def render_text(self, outfd, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        outfd.write(" Offset{0}  Local Address             Remote Address            Pid   \n".format(offsettype) + \
+        outfd.write(" Offset{0}  Local Address             Remote Address            Pid   \n".format(offsettype) +
                     "---------- ------------------------- ------------------------- ------ \n")
 
         for conn in data:
