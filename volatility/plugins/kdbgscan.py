@@ -110,12 +110,6 @@ class KDBGScan(commands.Command):
                     else:
                         yield l, offset, None
 
-        #XP = '\x90\x02'
-        #vista = '\x28\x03'
-        #win7 = '\x40\x03'
-        #w2k3 = '\x18\x03'
-        #w2k8 = '\x30\x03'
-
     def render_text(self, outfd, data):
         """Renders the KPCR values as text"""
 
