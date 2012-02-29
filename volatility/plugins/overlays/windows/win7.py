@@ -190,3 +190,9 @@ class Win7SP1x64(obj.Profile):
     _md_major = 6
     _md_minor = 1
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x64_vtypes'
+
+class Win2K8R2SP0x64(Win7SP0x64):
+    """ A Profile for Windows 2008 SP0 x64 """
+
+class Win2K8R2SP1x64(Win7SP1x64):
+    """ A Profile for Windows 2008 SP1 x64 """
