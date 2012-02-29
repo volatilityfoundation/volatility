@@ -66,7 +66,7 @@ class _MMVAD_SHORT(windows._MMVAD_SHORT):
 class _MMVAD_LONG(_MMVAD_SHORT):
     pass
 
-class Win2K3MMVad(obj.ProfileModification):
+class Win2003MMVad(obj.ProfileModification):
     before = ['WindowsOverlay', 'WindowsObjectClasses']
 
     def check(self, profile):
@@ -80,16 +80,16 @@ class Win2K3MMVad(obj.ProfileModification):
                                        '_MMVAD_SHORT': _MMVAD_SHORT,
                                        '_MMVAD_LONG': _MMVAD_LONG})
 
-class Win2K3KDBG(windows.AbstractKDBGMod):
+class Win2003KDBG(windows.AbstractKDBGMod):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x : x == 'windows',
                   'major': lambda x: x == 5,
                   'minor': lambda x: x >= 2}
     kdbgsize = 0x318
 
-class Win2K3SP0x86DTB(obj.ProfileModification):
-    # Make sure we apply after the normal Win2K3 DTB
-    before = ['WindowsOverlay', 'Win2K3x86DTB']
+class Win2003SP0x86DTB(obj.ProfileModification):
+    # Make sure we apply after the normal Win2003 DTB
+    before = ['WindowsOverlay', 'Win2003x86DTB']
     conditions = {'os': lambda x: x == 'windows',
                   'memory_model': lambda x: x == '32bit',
                   'major': lambda x: x == 5,
@@ -102,7 +102,7 @@ class Win2K3SP0x86DTB(obj.ProfileModification):
                                         ]}
         profile.merge_overlay(overlay)
 
-class Win2K3x86DTB(obj.ProfileModification):
+class Win2003x86DTB(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x : x == 'windows',
                   'memory_model': lambda x: x == '32bit',
@@ -115,7 +115,7 @@ class Win2K3x86DTB(obj.ProfileModification):
                                         ]}
         profile.merge_overlay(overlay)
 
-class Win2K3x64DTB(obj.ProfileModification):
+class Win2003x64DTB(obj.ProfileModification):
     before = ['WindowsOverlay', 'Windows64Overlay']
     conditions = {'os': lambda x : x == 'windows',
                   'memory_model': lambda x: x == '64bit',
@@ -136,7 +136,7 @@ class EThreadCreateTime(obj.ProfileModification):
         return (m.get('os', None) == 'windows' and
                 ((m.get('major', 0) == 5 and m.get('minor', 0) >= 2) or
                  m.get('major', 0) >= 6) and
-                 profile.__class__.__name__ != 'Win2K3SP0x86')
+                 profile.__class__.__name__ != 'Win2003SP0x86')
 
     def modification(self, profile):
         overlay = {'_ETHREAD': [ None, {
@@ -144,53 +144,53 @@ class EThreadCreateTime(obj.ProfileModification):
                                 ]}
         profile.merge_overlay(overlay)
 
-class Win2K3SP0x86(obj.Profile):
+class Win2003SP0x86(obj.Profile):
     """ A Profile for Windows 2003 SP0 x86 """
     _md_os = 'windows'
     _md_major = 5
     _md_minor = 2
-    # FIXME: 2K3's build numbers didn't differentiate between SP0 and SP1/2
+    # FIXME: 2003's build numbers didn't differentiate between SP0 and SP1/2
     # despite there being a large change. As such we fake a special build number
-    # for 2K3 SP0 to help us differentiate it
+    # for 2003 SP0 to help us differentiate it
     _md_build = 3789
     _md_memory_model = '32bit'
-    _md_vtype_module = 'volatility.plugins.overlays.windows.win2k3_sp0_x86_vtypes'
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win2003_sp0_x86_vtypes'
 
-class Win2K3SP1x86(obj.Profile):
+class Win2003SP1x86(obj.Profile):
     """ A Profile for Windows 2003 SP1 x86 """
     _md_os = 'windows'
     _md_major = 5
     _md_minor = 2
     _md_memory_model = '32bit'
-    _md_vtype_module = 'volatility.plugins.overlays.windows.win2k3_sp1_x86_vtypes'
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win2003_sp1_x86_vtypes'
 
-class Win2K3SP2x86(obj.Profile):
+class Win2003SP2x86(obj.Profile):
     """ A Profile for Windows 2003 SP2 x86 """
     _md_os = 'windows'
     _md_major = 5
     _md_minor = 2
     _md_memory_model = '32bit'
-    _md_vtype_module = 'volatility.plugins.overlays.windows.win2k3_sp2_x86_vtypes'
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win2003_sp2_x86_vtypes'
 
-class Win2K3SP1x64(obj.Profile):
+class Win2003SP1x64(obj.Profile):
     """ A Profile for Windows 2003 SP1 x64 """
     _md_memory_model = '64bit'
     _md_os = 'windows'
     _md_major = 5
     _md_minor = 2
-    _md_vtype_module = 'volatility.plugins.overlays.windows.win2k3_sp1_x64_vtypes'
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win2003_sp1_x64_vtypes'
 
-class Win2K3SP2x64(obj.Profile):
+class Win2003SP2x64(obj.Profile):
     """ A Profile for Windows 2003 SP2 x64 """
     _md_memory_model = '64bit'
     _md_os = 'windows'
     _md_major = 5
     _md_minor = 2
-    _md_vtype_module = 'volatility.plugins.overlays.windows.win2k3_sp2_x64_vtypes'
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win2003_sp2_x64_vtypes'
 
-class WinXPSP1x64(Win2K3SP1x64):
+class WinXPSP1x64(Win2003SP1x64):
     """ A Profile for Windows XP SP1 x64 """
 
-class WinXPSP2x64(Win2K3SP2x64):
+class WinXPSP2x64(Win2003SP2x64):
     """ A Profile for Windows XP SP2 x64 """
 

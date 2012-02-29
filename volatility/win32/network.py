@@ -76,29 +76,29 @@ module_versions_xp = {
 },
 }
 
-module_versions_2k3 = {
-# w2k3 sp0
+module_versions_2003 = {
+# w2003 sp0
 '3790' : {
  'TCBTableOff' : [0x4c6c8],
  'SizeOff' : [0x4312c],
  'AddrObjTableOffset'  : [0x4bba0],
  'AddrObjTableSizeOffset' : [0x4bba4],
 },
-# w2k3 sp1
+# w2003 sp1
 '1830' : {
  'TCBTableOff' : [0x4e428],
  'SizeOff' : [0x44140],
  'AddrObjTableOffset'  : [0x4d4e4],
  'AddrObjTableSizeOffset' : [0x4d4e8],
 },
-# w2k3 sp2
+# w2003 sp2
 '3959' : {
  'TCBTableOff' : [0x7c548],
  'SizeOff' : [0x50308],
  'AddrObjTableOffset'  : [0x5ada4],
  'AddrObjTableSizeOffset' : [0x5ada8],
 },
-# w2k3 sp2
+# w2003 sp2
 '4573' : {
  'TCBTableOff' : [0x7f0ac],
  'SizeOff' : [0x52328],
@@ -117,7 +117,7 @@ def determine_connections(addr_space):
     if version <= (5, 1):
         module_versions = module_versions_xp
     else:
-        module_versions = module_versions_2k3
+        module_versions = module_versions_2003
 
     for m in all_modules:
         if str(m.BaseDllName).lower() == 'tcpip.sys':
@@ -154,7 +154,7 @@ def determine_sockets(addr_space):
     if addr_space.profile.metadata.get('major', 0) <= 5.1 and addr_space.profile.metadata.get('minor', 0) == 1:
         module_versions = module_versions_xp
     else:
-        module_versions = module_versions_2k3
+        module_versions = module_versions_2003
 
     for m in all_modules:
         if str(m.BaseDllName).lower() == 'tcpip.sys':

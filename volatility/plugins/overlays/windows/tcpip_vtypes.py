@@ -7,7 +7,7 @@ Created on 31 Dec 2010
 import volatility.obj as obj
 
 # Structures used by connections, connscan, sockets, sockscan.
-# Used by x86 XP and Win2K3 profiles. 
+# Used by x86 XP and Win2003 profiles. 
 tcpip_vtypes = {
     '_ADDRESS_OBJECT' : [ 0x68, {
     'Next' : [ 0x0, ['pointer', ['_ADDRESS_OBJECT']]],
@@ -27,8 +27,8 @@ tcpip_vtypes = {
     }],
 }
 
-# Structures specific to x86 Win2K3 profiles. 
-tcpip_vtypes_2k3_sp1_sp2 = {
+# Structures specific to x86 Win2003 profiles. 
+tcpip_vtypes_2003_sp1_sp2 = {
     '_ADDRESS_OBJECT' : [ 0x68, {
     'Next' : [ 0x0, ['pointer', ['_ADDRESS_OBJECT']]],
     'LocalIpAddress' : [ 0x30, ['IpAddress']],
@@ -132,7 +132,7 @@ tcpip_vtypes_7_64 = {
     }],
 }
 
-class Win2K3SP12Tcpip(obj.ProfileModification):
+class Win2003SP12Tcpip(obj.ProfileModification):
     before = ['WindowsVTypes']
     conditions = {'os': lambda x: x == 'windows',
                   'memory_model': lambda x: x == '32bit',
@@ -140,9 +140,9 @@ class Win2K3SP12Tcpip(obj.ProfileModification):
                   'minor': lambda x : x == 2,
                   'build': lambda x : x != 3789}
     def modification(self, profile):
-        profile.vtypes.update(tcpip_vtypes_2k3_sp1_sp2)
+        profile.vtypes.update(tcpip_vtypes_2003_sp1_sp2)
 
-class Vista2K8Tcpip(obj.ProfileModification):
+class Vista2008Tcpip(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows',
                   'memory_model': lambda x: x == '32bit',
                   'major': lambda x : x == 6,
@@ -151,7 +151,7 @@ class Vista2K8Tcpip(obj.ProfileModification):
         profile.vtypes.update(tcpip_vtypes_vista)
 
 class Win7Tcpip(obj.ProfileModification):
-    before = ['Vista2K8Tcpip']
+    before = ['Vista2008Tcpip']
     conditions = {'os': lambda x: x == 'windows',
                   'memory_model': lambda x: x == '32bit',
                   'major': lambda x : x == 6,

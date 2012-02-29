@@ -94,7 +94,7 @@ class Vistax64DTB(obj.ProfileModification):
 
 
 class VistaMMVAD(obj.ProfileModification):
-    before = ['WindowsOverlay', 'Win2K3MMVad']
+    before = ['WindowsOverlay', 'Win2003MMVad']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x >= 6,
                   }
@@ -174,14 +174,14 @@ class VistaSP2x64(obj.Profile):
     _md_os = 'windows'
     _md_vtype_module = 'volatility.plugins.overlays.windows.vista_sp2_x64_vtypes'
 
-class Win2K8SP1x64(VistaSP1x64):
+class Win2008SP1x64(VistaSP1x64):
     """ A Profile for Windows 2008 SP1 x64 """
 
-class Win2K8SP2x64(VistaSP2x64):
+class Win2008SP2x64(VistaSP2x64):
     """ A Profile for Windows 2008 SP2 x64 """
 
-class Win2K8SP1x86(VistaSP1x86):
+class Win2008SP1x86(VistaSP1x86):
     """ A Profile for Windows 2008 SP1 x86 """
 
-class Win2K8SP2x86(VistaSP2x86):
+class Win2008SP2x86(VistaSP2x86):
     """ A Profile for Windows 2008 SP2 x86 """
