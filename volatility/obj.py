@@ -1268,3 +1268,6 @@ class ProfileModification(object):
             and modifications that need to be after this 
         """
         return self.before, self.after
+
+    def modification(self, profile):
+        """ Abstract function for modifying the profile """
