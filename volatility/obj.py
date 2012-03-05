@@ -1054,7 +1054,7 @@ class Profile(object):
     def add_types(self, vtypes, overlay = None):
         """ Add in a deprecated function that mimics the previous add_types function """
         debug.warning("Deprecation warning: A plugin is making use of profile.add_types")
-        self.merge_overlay(vtypes)
+        self.vtypes.update(vtypes)
         if overlay:
             self.merge_overlay(overlay)
         self.compile()
