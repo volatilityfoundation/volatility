@@ -496,6 +496,16 @@ class _FILE_OBJECT(obj.CType):
             name += self.FileName.v()
         return name
 
+    def access_string(self):
+        ## Make a nicely formatted ACL string
+        AccessStr = (((self.ReadAccess > 0 and "R") or '-') +
+                     ((self.WriteAccess > 0  and "W") or '-') +
+                     ((self.DeleteAccess > 0 and "D") or '-') +
+                     ((self.SharedRead > 0 and "r") or '-') +
+                     ((self.SharedWrite > 0 and "w") or '-') +
+                     ((self.SharedDelete > 0 and "d") or '-'))
+        return AccessStr
+
 ## This is an object which provides access to the VAD tree.
 class _MMVAD(obj.CType):
     """Class factory for _MMVAD objects"""
