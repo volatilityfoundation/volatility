@@ -50,8 +50,8 @@ class PrintKey(hivelist.HiveList):
     meta_info['os'] = 'WIN_32_XP_SP2'
     meta_info['version'] = '1.0'
 
-    def __init__(self, config, *args):
-        hivelist.HiveList.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        hivelist.HiveList.__init__(self, config, *args, **kwargs)
         config.add_option('HIVE-OFFSET', short_option = 'o',
                           help = 'Hive offset (virtual)', type = 'int')
         config.add_option('KEY', short_option = 'K',

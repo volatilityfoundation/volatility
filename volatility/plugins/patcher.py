@@ -147,8 +147,8 @@ class PatcherObject(object):
 
 class Patcher(commands.Command):
     """Patches memory based on page scans"""
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        commands.Command.__init__(self, config, *args, **kwargs)
         config.add_option('XML-INPUT', short_option = 'x',
                   help = 'Input XML file for patching binaries')
 

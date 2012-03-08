@@ -38,8 +38,8 @@ import volatility.protos as protos
 
 class CheckSocketCreateTime(scan.ScannerCheck):
     """ Check that _ADDRESS_OBJECT.CreateTime makes sense """
-    def __init__(self, address_space, condition = lambda x: x, **kwargs):
-        scan.ScannerCheck.__init__(self, address_space, **kwargs)
+    def __init__(self, address_space, condition = lambda x: x, *args, **kwargs):
+        scan.ScannerCheck.__init__(self, address_space, *args, **kwargs)
         self.condition = condition
 
     def check(self, offset):

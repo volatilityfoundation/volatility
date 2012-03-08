@@ -73,13 +73,13 @@ PROTECT_FLAGS = dict(enumerate([
 # OS after XP has a member _MMVAD_FLAGS.VadType, 3-bits, which is an index
 # into the following enumeration. 
 MI_VAD_TYPE = dict(enumerate([
-    'VadNone', 
-    'VadDevicePhysicalMemory', 
-    'VadImageMap', 
+    'VadNone',
+    'VadDevicePhysicalMemory',
+    'VadImageMap',
     'VadAwe',
-    'VadWriteWatch', 
-    'VadLargePages', 
-    'VadRotatePhysical', 
+    'VadWriteWatch',
+    'VadLargePages',
+    'VadRotatePhysical',
     'VadLargePageSection',
 ]))
 
@@ -121,12 +121,12 @@ class VADInfo(taskmods.DllList):
 
     def write_vad_control(self, outfd, vad):
         """Renders a text version of a (non-short) Vad's control information"""
-        
+
         # even if the ControlArea is not NULL, it is only meaningful 
         # for shared (non private) memory sections. 
         if vad.u.VadFlags.PrivateMemory == 1:
             return
-        
+
         CA = vad.get_control_area()
         if not CA:
             #debug.b()
@@ -207,8 +207,8 @@ class VADWalk(VADInfo):
 class VADDump(VADInfo):
     """Dumps out the vad sections to a file"""
 
-    def __init__(self, config, *args):
-        VADInfo.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        VADInfo.__init__(self, config, *args, **kwargs)
         config.add_option('DUMP-DIR', short_option = 'D', default = None,
                           cache_invalidator = False,
                           help = 'Directory in which to dump the VAD files')

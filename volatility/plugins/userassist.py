@@ -177,9 +177,9 @@ folder_guids = {
 class UserAssist(printkey.PrintKey, hivelist.HiveList):
     "Print userassist registry keys and information"
 
-    def __init__(self, config, *args):
-        printkey.PrintKey.__init__(self, config, *args)
-        hivelist.HiveList.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        printkey.PrintKey.__init__(self, config, *args, **kwargs)
+        hivelist.HiveList.__init__(self, config, *args, **kwargs)
         config.add_option('HIVE-OFFSET', short_option = 'o',
                           help = 'Hive offset (virtual)', type = 'int')
 

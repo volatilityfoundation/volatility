@@ -49,8 +49,8 @@ class volshell(commands.Command):
     meta_info['os'] = 'WIN_32_XP_SP2'
     meta_info['version'] = '1.3'
 
-    def __init__(self, config):
-        commands.Command.__init__(self, config)
+    def __init__(self, config, *args, **kwargs):
+        commands.Command.__init__(self, config, *args, **kwargs)
 
         config.add_option('OFFSET', short_option = 'o', default = None,
                           help = 'EPROCESS Offset (in hex) in kernel address space',

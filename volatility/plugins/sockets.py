@@ -27,8 +27,8 @@ import volatility.protos as protos
 
 class Sockets(volatility.commands.Command):
     """Print list of open sockets"""
-    def __init__(self, config, *args):
-        volatility.commands.Command.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        volatility.commands.Command.__init__(self, config, *args, **kwargs)
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
                           cache_invalidator = False,
                           help = "Physical Offset", action = "store_true")

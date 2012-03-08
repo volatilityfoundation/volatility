@@ -17,17 +17,17 @@
 #
 
 import volatility.plugins.taskmods as taskmods
-import volatility.utils as utils 
-import volatility.win32.tasks as tasks 
-import volatility.win32.modules as modules 
+import volatility.utils as utils
+import volatility.win32.tasks as tasks
+import volatility.win32.modules as modules
 import volatility.plugins.filescan as filescan
 import volatility.plugins.modscan as modscan
 
 class EnumFunc(taskmods.DllList):
     """Enumerate imported/exported functions"""
 
-    def __init__(self, config, *args):
-        taskmods.DllList.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        taskmods.DllList.__init__(self, config, *args, **kwargs)
         config.remove_option("PID")
         config.remove_option("OFFSET")
         config.add_option("SCAN", short_option = 's', default = False,
@@ -43,7 +43,7 @@ class EnumFunc(taskmods.DllList):
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
-    
+
         tasklist = []
         modslist = []
 
@@ -63,7 +63,7 @@ class EnumFunc(taskmods.DllList):
 
         for task in tasklist:
             for mod in task.get_load_modules():
-                yield task, mod 
+                yield task, mod
 
         for mod in modslist:
             yield None, mod
@@ -77,18 +77,18 @@ class EnumFunc(taskmods.DllList):
             if not self._config.IMPORT_ONLY:
                 for o, f, n in module.exports():
                     outfd.write("{0:<20} {1:<10} {2:<20} {3:<10} {4:#018x} {5}\n".format(
-                            process.ImageFileName if process else "<KERNEL>", 
-                            "Export", module.BaseDllName, 
-                            o, 
+                            process.ImageFileName if process else "<KERNEL>",
+                            "Export", module.BaseDllName,
+                            o,
                             (module.DllBase + f) if f else 0, # None if forwarded 
                             n or '' # None if paged
-                            )) 
+                            ))
             if not self._config.EXPORT_ONLY:
                 for dll, o, f, n in module.imports():
                     outfd.write("{0:<20} {1:<10} {2:<20} {3:<10} {4:#018x} {5}\n".format(
-                            process.ImageFileName if process else "<KERNEL>", 
-                            "Import", module.BaseDllName, 
-                            o, 
+                            process.ImageFileName if process else "<KERNEL>",
+                            "Import", module.BaseDllName,
+                            o,
                             f or 0, # None if paged 
                             dll + "!" + n or '' # None if paged or imported by ordinal 
-                            )) 
+                            ))

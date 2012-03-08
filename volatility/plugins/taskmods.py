@@ -33,8 +33,8 @@ import volatility.cache as cache
 class DllList(commands.Command, cache.Testable):
     """Print list of loaded dlls for each process"""
 
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        commands.Command.__init__(self, config, *args, **kwargs)
         cache.Testable.__init__(self)
         config.add_option('OFFSET', short_option = 'o', default = None,
                           help = 'EPROCESS offset (in hex) in the physical address space',
@@ -108,8 +108,8 @@ class DllList(commands.Command, cache.Testable):
 
 class PSList(DllList):
     """ print all running processes by following the EPROCESS lists """
-    def __init__(self, config, *args):
-        DllList.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        DllList.__init__(self, config, *args, **kwargs)
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
                           cache_invalidator = False, help = "Physical Offset", action = "store_true")
 
@@ -177,8 +177,8 @@ class MemMap(DllList):
 class MemDump(MemMap):
     """Dump the addressable memory for a process"""
 
-    def __init__(self, config, *args):
-        MemMap.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        MemMap.__init__(self, config, *args, **kwargs)
         config.add_option('DUMP-DIR', short_option = 'D', default = None,
                           cache_invalidator = False,
                           help = 'Directory in which to dump memory')

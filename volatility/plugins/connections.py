@@ -37,8 +37,8 @@ class Connections(commands.Command):
     because Windows closes all sockets before hibernating. You might
     find it more effective to do conscan instead.
     """
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        commands.Command.__init__(self, config, *args, **kwargs)
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
                           cache_invalidator = False,
                           help = "Physical Offset", action = "store_true")

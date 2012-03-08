@@ -32,8 +32,8 @@ import volatility.debug as debug
 class ModDump(procdump.ProcExeDump):
     """Dump a kernel driver to an executable file sample"""
 
-    def __init__(self, config, *args):
-        procdump.ProcExeDump.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        procdump.ProcExeDump.__init__(self, config, *args, **kwargs)
         config.remove_option("PID")
         config.remove_option("OFFSET")
         config.add_option('REGEX', short_option = 'r',

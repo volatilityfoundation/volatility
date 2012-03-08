@@ -62,8 +62,8 @@ Droping to a debugging shell....
 class TestSuite(commands.Command):
     """ Run unit test suit using the Cache """
 
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        commands.Command.__init__(self, config, *args, **kwargs)
         config.add_option("UNIT-TEST", default = False , action = 'store_true',
                           help = "Enable unit tests for this module")
 
@@ -99,8 +99,8 @@ class TestSuite(commands.Command):
 class InspectCache(commands.Command):
     """ Inspect the contents of a cache """
 
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        commands.Command.__init__(self, config, *args, **kwargs)
         config.add_option("CACHE-LOCATION", default = None,
                           help = "Location of the cache element")
 

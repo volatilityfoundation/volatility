@@ -27,8 +27,8 @@ import volatility.plugins.taskmods as taskmods
 class Handles(taskmods.DllList):
     """Print list of open handles for each process"""
 
-    def __init__(self, config, *args):
-        taskmods.DllList.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        taskmods.DllList.__init__(self, config, *args, **kwargs)
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
                           help = "Physical Offset", action = "store_true")
         config.add_option("OBJECT-TYPE", short_option = 't', default = None,

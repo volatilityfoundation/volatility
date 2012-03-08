@@ -25,11 +25,11 @@ import struct
 import volatility.plugins.taskmods as taskmods
 import volatility.debug as debug
 import volatility.obj as obj
-    
+
 class ProcExeDump(taskmods.DllList):
     """Dump a process to an executable file sample"""
-    def __init__(self, config, *args):
-        taskmods.DllList.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        taskmods.DllList.__init__(self, config, *args, **kwargs)
         config.add_option('DUMP-DIR', short_option = 'D', default = None,
                           cache_invalidator = False,
                           help = 'Directory in which to dump executable files')

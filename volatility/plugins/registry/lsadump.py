@@ -48,8 +48,8 @@ class LSADump(commands.Command):
     meta_info['os'] = 'WIN_32_XP_SP2'
     meta_info['version'] = '1.0'
 
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        commands.Command.__init__(self, config, *args, **kwargs)
         config.add_option('SYS-OFFSET', short_option = 'y', type = 'int',
                           help = 'SYSTEM hive offset (virtual)')
         config.add_option('SEC-OFFSET', short_option = 's', type = 'int',
@@ -78,8 +78,8 @@ class LSADump(commands.Command):
 class HashDump(commands.Command):
     """Dumps passwords hashes (LM/NTLM) from memory"""
 
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        commands.Command.__init__(self, config, *args, **kwargs)
         config.add_option('SYS-OFFSET', short_option = 'y', type = 'int',
                           help = 'SYSTEM hive offset (virtual)')
         config.add_option('SAM-OFFSET', short_option = 's', type = 'int',
@@ -102,8 +102,8 @@ class HashDump(commands.Command):
 
 class HiveDump(commands.Command):
     """Prints out a hive"""
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        commands.Command.__init__(self, config, *args, **kwargs)
         config.add_option('HIVE-OFFSET', short_option = 'o', type = 'int',
                           help = 'Hive offset (virtual)')
 

@@ -27,8 +27,8 @@ import volatility.utils as utils
 
 class Modules(commands.Command):
     """Print list of loaded modules"""
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        commands.Command.__init__(self, config, *args, **kwargs)
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
                           cache_invalidator = False, help = "Physical Offset", action = "store_true")
 

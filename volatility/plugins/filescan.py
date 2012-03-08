@@ -54,9 +54,6 @@ class FileScan(commands.Command):
     meta_info['os'] = 'WIN_32_XP_SP2'
     meta_info['version'] = '0.1'
 
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
-
     # Can't be cached until self.kernel_address_space is moved entirely within calculate
     def calculate(self):
         ## Just grab the AS and scan it using our scanner
@@ -248,8 +245,8 @@ class PoolScanMutant(PoolScanDriver):
 
 class MutantScan(FileScan):
     "Scan for mutant objects _KMUTANT "
-    def __init__(self, config, *args):
-        FileScan.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        FileScan.__init__(self, config, *args, **kwargs)
         config.add_option("SILENT", short_option = 's', default = False,
                           action = 'store_true', help = 'Suppress less meaningful results')
 
@@ -397,9 +394,6 @@ class PSScan(commands.Command):
     meta_info['url'] = 'https://www.volatilesystems.com/'
     meta_info['os'] = ['Win7SP0x86', 'WinXPSP3x86']
     meta_info['version'] = '0.1'
-
-    def __init__(self, config, *args):
-        commands.Command.__init__(self, config, *args)
 
     # Can't be cached until self.kernel_address_space is moved entirely
     # within calculate

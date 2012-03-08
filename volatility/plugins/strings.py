@@ -28,8 +28,8 @@ import volatility.debug as debug
 
 class Strings(taskmods.DllList):
     """Match physical offsets to virtual addresses (may take a while, VERY verbose)"""
-    def __init__(self, config, *args):
-        taskmods.DllList.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        taskmods.DllList.__init__(self, config, *args, **kwargs)
         config.remove_option('PID')
         config.add_option('STRING-FILE', short_option = 's', default = None,
                           help = 'File output in strings format (offset:string)',

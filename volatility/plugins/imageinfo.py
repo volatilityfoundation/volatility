@@ -29,9 +29,6 @@ import volatility.plugins.kdbgscan as kdbg
 
 class ImageInfo(kdbg.KDBGScan):
     """ Identify information for the image """
-    def __init__(self, config, args = None):
-        kdbg.KDBGScan.__init__(self, config, args)
-
     def render_text(self, outfd, data):
         """Renders the calculated data as text to outfd"""
         for k, v in data:
