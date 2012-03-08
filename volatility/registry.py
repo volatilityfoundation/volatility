@@ -6,6 +6,10 @@
 # Michael Cohen <scudette@users.sourceforge.net> 
 # David Collett <daveco@users.sourceforge.net>
 #
+# Subclassing plugin code developed by:
+#
+# Mike Auty <mike.auty@gmail.com>
+#
 # ******************************************************
 #  Version: FLAG $Version: 0.84RC4 Date: Wed May 30 20:48:31 EST 2007$
 # ******************************************************
@@ -39,39 +43,23 @@ functionality. For example we may include a Scanner, Report and File
 classes in the same plugin and have them all automatically loaded.
 """
 
-import os, sys, zipfile
-import volatility.constants as constants
+import os, zipfile
 import volatility.debug as debug
-import volatility.conf as conf
-config = conf.ConfObject()
-
-config.add_option("INFO", default = None, action = "store_true",
-                  cache_invalidator = False,
-                  help = "Print information about all registered objects")
-
-config.add_option("PLUGINS", default = "",
-                  cache_invalidator = False,
-                  help = "Additional plugin directories to use (colon separated)")
+import volatility.plugins as plugins
 
 class PluginImporter(object):
     """This class searches through a comma-separated list of plugins and
        imports all classes found, based on their path and a fixed prefix.
     """
-    def __init__(self, plugins = None):
+    def __init__(self):
         """Gathers all the plugins from config.PLUGINS
            Determines their namespaces and maintains a dictionary of modules to filepaths
            Then imports all modules found
         """
         self.modnames = {}
 
-        # Handle the core plugins
-        if not plugins:
-            plugins = constants.PLUGINPATH
-        else:
-            plugins += ";" + constants.PLUGINPATH
-
         # Handle additional plugins
-        for path in plugins.split(';'):
+        for path in plugins.__path__:
             path = os.path.abspath(path)
 
             for relfile in self.walkzip(path):
@@ -133,207 +121,33 @@ class PluginImporter(object):
                     # This is too early to have had the debug filter lowered to include debugging messages
                     debug.post_mortem(2)
 
-class MemoryRegistry(object):
-    """ Main class to register classes derived from a given parent
-    class. 
+def _get_subclasses(cls):
+    """ Run through subclasses of a particular class
+
+        This returns all classes descended from the main class,
+        _including_ the main class itself.  If showall is set to
+        False (the default) then classes starting with Abstract 
+        will not be returned.
     """
-    ## NOTE - These are class attributes - they will be the same for
-    ## all classes, subclasses and future instances of them. They DO
-    ## NOT get reset for each instance.
-    modules = []
-    module_desc = []
-    module_paths = []
+    for i in cls.__subclasses__():
+        for c in _get_subclasses(i):
+            yield c
+    yield cls
 
-    def __init__(self, ParentClass):
-        """ Search all imported modules for all classes extending
-        ParentClass.
-
-        These will be considered as implementations and added to our
-        internal registry.  
-        """
-        ## Create instance variables
-        self.classes = []
-        self.class_names = []
-        self.order = []
-        self.ParentClass = ParentClass
-
-        for Class in self.get_subclasses(self.ParentClass):
-            if Class != self.ParentClass:
-                ## Check the class for consistency
-                try:
-                    self.check_class(Class)
-                    ## Add the class to ourselves:
-                    self.add_class(Class)
-                except NotImplementedError:
-                    pass
-                except AttributeError, e:
-                    debug.debug("Failed to load {0} '{1}': {2}".format(self.ParentClass, Class, e))
-                    continue
+def get_plugin_classes(cls, showall = False, lower = False):
+    """Returns a dictionary of plugins"""
+    # Plugins all make use of the Abstract concept
+    result = {}
+    for plugin in set(_get_subclasses(cls)):
+        if showall or not (plugin.__name__.startswith("Abstract") or plugin == cls):
+            # FIXME: This is due to not having done things correctly at the start
+            if not showall and plugin.__name__ in ['BufferAddressSpace', 'HiveFileAddressSpace', 'HiveAddressSpace']:
+                continue
+            name = plugin.__name__.split('.')[-1]
+            if lower:
+                name = name.lower()
+            if name not in result:
+                result[name] = plugin
             else:
-                if hasattr(Class, 'register_options'):
-                    Class.register_options(config)
-
-    def get_subclasses(self, cls):
-        """Returns a list of all subclasses"""
-        for i in cls.__subclasses__():
-            for c in self.get_subclasses(i):
-                yield c
-        yield cls
-
-    def add_class(self, Class):
-        """ Adds the class provided to our self. This is here to be
-        possibly over ridden by derived classes.
-        """
-        if Class not in self.classes:
-            self.classes.append(Class)
-
-            # Register any config options required by the class
-            if hasattr(Class, 'register_options'):
-                Class.register_options(config)
-
-            try:
-                self.order.append(Class.order)
-            except AttributeError:
-                self.order.append(10)
-
-    def check_class(self, Class):
-        """ Run a set of tests on the class to ensure its ok to use.
-
-        If there is any problem, we chuck an exception.
-        """
-        prohibited_class_names = ["BufferAddressSpace", "HiveAddressSpace"]
-        if Class.__name__.lower().startswith("abstract"):
-            raise NotImplementedError("This class is an abstract class")
-        if Class.__name__ in prohibited_class_names:
-            raise NotImplementedError("This class name is prohibited from the Registry")
-
-class VolatilityCommandRegistry(MemoryRegistry):
-    """ A class to manage commands """
-    def __getitem__(self, command_name):
-        """ Return the command objects by name """
-        return self.commands[command_name]
-
-    def __contains__(self, item):
-        """ Return whether the item is present in the registry """
-        return item in self.commands
-
-    def __init__(self, ParentClass):
-        MemoryRegistry.__init__(self, ParentClass)
-        self.commands = {}
-
-        for cls in self.classes:
-            ## The name of the class is the command name
-            command = cls.__name__.split('.')[-1].lower()
-            try:
-                raise Exception("Command {0} has already been defined by {1}".format(cls, self.commands[command]))
-            except KeyError:
-                self.commands[command] = cls
-
-class VolatilityObjectRegistry(MemoryRegistry):
-    """ A class to manage objects """
-    def __getitem__(self, object_name):
-        """ Return the objects by name """
-        return self.objects[object_name]
-
-    def __contains__(self, item):
-        """ Return whether the item is present in the registry """
-        return item in self.objects
-
-    def __init__(self, ParentClass):
-        MemoryRegistry.__init__(self, ParentClass)
-        self.objects = {}
-
-        ## First we sort the classes according to their order
-        def sort_function(x, y):
-            try:
-                a = x.order
-            except AttributeError:
-                a = 10
-
-            try:
-                b = y.order
-            except AttributeError:
-                b = 10
-
-            if a < b:
-                return -1
-            elif a == b:
-                return 0
-            return 1
-
-        self.classes.sort(sort_function)
-
-        for cls in self.classes:
-            ## The name of the class is the object name
-            obj = cls.__name__.split('.')[-1]
-            try:
-                raise Exception("Object {0} has already been defined by {1}".format(obj, self.objects[obj]))
-            except KeyError:
-                self.objects[obj] = cls
-
-def print_info():
-    for k, v in globals().items():
-        if isinstance(v, MemoryRegistry):
-            print "\n"
-            print "{0}".format(k)
-            print "-" * len(k)
-
-            result = []
-            max_length = 0
-            for cls in v.classes:
-                try:
-                    doc = cls.__doc__.strip().splitlines()[0]
-                except AttributeError:
-                    doc = 'No docs'
-                clsname = cls.__name__
-                # Convert classes to lower case for plugins so as not to
-                # confuse people who attempt to use the classes as the name for plugins
-                if isinstance(v, VolatilityCommandRegistry):
-                    clsname = cls.__name__.lower()
-                result.append((clsname, doc))
-                max_length = max(len(clsname), max_length)
-
-            ## Sort the result
-            result.sort(key = lambda x: x[0])
-
-            for x in result:
-                print "{0:{2}} - {1:15}".format(x[0], x[1], max_length)
-
-LOCK = 0
-PLUGIN_COMMANDS = None
-OBJECT_CLASSES = None
-AS_CLASSES = None
-PROFILES = None
-SCANNER_CHECKS = None
-
-## This is required for late initialization to avoid dependency nightmare.
-def Init():
-    ## Load all the modules:
-    PluginImporter(config.PLUGINS)
-
-    ## LOCK will ensure that we only initialize once.
-    global LOCK
-    if LOCK:
-        return
-    LOCK = 1
-
-    ## Register all shell commands:
-    import volatility.commands as commands
-    global PLUGIN_COMMANDS
-    PLUGIN_COMMANDS = VolatilityCommandRegistry(commands.Command)
-
-    import volatility.addrspace as addrspace
-    global AS_CLASSES
-    AS_CLASSES = VolatilityObjectRegistry(addrspace.BaseAddressSpace)
-
-    global PROFILES
-    import volatility.obj as obj
-    PROFILES = VolatilityObjectRegistry(obj.Profile)
-
-    import volatility.scan as scan
-    global SCANNER_CHECKS
-    SCANNER_CHECKS = VolatilityObjectRegistry(scan.ScannerCheck)
-
-    if config.INFO:
-        print_info()
-        sys.exit(0)
+                raise Exception("Object {0} has already been defined by {1}".format(name, plugin))
+    return result

@@ -48,20 +48,27 @@ if False:
     import yara
 
 import textwrap
-import volatility.registry as MemoryRegistry
 import volatility.conf as conf
 config = conf.ConfObject()
-import volatility.obj as obj
-import volatility.utils as utils
 import volatility.constants as constants
+import volatility.registry as registry
+import volatility.exceptions as exceptions
+import volatility.obj as obj
 import volatility.debug as debug
+
+import volatility.addrspace as addrspace
+import volatility.commands as commands
+import volatility.scan as scan
+
+config.add_option("INFO", default = None, action = "store_true",
+                  cache_invalidator = False,
+                  help = "Print information about all registered objects")
 
 def list_plugins():
     result = "\n\tSupported Plugin Commands:\n\n"
-    keys = MemoryRegistry.PLUGIN_COMMANDS.commands.keys()
-    keys.sort()
-    for cmdname in keys:
-        command = MemoryRegistry.PLUGIN_COMMANDS[cmdname]
+    cmds = registry.get_plugin_classes(commands.Command, lower = True)
+    for cmdname in sorted(cmds):
+        command = cmds[cmdname]
         helpline = command.help() or ''
         ## Just put the title line (First non empty line) in this
         ## abbreviated display
@@ -81,6 +88,32 @@ def command_help(command):
 
     return result + command.help() + "\n\n"
 
+def print_info():
+    """ Returns the results """
+    categories = {addrspace.BaseAddressSpace: 'Address Spaces',
+                  commands.Command : 'Plugins',
+                  obj.Profile: 'Profiles',
+                  scan.ScannerCheck: 'Scanner Checks'}
+    for c, n in sorted(categories.items()):
+        lower = (c == commands.Command)
+        plugins = registry.get_plugin_classes(c, lower = lower)
+        print "\n"
+        print "{0}".format(n)
+        print "-" * len(n)
+
+        result = []
+        max_length = 0
+        for clsname, cls in sorted(plugins.items()):
+            try:
+                doc = cls.__doc__.strip().splitlines()[0]
+            except AttributeError:
+                doc = 'No docs'
+            result.append((clsname, doc))
+            max_length = max(len(clsname), max_length)
+
+        for (name, doc) in result:
+            print "{0:{2}} - {1:15}".format(name, doc, max_length)
+
 def main():
 
     # Get the version information on every output from the beginning
@@ -90,7 +123,20 @@ def main():
     # Setup the debugging format
     debug.setup()
     # Load up modules in case they set config options
-    MemoryRegistry.Init()
+    registry.PluginImporter()
+
+    ## Register all register_options for the various classes
+    for m in registry.get_plugin_classes(addrspace.BaseAddressSpace, True).values():
+        if hasattr(m, 'register_options'):
+            m.register_options(config)
+    for m in registry.get_plugin_classes(commands.Command, True).values():
+        if hasattr(m, 'register_options'):
+            m.register_options(config)
+
+    if config.INFO:
+        print_info()
+        sys.exit(0)
+
     ## Parse all the options now
     config.parse_options(False)
     # Reset the logging level now we know whether debug is set or not
@@ -98,8 +144,9 @@ def main():
 
     module = None
     ## Try to find the first thing that looks like a module name
+    cmds = registry.get_plugin_classes(commands.Command, lower = True)
     for m in config.args:
-        if m in MemoryRegistry.PLUGIN_COMMANDS.commands:
+        if m in cmds.keys():
             module = m
             break
 
@@ -107,14 +154,9 @@ def main():
         config.parse_options()
         debug.error("You must specify something to do (try -h)")
 
-    if module not in MemoryRegistry.PLUGIN_COMMANDS.commands:
-        config.parse_options()
-        debug.error("Invalid module [{0}].".format(module))
-
-
     try:
-        if module in MemoryRegistry.PLUGIN_COMMANDS.commands:
-            command = MemoryRegistry.PLUGIN_COMMANDS[module](config)
+        if module in cmds.keys():
+            command = cmds[module](config)
 
             ## Register the help cb from the command itself
             config.set_help_hook(obj.Curry(command_help, command))
@@ -124,7 +166,7 @@ def main():
                 debug.error("Please specify a location (-l) or filename (-f)")
 
             command.execute()
-    except utils.VolatilityException, e:
+    except exceptions.VolatilityException, e:
         print e
 
 if __name__ == "__main__":

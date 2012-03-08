@@ -32,6 +32,7 @@
 
 #pylint: disable-msg=C0111
 
+import volatility.obj as obj
 import volatility.registry as registry
 import volatility.debug as debug
 
@@ -50,9 +51,10 @@ def check_valid_profile(option, _opt_str, value, parser):
     # PROFILES may not have been created yet,
     # but the callback should get called once it has
     # during the final parse of the config options
-    if registry.PROFILES:
+    profs = registry.get_plugin_classes(obj.Profile)
+    if profs:
         try:
-            registry.PROFILES[value]
+            profs[value]
         except KeyError:
             debug.error("Invalid profile " + value + " selected")
         setattr(parser.values, option.dest, value)
@@ -86,8 +88,9 @@ class BaseAddressSpace(object):
         if profile_name in PROFILES:
             ret = PROFILES[profile_name]
         else:
-            if profile_name in registry.PROFILES:
-                ret = registry.PROFILES[profile_name]()
+            profs = registry.get_plugin_classes(obj.Profile)
+            if profile_name in profs:
+                ret = profs[profile_name]()
                 PROFILES[profile_name] = ret
             else:
                 raise ASAssertionError, "Invalid profile " + profile_name + " selected"

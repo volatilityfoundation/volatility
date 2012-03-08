@@ -218,8 +218,9 @@ class HiveAddressSpace(addrspace.BaseAddressSpace):
         return (bad_blocks_reg, bad_blocks_mem, total_blocks)
 
 
-class HiveFileAddressSpace:
-    def __init__(self, base):
+class HiveFileAddressSpace(addrspace.BaseAddressSpace):
+    def __init__(self, base, config):
+        addrspace.BaseAddressSpace.__init__(self, base, config)
         self.base = base
 
     def vtop(self, vaddr):

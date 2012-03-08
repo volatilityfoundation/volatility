@@ -23,7 +23,7 @@
 """
 
 import sys
-import volatility.registry as MemoryRegistry
+import volatility.registry as registry
 import volatility.commands as commands
 import volatility.debug as debug
 import volatility.cache as cache
@@ -75,7 +75,7 @@ class TestSuite(commands.Command):
             print "Setting CacheNodes to TestNodes"
             cache.CACHE = cache.CacheTree(cache.CacheStorage(), cls = TestNode, invalidator = cache.CACHE.invalidator)
 
-        cmds = MemoryRegistry.PLUGIN_COMMANDS.commands
+        cmds = registry.get_plugin_classes(commands.Command)
         modules = None
         if self._config.MODULES:
             modules = self._config.MODULES.split(",")
@@ -87,7 +87,7 @@ class TestSuite(commands.Command):
             try:
                 # TODO: This won't work until ConfObejct isn't a singleton class
                 config = conf.ConfObject()
-                command = MemoryRegistry.PLUGIN_COMMANDS[cmdname](config)
+                command = cmds[cmdname](config)
                 if isinstance(command, cache.Testable):
                     print "Executing {0}".format(cmdname)
                     command.test()

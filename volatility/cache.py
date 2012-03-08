@@ -200,7 +200,7 @@ import urlparse
 import volatility.conf as conf
 import volatility.obj as obj
 import volatility.debug as debug
-import volatility.utils as utils
+import volatility.exceptions as exceptions
 import cPickle as pickle
 config = conf.ConfObject()
 
@@ -211,7 +211,7 @@ config.add_option("CACHE-DIRECTORY", default = default_cache_location,
                   cache_invalidator = False,
                   help = "Directory where cache files are stored")
 
-class CacheContainsGenerator(utils.VolatilityException):
+class CacheContainsGenerator(exceptions.VolatilityException):
     """Exception raised when the cache contains a generator"""
     pass
 
@@ -436,7 +436,7 @@ class CacheStorage(object):
             # Encode just the path part, since everything else is taken from relatively safe/already used data
             path = self.encode(url[len(config.LOCATION):])
         else:
-            raise utils.CacheRelativeURLException("Storing non relative URLs is not supported now ({0})".format(url))
+            raise exceptions.CacheRelativeURLException("Storing non relative URLs is not supported now ({0})".format(url))
 
         # Join together the bits we need, and abspath it to ensure it's right for the OS it's on
         path = os.path.abspath(os.path.sep.join([config.CACHE_DIRECTORY,
@@ -458,7 +458,7 @@ class CacheStorage(object):
         # TODO: Ensure a better check for ieee1394/non-cachable address spaces than a bad URL
         try:
             filename = self.filename(url)
-        except utils.CacheRelativeURLException:
+        except exceptions.CacheRelativeURLException:
             debug.debug("NOT Dumping url {0} - relative URLs are not yet supported".format(url))
             return
 

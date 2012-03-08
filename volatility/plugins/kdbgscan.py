@@ -85,7 +85,7 @@ class KDBGScan(commands.Command):
     @cache.CacheDecorator(lambda self: "tests/kdbgscan/kdbg={0}".format(self._config.KDBG))
     def calculate(self):
         """Determines the address space"""
-        profilelist = [ p.__name__ for p in registry.PROFILES.classes ]
+        profilelist = [ p.__name__ for p in registry.get_plugin_classes(obj.Profile).values() ]
 
         proflens = {}
         maxlen = 0

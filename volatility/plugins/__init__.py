@@ -4,6 +4,10 @@ import os
 
 config = conf.ConfObject()
 
+config.add_option("PLUGINS", default = "",
+                  cache_invalidator = False,
+                  help = "Additional plugin directories to use (colon separated)")
+
 # Add the PLUGINPATH, in case we're frozen
 __path__.extend([constants.PLUGINPATH])
 

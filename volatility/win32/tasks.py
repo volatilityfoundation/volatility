@@ -30,10 +30,10 @@
 
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
-import volatility.utils as utils
+import volatility.exceptions as exceptions
 from bisect import bisect_right
 
-class TasksNotFound(utils.VolatilityException):
+class TasksNotFound(exceptions.VolatilityException):
     """Thrown when a tasklist cannot be determined"""
     pass
 

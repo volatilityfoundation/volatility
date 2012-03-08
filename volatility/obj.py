@@ -36,7 +36,7 @@ import re
 import cPickle as pickle # pickle implementation must match that in volatility.cache
 import struct, copy, operator
 import volatility.debug as debug
-import volatility.utils as utils
+import volatility.exceptions as exceptions
 import volatility.plugins.overlays.native_types as native_types
 
 ## Curry is now a standard python feature
@@ -45,6 +45,11 @@ import functools
 Curry = functools.partial
 
 import traceback
+
+class classproperty(property):
+    def __get__(self, cls, owner):
+        # We don't think pylint knows what it's talking about here
+        return self.fget.__get__(None, owner)() #pylint: disable-msg=E1101
 
 def get_bt_string(_e = None):
     return ''.join(traceback.format_stack()[:-3])
@@ -231,7 +236,7 @@ class NoneObject(object):
     __ror__ = __call__
 
 
-class InvalidOffsetError(utils.VolatilityException):
+class InvalidOffsetError(exceptions.VolatilityException):
     """Simple placeholder to identify invalid offsets"""
     pass
 
@@ -983,7 +988,7 @@ class Profile(object):
             if name not in self.types:
                 self.types[name] = Curry(self.object_classes[name], name)
 
-    @utils.classproperty
+    @classproperty
     @classmethod
     def metadata(cls):
         """ Returns a read-only dictionary copy of the metadata associated with a profile """

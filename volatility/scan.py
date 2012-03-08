@@ -53,7 +53,7 @@ class BaseScanner(object):
         ## Build our constraints from the specified ScannerCheck
         ## classes:
         for class_name, args in self.checks:
-            check = registry.SCANNER_CHECKS[class_name](self.buffer, **args)
+            check = registry.get_plugin_classes(ScannerCheck)[class_name](self.buffer, **args)
             self.constraints.append(check)
 
         self.max_length = None
