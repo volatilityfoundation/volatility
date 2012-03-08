@@ -57,7 +57,7 @@ class PluginImporter(object):
     """This class searches through a comma-separated list of plugins and
        imports all classes found, based on their path and a fixed prefix.
     """
-    def __init__(self, plugins):
+    def __init__(self, plugins = None):
         """Gathers all the plugins from config.PLUGINS
            Determines their namespaces and maintains a dictionary of modules to filepaths
            Then imports all modules found
