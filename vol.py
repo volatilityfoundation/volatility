@@ -126,12 +126,8 @@ def main():
     registry.PluginImporter()
 
     ## Register all register_options for the various classes
-    for m in registry.get_plugin_classes(addrspace.BaseAddressSpace, True).values():
-        if hasattr(m, 'register_options'):
-            m.register_options(config)
-    for m in registry.get_plugin_classes(commands.Command, True).values():
-        if hasattr(m, 'register_options'):
-            m.register_options(config)
+    registry.register_global_options(config, addrspace.BaseAddressSpace)
+    registry.register_global_options(config, commands.Command)
 
     if config.INFO:
         print_info()

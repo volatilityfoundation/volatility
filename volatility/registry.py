@@ -151,3 +151,9 @@ def get_plugin_classes(cls, showall = False, lower = False):
             else:
                 raise Exception("Object {0} has already been defined by {1}".format(name, plugin))
     return result
+
+def register_global_options(config, cls):
+    ## Register all register_options for the various classes
+    for m in get_plugin_classes(cls, True).values():
+        if hasattr(m, 'register_options'):
+            m.register_options(config)
