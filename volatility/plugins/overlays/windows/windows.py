@@ -63,7 +63,7 @@ windows_overlay = {
     }],
 
     '_KUSER_SHARED_DATA' : [ None, {
-    'SystemTime' : [ None, ['WinTimeStamp', {}]],
+    'SystemTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
     'TimeZoneBias' : [ None, ['WinTimeStamp', {}]],
     }],
 
