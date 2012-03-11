@@ -66,6 +66,7 @@ class BaseAddressSpace(object):
         options which we may use.
         """
         self.base = base
+        self.name = "Unnamed AS"
         self._config = config
         self.profile = self._set_profile(config.PROFILE)
 
