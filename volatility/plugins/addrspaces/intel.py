@@ -68,10 +68,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         addrspace.BaseAddressSpace.__init__(self, base, config, *args, **kwargs)
 
         ## We can not stack on someone with a dtb
-        try:
-            self.as_assert(not base.paging_address_space, "Can not stack over another paging address space")
-        except AttributeError:
-            pass
+        self.as_assert(not (hasattr(base, 'paging_address_space') and base.paging_address_space), "Can not stack over another paging address space")
 
         self.dtb = dtb or self.load_dtb()
         # No need to set the base, it's already been by the inherited class
