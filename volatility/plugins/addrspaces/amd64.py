@@ -59,7 +59,7 @@ class AMD64PagedMemory(intel.JKIA32PagedMemoryPae):
         look them up later. There are 0x200 entries of 64-bits each
         This means there are 0x1000 bytes of data
         '''
-        buf = self.base.read(self.dtb, 0x1000)
+        buf = self.base.read(self.dtb & 0xffffffffff000, 0x1000)
         self.cache = False
         if buf:
             self.pml4e_cache = struct.unpack('<' + 'Q' * 0x200, buf)
