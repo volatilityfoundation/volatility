@@ -140,7 +140,7 @@ class VtypeHolder(object):
 
         # Create the namemap
         for t in unnamed:
-            newname = "__volstablename_" + hashlib.md5(str(self._tuplify(self.vtypes, self.vtypes[t]))).hexdigest()
+            newname = "__volstablename_" + hashlib.md5(str(self._tuplify(self.vtypes, self.vtypes[t]))).hexdigest() #pylint: disable-msg=E1101
             if t in namemap:
                 print "Conflicting names for {0}: {1} and {2}".format(t, newname, self.namemap[t])
             if newname in self.vtypes:
@@ -174,8 +174,8 @@ class VtypeHolder(object):
         removelist = []
         for i in base.vtypes:
             if i in self.vtypes:
-                inithash = hashlib.md5(str(self._tuplify(base.vtypes, base.vtypes[i]))).hexdigest()
-                diffhash = hashlib.md5(str(self._tuplify(self.vtypes, self.vtypes[i]))).hexdigest()
+                inithash = hashlib.md5(str(self._tuplify(base.vtypes, base.vtypes[i]))).hexdigest() #pylint: disable-msg=E1101
+                diffhash = hashlib.md5(str(self._tuplify(self.vtypes, self.vtypes[i]))).hexdigest() #pylint: disable-msg=E1101
                 if inithash == diffhash:
                     removelist.append(i)
             else:
