@@ -697,10 +697,17 @@ class Array(BaseObject):
             start, stop, step = pos.indices(self.count)
             return [self[i] for i in xrange(start, stop, step)]
 
+        # Handle negative values
+        if pos >= self.count or pos <= -self.count:
+            raise IndexError("array index out of range")
+
+        if pos < 0:
+            pos = self.count - pos
+
         ## Check if the offset is valid
         offset = self.original_offset + pos * self.current.size()
 
-        if pos <= self.count and self.obj_vm.is_valid_address(offset):
+        if self.obj_vm.is_valid_address(offset):
             # Ensure both the true VM and offsetlayer are copied across
             return self.target(offset = offset,
                                vm = self.obj_vm,
