@@ -718,6 +718,12 @@ class Array(BaseObject):
             return NoneObject("Array {0} invalid member {1}".format(self.obj_name, pos),
                               self.obj_vm.profile.strict)
 
+    def __setitem__(self, pos, value):
+        ## Get the item, then try writing to it
+        item = self.__getitem__(pos)
+        if item != None:
+            item.write(value)
+
 class CType(BaseObject):
     """ A CType is an object which represents a c struct """
     def __init__(self, theType, offset, vm, name = None, members = None, struct_size = 0, **kwargs):
