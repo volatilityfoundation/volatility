@@ -799,8 +799,10 @@ class CType(BaseObject):
             return BaseObject.__setattr__(self, attr, value)
         else:
             obj = self.m(attr)
-            if not obj.write(value):
-                raise ValueError("Error writing value to member " + attr)
+            if hasattr(obj, 'write'):
+                if not obj.write(value):
+                    raise ValueError("Error writing value to member " + attr)
+                return
         # If you hit this, consider using obj.newattr('attr', value)
         raise ValueError("Attribute " + attr + " was set after object initialization")
 
