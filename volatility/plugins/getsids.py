@@ -147,17 +147,13 @@ class GetSIDs(taskmods.DllList):
     def render_text(self, outfd, data):
         """Renders the sids as text"""
         for task in data:
-            if not task.Token.is_valid():
+            token = task.get_token()
+
+            if not token:
                 outfd.write("{0} ({1}): Token unreadable\n".format(task.ImageFileName, int(task.UniqueProcessId)))
                 continue
 
-            tok = task.Token.dereference_as("_TOKEN")
-
-            for sa in tok.UserAndGroups.dereference():
-                sid = sa.Sid.dereference_as('_SID')
-                for i in sid.IdentifierAuthority.Value:
-                    id_auth = i
-                sid_string = "S-" + "-".join(str(i) for i in (sid.Revision, id_auth) + tuple(sid.SubAuthority))
+            for sid_string in token.get_sids():
                 if sid_string in well_known_sids:
                     sid_name = " ({0})".format(well_known_sids[sid_string])
                 else:

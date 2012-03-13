@@ -338,6 +338,38 @@ class _EPROCESS(obj.CType):
                 for v in vadroot.traverse():
                     yield v
 
+    def get_token(self):
+        """Return the process's TOKEN object if its valid"""
+    
+        # The dereference checks if the address is valid  
+        # and returns obj.NoneObject if it fails 
+        token = self.Token.dereference_as("_TOKEN")
+        
+        # This check fails if the above dereference failed 
+        # or if any of the _TOKEN specific validity tests failed. 
+        if token.is_valid():
+            return token
+
+        return obj.NoneObject("Cannot get process Token")
+
+class _TOKEN(obj.CType):
+    """A class for Tokens"""
+
+    def is_valid(self):
+        """Override BaseObject.is_valid with some additional
+        checks specific to _TOKEN objects."""
+        return obj.CType.is_valid(self) and self.TokenInUse in (0, 1) and self.SessionId < 10
+
+    def get_sids(self):
+        """Generator for process SID strings"""
+        if self.UserAndGroupCount < 0xFFFF:
+            for sa in self.UserAndGroups.dereference():
+                sid = sa.Sid.dereference_as('_SID')
+                for i in sid.IdentifierAuthority.Value:
+                    id_auth = i
+                yield "S-" + "-".join(str(i) for i in (sid.Revision, id_auth) + 
+                                      tuple(sid.SubAuthority))
+
 class _ETHREAD(obj.CType):
     """ A class for threads """
 
@@ -838,6 +870,7 @@ class WindowsObjectClasses(obj.ProfileModification):
             '_MMVAD_FLAGS': _MMVAD_FLAGS,
             '_MMVAD_FLAGS2': _MMVAD_FLAGS2,
             '_MMSECTION_FLAGS': _MMSECTION_FLAGS,
+            '_TOKEN': _TOKEN,
             })
 
 class AbstractKDBGMod(obj.ProfileModification):
