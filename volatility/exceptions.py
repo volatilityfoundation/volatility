@@ -20,7 +20,7 @@ class AddrSpaceError(VolatilityException):
         self.reasons.append((driver, reason))
 
     def __str__(self):
-        result = str(self) + "\nTried to open image as:\n"
+        result = VolatilityException.__str__(self) + "\nTried to open image as:\n" #pylint: disable-msg=E1101
         for k, v in self.reasons:
             result += " {0}: {1}\n".format(k, v)
 
