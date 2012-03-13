@@ -326,6 +326,18 @@ class _EPROCESS(obj.CType):
     def get_load_modules(self):
         return self._get_modules(self.Peb.Ldr.InLoadOrderModuleList, "InLoadOrderLinks")
 
+    def get_vads(self):
+        """Generator for MMVADs that does not rely on named AS"""
+        procspace = self.get_process_address_space()
+
+        # Potentially get_process_address_space will return obj.NoneObject
+        if procspace:
+            vadroot = obj.Object('_MMVAD', offset = self.VadRoot, vm = procspace)
+
+            if vadroot:
+                for v in vadroot.traverse():
+                    yield v
+
 class _ETHREAD(obj.CType):
     """ A class for threads """
 
@@ -525,21 +537,6 @@ class _MMVAD(obj.CType):
         if offset < 4:
             return obj.NoneObject("MMVAD probably instantiated from a NULL pointer, there is no tag to read")
 
-        ## All VADs are done in the process AS - so we might need to switch
-        ## Address spaces now. Find the eprocess we came from and switch
-        ## AS. Note that all child traversals will be in Process AS. 
-        if vm.name.startswith("Kernel"):
-            # Find the next _EPROCESS along our parent list. To account for 
-            # cases when _EPROCESS is instantiated by dereferencing _ETHREAD.Tcb.Process
-            # or _ETHREAD.ThreadsProcess, we need the alternate obj_name fields. 
-            # For more information see Issue #216. 
-            eprocess = parent
-            while eprocess and eprocess.obj_type != "_EPROCESS":
-                eprocess = eprocess.obj_parent
-
-            # Switch to its process AS
-            vm = eprocess.get_process_address_space()
-
         if not vm:
             return obj.NoneObject("Could not find address space for _MMVAD object")
 
@@ -547,6 +544,8 @@ class _MMVAD(obj.CType):
         ## completely different object here (including
         ## NoneObject). This also means that we can not add any
         ## specialist methods to the _MMVAD class.
+        if vm.name.startswith('Kernel'):
+            debug.warning("Instantiating _MMVAD objects from the wrong address has been deprecated\nPlease use _EPROCESS.get_vads() instead")
 
         ## We must not polute Object's constructor by providing the
         ## members or struct_size we were instantiated with

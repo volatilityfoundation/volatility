@@ -91,7 +91,7 @@ class VADInfo(taskmods.DllList):
         for task in data:
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
-            for vad in task.VadRoot.traverse():
+            for vad in task.get_vads():
                 if vad == None:
                     outfd.write("Error: {0}".format(vad))
                 else:
@@ -157,7 +157,7 @@ class VADTree(VADInfo):
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
             levels = {}
-            for vad in task.VadRoot.traverse():
+            for vad in task.get_vads():
                 if vad:
                     level = levels.get(vad.get_parent().dereference().obj_offset, -1) + 1
                     levels[vad.obj_offset] = level
@@ -171,7 +171,7 @@ class VADTree(VADInfo):
             outfd.write("/* Pid: {0:6} */\n".format(task.UniqueProcessId))
             outfd.write("digraph processtree {\n")
             outfd.write("graph [rankdir = \"TB\"];\n")
-            for vad in task.VadRoot.traverse():
+            for vad in task.get_vads():
                 if vad:
                     if vad.get_parent() and vad.get_parent().dereference():
                         outfd.write("vad_{0:08x} -> vad_{1:08x}\n".format(vad.get_parent().dereference().obj_offset or 0, vad.obj_offset))
@@ -192,7 +192,7 @@ class VADWalk(VADInfo):
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
             outfd.write("Address  Parent   Left     Right    Start    End      Tag\n")
-            for vad in task.VadRoot.traverse():
+            for vad in task.get_vads():
                 # Ignore Vads with bad tags (which we explicitly include as None)
                 if vad:
                     outfd.write("{0:08x} {1:08x} {2:08x} {3:08x} {4:08x} {5:08x} {6:4}\n".format(
@@ -231,7 +231,7 @@ class VADDump(VADInfo):
             offset = task_space.vtop(task.obj_offset)
 
             outfd.write("*" * 72 + "\n")
-            for vad in task.VadRoot.traverse():
+            for vad in task.get_vads():
                 # Ignore Vads with bad tags (which we explicitly include as None)
                 if vad == None:
                     continue

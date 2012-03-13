@@ -66,6 +66,20 @@ class _MMVAD_SHORT(windows._MMVAD_SHORT):
 class _MMVAD_LONG(_MMVAD_SHORT):
     pass
 
+class _EPROCESS(windows._EPROCESS):
+
+    def get_vads(self):
+        """Generator for MMVADs that does not rely on named AS"""
+        procspace = self.get_process_address_space()
+
+        # Potentially get_process_address_space will return obj.NoneObject
+        if procspace != None:
+            vadroot = obj.Object('_MM_AVL_TABLE', offset = self.VadRoot.obj_offset, vm = procspace)
+
+            if vadroot != None:
+                for v in vadroot.traverse():
+                    yield v
+
 class Win2003MMVad(obj.ProfileModification):
     before = ['WindowsOverlay', 'WindowsObjectClasses']
 
@@ -78,7 +92,8 @@ class Win2003MMVad(obj.ProfileModification):
         profile.object_classes.update({'_MM_AVL_TABLE': _MM_AVL_TABLE,
                                        '_MMADDRESS_NODE': windows._MMVAD,
                                        '_MMVAD_SHORT': _MMVAD_SHORT,
-                                       '_MMVAD_LONG': _MMVAD_LONG})
+                                       '_MMVAD_LONG': _MMVAD_LONG,
+                                       '_EPROCESS': _EPROCESS})
 
 class Win2003KDBG(windows.AbstractKDBGMod):
     before = ['WindowsOverlay']
