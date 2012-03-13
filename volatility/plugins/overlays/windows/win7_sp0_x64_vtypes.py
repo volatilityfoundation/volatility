@@ -25,7 +25,7 @@ ntkrnlmp_types = {
 } ],
   '_DEVICE_RELATIONS' : [ 0x10, {
     'Count' : [ 0x0, ['unsigned long']],
-    'Objects' : [ 0x8, ['array', 2, ['pointer', ['_DEVICE_OBJECT']]]],
+    'Objects' : [ 0x8, ['array', 1, ['pointer', ['_DEVICE_OBJECT']]]],
 } ],
   '_IMAGE_ROM_OPTIONAL_HEADER' : [ 0x38, {
     'Magic' : [ 0x0, ['unsigned short']],
@@ -299,7 +299,7 @@ ntkrnlmp_types = {
     'CriticalSection' : [ 0x8, ['_RTL_CRITICAL_SECTION']],
     'RtlHandleTable' : [ 0x30, ['_RTL_HANDLE_TABLE']],
     'NumberOfBuckets' : [ 0x60, ['unsigned long']],
-    'Buckets' : [ 0x68, ['array', 2, ['pointer', ['_RTL_ATOM_TABLE_ENTRY']]]],
+    'Buckets' : [ 0x68, ['array', 1, ['pointer', ['_RTL_ATOM_TABLE_ENTRY']]]],
 } ],
   '_POP_POWER_ACTION' : [ 0xc0, {
     'Updates' : [ 0x0, ['unsigned char']],
@@ -1030,7 +1030,7 @@ ntkrnlmp_types = {
     'TagCount' : [ 0x4, ['unsigned long']],
     'FirstLevel' : [ 0x8, ['unsigned long']],
     'MaxLevel' : [ 0xc, ['unsigned long']],
-    'Entries' : [ 0x10, ['array', 2, ['pointer', ['_RELATION_LIST_ENTRY']]]],
+    'Entries' : [ 0x10, ['array', 1, ['pointer', ['_RELATION_LIST_ENTRY']]]],
 } ],
   '_IO_TIMER' : [ 0x30, {
     'Type' : [ 0x0, ['short']],
@@ -1514,7 +1514,7 @@ ntkrnlmp_types = {
     'EnableMask' : [ 0x1c, ['unsigned char']],
     'SessionId' : [ 0x20, ['unsigned long']],
     'ReplyQueue' : [ 0x20, ['pointer', ['_ETW_REPLY_QUEUE']]],
-    'ReplySlot' : [ 0x20, ['array', 8, ['pointer', ['_ETW_REG_ENTRY']]]],
+    'ReplySlot' : [ 0x20, ['array', 4, ['pointer', ['_ETW_REG_ENTRY']]]],
     'Process' : [ 0x40, ['pointer', ['_EPROCESS']]],
     'Callback' : [ 0x40, ['pointer64', ['void']]],
     'CallbackContext' : [ 0x48, ['pointer64', ['void']]],
@@ -1816,7 +1816,7 @@ ntkrnlmp_types = {
   '_RELATION_LIST_ENTRY' : [ 0x10, {
     'Count' : [ 0x0, ['unsigned long']],
     'MaxCount' : [ 0x4, ['unsigned long']],
-    'Devices' : [ 0x8, ['array', 2, ['pointer', ['_DEVICE_OBJECT']]]],
+    'Devices' : [ 0x8, ['array', 1, ['pointer', ['_DEVICE_OBJECT']]]],
 } ],
   '_HEAP_FREE_ENTRY_EXTRA' : [ 0x4, {
     'TagIndex' : [ 0x0, ['unsigned short']],
@@ -1849,7 +1849,7 @@ ntkrnlmp_types = {
     'ForgetHistoryCounter' : [ 0x804c, ['unsigned long']],
     'Instigator' : [ 0x8050, ['pointer64', ['void']]],
     'NumberOfParticipants' : [ 0x8058, ['unsigned long']],
-    'Participant' : [ 0x8060, ['array', 64, ['pointer', ['_VI_DEADLOCK_NODE']]]],
+    'Participant' : [ 0x8060, ['array', 32, ['pointer', ['_VI_DEADLOCK_NODE']]]],
     'ChildrenCountWatermark' : [ 0x8160, ['long']],
 } ],
   '_KTM' : [ 0x3c0, {
@@ -2175,7 +2175,7 @@ ntkrnlmp_types = {
   '_STACK_TABLE' : [ 0x8088, {
     'NumStackTraces' : [ 0x0, ['unsigned short']],
     'TraceCapacity' : [ 0x2, ['unsigned short']],
-    'StackTrace' : [ 0x8, ['array', 32, ['pointer', ['_OBJECT_REF_TRACE']]]],
+    'StackTrace' : [ 0x8, ['array', 16, ['pointer', ['_OBJECT_REF_TRACE']]]],
     'StackTableHash' : [ 0x88, ['array', 16381, ['unsigned short']]],
 } ],
   '_TOKEN_CONTROL' : [ 0x28, {
@@ -3336,7 +3336,7 @@ ntkrnlmp_types = {
     'Affinity' : [ 0x218, ['_GROUP_AFFINITY']],
     'IdealProcessor' : [ 0x228, ['unsigned long']],
     'UserIdealProcessor' : [ 0x22c, ['unsigned long']],
-    'ApcStatePointer' : [ 0x230, ['array', 4, ['pointer', ['_KAPC_STATE']]]],
+    'ApcStatePointer' : [ 0x230, ['array', 2, ['pointer', ['_KAPC_STATE']]]],
     'SavedApcState' : [ 0x240, ['_KAPC_STATE']],
     'SavedApcStateFill' : [ 0x240, ['array', 43, ['unsigned char']]],
     'WaitReason' : [ 0x26b, ['unsigned char']],
@@ -3491,7 +3491,7 @@ ntkrnlmp_types = {
     'Reserved' : [ 0x3, ['unsigned char']],
 } ],
   '_EX_PUSH_LOCK_CACHE_AWARE' : [ 0x100, {
-    'Locks' : [ 0x0, ['array', 64, ['pointer', ['_EX_PUSH_LOCK']]]],
+    'Locks' : [ 0x0, ['array', 32, ['pointer', ['_EX_PUSH_LOCK']]]],
 } ],
   '_PP_LOOKASIDE_LIST' : [ 0x10, {
     'P' : [ 0x0, ['pointer', ['_GENERAL_LOOKASIDE']]],
@@ -4524,7 +4524,7 @@ ntkrnlmp_types = {
     'PeakUsage' : [ 0x20, ['unsigned long long']],
     'HighestPage' : [ 0x28, ['unsigned long long']],
     'File' : [ 0x30, ['pointer', ['_FILE_OBJECT']]],
-    'Entry' : [ 0x38, ['array', 4, ['pointer', ['_MMMOD_WRITER_MDL_ENTRY']]]],
+    'Entry' : [ 0x38, ['array', 2, ['pointer', ['_MMMOD_WRITER_MDL_ENTRY']]]],
     'PageFileName' : [ 0x48, ['_UNICODE_STRING']],
     'Bitmap' : [ 0x58, ['pointer', ['_RTL_BITMAP']]],
     'EvictStoreBitmap' : [ 0x60, ['pointer', ['_RTL_BITMAP']]],
@@ -4783,7 +4783,7 @@ ntkrnlmp_types = {
     'SubKeyCount' : [ 0x70, ['unsigned long']],
     'KeyBodyListHead' : [ 0x78, ['_LIST_ENTRY']],
     'FreeListEntry' : [ 0x78, ['_LIST_ENTRY']],
-    'KeyBodyArray' : [ 0x88, ['array', 8, ['pointer', ['_CM_KEY_BODY']]]],
+    'KeyBodyArray' : [ 0x88, ['array', 4, ['pointer', ['_CM_KEY_BODY']]]],
     'KcbLastWriteTime' : [ 0xa8, ['_LARGE_INTEGER']],
     'KcbMaxNameLen' : [ 0xb0, ['unsigned short']],
     'KcbMaxValueNameLen' : [ 0xb2, ['unsigned short']],
@@ -4918,7 +4918,7 @@ ntkrnlmp_types = {
     'NumberEntries' : [ 0x0, ['unsigned long']],
 } ],
   '_KTIMER_TABLE' : [ 0x2200, {
-    'TimerExpiry' : [ 0x0, ['array', 128, ['pointer', ['_KTIMER']]]],
+    'TimerExpiry' : [ 0x0, ['array', 64, ['pointer', ['_KTIMER']]]],
     'TimerEntries' : [ 0x200, ['array', 256, ['_KTIMER_TABLE_ENTRY']]],
 } ],
   '_KTIMER_TABLE_ENTRY' : [ 0x20, {
@@ -5169,7 +5169,7 @@ ntkrnlmp_types = {
   '_PNP_ASSIGN_RESOURCES_CONTEXT' : [ 0x10, {
     'IncludeFailedDevices' : [ 0x0, ['unsigned long']],
     'DeviceCount' : [ 0x4, ['unsigned long']],
-    'DeviceList' : [ 0x8, ['array', 2, ['pointer', ['_DEVICE_OBJECT']]]],
+    'DeviceList' : [ 0x8, ['array', 1, ['pointer', ['_DEVICE_OBJECT']]]],
 } ],
   '_PNP_RESOURCE_REQUEST' : [ 0x40, {
     'PhysicalDevice' : [ 0x0, ['pointer', ['_DEVICE_OBJECT']]],
@@ -5435,7 +5435,7 @@ ntkrnlmp_types = {
     'SectionSize' : [ 0x20, ['_LARGE_INTEGER']],
     'ValidDataLength' : [ 0x28, ['_LARGE_INTEGER']],
     'ValidDataGoal' : [ 0x30, ['_LARGE_INTEGER']],
-    'InitialVacbs' : [ 0x38, ['array', 8, ['pointer', ['_VACB']]]],
+    'InitialVacbs' : [ 0x38, ['array', 4, ['pointer', ['_VACB']]]],
     'Vacbs' : [ 0x58, ['pointer', ['pointer', ['_VACB']]]],
     'FileObjectFastRef' : [ 0x60, ['_EX_FAST_REF']],
     'VacbLock' : [ 0x68, ['_EX_PUSH_LOCK']],
@@ -6138,7 +6138,7 @@ ntkrnlmp_types = {
     'DriverInit' : [ 0x58, ['pointer', ['void']]],
     'DriverStartIo' : [ 0x60, ['pointer', ['void']]],
     'DriverUnload' : [ 0x68, ['pointer', ['void']]],
-    'MajorFunction' : [ 0x70, ['array', 56, ['pointer', ['void']]]],
+    'MajorFunction' : [ 0x70, ['array', 28, ['pointer', ['void']]]],
 } ],
   '_FILE_SEGMENT_ELEMENT' : [ 0x8, {
     'Buffer' : [ 0x0, ['pointer64', ['void']]],
@@ -6373,7 +6373,7 @@ ntkrnlmp_types = {
     'MatchId' : [ 0x40, ['unsigned long long']],
     'ProviderEnableInfo' : [ 0x50, ['_TRACE_ENABLE_INFO']],
     'EnableInfo' : [ 0x70, ['array', 8, ['_TRACE_ENABLE_INFO']]],
-    'FilterData' : [ 0x170, ['array', 16, ['pointer', ['_EVENT_FILTER_HEADER']]]],
+    'FilterData' : [ 0x170, ['array', 8, ['pointer', ['_EVENT_FILTER_HEADER']]]],
 } ],
   '_TRACE_ENABLE_INFO' : [ 0x20, {
     'IsEnabled' : [ 0x0, ['unsigned long']],
@@ -6485,7 +6485,7 @@ ntkrnlmp_types = {
     'LockStateSignature' : [ 0x18, ['unsigned long']],
 } ],
   '_OBJECT_DIRECTORY' : [ 0x150, {
-    'HashBuckets' : [ 0x0, ['array', 74, ['pointer', ['_OBJECT_DIRECTORY_ENTRY']]]],
+    'HashBuckets' : [ 0x0, ['array', 37, ['pointer', ['_OBJECT_DIRECTORY_ENTRY']]]],
     'Lock' : [ 0x128, ['_EX_PUSH_LOCK']],
     'DeviceMap' : [ 0x130, ['pointer', ['_DEVICE_MAP']]],
     'SessionId' : [ 0x138, ['unsigned long']],
@@ -6756,7 +6756,7 @@ ntkrnlmp_types = {
     'Index' : [ 0x8, ['unsigned long']],
 } ],
   '_HMAP_DIRECTORY' : [ 0x2000, {
-    'Directory' : [ 0x0, ['array', 2048, ['pointer', ['_HMAP_TABLE']]]],
+    'Directory' : [ 0x0, ['array', 1024, ['pointer', ['_HMAP_TABLE']]]],
 } ],
   '_KAPC' : [ 0x58, {
     'Type' : [ 0x0, ['unsigned char']],
@@ -8322,7 +8322,7 @@ ntkrnlmp_types = {
     'StartLsn' : [ 0x60, ['unsigned long long']],
     'TransState' : [ 0x68, ['unsigned long']],
     'HiveCount' : [ 0x6c, ['unsigned long']],
-    'HiveArray' : [ 0x70, ['array', 14, ['pointer', ['_CMHIVE']]]],
+    'HiveArray' : [ 0x70, ['array', 7, ['pointer', ['_CMHIVE']]]],
 } ],
   '_WHEA_ERROR_RECORD_HEADER_VALIDBITS' : [ 0x4, {
     'PlatformId' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],

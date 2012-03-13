@@ -358,7 +358,7 @@ ntkrnlmp_types = {
     'UserAffinity' : [ 0x1f0, ['unsigned long long']],
     'Process' : [ 0x1f8, ['pointer', ['_KPROCESS']]],
     'Affinity' : [ 0x200, ['unsigned long long']],
-    'ApcStatePointer' : [ 0x208, ['array', 4, ['pointer', ['_KAPC_STATE']]]],
+    'ApcStatePointer' : [ 0x208, ['array', 2, ['pointer', ['_KAPC_STATE']]]],
     'SavedApcState' : [ 0x218, ['_KAPC_STATE']],
     'SavedApcStateFill' : [ 0x218, ['array', 43, ['unsigned char']]],
     'FreezeCount' : [ 0x243, ['unsigned char']],
@@ -462,7 +462,7 @@ ntkrnlmp_types = {
     'Ptr' : [ 0x0, ['pointer64', ['void']]],
 } ],
   '_EX_PUSH_LOCK_CACHE_AWARE' : [ 0x100, {
-    'Locks' : [ 0x0, ['array', 64, ['pointer', ['_EX_PUSH_LOCK']]]],
+    'Locks' : [ 0x0, ['array', 32, ['pointer', ['_EX_PUSH_LOCK']]]],
 } ],
   '_GENERAL_LOOKASIDE' : [ 0x80, {
     'ListHead' : [ 0x0, ['_SLIST_HEADER']],
@@ -1401,7 +1401,7 @@ ntkrnlmp_types = {
     'PeakUsage' : [ 0x20, ['unsigned long long']],
     'HighestPage' : [ 0x28, ['unsigned long long']],
     'File' : [ 0x30, ['pointer', ['_FILE_OBJECT']]],
-    'Entry' : [ 0x38, ['array', 4, ['pointer', ['_MMMOD_WRITER_MDL_ENTRY']]]],
+    'Entry' : [ 0x38, ['array', 2, ['pointer', ['_MMMOD_WRITER_MDL_ENTRY']]]],
     'PageFileName' : [ 0x48, ['_UNICODE_STRING']],
     'Bitmap' : [ 0x58, ['pointer', ['_RTL_BITMAP']]],
     'BitmapHint' : [ 0x60, ['unsigned long']],
@@ -2008,7 +2008,7 @@ ntkrnlmp_types = {
   '_PNP_ASSIGN_RESOURCES_CONTEXT' : [ 0x10, {
     'IncludeFailedDevices' : [ 0x0, ['unsigned long']],
     'DeviceCount' : [ 0x4, ['unsigned long']],
-    'DeviceList' : [ 0x8, ['array', 2, ['pointer', ['_DEVICE_OBJECT']]]],
+    'DeviceList' : [ 0x8, ['array', 1, ['pointer', ['_DEVICE_OBJECT']]]],
 } ],
   '_PNP_RESOURCE_REQUEST' : [ 0x40, {
     'PhysicalDevice' : [ 0x0, ['pointer', ['_DEVICE_OBJECT']]],
@@ -2226,7 +2226,7 @@ ntkrnlmp_types = {
     'SectionSize' : [ 0x20, ['_LARGE_INTEGER']],
     'ValidDataLength' : [ 0x28, ['_LARGE_INTEGER']],
     'ValidDataGoal' : [ 0x30, ['_LARGE_INTEGER']],
-    'InitialVacbs' : [ 0x38, ['array', 8, ['pointer', ['_VACB']]]],
+    'InitialVacbs' : [ 0x38, ['array', 4, ['pointer', ['_VACB']]]],
     'Vacbs' : [ 0x58, ['pointer', ['pointer', ['_VACB']]]],
     'FileObjectFastRef' : [ 0x60, ['_EX_FAST_REF']],
     'ActiveVacb' : [ 0x68, ['pointer', ['_VACB']]],
@@ -2882,7 +2882,7 @@ ntkrnlmp_types = {
     'PatternLength' : [ 0x10, ['unsigned long']],
 } ],
   '_HMAP_DIRECTORY' : [ 0x2000, {
-    'Directory' : [ 0x0, ['array', 2048, ['pointer', ['_HMAP_TABLE']]]],
+    'Directory' : [ 0x0, ['array', 1024, ['pointer', ['_HMAP_TABLE']]]],
 } ],
   '_WHEA_NMI_ERROR' : [ 0x8, {
     'Data' : [ 0x0, ['array', 8, ['unsigned char']]],
@@ -3597,7 +3597,7 @@ ntkrnlmp_types = {
     'DriverInit' : [ 0x58, ['pointer', ['void']]],
     'DriverStartIo' : [ 0x60, ['pointer', ['void']]],
     'DriverUnload' : [ 0x68, ['pointer', ['void']]],
-    'MajorFunction' : [ 0x70, ['array', 56, ['pointer', ['void']]]],
+    'MajorFunction' : [ 0x70, ['array', 28, ['pointer', ['void']]]],
 } ],
   '_SID_AND_ATTRIBUTES' : [ 0x10, {
     'Sid' : [ 0x0, ['pointer64', ['void']]],
@@ -3749,7 +3749,7 @@ ntkrnlmp_types = {
     'SubKeyCount' : [ 0x50, ['unsigned long']],
     'KeyBodyListHead' : [ 0x58, ['_LIST_ENTRY']],
     'FreeListEntry' : [ 0x58, ['_LIST_ENTRY']],
-    'KeyBodyArray' : [ 0x68, ['array', 8, ['pointer', ['_CM_KEY_BODY']]]],
+    'KeyBodyArray' : [ 0x68, ['array', 4, ['pointer', ['_CM_KEY_BODY']]]],
     'DelayCloseEntry' : [ 0x88, ['pointer64', ['void']]],
     'KcbLastWriteTime' : [ 0x90, ['_LARGE_INTEGER']],
     'KcbMaxNameLen' : [ 0x98, ['unsigned short']],
@@ -4452,7 +4452,7 @@ ntkrnlmp_types = {
     'StartLsn' : [ 0x60, ['unsigned long long']],
     'TransState' : [ 0x68, ['unsigned long']],
     'HiveCount' : [ 0x6c, ['unsigned long']],
-    'HiveArray' : [ 0x70, ['array', 16, ['pointer', ['_CMHIVE']]]],
+    'HiveArray' : [ 0x70, ['array', 8, ['pointer', ['_CMHIVE']]]],
 } ],
   '_CM_PARTIAL_RESOURCE_LIST' : [ 0x1c, {
     'Version' : [ 0x0, ['unsigned short']],
@@ -5120,7 +5120,7 @@ ntkrnlmp_types = {
 } ],
   '_DEVICE_RELATIONS' : [ 0x10, {
     'Count' : [ 0x0, ['unsigned long']],
-    'Objects' : [ 0x8, ['array', 2, ['pointer', ['_DEVICE_OBJECT']]]],
+    'Objects' : [ 0x8, ['array', 1, ['pointer', ['_DEVICE_OBJECT']]]],
 } ],
   '_IMAGE_ROM_OPTIONAL_HEADER' : [ 0x38, {
     'Magic' : [ 0x0, ['unsigned short']],
@@ -5354,7 +5354,7 @@ ntkrnlmp_types = {
     'CriticalSection' : [ 0x8, ['_RTL_CRITICAL_SECTION']],
     'RtlHandleTable' : [ 0x30, ['_RTL_HANDLE_TABLE']],
     'NumberOfBuckets' : [ 0x60, ['unsigned long']],
-    'Buckets' : [ 0x68, ['array', 2, ['pointer', ['_RTL_ATOM_TABLE_ENTRY']]]],
+    'Buckets' : [ 0x68, ['array', 1, ['pointer', ['_RTL_ATOM_TABLE_ENTRY']]]],
 } ],
   '_POP_POWER_ACTION' : [ 0xb0, {
     'Updates' : [ 0x0, ['unsigned char']],
@@ -6006,7 +6006,7 @@ ntkrnlmp_types = {
     'List' : [ 0x78, ['_LIST_ENTRY']],
 } ],
   '_OBJECT_DIRECTORY' : [ 0x150, {
-    'HashBuckets' : [ 0x0, ['array', 74, ['pointer', ['_OBJECT_DIRECTORY_ENTRY']]]],
+    'HashBuckets' : [ 0x0, ['array', 37, ['pointer', ['_OBJECT_DIRECTORY_ENTRY']]]],
     'Lock' : [ 0x128, ['_EX_PUSH_LOCK']],
     'DeviceMap' : [ 0x130, ['pointer', ['_DEVICE_MAP']]],
     'SessionId' : [ 0x138, ['unsigned long']],
@@ -6347,7 +6347,7 @@ ntkrnlmp_types = {
     'Flags' : [ 0x1a, ['unsigned short']],
     'EnableMask' : [ 0x1c, ['unsigned char']],
     'ReplyQueue' : [ 0x20, ['pointer', ['_ETW_REPLY_QUEUE']]],
-    'ReplySlot' : [ 0x20, ['array', 8, ['pointer', ['_ETW_REG_ENTRY']]]],
+    'ReplySlot' : [ 0x20, ['array', 4, ['pointer', ['_ETW_REG_ENTRY']]]],
     'Process' : [ 0x40, ['pointer', ['_EPROCESS']]],
     'Callback' : [ 0x40, ['pointer64', ['void']]],
     'CallbackContext' : [ 0x48, ['pointer64', ['void']]],
@@ -6665,7 +6665,7 @@ ntkrnlmp_types = {
     'ForgetHistoryCounter' : [ 0x804c, ['unsigned long']],
     'Instigator' : [ 0x8050, ['pointer64', ['void']]],
     'NumberOfParticipants' : [ 0x8058, ['unsigned long']],
-    'Participant' : [ 0x8060, ['array', 64, ['pointer', ['_VI_DEADLOCK_NODE']]]],
+    'Participant' : [ 0x8060, ['array', 32, ['pointer', ['_VI_DEADLOCK_NODE']]]],
     'CacheReductionInProgress' : [ 0x8160, ['unsigned long']],
 } ],
   '_POP_DISPLAY_RESUME_CONTEXT' : [ 0x80, {
