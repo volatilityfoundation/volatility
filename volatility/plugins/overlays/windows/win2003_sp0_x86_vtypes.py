@@ -1,4 +1,4 @@
-nt_types = {
+ntkrnlmp_types = {
   'LIST_ENTRY64' : [ 0x10, {
     'Flink' : [ 0x0, ['unsigned long long']],
     'Blink' : [ 0x8, ['unsigned long long']],
@@ -333,13 +333,13 @@ nt_types = {
 } ],
   '_EX_FAST_REF' : [ 0x4, {
     'Object' : [ 0x0, ['pointer', ['void']]],
-    'RefCnt' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 3)]],
+    'RefCnt' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 3, native_type='unsigned long')]],
     'Value' : [ 0x0, ['unsigned long']],
 } ],
   '_EX_PUSH_LOCK' : [ 0x4, {
-    'Waiting' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'Exclusive' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'Shared' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 32)]],
+    'Waiting' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'Exclusive' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'Shared' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 32, native_type='unsigned long')]],
     'Value' : [ 0x0, ['unsigned long']],
     'Ptr' : [ 0x0, ['pointer', ['void']]],
 } ],
@@ -351,14 +351,14 @@ nt_types = {
     'ShareCount' : [ 0x1c, ['unsigned long']],
     'Exclusive' : [ 0x20, ['unsigned char']],
 } ],
-  '_EX_PUSH_LOCK_CACHE_AWARE' : [ 0x4, {
-    'Locks' : [ 0x0, ['array', 1, ['pointer', ['_EX_PUSH_LOCK']]]],
+  '_EX_PUSH_LOCK_CACHE_AWARE' : [ 0x80, {
+    'Locks' : [ 0x0, ['array', 32, ['pointer', ['_EX_PUSH_LOCK']]]],
 } ],
   '_ETHREAD' : [ 0x260, {
     'Tcb' : [ 0x0, ['_KTHREAD']],
     'CreateTime' : [ 0x1c8, ['_LARGE_INTEGER']],
-    'NestedFaultCount' : [ 0x1c8, ['BitField', dict(start_bit = 0, end_bit = 2)]],
-    'ApcNeeded' : [ 0x1c8, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'NestedFaultCount' : [ 0x1c8, ['BitField', dict(start_bit = 0, end_bit = 2, native_type='unsigned long')]],
+    'ApcNeeded' : [ 0x1c8, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
     'ExitTime' : [ 0x1d0, ['_LARGE_INTEGER']],
     'LpcReplyChain' : [ 0x1d0, ['_LIST_ENTRY']],
     'KeyedWaitChain' : [ 0x1d0, ['_LIST_ENTRY']],
@@ -390,24 +390,24 @@ nt_types = {
     'ReadClusterSize' : [ 0x248, ['unsigned long']],
     'GrantedAccess' : [ 0x24c, ['unsigned long']],
     'CrossThreadFlags' : [ 0x250, ['unsigned long']],
-    'Terminated' : [ 0x250, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'DeadThread' : [ 0x250, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'HideFromDebugger' : [ 0x250, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'ActiveImpersonationInfo' : [ 0x250, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'SystemThread' : [ 0x250, ['BitField', dict(start_bit = 4, end_bit = 5)]],
-    'HardErrorsAreDisabled' : [ 0x250, ['BitField', dict(start_bit = 5, end_bit = 6)]],
-    'BreakOnTermination' : [ 0x250, ['BitField', dict(start_bit = 6, end_bit = 7)]],
-    'SkipCreationMsg' : [ 0x250, ['BitField', dict(start_bit = 7, end_bit = 8)]],
-    'SkipTerminationMsg' : [ 0x250, ['BitField', dict(start_bit = 8, end_bit = 9)]],
+    'Terminated' : [ 0x250, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'DeadThread' : [ 0x250, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'HideFromDebugger' : [ 0x250, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'ActiveImpersonationInfo' : [ 0x250, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned long')]],
+    'SystemThread' : [ 0x250, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned long')]],
+    'HardErrorsAreDisabled' : [ 0x250, ['BitField', dict(start_bit = 5, end_bit = 6, native_type='unsigned long')]],
+    'BreakOnTermination' : [ 0x250, ['BitField', dict(start_bit = 6, end_bit = 7, native_type='unsigned long')]],
+    'SkipCreationMsg' : [ 0x250, ['BitField', dict(start_bit = 7, end_bit = 8, native_type='unsigned long')]],
+    'SkipTerminationMsg' : [ 0x250, ['BitField', dict(start_bit = 8, end_bit = 9, native_type='unsigned long')]],
     'SameThreadPassiveFlags' : [ 0x254, ['unsigned long']],
-    'ActiveExWorker' : [ 0x254, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'ExWorkerCanWaitUser' : [ 0x254, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'MemoryMaker' : [ 0x254, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'KeyedEventInUse' : [ 0x254, ['BitField', dict(start_bit = 3, end_bit = 4)]],
+    'ActiveExWorker' : [ 0x254, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'ExWorkerCanWaitUser' : [ 0x254, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'MemoryMaker' : [ 0x254, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'KeyedEventInUse' : [ 0x254, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned long')]],
     'SameThreadApcFlags' : [ 0x258, ['unsigned long']],
-    'LpcReceivedMsgIdValid' : [ 0x258, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'LpcExitThreadCalled' : [ 0x258, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'AddressSpaceOwner' : [ 0x258, ['BitField', dict(start_bit = 2, end_bit = 3)]],
+    'LpcReceivedMsgIdValid' : [ 0x258, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned char')]],
+    'LpcExitThreadCalled' : [ 0x258, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned char')]],
+    'AddressSpaceOwner' : [ 0x258, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned char')]],
     'ForwardClusterOnly' : [ 0x25c, ['unsigned char']],
     'DisablePageFaultClustering' : [ 0x25d, ['unsigned char']],
 } ],
@@ -481,31 +481,31 @@ nt_types = {
     'ModifiedPageCount' : [ 0x240, ['unsigned long']],
     'JobStatus' : [ 0x244, ['unsigned long']],
     'Flags' : [ 0x248, ['unsigned long']],
-    'CreateReported' : [ 0x248, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'NoDebugInherit' : [ 0x248, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'ProcessExiting' : [ 0x248, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'ProcessDelete' : [ 0x248, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'Wow64SplitPages' : [ 0x248, ['BitField', dict(start_bit = 4, end_bit = 5)]],
-    'VmDeleted' : [ 0x248, ['BitField', dict(start_bit = 5, end_bit = 6)]],
-    'OutswapEnabled' : [ 0x248, ['BitField', dict(start_bit = 6, end_bit = 7)]],
-    'Outswapped' : [ 0x248, ['BitField', dict(start_bit = 7, end_bit = 8)]],
-    'ForkFailed' : [ 0x248, ['BitField', dict(start_bit = 8, end_bit = 9)]],
-    'Wow64VaSpace4Gb' : [ 0x248, ['BitField', dict(start_bit = 9, end_bit = 10)]],
-    'AddressSpaceInitialized' : [ 0x248, ['BitField', dict(start_bit = 10, end_bit = 12)]],
-    'SetTimerResolution' : [ 0x248, ['BitField', dict(start_bit = 12, end_bit = 13)]],
-    'BreakOnTermination' : [ 0x248, ['BitField', dict(start_bit = 13, end_bit = 14)]],
-    'SessionCreationUnderway' : [ 0x248, ['BitField', dict(start_bit = 14, end_bit = 15)]],
-    'WriteWatch' : [ 0x248, ['BitField', dict(start_bit = 15, end_bit = 16)]],
-    'ProcessInSession' : [ 0x248, ['BitField', dict(start_bit = 16, end_bit = 17)]],
-    'OverrideAddressSpace' : [ 0x248, ['BitField', dict(start_bit = 17, end_bit = 18)]],
-    'HasAddressSpace' : [ 0x248, ['BitField', dict(start_bit = 18, end_bit = 19)]],
-    'LaunchPrefetched' : [ 0x248, ['BitField', dict(start_bit = 19, end_bit = 20)]],
-    'InjectInpageErrors' : [ 0x248, ['BitField', dict(start_bit = 20, end_bit = 21)]],
-    'VmTopDown' : [ 0x248, ['BitField', dict(start_bit = 21, end_bit = 22)]],
-    'ImageNotifyDone' : [ 0x248, ['BitField', dict(start_bit = 22, end_bit = 23)]],
-    'PdeUpdateNeeded' : [ 0x248, ['BitField', dict(start_bit = 23, end_bit = 24)]],
-    'VdmAllowed' : [ 0x248, ['BitField', dict(start_bit = 24, end_bit = 25)]],
-    'Unused' : [ 0x248, ['BitField', dict(start_bit = 25, end_bit = 32)]],
+    'CreateReported' : [ 0x248, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'NoDebugInherit' : [ 0x248, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'ProcessExiting' : [ 0x248, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'ProcessDelete' : [ 0x248, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned long')]],
+    'Wow64SplitPages' : [ 0x248, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned long')]],
+    'VmDeleted' : [ 0x248, ['BitField', dict(start_bit = 5, end_bit = 6, native_type='unsigned long')]],
+    'OutswapEnabled' : [ 0x248, ['BitField', dict(start_bit = 6, end_bit = 7, native_type='unsigned long')]],
+    'Outswapped' : [ 0x248, ['BitField', dict(start_bit = 7, end_bit = 8, native_type='unsigned long')]],
+    'ForkFailed' : [ 0x248, ['BitField', dict(start_bit = 8, end_bit = 9, native_type='unsigned long')]],
+    'Wow64VaSpace4Gb' : [ 0x248, ['BitField', dict(start_bit = 9, end_bit = 10, native_type='unsigned long')]],
+    'AddressSpaceInitialized' : [ 0x248, ['BitField', dict(start_bit = 10, end_bit = 12, native_type='unsigned long')]],
+    'SetTimerResolution' : [ 0x248, ['BitField', dict(start_bit = 12, end_bit = 13, native_type='unsigned long')]],
+    'BreakOnTermination' : [ 0x248, ['BitField', dict(start_bit = 13, end_bit = 14, native_type='unsigned long')]],
+    'SessionCreationUnderway' : [ 0x248, ['BitField', dict(start_bit = 14, end_bit = 15, native_type='unsigned long')]],
+    'WriteWatch' : [ 0x248, ['BitField', dict(start_bit = 15, end_bit = 16, native_type='unsigned long')]],
+    'ProcessInSession' : [ 0x248, ['BitField', dict(start_bit = 16, end_bit = 17, native_type='unsigned long')]],
+    'OverrideAddressSpace' : [ 0x248, ['BitField', dict(start_bit = 17, end_bit = 18, native_type='unsigned long')]],
+    'HasAddressSpace' : [ 0x248, ['BitField', dict(start_bit = 18, end_bit = 19, native_type='unsigned long')]],
+    'LaunchPrefetched' : [ 0x248, ['BitField', dict(start_bit = 19, end_bit = 20, native_type='unsigned long')]],
+    'InjectInpageErrors' : [ 0x248, ['BitField', dict(start_bit = 20, end_bit = 21, native_type='unsigned long')]],
+    'VmTopDown' : [ 0x248, ['BitField', dict(start_bit = 21, end_bit = 22, native_type='unsigned long')]],
+    'ImageNotifyDone' : [ 0x248, ['BitField', dict(start_bit = 22, end_bit = 23, native_type='unsigned long')]],
+    'PdeUpdateNeeded' : [ 0x248, ['BitField', dict(start_bit = 23, end_bit = 24, native_type='unsigned long')]],
+    'VdmAllowed' : [ 0x248, ['BitField', dict(start_bit = 24, end_bit = 25, native_type='unsigned long')]],
+    'Unused' : [ 0x248, ['BitField', dict(start_bit = 25, end_bit = 32, native_type='unsigned long')]],
     'ExitStatus' : [ 0x24c, ['long']],
     'NextPageColor' : [ 0x250, ['unsigned short']],
     'SubSystemMinorVersion' : [ 0x252, ['unsigned char']],
@@ -611,54 +611,54 @@ nt_types = {
   '_KEVENT' : [ 0x10, {
     'Header' : [ 0x0, ['_DISPATCHER_HEADER']],
 } ],
-  '__unnamed_1126' : [ 0x208, {
+  '__unnamed_1128' : [ 0x208, {
     'FnArea' : [ 0x0, ['_FNSAVE_FORMAT']],
     'FxArea' : [ 0x0, ['_FXSAVE_FORMAT']],
 } ],
   '_FX_SAVE_AREA' : [ 0x210, {
-    'U' : [ 0x0, ['__unnamed_1126']],
+    'U' : [ 0x0, ['__unnamed_1128']],
     'NpxSavedCpu' : [ 0x208, ['unsigned long']],
     'Cr0NpxState' : [ 0x20c, ['unsigned long']],
 } ],
-  '__unnamed_1130' : [ 0x4, {
+  '__unnamed_1132' : [ 0x4, {
     'Flink' : [ 0x0, ['unsigned long']],
     'WsIndex' : [ 0x0, ['unsigned long']],
     'Event' : [ 0x0, ['pointer', ['_KEVENT']]],
     'ReadStatus' : [ 0x0, ['long']],
     'NextStackPfn' : [ 0x0, ['_SINGLE_LIST_ENTRY']],
 } ],
-  '__unnamed_1134' : [ 0x4, {
+  '__unnamed_1136' : [ 0x4, {
     'Blink' : [ 0x0, ['unsigned long']],
     'ShareCount' : [ 0x0, ['unsigned long']],
 } ],
-  '__unnamed_1137' : [ 0x4, {
+  '__unnamed_1139' : [ 0x4, {
     'ShortFlags' : [ 0x0, ['unsigned short']],
     'ReferenceCount' : [ 0x2, ['unsigned short']],
 } ],
-  '__unnamed_1139' : [ 0x4, {
+  '__unnamed_113b' : [ 0x4, {
     'e1' : [ 0x0, ['_MMPFNENTRY']],
-    'e2' : [ 0x0, ['__unnamed_1137']],
+    'e2' : [ 0x0, ['__unnamed_1139']],
 } ],
-  '__unnamed_1142' : [ 0x4, {
+  '__unnamed_1144' : [ 0x4, {
     'EntireFrame' : [ 0x0, ['unsigned long']],
-    'PteFrame' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 26)]],
-    'InPageError' : [ 0x0, ['BitField', dict(start_bit = 26, end_bit = 27)]],
-    'VerifierAllocation' : [ 0x0, ['BitField', dict(start_bit = 27, end_bit = 28)]],
-    'AweAllocation' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 29)]],
-    'LockCharged' : [ 0x0, ['BitField', dict(start_bit = 29, end_bit = 30)]],
-    'KernelStack' : [ 0x0, ['BitField', dict(start_bit = 30, end_bit = 31)]],
-    'MustBeCached' : [ 0x0, ['BitField', dict(start_bit = 31, end_bit = 32)]],
+    'PteFrame' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 26, native_type='unsigned long')]],
+    'InPageError' : [ 0x0, ['BitField', dict(start_bit = 26, end_bit = 27, native_type='unsigned long')]],
+    'VerifierAllocation' : [ 0x0, ['BitField', dict(start_bit = 27, end_bit = 28, native_type='unsigned long')]],
+    'AweAllocation' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 29, native_type='unsigned long')]],
+    'LockCharged' : [ 0x0, ['BitField', dict(start_bit = 29, end_bit = 30, native_type='unsigned long')]],
+    'KernelStack' : [ 0x0, ['BitField', dict(start_bit = 30, end_bit = 31, native_type='unsigned long')]],
+    'MustBeCached' : [ 0x0, ['BitField', dict(start_bit = 31, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_MMPFN' : [ 0x18, {
-    'u1' : [ 0x0, ['__unnamed_1130']],
+    'u1' : [ 0x0, ['__unnamed_1132']],
     'PteAddress' : [ 0x4, ['pointer', ['_MMPTE']]],
-    'u2' : [ 0x8, ['__unnamed_1134']],
-    'u3' : [ 0xc, ['__unnamed_1139']],
+    'u2' : [ 0x8, ['__unnamed_1136']],
+    'u3' : [ 0xc, ['__unnamed_113b']],
     'OriginalPte' : [ 0x10, ['_MMPTE']],
     'AweReferenceCount' : [ 0x10, ['long']],
-    'u4' : [ 0x14, ['__unnamed_1142']],
+    'u4' : [ 0x14, ['__unnamed_1144']],
 } ],
-  '__unnamed_114c' : [ 0x4, {
+  '__unnamed_114e' : [ 0x4, {
     'Long' : [ 0x0, ['unsigned long']],
     'Flush' : [ 0x0, ['_HARDWARE_PTE']],
     'Hard' : [ 0x0, ['_MMPTE_HARDWARE']],
@@ -669,7 +669,7 @@ nt_types = {
     'List' : [ 0x0, ['_MMPTE_LIST']],
 } ],
   '_MMPTE' : [ 0x4, {
-    'u' : [ 0x0, ['__unnamed_114c']],
+    'u' : [ 0x0, ['__unnamed_114e']],
 } ],
   '_MMPAGING_FILE' : [ 0x3c, {
     'Size' : [ 0x0, ['unsigned long']],
@@ -683,10 +683,10 @@ nt_types = {
     'Entry' : [ 0x20, ['array', 2, ['pointer', ['_MMMOD_WRITER_MDL_ENTRY']]]],
     'PageFileName' : [ 0x28, ['_UNICODE_STRING']],
     'Bitmap' : [ 0x30, ['pointer', ['_RTL_BITMAP']]],
-    'PageFileNumber' : [ 0x34, ['BitField', dict(start_bit = 0, end_bit = 4)]],
-    'ReferenceCount' : [ 0x34, ['BitField', dict(start_bit = 4, end_bit = 8)]],
-    'BootPartition' : [ 0x34, ['BitField', dict(start_bit = 8, end_bit = 9)]],
-    'Reserved' : [ 0x34, ['BitField', dict(start_bit = 9, end_bit = 32)]],
+    'PageFileNumber' : [ 0x34, ['BitField', dict(start_bit = 0, end_bit = 4, native_type='unsigned long')]],
+    'ReferenceCount' : [ 0x34, ['BitField', dict(start_bit = 4, end_bit = 8, native_type='unsigned long')]],
+    'BootPartition' : [ 0x34, ['BitField', dict(start_bit = 8, end_bit = 9, native_type='unsigned long')]],
+    'Reserved' : [ 0x34, ['BitField', dict(start_bit = 9, end_bit = 32, native_type='unsigned long')]],
     'FileHandle' : [ 0x38, ['pointer', ['void']]],
 } ],
   '_EXCEPTION_RECORD64' : [ 0x98, {
@@ -816,7 +816,7 @@ nt_types = {
     'MaxInstructions' : [ 0x14, ['unsigned long']],
     'TotalInstructions' : [ 0x18, ['unsigned long']],
 } ],
-  '__unnamed_11c8' : [ 0x28, {
+  '__unnamed_11ca' : [ 0x28, {
     'ReadMemory' : [ 0x0, ['_DBGKD_READ_MEMORY64']],
     'WriteMemory' : [ 0x0, ['_DBGKD_WRITE_MEMORY64']],
     'GetContext' : [ 0x0, ['_DBGKD_GET_CONTEXT']],
@@ -845,9 +845,9 @@ nt_types = {
     'ProcessorLevel' : [ 0x4, ['unsigned short']],
     'Processor' : [ 0x6, ['unsigned short']],
     'ReturnStatus' : [ 0x8, ['long']],
-    'u' : [ 0x10, ['__unnamed_11c8']],
+    'u' : [ 0x10, ['__unnamed_11ca']],
 } ],
-  '__unnamed_11cf' : [ 0x28, {
+  '__unnamed_11d1' : [ 0x28, {
     'ReadMemory' : [ 0x0, ['_DBGKD_READ_MEMORY32']],
     'WriteMemory' : [ 0x0, ['_DBGKD_WRITE_MEMORY32']],
     'ReadMemory64' : [ 0x0, ['_DBGKD_READ_MEMORY64']],
@@ -874,16 +874,16 @@ nt_types = {
     'ProcessorLevel' : [ 0x4, ['unsigned short']],
     'Processor' : [ 0x6, ['unsigned short']],
     'ReturnStatus' : [ 0x8, ['long']],
-    'u' : [ 0xc, ['__unnamed_11cf']],
+    'u' : [ 0xc, ['__unnamed_11d1']],
 } ],
-  '__unnamed_11de' : [ 0x8, {
+  '__unnamed_11e0' : [ 0x8, {
     'FileOffset' : [ 0x0, ['_LARGE_INTEGER']],
     'ActiveCount' : [ 0x0, ['unsigned short']],
 } ],
   '_VACB' : [ 0x18, {
     'BaseAddress' : [ 0x0, ['pointer', ['void']]],
     'SharedCacheMap' : [ 0x4, ['pointer', ['_SHARED_CACHE_MAP']]],
-    'Overlay' : [ 0x8, ['__unnamed_11de']],
+    'Overlay' : [ 0x8, ['__unnamed_11e0']],
     'LruList' : [ 0x10, ['_LIST_ENTRY']],
 } ],
   '_SHARED_CACHE_MAP' : [ 0x130, {
@@ -933,11 +933,11 @@ nt_types = {
     'Reference' : [ 0x0, ['long']],
     'SpecialReference' : [ 0x4, ['long']],
 } ],
-  '__unnamed_1200' : [ 0x10, {
+  '__unnamed_1202' : [ 0x10, {
     'FreeListsInUseUlong' : [ 0x0, ['array', 4, ['unsigned long']]],
     'FreeListsInUseBytes' : [ 0x0, ['array', 16, ['unsigned char']]],
 } ],
-  '__unnamed_1202' : [ 0x2, {
+  '__unnamed_1204' : [ 0x2, {
     'FreeListsInUseTerminate' : [ 0x0, ['unsigned short']],
     'DecommitCount' : [ 0x0, ['unsigned short']],
 } ],
@@ -965,8 +965,8 @@ nt_types = {
     'AlignMask' : [ 0x4c, ['unsigned long']],
     'VirtualAllocdBlocks' : [ 0x50, ['_LIST_ENTRY']],
     'Segments' : [ 0x58, ['array', 64, ['pointer', ['_HEAP_SEGMENT']]]],
-    'u' : [ 0x158, ['__unnamed_1200']],
-    'u2' : [ 0x168, ['__unnamed_1202']],
+    'u' : [ 0x158, ['__unnamed_1202']],
+    'u2' : [ 0x168, ['__unnamed_1204']],
     'AllocatorBackTraceIndex' : [ 0x16a, ['unsigned short']],
     'NonDedicatedListLength' : [ 0x16c, ['unsigned long']],
     'LargeBlocksIndex' : [ 0x170, ['pointer', ['void']]],
@@ -1195,7 +1195,7 @@ nt_types = {
     'MmSectionFlags' : [ 0x24, ['pointer', ['_MMSECTION_FLAGS']]],
     'MmSubSectionFlags' : [ 0x28, ['pointer', ['_MMSUBSECTION_FLAGS']]],
 } ],
-  '__unnamed_12e8' : [ 0x4, {
+  '__unnamed_12ea' : [ 0x4, {
     'LongFlags' : [ 0x0, ['unsigned long']],
     'Flags' : [ 0x0, ['_MMSECTION_FLAGS']],
 } ],
@@ -1207,7 +1207,7 @@ nt_types = {
     'NumberOfMappedViews' : [ 0x14, ['unsigned long']],
     'NumberOfSystemCacheViews' : [ 0x18, ['unsigned long']],
     'NumberOfUserReferences' : [ 0x1c, ['unsigned long']],
-    'u' : [ 0x20, ['__unnamed_12e8']],
+    'u' : [ 0x20, ['__unnamed_12ea']],
     'FilePointer' : [ 0x24, ['pointer', ['_FILE_OBJECT']]],
     'WaitingForDeletion' : [ 0x28, ['pointer', ['_EVENT_COUNTER']]],
     'ModifiedWriteCount' : [ 0x2c, ['unsigned short']],
@@ -1227,25 +1227,25 @@ nt_types = {
     'NextHandleNeedingPool' : [ 0x38, ['unsigned long']],
     'HandleCount' : [ 0x3c, ['long']],
     'Flags' : [ 0x40, ['unsigned long']],
-    'StrictFIFO' : [ 0x40, ['BitField', dict(start_bit = 0, end_bit = 1)]],
+    'StrictFIFO' : [ 0x40, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned char')]],
 } ],
   '_POOL_HEADER' : [ 0x8, {
-    'PreviousSize' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 9)]],
-    'PoolIndex' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 16)]],
-    'BlockSize' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 9)]],
-    'PoolType' : [ 0x2, ['BitField', dict(start_bit = 9, end_bit = 16)]],
+    'PreviousSize' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 9, native_type='unsigned short')]],
+    'PoolIndex' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 16, native_type='unsigned short')]],
+    'BlockSize' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 9, native_type='unsigned short')]],
+    'PoolType' : [ 0x2, ['BitField', dict(start_bit = 9, end_bit = 16, native_type='unsigned short')]],
     'Ulong1' : [ 0x0, ['unsigned long']],
     'PoolTag' : [ 0x4, ['unsigned long']],
     'AllocatorBackTraceIndex' : [ 0x4, ['unsigned short']],
     'PoolTagHash' : [ 0x6, ['unsigned short']],
 } ],
   '_MMPTE_PROTOTYPE' : [ 0x4, {
-    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'ProtoAddressLow' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 8)]],
-    'ReadOnly' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
-    'WhichPool' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
-    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
-    'ProtoAddressHigh' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 32)]],
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'ProtoAddressLow' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 8, native_type='unsigned long')]],
+    'ReadOnly' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9, native_type='unsigned long')]],
+    'WhichPool' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10, native_type='unsigned long')]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11, native_type='unsigned long')]],
+    'ProtoAddressHigh' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_MMSUPPORT' : [ 0x60, {
     'WorkingSetExpansionLinks' : [ 0x0, ['_LIST_ENTRY']],
@@ -1273,14 +1273,14 @@ nt_types = {
     'Info' : [ 0x38, ['EX_QUEUE_WORKER_INFO']],
 } ],
   '_MMSUBSECTION_FLAGS' : [ 0x4, {
-    'ReadOnly' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'ReadWrite' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'SubsectionStatic' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'GlobalMemory' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'Protection' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 9)]],
-    'Spare' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
-    'StartingSector4132' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 20)]],
-    'SectorEndOffset' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 32)]],
+    'ReadOnly' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'ReadWrite' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'SubsectionStatic' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'GlobalMemory' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned long')]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 9, native_type='unsigned long')]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10, native_type='unsigned long')]],
+    'StartingSector4132' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 20, native_type='unsigned long')]],
+    'SectorEndOffset' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_HEAP_TAG_ENTRY' : [ 0x40, {
     'Allocs' : [ 0x0, ['unsigned long']],
@@ -1372,7 +1372,7 @@ nt_types = {
     'NumberOfSubsections' : [ 0x18, ['unsigned short']],
     'FlushInProgressCount' : [ 0x1a, ['unsigned short']],
     'NumberOfUserReferences' : [ 0x1c, ['unsigned long']],
-    'u' : [ 0x20, ['__unnamed_12e8']],
+    'u' : [ 0x20, ['__unnamed_12ea']],
     'FilePointer' : [ 0x24, ['pointer', ['_FILE_OBJECT']]],
     'WaitingForDeletion' : [ 0x28, ['pointer', ['_EVENT_COUNTER']]],
     'ModifiedWriteCount' : [ 0x2c, ['unsigned short']],
@@ -1381,32 +1381,32 @@ nt_types = {
     'UserGlobalList' : [ 0x34, ['_LIST_ENTRY']],
     'SessionId' : [ 0x3c, ['unsigned long']],
 } ],
-  '__unnamed_1324' : [ 0x4, {
+  '__unnamed_1326' : [ 0x4, {
     'BaseMid' : [ 0x0, ['unsigned char']],
     'Flags1' : [ 0x1, ['unsigned char']],
     'Flags2' : [ 0x2, ['unsigned char']],
     'BaseHi' : [ 0x3, ['unsigned char']],
 } ],
-  '__unnamed_132b' : [ 0x4, {
-    'BaseMid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 8)]],
-    'Type' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 13)]],
-    'Dpl' : [ 0x0, ['BitField', dict(start_bit = 13, end_bit = 15)]],
-    'Pres' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16)]],
-    'LimitHi' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 20)]],
-    'Sys' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 21)]],
-    'Reserved_0' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 22)]],
-    'Default_Big' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 23)]],
-    'Granularity' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 24)]],
-    'BaseHi' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 32)]],
-} ],
   '__unnamed_132d' : [ 0x4, {
-    'Bytes' : [ 0x0, ['__unnamed_1324']],
-    'Bits' : [ 0x0, ['__unnamed_132b']],
+    'BaseMid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 8, native_type='unsigned long')]],
+    'Type' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 13, native_type='unsigned long')]],
+    'Dpl' : [ 0x0, ['BitField', dict(start_bit = 13, end_bit = 15, native_type='unsigned long')]],
+    'Pres' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16, native_type='unsigned long')]],
+    'LimitHi' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 20, native_type='unsigned long')]],
+    'Sys' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 21, native_type='unsigned long')]],
+    'Reserved_0' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 22, native_type='unsigned long')]],
+    'Default_Big' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 23, native_type='unsigned long')]],
+    'Granularity' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 24, native_type='unsigned long')]],
+    'BaseHi' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 32, native_type='unsigned long')]],
+} ],
+  '__unnamed_132f' : [ 0x4, {
+    'Bytes' : [ 0x0, ['__unnamed_1326']],
+    'Bits' : [ 0x0, ['__unnamed_132d']],
 } ],
   '_KGDTENTRY' : [ 0x8, {
     'LimitLow' : [ 0x0, ['unsigned short']],
     'BaseLow' : [ 0x2, ['unsigned short']],
-    'HighWord' : [ 0x4, ['__unnamed_132d']],
+    'HighWord' : [ 0x4, ['__unnamed_132f']],
 } ],
   '_PS_JOB_TOKEN_FILTER' : [ 0x24, {
     'CapturedSidCount' : [ 0x0, ['unsigned long']],
@@ -1487,19 +1487,19 @@ nt_types = {
     'CompletionContext' : [ 0x6c, ['pointer', ['_IO_COMPLETION_CONTEXT']]],
 } ],
   '_MMPTE_HARDWARE' : [ 0x4, {
-    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'Write' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'Owner' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'WriteThrough' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'CacheDisable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
-    'Accessed' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
-    'Dirty' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
-    'LargePage' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
-    'Global' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
-    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
-    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
-    'reserved' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
-    'PageFrameNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'Writable' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'Owner' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'WriteThrough' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned long')]],
+    'CacheDisable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned long')]],
+    'Accessed' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6, native_type='unsigned long')]],
+    'Dirty' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7, native_type='unsigned long')]],
+    'LargePage' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8, native_type='unsigned long')]],
+    'Global' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9, native_type='unsigned long')]],
+    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10, native_type='unsigned long')]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11, native_type='unsigned long')]],
+    'Write' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12, native_type='unsigned long')]],
+    'PageFrameNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_IO_COMPLETION_CONTEXT' : [ 0x8, {
     'Port' : [ 0x0, ['pointer', ['void']]],
@@ -1521,37 +1521,37 @@ nt_types = {
     'ContextFlags' : [ 0x0, ['unsigned long']],
 } ],
   '_MMSECTION_FLAGS' : [ 0x4, {
-    'BeingDeleted' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'BeingCreated' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'BeingPurged' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'NoModifiedWriting' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'FailAllIo' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
-    'Image' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
-    'Based' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
-    'File' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
-    'Networked' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
-    'NoCache' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
-    'PhysicalMemory' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
-    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
-    'Reserve' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 13)]],
-    'Commit' : [ 0x0, ['BitField', dict(start_bit = 13, end_bit = 14)]],
-    'FloppyMedia' : [ 0x0, ['BitField', dict(start_bit = 14, end_bit = 15)]],
-    'WasPurged' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16)]],
-    'UserReference' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 17)]],
-    'GlobalMemory' : [ 0x0, ['BitField', dict(start_bit = 17, end_bit = 18)]],
-    'DeleteOnClose' : [ 0x0, ['BitField', dict(start_bit = 18, end_bit = 19)]],
-    'FilePointerNull' : [ 0x0, ['BitField', dict(start_bit = 19, end_bit = 20)]],
-    'DebugSymbolsLoaded' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 21)]],
-    'SetMappedFileIoComplete' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 22)]],
-    'CollidedFlush' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 23)]],
-    'NoChange' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 24)]],
-    'HadUserReference' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 25)]],
-    'ImageMappedInSystemSpace' : [ 0x0, ['BitField', dict(start_bit = 25, end_bit = 26)]],
-    'UserWritable' : [ 0x0, ['BitField', dict(start_bit = 26, end_bit = 27)]],
-    'Accessed' : [ 0x0, ['BitField', dict(start_bit = 27, end_bit = 28)]],
-    'GlobalOnlyPerSession' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 29)]],
-    'Rom' : [ 0x0, ['BitField', dict(start_bit = 29, end_bit = 30)]],
-    'filler' : [ 0x0, ['BitField', dict(start_bit = 30, end_bit = 32)]],
+    'BeingDeleted' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'BeingCreated' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'BeingPurged' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'NoModifiedWriting' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned long')]],
+    'FailAllIo' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned long')]],
+    'Image' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6, native_type='unsigned long')]],
+    'Based' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7, native_type='unsigned long')]],
+    'File' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8, native_type='unsigned long')]],
+    'Networked' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9, native_type='unsigned long')]],
+    'NoCache' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10, native_type='unsigned long')]],
+    'PhysicalMemory' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11, native_type='unsigned long')]],
+    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12, native_type='unsigned long')]],
+    'Reserve' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 13, native_type='unsigned long')]],
+    'Commit' : [ 0x0, ['BitField', dict(start_bit = 13, end_bit = 14, native_type='unsigned long')]],
+    'FloppyMedia' : [ 0x0, ['BitField', dict(start_bit = 14, end_bit = 15, native_type='unsigned long')]],
+    'WasPurged' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16, native_type='unsigned long')]],
+    'UserReference' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 17, native_type='unsigned long')]],
+    'GlobalMemory' : [ 0x0, ['BitField', dict(start_bit = 17, end_bit = 18, native_type='unsigned long')]],
+    'DeleteOnClose' : [ 0x0, ['BitField', dict(start_bit = 18, end_bit = 19, native_type='unsigned long')]],
+    'FilePointerNull' : [ 0x0, ['BitField', dict(start_bit = 19, end_bit = 20, native_type='unsigned long')]],
+    'DebugSymbolsLoaded' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 21, native_type='unsigned long')]],
+    'SetMappedFileIoComplete' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 22, native_type='unsigned long')]],
+    'CollidedFlush' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 23, native_type='unsigned long')]],
+    'NoChange' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 24, native_type='unsigned long')]],
+    'HadUserReference' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 25, native_type='unsigned long')]],
+    'ImageMappedInSystemSpace' : [ 0x0, ['BitField', dict(start_bit = 25, end_bit = 26, native_type='unsigned long')]],
+    'UserWritable' : [ 0x0, ['BitField', dict(start_bit = 26, end_bit = 27, native_type='unsigned long')]],
+    'Accessed' : [ 0x0, ['BitField', dict(start_bit = 27, end_bit = 28, native_type='unsigned long')]],
+    'GlobalOnlyPerSession' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 29, native_type='unsigned long')]],
+    'Rom' : [ 0x0, ['BitField', dict(start_bit = 29, end_bit = 30, native_type='unsigned long')]],
+    'filler' : [ 0x0, ['BitField', dict(start_bit = 30, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_DEFERRED_WRITE' : [ 0x28, {
     'NodeTypeCode' : [ 0x0, ['short']],
@@ -1590,14 +1590,14 @@ nt_types = {
     'EffectiveOnly' : [ 0x5, ['unsigned char']],
     'ImpersonationLevel' : [ 0x8, ['Enumeration', dict(target = 'long', choices = {0: 'SecurityAnonymous', 1: 'SecurityIdentification', 2: 'SecurityImpersonation', 3: 'SecurityDelegation'})]],
 } ],
-  '__unnamed_1391' : [ 0x4, {
+  '__unnamed_1393' : [ 0x4, {
     'LegacyDeviceNode' : [ 0x0, ['pointer', ['_DEVICE_NODE']]],
     'PendingDeviceRelations' : [ 0x0, ['pointer', ['_DEVICE_RELATIONS']]],
 } ],
-  '__unnamed_1393' : [ 0x4, {
+  '__unnamed_1395' : [ 0x4, {
     'NextResourceDeviceNode' : [ 0x0, ['pointer', ['_DEVICE_NODE']]],
 } ],
-  '__unnamed_1397' : [ 0x10, {
+  '__unnamed_1399' : [ 0x10, {
     'DockStatus' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'DOCK_NOTDOCKDEVICE', 1: 'DOCK_QUIESCENT', 2: 'DOCK_ARRIVING', 3: 'DOCK_DEPARTING', 4: 'DOCK_EJECTIRP_COMPLETED'})]],
     'ListEntry' : [ 0x4, ['_LIST_ENTRY']],
     'SerialNumber' : [ 0xc, ['pointer', ['unsigned short']]],
@@ -1639,21 +1639,21 @@ nt_types = {
     'QueryTranslatorMask' : [ 0xda, ['unsigned short']],
     'NoArbiterMask' : [ 0xdc, ['unsigned short']],
     'QueryArbiterMask' : [ 0xde, ['unsigned short']],
-    'OverUsed1' : [ 0xe0, ['__unnamed_1391']],
-    'OverUsed2' : [ 0xe4, ['__unnamed_1393']],
+    'OverUsed1' : [ 0xe0, ['__unnamed_1393']],
+    'OverUsed2' : [ 0xe4, ['__unnamed_1395']],
     'BootResources' : [ 0xe8, ['pointer', ['_CM_RESOURCE_LIST']]],
     'CapabilityFlags' : [ 0xec, ['unsigned long']],
-    'DockInfo' : [ 0xf0, ['__unnamed_1397']],
+    'DockInfo' : [ 0xf0, ['__unnamed_1399']],
     'DisableableDepends' : [ 0x100, ['unsigned long']],
     'PendedSetInterfaceState' : [ 0x104, ['_LIST_ENTRY']],
     'LegacyBusListEntry' : [ 0x10c, ['_LIST_ENTRY']],
 } ],
-  '__unnamed_139c' : [ 0x38, {
+  '__unnamed_139e' : [ 0x38, {
     'CriticalSection' : [ 0x0, ['_RTL_CRITICAL_SECTION']],
     'Resource' : [ 0x0, ['_ERESOURCE']],
 } ],
   '_HEAP_LOCK' : [ 0x38, {
-    'Lock' : [ 0x0, ['__unnamed_139c']],
+    'Lock' : [ 0x0, ['__unnamed_139e']],
 } ],
   '_MMCOLOR_TABLES' : [ 0xc, {
     'Flink' : [ 0x0, ['unsigned long']],
@@ -1681,14 +1681,14 @@ nt_types = {
     'BasePage' : [ 0x0, ['unsigned long']],
     'PageCount' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_13b1' : [ 0x4, {
+  '__unnamed_13b3' : [ 0x4, {
     'LongFlags' : [ 0x0, ['unsigned long']],
     'Flags' : [ 0x0, ['_MM_SESSION_SPACE_FLAGS']],
 } ],
   '_MM_SESSION_SPACE' : [ 0x1f00, {
     'GlobalVirtualAddress' : [ 0x0, ['pointer', ['_MM_SESSION_SPACE']]],
     'ReferenceCount' : [ 0x4, ['unsigned long']],
-    'u' : [ 0x8, ['__unnamed_13b1']],
+    'u' : [ 0x8, ['__unnamed_13b3']],
     'SessionId' : [ 0xc, ['unsigned long']],
     'ProcessList' : [ 0x10, ['_LIST_ENTRY']],
     'LastProcessSwappedOutTime' : [ 0x18, ['_LARGE_INTEGER']],
@@ -1736,8 +1736,8 @@ nt_types = {
     'EnvironmentUpdateCount' : [ 0x28, ['unsigned long']],
     'KernelCallbackTable' : [ 0x2c, ['pointer', ['void']]],
     'SystemReserved' : [ 0x30, ['array', 1, ['unsigned long']]],
-    'ExecuteOptions' : [ 0x34, ['BitField', dict(start_bit = 0, end_bit = 2)]],
-    'SpareBits' : [ 0x34, ['BitField', dict(start_bit = 2, end_bit = 32)]],
+    'ExecuteOptions' : [ 0x34, ['BitField', dict(start_bit = 0, end_bit = 2, native_type='unsigned long')]],
+    'SpareBits' : [ 0x34, ['BitField', dict(start_bit = 2, end_bit = 32, native_type='unsigned long')]],
     'FreeList' : [ 0x38, ['pointer', ['_PEB_FREE_BLOCK']]],
     'TlsExpansionCounter' : [ 0x3c, ['unsigned long']],
     'TlsBitmap' : [ 0x40, ['pointer', ['void']]],
@@ -1806,12 +1806,12 @@ nt_types = {
     'Unused' : [ 0x0, ['unsigned long']],
 } ],
   '_MMPTE_SOFTWARE' : [ 0x4, {
-    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'PageFileLow' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 5)]],
-    'Protection' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 10)]],
-    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
-    'Transition' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
-    'PageFileHigh' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'PageFileLow' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 5, native_type='unsigned long')]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 10, native_type='unsigned long')]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11, native_type='unsigned long')]],
+    'Transition' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12, native_type='unsigned long')]],
+    'PageFileHigh' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_IO_RESOURCE_REQUIREMENTS_LIST' : [ 0x48, {
     'ListSize' : [ 0x0, ['unsigned long']],
@@ -1822,14 +1822,14 @@ nt_types = {
     'AlternativeLists' : [ 0x1c, ['unsigned long']],
     'List' : [ 0x20, ['array', 1, ['_IO_RESOURCE_LIST']]],
 } ],
-  '__unnamed_13e1' : [ 0x8, {
+  '__unnamed_13e3' : [ 0x8, {
     'IoStatus' : [ 0x0, ['_IO_STATUS_BLOCK']],
     'LastByte' : [ 0x0, ['_LARGE_INTEGER']],
 } ],
   '_MMMOD_WRITER_MDL_ENTRY' : [ 0x60, {
     'Links' : [ 0x0, ['_LIST_ENTRY']],
     'WriteOffset' : [ 0x8, ['_LARGE_INTEGER']],
-    'u' : [ 0x10, ['__unnamed_13e1']],
+    'u' : [ 0x10, ['__unnamed_13e3']],
     'Irp' : [ 0x18, ['pointer', ['_IRP']]],
     'LastPageToWrite' : [ 0x1c, ['unsigned long']],
     'PagingListHead' : [ 0x20, ['pointer', ['_MMMOD_WRITER_LISTHEAD']]],
@@ -1866,13 +1866,13 @@ nt_types = {
     'Peak' : [ 0x8, ['unsigned long']],
     'Return' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_13f7' : [ 0x50, {
+  '__unnamed_13f9' : [ 0x50, {
     'CellData' : [ 0x0, ['_CELL_DATA']],
     'List' : [ 0x0, ['array', 1, ['unsigned long']]],
 } ],
   '_CM_CACHED_VALUE_INDEX' : [ 0x54, {
     'CellIndex' : [ 0x0, ['unsigned long']],
-    'Data' : [ 0x4, ['__unnamed_13f7']],
+    'Data' : [ 0x4, ['__unnamed_13f9']],
 } ],
   '_KSEMAPHORE' : [ 0x14, {
     'Header' : [ 0x0, ['_DISPATCHER_HEADER']],
@@ -1929,17 +1929,17 @@ nt_types = {
     'DataValueHigh' : [ 0x8, ['unsigned long']],
 } ],
   '_MMPFNENTRY' : [ 0x4, {
-    'Modified' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'ReadInProgress' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'WriteInProgress' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'PrototypePte' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'PageColor' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 8)]],
-    'PageLocation' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 11)]],
-    'RemovalRequested' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
-    'CacheAttribute' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 14)]],
-    'Rom' : [ 0x0, ['BitField', dict(start_bit = 14, end_bit = 15)]],
-    'ParityError' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16)]],
-    'DontUse' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 32)]],
+    'Modified' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'ReadInProgress' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'WriteInProgress' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'PrototypePte' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned long')]],
+    'PageColor' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 8, native_type='unsigned long')]],
+    'PageLocation' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 11, native_type='unsigned long')]],
+    'RemovalRequested' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12, native_type='unsigned long')]],
+    'CacheAttribute' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 14, native_type='unsigned long')]],
+    'Rom' : [ 0x0, ['BitField', dict(start_bit = 14, end_bit = 15, native_type='unsigned long')]],
+    'ParityError' : [ 0x0, ['BitField', dict(start_bit = 15, end_bit = 16, native_type='unsigned long')]],
+    'DontUse' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_IO_COUNTERS' : [ 0x30, {
     'ReadOperationCount' : [ 0x0, ['unsigned long long']],
@@ -2016,18 +2016,18 @@ nt_types = {
     'Volume' : [ 0x44, ['_LIST_ENTRY']],
 } ],
   '_MMSUPPORT_FLAGS' : [ 0x4, {
-    'SessionSpace' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'BeingTrimmed' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'SessionLeader' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'TrimHard' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'MaximumWorkingSetHard' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
-    'ForceTrim' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
-    'MinimumWorkingSetHard' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
-    'Available0' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
-    'MemoryPriority' : [ 0x1, ['BitField', dict(start_bit = 0, end_bit = 8)]],
-    'GrowWsleHash' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'AcquiredUnsafe' : [ 0x2, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'Available' : [ 0x2, ['BitField', dict(start_bit = 2, end_bit = 16)]],
+    'SessionSpace' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned char')]],
+    'BeingTrimmed' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned char')]],
+    'SessionLeader' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned char')]],
+    'TrimHard' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned char')]],
+    'MaximumWorkingSetHard' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned char')]],
+    'ForceTrim' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6, native_type='unsigned char')]],
+    'MinimumWorkingSetHard' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7, native_type='unsigned char')]],
+    'Available0' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8, native_type='unsigned char')]],
+    'MemoryPriority' : [ 0x1, ['BitField', dict(start_bit = 0, end_bit = 8, native_type='unsigned char')]],
+    'GrowWsleHash' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned short')]],
+    'AcquiredUnsafe' : [ 0x2, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned short')]],
+    'Available' : [ 0x2, ['BitField', dict(start_bit = 2, end_bit = 16, native_type='unsigned short')]],
 } ],
   '_KSYSTEM_TIME' : [ 0xc, {
     'LowPart' : [ 0x0, ['unsigned long']],
@@ -2111,8 +2111,8 @@ nt_types = {
     'Revision' : [ 0x0, ['unsigned long']],
     'DynamicThrottle' : [ 0x4, ['unsigned char']],
     'Spare' : [ 0x5, ['array', 3, ['unsigned char']]],
-    'DisableCStates' : [ 0x8, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'Reserved' : [ 0x8, ['BitField', dict(start_bit = 1, end_bit = 32)]],
+    'DisableCStates' : [ 0x8, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'Reserved' : [ 0x8, ['BitField', dict(start_bit = 1, end_bit = 32, native_type='unsigned long')]],
     'PolicyCount' : [ 0xc, ['unsigned long']],
     'Policy' : [ 0x10, ['array', 3, ['_PROCESSOR_POWER_POLICY_INFO']]],
 } ],
@@ -2167,10 +2167,10 @@ nt_types = {
     'RegisterArea' : [ 0x1c, ['array', 80, ['unsigned char']]],
 } ],
   'EX_QUEUE_WORKER_INFO' : [ 0x4, {
-    'QueueDisabled' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'MakeThreadsAsNecessary' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'WaitMode' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'WorkerCount' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 32)]],
+    'QueueDisabled' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'MakeThreadsAsNecessary' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'WaitMode' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'WorkerCount' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 32, native_type='unsigned long')]],
     'QueueWorkerInfo' : [ 0x0, ['long']],
 } ],
   'SYSTEM_POWER_LEVEL' : [ 0x18, {
@@ -2229,12 +2229,12 @@ nt_types = {
     '_tmpfname' : [ 0x1c, ['pointer', ['unsigned char']]],
 } ],
   '_MMPTE_LIST' : [ 0x4, {
-    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'OneEntry' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'filler0' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 10)]],
-    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
-    'filler1' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
-    'NextEntry' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'OneEntry' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'filler0' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 10, native_type='unsigned long')]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11, native_type='unsigned long')]],
+    'filler1' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12, native_type='unsigned long')]],
+    'NextEntry' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_CMHIVE' : [ 0x56c, {
     'Hive' : [ 0x0, ['_HHIVE']],
@@ -2330,9 +2330,9 @@ nt_types = {
     'Name' : [ 0xc, ['array', 1, ['unsigned short']]],
 } ],
   '_MM_SESSION_SPACE_FLAGS' : [ 0x4, {
-    'Initialized' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'DeletePending' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'Filler' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 32)]],
+    'Initialized' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'DeletePending' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'Filler' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_CM_PARTIAL_RESOURCE_LIST' : [ 0x18, {
     'Version' : [ 0x0, ['unsigned short']],
@@ -2340,7 +2340,7 @@ nt_types = {
     'Count' : [ 0x4, ['unsigned long']],
     'PartialDescriptors' : [ 0x8, ['array', 1, ['_CM_PARTIAL_RESOURCE_DESCRIPTOR']]],
 } ],
-  '__unnamed_14c5' : [ 0x28, {
+  '__unnamed_14c7' : [ 0x28, {
     'ListEntry' : [ 0x0, ['_LIST_ENTRY']],
     'Wcb' : [ 0x0, ['_WAIT_CONTEXT_BLOCK']],
 } ],
@@ -2359,7 +2359,7 @@ nt_types = {
     'DeviceExtension' : [ 0x28, ['pointer', ['void']]],
     'DeviceType' : [ 0x2c, ['unsigned long']],
     'StackSize' : [ 0x30, ['unsigned char']],
-    'Queue' : [ 0x34, ['__unnamed_14c5']],
+    'Queue' : [ 0x34, ['__unnamed_14c7']],
     'AlignmentRequirement' : [ 0x5c, ['unsigned long']],
     'DeviceQueue' : [ 0x60, ['_KDEVICE_QUEUE']],
     'Dpc' : [ 0x74, ['_KDPC']],
@@ -2383,9 +2383,9 @@ nt_types = {
 } ],
   '_MM_AVL_TABLE' : [ 0x20, {
     'BalancedRoot' : [ 0x0, ['_MMADDRESS_NODE']],
-    'DepthOfTree' : [ 0x14, ['BitField', dict(start_bit = 0, end_bit = 5)]],
-    'Unused' : [ 0x14, ['BitField', dict(start_bit = 5, end_bit = 8)]],
-    'NumberGenericTableElements' : [ 0x14, ['BitField', dict(start_bit = 8, end_bit = 32)]],
+    'DepthOfTree' : [ 0x14, ['BitField', dict(start_bit = 0, end_bit = 5, native_type='unsigned long')]],
+    'Unused' : [ 0x14, ['BitField', dict(start_bit = 5, end_bit = 8, native_type='unsigned long')]],
+    'NumberGenericTableElements' : [ 0x14, ['BitField', dict(start_bit = 8, end_bit = 32, native_type='unsigned long')]],
     'NodeHint' : [ 0x18, ['pointer', ['void']]],
     'NodeFreeHint' : [ 0x1c, ['pointer', ['void']]],
 } ],
@@ -2487,13 +2487,13 @@ nt_types = {
     'QueryNameProcedure' : [ 0x44, ['pointer', ['void']]],
     'OkayToCloseProcedure' : [ 0x48, ['pointer', ['void']]],
 } ],
-  '__unnamed_1513' : [ 0x4, {
+  '__unnamed_1515' : [ 0x4, {
     'LongFlags' : [ 0x0, ['unsigned long']],
     'SubsectionFlags' : [ 0x0, ['_MMSUBSECTION_FLAGS']],
 } ],
   '_SUBSECTION' : [ 0x20, {
     'ControlArea' : [ 0x0, ['pointer', ['_CONTROL_AREA']]],
-    'u' : [ 0x4, ['__unnamed_1513']],
+    'u' : [ 0x4, ['__unnamed_1515']],
     'StartingSector' : [ 0x8, ['unsigned long']],
     'NumberOfFullSectors' : [ 0xc, ['unsigned long']],
     'SubsectionBase' : [ 0x10, ['pointer', ['_MMPTE']]],
@@ -2501,51 +2501,51 @@ nt_types = {
     'PtesInSubsection' : [ 0x18, ['unsigned long']],
     'NextSubsection' : [ 0x1c, ['pointer', ['_SUBSECTION']]],
 } ],
-  '__unnamed_151c' : [ 0x4, {
-    'Balance' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2)]],
+  '__unnamed_151e' : [ 0x4, {
+    'Balance' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2, native_type='long')]],
     'Parent' : [ 0x0, ['pointer', ['_MMVAD']]],
 } ],
-  '__unnamed_151f' : [ 0x4, {
+  '__unnamed_1521' : [ 0x4, {
     'LongFlags' : [ 0x0, ['unsigned long']],
     'VadFlags' : [ 0x0, ['_MMVAD_FLAGS']],
 } ],
-  '__unnamed_1522' : [ 0x4, {
+  '__unnamed_1524' : [ 0x4, {
     'LongFlags2' : [ 0x0, ['unsigned long']],
     'VadFlags2' : [ 0x0, ['_MMVAD_FLAGS2']],
 } ],
-  '__unnamed_1525' : [ 0x8, {
+  '__unnamed_1527' : [ 0x8, {
     'List' : [ 0x0, ['_LIST_ENTRY']],
     'Secured' : [ 0x0, ['_MMADDRESS_LIST']],
 } ],
-  '__unnamed_152b' : [ 0x4, {
+  '__unnamed_152d' : [ 0x4, {
     'Banked' : [ 0x0, ['pointer', ['_MMBANKED_SECTION']]],
     'ExtendedInfo' : [ 0x0, ['pointer', ['_MMEXTEND_INFO']]],
 } ],
   '_MMVAD_LONG' : [ 0x34, {
-    'u1' : [ 0x0, ['__unnamed_151c']],
+    'u1' : [ 0x0, ['__unnamed_151e']],
     'LeftChild' : [ 0x4, ['pointer', ['_MMVAD']]],
     'RightChild' : [ 0x8, ['pointer', ['_MMVAD']]],
     'StartingVpn' : [ 0xc, ['unsigned long']],
     'EndingVpn' : [ 0x10, ['unsigned long']],
-    'u' : [ 0x14, ['__unnamed_151f']],
+    'u' : [ 0x14, ['__unnamed_1521']],
     'ControlArea' : [ 0x18, ['pointer', ['_CONTROL_AREA']]],
     'FirstPrototypePte' : [ 0x1c, ['pointer', ['_MMPTE']]],
     'LastContiguousPte' : [ 0x20, ['pointer', ['_MMPTE']]],
-    'u2' : [ 0x24, ['__unnamed_1522']],
-    'u3' : [ 0x28, ['__unnamed_1525']],
-    'u4' : [ 0x30, ['__unnamed_152b']],
+    'u2' : [ 0x24, ['__unnamed_1524']],
+    'u3' : [ 0x28, ['__unnamed_1527']],
+    'u4' : [ 0x30, ['__unnamed_152d']],
 } ],
   '_MMVAD_FLAGS' : [ 0x4, {
-    'CommitCharge' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 19)]],
-    'PhysicalMapping' : [ 0x0, ['BitField', dict(start_bit = 19, end_bit = 20)]],
-    'ImageMap' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 21)]],
-    'UserPhysicalPages' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 22)]],
-    'NoChange' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 23)]],
-    'WriteWatch' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 24)]],
-    'Protection' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 29)]],
-    'LargePages' : [ 0x0, ['BitField', dict(start_bit = 29, end_bit = 30)]],
-    'MemCommit' : [ 0x0, ['BitField', dict(start_bit = 30, end_bit = 31)]],
-    'PrivateMemory' : [ 0x0, ['BitField', dict(start_bit = 31, end_bit = 32)]],
+    'CommitCharge' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 19, native_type='unsigned long')]],
+    'PhysicalMapping' : [ 0x0, ['BitField', dict(start_bit = 19, end_bit = 20, native_type='unsigned long')]],
+    'ImageMap' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 21, native_type='unsigned long')]],
+    'UserPhysicalPages' : [ 0x0, ['BitField', dict(start_bit = 21, end_bit = 22, native_type='unsigned long')]],
+    'NoChange' : [ 0x0, ['BitField', dict(start_bit = 22, end_bit = 23, native_type='unsigned long')]],
+    'WriteWatch' : [ 0x0, ['BitField', dict(start_bit = 23, end_bit = 24, native_type='unsigned long')]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 29, native_type='unsigned long')]],
+    'LargePages' : [ 0x0, ['BitField', dict(start_bit = 29, end_bit = 30, native_type='unsigned long')]],
+    'MemCommit' : [ 0x0, ['BitField', dict(start_bit = 30, end_bit = 31, native_type='unsigned long')]],
+    'PrivateMemory' : [ 0x0, ['BitField', dict(start_bit = 31, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_POOL_DESCRIPTOR' : [ 0x1030, {
     'PoolType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'NonPagedPool', 1: 'PagedPool', 2: 'NonPagedPoolMustSucceed', 3: 'DontUseThisType', 4: 'NonPagedPoolCacheAligned', 5: 'PagedPoolCacheAligned', 6: 'NonPagedPoolCacheAlignedMustS', 7: 'MaxPoolType', 34: 'NonPagedPoolMustSucceedSession', 35: 'DontUseThisTypeSession', 32: 'NonPagedPoolSession', 36: 'NonPagedPoolCacheAlignedSession', 33: 'PagedPoolSession', 38: 'NonPagedPoolCacheAlignedMustSSession', 37: 'PagedPoolCacheAlignedSession'})]],
@@ -2563,19 +2563,19 @@ nt_types = {
     'ListHeads' : [ 0x30, ['array', 512, ['_LIST_ENTRY']]],
 } ],
   '_HARDWARE_PTE' : [ 0x4, {
-    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'Write' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'Owner' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'WriteThrough' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'CacheDisable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
-    'Accessed' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
-    'Dirty' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
-    'LargePage' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
-    'Global' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
-    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
-    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
-    'reserved' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
-    'PageFrameNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'Write' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'Owner' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'WriteThrough' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned long')]],
+    'CacheDisable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned long')]],
+    'Accessed' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6, native_type='unsigned long')]],
+    'Dirty' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7, native_type='unsigned long')]],
+    'LargePage' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8, native_type='unsigned long')]],
+    'Global' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9, native_type='unsigned long')]],
+    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10, native_type='unsigned long')]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11, native_type='unsigned long')]],
+    'reserved' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12, native_type='unsigned long')]],
+    'PageFrameNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_PEB_LDR_DATA' : [ 0x28, {
     'Length' : [ 0x0, ['unsigned long']],
@@ -2662,8 +2662,8 @@ nt_types = {
     'Handler' : [ 0x4, ['pointer', ['void']]],
 } ],
   '_SEP_AUDIT_POLICY_OVERLAY' : [ 0x8, {
-    'PolicyBits' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 36)]],
-    'SetBit' : [ 0x0, ['BitField', dict(start_bit = 36, end_bit = 37)]],
+    'PolicyBits' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 36, native_type='unsigned long long')]],
+    'SetBit' : [ 0x0, ['BitField', dict(start_bit = 36, end_bit = 37, native_type='unsigned long long')]],
 } ],
   '_POOL_TRACKER_BIG_PAGES' : [ 0x10, {
     'Va' : [ 0x0, ['pointer', ['void']]],
@@ -2676,12 +2676,12 @@ nt_types = {
     'FaultingVa' : [ 0x4, ['pointer', ['void']]],
 } ],
   '_MMPTE_SUBSECTION' : [ 0x4, {
-    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'SubsectionAddressLow' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 5)]],
-    'Protection' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 10)]],
-    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
-    'SubsectionAddressHigh' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 31)]],
-    'WhichPool' : [ 0x0, ['BitField', dict(start_bit = 31, end_bit = 32)]],
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'SubsectionAddressLow' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 5, native_type='unsigned long')]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 10, native_type='unsigned long')]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11, native_type='unsigned long')]],
+    'SubsectionAddressHigh' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 31, native_type='unsigned long')]],
+    'WhichPool' : [ 0x0, ['BitField', dict(start_bit = 31, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_VI_DEADLOCK_NODE' : [ 0x68, {
     'Parent' : [ 0x0, ['pointer', ['_VI_DEADLOCK_NODE']]],
@@ -2691,10 +2691,10 @@ nt_types = {
     'FreeListEntry' : [ 0x14, ['_LIST_ENTRY']],
     'Root' : [ 0x1c, ['pointer', ['_VI_DEADLOCK_RESOURCE']]],
     'ThreadEntry' : [ 0x20, ['pointer', ['_VI_DEADLOCK_THREAD']]],
-    'Active' : [ 0x24, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'OnlyTryAcquireUsed' : [ 0x24, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'ReleasedOutOfOrder' : [ 0x24, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'SequenceNumber' : [ 0x24, ['BitField', dict(start_bit = 3, end_bit = 32)]],
+    'Active' : [ 0x24, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'OnlyTryAcquireUsed' : [ 0x24, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'ReleasedOutOfOrder' : [ 0x24, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'SequenceNumber' : [ 0x24, ['BitField', dict(start_bit = 3, end_bit = 32, native_type='unsigned long')]],
     'StackTrace' : [ 0x28, ['array', 8, ['pointer', ['void']]]],
     'ParentStackTrace' : [ 0x48, ['array', 8, ['pointer', ['void']]]],
 } ],
@@ -2850,18 +2850,18 @@ nt_types = {
     'Sacl' : [ 0xc, ['pointer', ['_ACL']]],
     'Dacl' : [ 0x10, ['pointer', ['_ACL']]],
 } ],
-  '__unnamed_159e' : [ 0x8, {
+  '__unnamed_15a1' : [ 0x8, {
     'UserData' : [ 0x0, ['pointer', ['void']]],
     'Owner' : [ 0x4, ['pointer', ['void']]],
 } ],
-  '__unnamed_15a0' : [ 0x8, {
+  '__unnamed_15a3' : [ 0x8, {
     'ListHead' : [ 0x0, ['_LIST_ENTRY']],
 } ],
   '_RTLP_RANGE_LIST_ENTRY' : [ 0x28, {
     'Start' : [ 0x0, ['unsigned long long']],
     'End' : [ 0x8, ['unsigned long long']],
-    'Allocated' : [ 0x10, ['__unnamed_159e']],
-    'Merged' : [ 0x10, ['__unnamed_15a0']],
+    'Allocated' : [ 0x10, ['__unnamed_15a1']],
+    'Merged' : [ 0x10, ['__unnamed_15a3']],
     'Attributes' : [ 0x18, ['unsigned char']],
     'PublicFlags' : [ 0x19, ['unsigned char']],
     'PrivateFlags' : [ 0x1a, ['unsigned short']],
@@ -2982,7 +2982,7 @@ nt_types = {
     'V86Fs' : [ 0x84, ['unsigned long']],
     'V86Gs' : [ 0x88, ['unsigned long']],
 } ],
-  '__unnamed_15d1' : [ 0x5, {
+  '__unnamed_15d4' : [ 0x5, {
     'Acquired' : [ 0x0, ['unsigned char']],
     'CacheLineSize' : [ 0x1, ['unsigned char']],
     'LatencyTimer' : [ 0x2, ['unsigned char']],
@@ -3018,51 +3018,51 @@ nt_types = {
     'ChildWaitWakeCount' : [ 0xc4, ['unsigned long']],
     'IchHackConfig' : [ 0xc8, ['pointer', ['_PCI_COMMON_CONFIG']]],
     'Lock' : [ 0xcc, ['_PCI_LOCK']],
-    'HotPlugParameters' : [ 0xd4, ['__unnamed_15d1']],
+    'HotPlugParameters' : [ 0xd4, ['__unnamed_15d4']],
     'BusHackFlags' : [ 0xdc, ['unsigned long']],
 } ],
-  '__unnamed_15d5' : [ 0xc, {
+  '__unnamed_15d8' : [ 0xc, {
     'Start' : [ 0x0, ['_LARGE_INTEGER']],
     'Length' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_15d7' : [ 0xc, {
+  '__unnamed_15da' : [ 0xc, {
     'Level' : [ 0x0, ['unsigned long']],
     'Vector' : [ 0x4, ['unsigned long']],
     'Affinity' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_15d9' : [ 0xc, {
+  '__unnamed_15dc' : [ 0xc, {
     'Channel' : [ 0x0, ['unsigned long']],
     'Port' : [ 0x4, ['unsigned long']],
     'Reserved1' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_15db' : [ 0xc, {
+  '__unnamed_15de' : [ 0xc, {
     'Data' : [ 0x0, ['array', 3, ['unsigned long']]],
 } ],
-  '__unnamed_15dd' : [ 0xc, {
+  '__unnamed_15e0' : [ 0xc, {
     'Start' : [ 0x0, ['unsigned long']],
     'Length' : [ 0x4, ['unsigned long']],
     'Reserved' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_15df' : [ 0xc, {
+  '__unnamed_15e2' : [ 0xc, {
     'DataSize' : [ 0x0, ['unsigned long']],
     'Reserved1' : [ 0x4, ['unsigned long']],
     'Reserved2' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_15e1' : [ 0xc, {
-    'Generic' : [ 0x0, ['__unnamed_15d5']],
-    'Port' : [ 0x0, ['__unnamed_15d5']],
-    'Interrupt' : [ 0x0, ['__unnamed_15d7']],
-    'Memory' : [ 0x0, ['__unnamed_15d5']],
-    'Dma' : [ 0x0, ['__unnamed_15d9']],
-    'DevicePrivate' : [ 0x0, ['__unnamed_15db']],
-    'BusNumber' : [ 0x0, ['__unnamed_15dd']],
-    'DeviceSpecificData' : [ 0x0, ['__unnamed_15df']],
+  '__unnamed_15e4' : [ 0xc, {
+    'Generic' : [ 0x0, ['__unnamed_15d8']],
+    'Port' : [ 0x0, ['__unnamed_15d8']],
+    'Interrupt' : [ 0x0, ['__unnamed_15da']],
+    'Memory' : [ 0x0, ['__unnamed_15d8']],
+    'Dma' : [ 0x0, ['__unnamed_15dc']],
+    'DevicePrivate' : [ 0x0, ['__unnamed_15de']],
+    'BusNumber' : [ 0x0, ['__unnamed_15e0']],
+    'DeviceSpecificData' : [ 0x0, ['__unnamed_15e2']],
 } ],
   '_CM_PARTIAL_RESOURCE_DESCRIPTOR' : [ 0x10, {
     'Type' : [ 0x0, ['unsigned char']],
     'ShareDisposition' : [ 0x1, ['unsigned char']],
     'Flags' : [ 0x2, ['unsigned short']],
-    'u' : [ 0x4, ['__unnamed_15e1']],
+    'u' : [ 0x4, ['__unnamed_15e4']],
 } ],
   '_WAIT_CONTEXT_BLOCK' : [ 0x28, {
     'WaitQueueEntry' : [ 0x0, ['_KDEVICE_QUEUE_ENTRY']],
@@ -3076,11 +3076,11 @@ nt_types = {
   '_CM_KEY_CONTROL_BLOCK' : [ 0x48, {
     'RefCount' : [ 0x0, ['unsigned short']],
     'Flags' : [ 0x2, ['unsigned short']],
-    'ExtFlags' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 8)]],
-    'PrivateAlloc' : [ 0x4, ['BitField', dict(start_bit = 8, end_bit = 9)]],
-    'Delete' : [ 0x4, ['BitField', dict(start_bit = 9, end_bit = 10)]],
-    'DelayedCloseIndex' : [ 0x4, ['BitField', dict(start_bit = 10, end_bit = 22)]],
-    'TotalLevels' : [ 0x4, ['BitField', dict(start_bit = 22, end_bit = 32)]],
+    'ExtFlags' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 8, native_type='unsigned long')]],
+    'PrivateAlloc' : [ 0x4, ['BitField', dict(start_bit = 8, end_bit = 9, native_type='unsigned long')]],
+    'Delete' : [ 0x4, ['BitField', dict(start_bit = 9, end_bit = 10, native_type='unsigned long')]],
+    'DelayedCloseIndex' : [ 0x4, ['BitField', dict(start_bit = 10, end_bit = 22, native_type='unsigned long')]],
+    'TotalLevels' : [ 0x4, ['BitField', dict(start_bit = 22, end_bit = 32, native_type='unsigned long')]],
     'KeyHash' : [ 0x8, ['_CM_KEY_HASH']],
     'ConvKey' : [ 0x8, ['unsigned long']],
     'NextHash' : [ 0xc, ['pointer', ['_CM_KEY_HASH']]],
@@ -3140,15 +3140,15 @@ nt_types = {
     'ResourcesChanged' : [ 0x35, ['unsigned char']],
 } ],
   '_SEP_AUDIT_POLICY_CATEGORIES' : [ 0x8, {
-    'System' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 4)]],
-    'Logon' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 8)]],
-    'ObjectAccess' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 12)]],
-    'PrivilegeUse' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 16)]],
-    'DetailedTracking' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 20)]],
-    'PolicyChange' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 24)]],
-    'AccountManagement' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 28)]],
-    'DirectoryServiceAccess' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 32)]],
-    'AccountLogon' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 4)]],
+    'System' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 4, native_type='unsigned long')]],
+    'Logon' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 8, native_type='unsigned long')]],
+    'ObjectAccess' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 12, native_type='unsigned long')]],
+    'PrivilegeUse' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 16, native_type='unsigned long')]],
+    'DetailedTracking' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 20, native_type='unsigned long')]],
+    'PolicyChange' : [ 0x0, ['BitField', dict(start_bit = 20, end_bit = 24, native_type='unsigned long')]],
+    'AccountManagement' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 28, native_type='unsigned long')]],
+    'DirectoryServiceAccess' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 32, native_type='unsigned long')]],
+    'AccountLogon' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 4, native_type='unsigned long')]],
 } ],
   '_CM_KEY_HASH' : [ 0x10, {
     'ConvKey' : [ 0x0, ['unsigned long']],
@@ -3156,20 +3156,20 @@ nt_types = {
     'KeyHive' : [ 0x8, ['pointer', ['_HHIVE']]],
     'KeyCell' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_161b' : [ 0x4, {
+  '__unnamed_161e' : [ 0x4, {
     'MasterIrp' : [ 0x0, ['pointer', ['_IRP']]],
     'IrpCount' : [ 0x0, ['long']],
     'SystemBuffer' : [ 0x0, ['pointer', ['void']]],
 } ],
-  '__unnamed_1621' : [ 0x8, {
+  '__unnamed_1624' : [ 0x8, {
     'UserApcRoutine' : [ 0x0, ['pointer', ['void']]],
     'UserApcContext' : [ 0x4, ['pointer', ['void']]],
 } ],
-  '__unnamed_1623' : [ 0x8, {
-    'AsynchronousParameters' : [ 0x0, ['__unnamed_1621']],
+  '__unnamed_1626' : [ 0x8, {
+    'AsynchronousParameters' : [ 0x0, ['__unnamed_1624']],
     'AllocationSize' : [ 0x0, ['_LARGE_INTEGER']],
 } ],
-  '__unnamed_162b' : [ 0x28, {
+  '__unnamed_162e' : [ 0x28, {
     'DeviceQueueEntry' : [ 0x0, ['_KDEVICE_QUEUE_ENTRY']],
     'DriverContext' : [ 0x0, ['array', 4, ['pointer', ['void']]]],
     'Thread' : [ 0x10, ['pointer', ['_ETHREAD']]],
@@ -3179,8 +3179,8 @@ nt_types = {
     'PacketType' : [ 0x20, ['unsigned long']],
     'OriginalFileObject' : [ 0x24, ['pointer', ['_FILE_OBJECT']]],
 } ],
-  '__unnamed_162d' : [ 0x30, {
-    'Overlay' : [ 0x0, ['__unnamed_162b']],
+  '__unnamed_1630' : [ 0x30, {
+    'Overlay' : [ 0x0, ['__unnamed_162e']],
     'Apc' : [ 0x0, ['_KAPC']],
     'CompletionKey' : [ 0x0, ['pointer', ['void']]],
 } ],
@@ -3189,7 +3189,7 @@ nt_types = {
     'Size' : [ 0x2, ['unsigned short']],
     'MdlAddress' : [ 0x4, ['pointer', ['_MDL']]],
     'Flags' : [ 0x8, ['unsigned long']],
-    'AssociatedIrp' : [ 0xc, ['__unnamed_161b']],
+    'AssociatedIrp' : [ 0xc, ['__unnamed_161e']],
     'ThreadListEntry' : [ 0x10, ['_LIST_ENTRY']],
     'IoStatus' : [ 0x18, ['_IO_STATUS_BLOCK']],
     'RequestorMode' : [ 0x20, ['unsigned char']],
@@ -3202,10 +3202,10 @@ nt_types = {
     'AllocationFlags' : [ 0x27, ['unsigned char']],
     'UserIosb' : [ 0x28, ['pointer', ['_IO_STATUS_BLOCK']]],
     'UserEvent' : [ 0x2c, ['pointer', ['_KEVENT']]],
-    'Overlay' : [ 0x30, ['__unnamed_1623']],
+    'Overlay' : [ 0x30, ['__unnamed_1626']],
     'CancelRoutine' : [ 0x38, ['pointer', ['void']]],
     'UserBuffer' : [ 0x3c, ['pointer', ['void']]],
-    'Tail' : [ 0x40, ['__unnamed_162d']],
+    'Tail' : [ 0x40, ['__unnamed_1630']],
 } ],
   '_PCI_LOCK' : [ 0x8, {
     'Atom' : [ 0x0, ['unsigned long']],
@@ -3215,13 +3215,13 @@ nt_types = {
     'Cell' : [ 0x0, ['unsigned long']],
     'CachedSecurity' : [ 0x4, ['pointer', ['_CM_KEY_SECURITY_CACHE']]],
 } ],
-  '__unnamed_1638' : [ 0x4, {
+  '__unnamed_163b' : [ 0x4, {
     'PhysicalAddress' : [ 0x0, ['unsigned long']],
     'VirtualSize' : [ 0x0, ['unsigned long']],
 } ],
   '_IMAGE_SECTION_HEADER' : [ 0x28, {
     'Name' : [ 0x0, ['array', 8, ['unsigned char']]],
-    'Misc' : [ 0x8, ['__unnamed_1638']],
+    'Misc' : [ 0x8, ['__unnamed_163b']],
     'VirtualAddress' : [ 0xc, ['unsigned long']],
     'SizeOfRawData' : [ 0x10, ['unsigned long']],
     'PointerToRawData' : [ 0x14, ['unsigned long']],
@@ -3231,14 +3231,14 @@ nt_types = {
     'NumberOfLinenumbers' : [ 0x22, ['unsigned short']],
     'Characteristics' : [ 0x24, ['unsigned long']],
 } ],
-  '__unnamed_163e' : [ 0x4, {
+  '__unnamed_1641' : [ 0x4, {
     'Level' : [ 0x0, ['unsigned long']],
 } ],
   '_POP_ACTION_TRIGGER' : [ 0xc, {
     'Type' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'PolicyDeviceSystemButton', 1: 'PolicyDeviceThermalZone', 2: 'PolicyDeviceBattery', 3: 'PolicyInitiatePowerActionAPI', 4: 'PolicySetPowerStateAPI', 5: 'PolicyImmediateDozeS4', 6: 'PolicySystemIdle'})]],
     'Flags' : [ 0x4, ['unsigned char']],
     'Spare' : [ 0x5, ['array', 3, ['unsigned char']]],
-    'Battery' : [ 0x8, ['__unnamed_163e']],
+    'Battery' : [ 0x8, ['__unnamed_1641']],
     'Wait' : [ 0x8, ['pointer', ['_POP_TRIGGER_WAIT']]],
 } ],
   '_ETIMER' : [ 0x98, {
@@ -3261,34 +3261,34 @@ nt_types = {
     'NewCell' : [ 0x4, ['unsigned long']],
 } ],
   '_PCI_PMC' : [ 0x2, {
-    'Version' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 3)]],
-    'PMEClock' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'Rsvd1' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
-    'DeviceSpecificInitialization' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
-    'Rsvd2' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 8)]],
+    'Version' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 3, native_type='unsigned char')]],
+    'PMEClock' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned char')]],
+    'Rsvd1' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned char')]],
+    'DeviceSpecificInitialization' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6, native_type='unsigned char')]],
+    'Rsvd2' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 8, native_type='unsigned char')]],
     'Support' : [ 0x1, ['_PM_SUPPORT']],
 } ],
   '_DBGKD_CONTINUE' : [ 0x4, {
     'ContinueStatus' : [ 0x0, ['long']],
 } ],
-  '__unnamed_1655' : [ 0x4, {
+  '__unnamed_1658' : [ 0x4, {
     'VirtualAddress' : [ 0x0, ['pointer', ['void']]],
     'Long' : [ 0x0, ['unsigned long']],
     'e1' : [ 0x0, ['_MMWSLENTRY']],
 } ],
   '_MMWSLE' : [ 0x4, {
-    'u1' : [ 0x0, ['__unnamed_1655']],
+    'u1' : [ 0x0, ['__unnamed_1658']],
 } ],
   '_EXCEPTION_POINTERS' : [ 0x8, {
     'ExceptionRecord' : [ 0x0, ['pointer', ['_EXCEPTION_RECORD']]],
     'ContextRecord' : [ 0x4, ['pointer', ['_CONTEXT']]],
 } ],
-  '__unnamed_165d' : [ 0x4, {
-    'Balance' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2)]],
+  '__unnamed_1660' : [ 0x4, {
+    'Balance' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 2, native_type='long')]],
     'Parent' : [ 0x0, ['pointer', ['_MMADDRESS_NODE']]],
 } ],
   '_MMADDRESS_NODE' : [ 0x14, {
-    'u1' : [ 0x0, ['__unnamed_165d']],
+    'u1' : [ 0x0, ['__unnamed_1660']],
     'LeftChild' : [ 0x4, ['pointer', ['_MMADDRESS_NODE']]],
     'RightChild' : [ 0x8, ['pointer', ['_MMADDRESS_NODE']]],
     'StartingVpn' : [ 0xc, ['unsigned long']],
@@ -3344,8 +3344,8 @@ nt_types = {
 } ],
   '_VI_DEADLOCK_RESOURCE' : [ 0x80, {
     'Type' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'VfDeadlockUnknown', 1: 'VfDeadlockMutex', 2: 'VfDeadlockMutexAbandoned', 3: 'VfDeadlockFastMutex', 4: 'VfDeadlockFastMutexUnsafe', 5: 'VfDeadlockSpinLock', 6: 'VfDeadlockQueuedSpinLock', 7: 'VfDeadlockTypeMaximum'})]],
-    'NodeCount' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 16)]],
-    'RecursionCount' : [ 0x4, ['BitField', dict(start_bit = 16, end_bit = 32)]],
+    'NodeCount' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 16, native_type='unsigned long')]],
+    'RecursionCount' : [ 0x4, ['BitField', dict(start_bit = 16, end_bit = 32, native_type='unsigned long')]],
     'ResourceAddress' : [ 0x8, ['pointer', ['void']]],
     'ThreadOwner' : [ 0xc, ['pointer', ['_VI_DEADLOCK_THREAD']]],
     'ResourceList' : [ 0x10, ['_LIST_ENTRY']],
@@ -3381,23 +3381,23 @@ nt_types = {
     'Flink' : [ 0x8, ['unsigned long']],
     'Blink' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_1681' : [ 0x4, {
+  '__unnamed_1684' : [ 0x4, {
     'Spare' : [ 0x0, ['array', 4, ['unsigned char']]],
 } ],
-  '__unnamed_1683' : [ 0x4, {
+  '__unnamed_1686' : [ 0x4, {
     'PrimaryBus' : [ 0x0, ['unsigned char']],
     'SecondaryBus' : [ 0x1, ['unsigned char']],
     'SubordinateBus' : [ 0x2, ['unsigned char']],
-    'SubtractiveDecode' : [ 0x3, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'IsaBitSet' : [ 0x3, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'VgaBitSet' : [ 0x3, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'WeChangedBusNumbers' : [ 0x3, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'IsaBitRequired' : [ 0x3, ['BitField', dict(start_bit = 4, end_bit = 5)]],
+    'SubtractiveDecode' : [ 0x3, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned char')]],
+    'IsaBitSet' : [ 0x3, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned char')]],
+    'VgaBitSet' : [ 0x3, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned char')]],
+    'WeChangedBusNumbers' : [ 0x3, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned char')]],
+    'IsaBitRequired' : [ 0x3, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned char')]],
 } ],
   'PCI_HEADER_TYPE_DEPENDENT' : [ 0x4, {
-    'type0' : [ 0x0, ['__unnamed_1681']],
-    'type1' : [ 0x0, ['__unnamed_1683']],
-    'type2' : [ 0x0, ['__unnamed_1683']],
+    'type0' : [ 0x0, ['__unnamed_1684']],
+    'type1' : [ 0x0, ['__unnamed_1686']],
+    'type2' : [ 0x0, ['__unnamed_1686']],
 } ],
   '_DBGKD_GET_SET_BUS_DATA' : [ 0x14, {
     'BusDataType' : [ 0x0, ['unsigned long']],
@@ -3499,14 +3499,14 @@ nt_types = {
     'Align16Byte' : [ 0x200, ['array', 8, ['unsigned char']]],
 } ],
   '_MMWSLENTRY' : [ 0x4, {
-    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'LockedInWs' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'LockedInMemory' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'Protection' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 8)]],
-    'SameProtectAsProto' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9)]],
-    'Direct' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10)]],
-    'Age' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 12)]],
-    'VirtualPageNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'LockedInWs' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'LockedInMemory' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 8, native_type='unsigned long')]],
+    'SameProtectAsProto' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 9, native_type='unsigned long')]],
+    'Direct' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 10, native_type='unsigned long')]],
+    'Age' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 12, native_type='unsigned long')]],
+    'VirtualPageNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_OBJECT_DIRECTORY' : [ 0xa0, {
     'HashBuckets' : [ 0x0, ['array', 37, ['pointer', ['_OBJECT_DIRECTORY_ENTRY']]]],
@@ -3600,11 +3600,11 @@ nt_types = {
     'Abandoned' : [ 0x1c, ['unsigned char']],
     'ApcDisable' : [ 0x1d, ['unsigned char']],
 } ],
-  '__unnamed_16f1' : [ 0x4, {
+  '__unnamed_16f4' : [ 0x4, {
     'ImageCommitment' : [ 0x0, ['unsigned long']],
     'CreatingProcess' : [ 0x0, ['pointer', ['_EPROCESS']]],
 } ],
-  '__unnamed_16f5' : [ 0x4, {
+  '__unnamed_16f8' : [ 0x4, {
     'ImageInformation' : [ 0x0, ['pointer', ['_SECTION_IMAGE_INFORMATION']]],
     'FirstMappedVa' : [ 0x0, ['pointer', ['void']]],
 } ],
@@ -3619,8 +3619,8 @@ nt_types = {
     'ExtendInfo' : [ 0x20, ['pointer', ['_MMEXTEND_INFO']]],
     'SegmentFlags' : [ 0x24, ['_SEGMENT_FLAGS']],
     'BasedAddress' : [ 0x28, ['pointer', ['void']]],
-    'u1' : [ 0x2c, ['__unnamed_16f1']],
-    'u2' : [ 0x30, ['__unnamed_16f5']],
+    'u1' : [ 0x2c, ['__unnamed_16f4']],
+    'u2' : [ 0x30, ['__unnamed_16f8']],
     'PrototypePte' : [ 0x34, ['pointer', ['_MMPTE']]],
     'ThePtes' : [ 0x38, ['array', 1, ['_MMPTE']]],
 } ],
@@ -3836,7 +3836,7 @@ nt_types = {
     'ExtensionType' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {1768116272: 'PciPdoExtensionType', 1768116273: 'PciFdoExtensionType', 1768116274: 'PciArb_Io', 1768116275: 'PciArb_Memory', 1768116276: 'PciArb_Interrupt', 1768116277: 'PciArb_BusNumber', 1768116278: 'PciTrans_Interrupt', 1768116279: 'PciInterface_BusHandler', 1768116280: 'PciInterface_IntRouteHandler', 1768116281: 'PciInterface_PciCb', 1768116282: 'PciInterface_LegacyDeviceDetection', 1768116283: 'PciInterface_PmeHandler', 1768116284: 'PciInterface_DevicePresent', 1768116285: 'PciInterface_NativeIde', 1768116286: 'PciInterface_Location', 1768116287: 'PciInterface_AgpTarget'})]],
     'Destructor' : [ 0x8, ['pointer', ['void']]],
 } ],
-  '__unnamed_1734' : [ 0x30, {
+  '__unnamed_1737' : [ 0x30, {
     'type0' : [ 0x0, ['_PCI_HEADER_TYPE_0']],
     'type1' : [ 0x0, ['_PCI_HEADER_TYPE_1']],
     'type2' : [ 0x0, ['_PCI_HEADER_TYPE_2']],
@@ -3854,7 +3854,7 @@ nt_types = {
     'LatencyTimer' : [ 0xd, ['unsigned char']],
     'HeaderType' : [ 0xe, ['unsigned char']],
     'BIST' : [ 0xf, ['unsigned char']],
-    'u' : [ 0x10, ['__unnamed_1734']],
+    'u' : [ 0x10, ['__unnamed_1737']],
     'DeviceSpecific' : [ 0x40, ['array', 192, ['unsigned char']]],
 } ],
   '_HEAP_FREE_ENTRY_EXTRA' : [ 0x4, {
@@ -3912,9 +3912,9 @@ nt_types = {
     'Run' : [ 0x8, ['array', 1, ['_PHYSICAL_MEMORY_RUN']]],
 } ],
   '_SEGMENT_FLAGS' : [ 0x4, {
-    'TotalNumberOfPtes4132' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 10)]],
-    'ExtraSharedWowSubsections' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
-    'Spare' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 32)]],
+    'TotalNumberOfPtes4132' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 10, native_type='unsigned long')]],
+    'ExtraSharedWowSubsections' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11, native_type='unsigned long')]],
+    'Spare' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_PI_BUS_EXTENSION' : [ 0x44, {
     'Flags' : [ 0x0, ['unsigned long']],
@@ -3970,16 +3970,16 @@ nt_types = {
     'Initializer' : [ 0x18, ['pointer', ['void']]],
 } ],
   '_MMVAD' : [ 0x28, {
-    'u1' : [ 0x0, ['__unnamed_151c']],
+    'u1' : [ 0x0, ['__unnamed_151e']],
     'LeftChild' : [ 0x4, ['pointer', ['_MMVAD']]],
     'RightChild' : [ 0x8, ['pointer', ['_MMVAD']]],
     'StartingVpn' : [ 0xc, ['unsigned long']],
     'EndingVpn' : [ 0x10, ['unsigned long']],
-    'u' : [ 0x14, ['__unnamed_151f']],
+    'u' : [ 0x14, ['__unnamed_1521']],
     'ControlArea' : [ 0x18, ['pointer', ['_CONTROL_AREA']]],
     'FirstPrototypePte' : [ 0x1c, ['pointer', ['_MMPTE']]],
     'LastContiguousPte' : [ 0x20, ['pointer', ['_MMPTE']]],
-    'u2' : [ 0x24, ['__unnamed_1522']],
+    'u2' : [ 0x24, ['__unnamed_1524']],
 } ],
   '_POP_POWER_ACTION' : [ 0x40, {
     'Updates' : [ 0x0, ['unsigned char']],
@@ -4009,14 +4009,14 @@ nt_types = {
     'Request' : [ 0x18, ['_PORT_MESSAGE']],
 } ],
   '_MMVAD_SHORT' : [ 0x18, {
-    'u1' : [ 0x0, ['__unnamed_151c']],
+    'u1' : [ 0x0, ['__unnamed_151e']],
     'LeftChild' : [ 0x4, ['pointer', ['_MMVAD']]],
     'RightChild' : [ 0x8, ['pointer', ['_MMVAD']]],
     'StartingVpn' : [ 0xc, ['unsigned long']],
     'EndingVpn' : [ 0x10, ['unsigned long']],
-    'u' : [ 0x14, ['__unnamed_151f']],
+    'u' : [ 0x14, ['__unnamed_1521']],
 } ],
-  '__unnamed_177f' : [ 0x2c, {
+  '__unnamed_1782' : [ 0x2c, {
     'InitialPrivilegeSet' : [ 0x0, ['_INITIAL_PRIVILEGE_SET']],
     'PrivilegeSet' : [ 0x0, ['_PRIVILEGE_SET']],
 } ],
@@ -4033,7 +4033,7 @@ nt_types = {
     'SubjectSecurityContext' : [ 0x1c, ['_SECURITY_SUBJECT_CONTEXT']],
     'SecurityDescriptor' : [ 0x2c, ['pointer', ['void']]],
     'AuxData' : [ 0x30, ['pointer', ['void']]],
-    'Privileges' : [ 0x34, ['__unnamed_177f']],
+    'Privileges' : [ 0x34, ['__unnamed_1782']],
     'AuditPrivileges' : [ 0x60, ['unsigned char']],
     'ObjectName' : [ 0x64, ['_UNICODE_STRING']],
     'ObjectTypeName' : [ 0x6c, ['_UNICODE_STRING']],
@@ -4049,10 +4049,10 @@ nt_types = {
     'Data' : [ 0x20, ['_PLUGPLAY_EVENT_BLOCK']],
 } ],
   '_PRIVATE_CACHE_MAP_FLAGS' : [ 0x4, {
-    'DontUse' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 16)]],
-    'ReadAheadActive' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 17)]],
-    'ReadAheadEnabled' : [ 0x0, ['BitField', dict(start_bit = 17, end_bit = 18)]],
-    'Available' : [ 0x0, ['BitField', dict(start_bit = 18, end_bit = 32)]],
+    'DontUse' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 16, native_type='unsigned long')]],
+    'ReadAheadActive' : [ 0x0, ['BitField', dict(start_bit = 16, end_bit = 17, native_type='unsigned long')]],
+    'ReadAheadEnabled' : [ 0x0, ['BitField', dict(start_bit = 17, end_bit = 18, native_type='unsigned long')]],
+    'Available' : [ 0x0, ['BitField', dict(start_bit = 18, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_PNP_DEVICE_EVENT_LIST' : [ 0x4c, {
     'Status' : [ 0x0, ['long']],
@@ -4065,15 +4065,15 @@ nt_types = {
     'SpecialRegisters' : [ 0x2cc, ['_KSPECIAL_REGISTERS']],
 } ],
   '_MMPTE_TRANSITION' : [ 0x4, {
-    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'Write' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'Owner' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'WriteThrough' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'CacheDisable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
-    'Protection' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 10)]],
-    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11)]],
-    'Transition' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12)]],
-    'PageFrameNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32)]],
+    'Valid' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'Write' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'Owner' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'WriteThrough' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned long')]],
+    'CacheDisable' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned long')]],
+    'Protection' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 10, native_type='unsigned long')]],
+    'Prototype' : [ 0x0, ['BitField', dict(start_bit = 10, end_bit = 11, native_type='unsigned long')]],
+    'Transition' : [ 0x0, ['BitField', dict(start_bit = 11, end_bit = 12, native_type='unsigned long')]],
+    'PageFrameNumber' : [ 0x0, ['BitField', dict(start_bit = 12, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_STRING' : [ 0x8, {
     'Length' : [ 0x0, ['unsigned short']],
@@ -4081,15 +4081,15 @@ nt_types = {
     'Buffer' : [ 0x4, ['pointer', ['unsigned char']]],
 } ],
   '_MMVAD_FLAGS2' : [ 0x4, {
-    'FileOffset' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 24)]],
-    'SecNoChange' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 25)]],
-    'OneSecured' : [ 0x0, ['BitField', dict(start_bit = 25, end_bit = 26)]],
-    'MultipleSecured' : [ 0x0, ['BitField', dict(start_bit = 26, end_bit = 27)]],
-    'ReadOnly' : [ 0x0, ['BitField', dict(start_bit = 27, end_bit = 28)]],
-    'LongVad' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 29)]],
-    'ExtendableFile' : [ 0x0, ['BitField', dict(start_bit = 29, end_bit = 30)]],
-    'Inherit' : [ 0x0, ['BitField', dict(start_bit = 30, end_bit = 31)]],
-    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 31, end_bit = 32)]],
+    'FileOffset' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 24, native_type='unsigned long')]],
+    'SecNoChange' : [ 0x0, ['BitField', dict(start_bit = 24, end_bit = 25, native_type='unsigned long')]],
+    'OneSecured' : [ 0x0, ['BitField', dict(start_bit = 25, end_bit = 26, native_type='unsigned long')]],
+    'MultipleSecured' : [ 0x0, ['BitField', dict(start_bit = 26, end_bit = 27, native_type='unsigned long')]],
+    'ReadOnly' : [ 0x0, ['BitField', dict(start_bit = 27, end_bit = 28, native_type='unsigned long')]],
+    'LongVad' : [ 0x0, ['BitField', dict(start_bit = 28, end_bit = 29, native_type='unsigned long')]],
+    'ExtendableFile' : [ 0x0, ['BitField', dict(start_bit = 29, end_bit = 30, native_type='unsigned long')]],
+    'Inherit' : [ 0x0, ['BitField', dict(start_bit = 30, end_bit = 31, native_type='unsigned long')]],
+    'CopyOnWrite' : [ 0x0, ['BitField', dict(start_bit = 31, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_flags' : [ 0x1, {
     'Removable' : [ 0x0, ['unsigned char']],
@@ -4108,9 +4108,9 @@ nt_types = {
     'DemotePercent' : [ 0xc, ['unsigned char']],
     'PromotePercent' : [ 0xd, ['unsigned char']],
     'Spare' : [ 0xe, ['array', 2, ['unsigned char']]],
-    'AllowDemotion' : [ 0x10, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'AllowPromotion' : [ 0x10, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'Reserved' : [ 0x10, ['BitField', dict(start_bit = 2, end_bit = 32)]],
+    'AllowDemotion' : [ 0x10, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'AllowPromotion' : [ 0x10, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'Reserved' : [ 0x10, ['BitField', dict(start_bit = 2, end_bit = 32, native_type='unsigned long')]],
 } ],
   '_GUID' : [ 0x10, {
     'Data1' : [ 0x0, ['unsigned long']],
@@ -4298,47 +4298,47 @@ nt_types = {
     'Count' : [ 0x0, ['unsigned long']],
     'HashKey' : [ 0x4, ['array', 1, ['unsigned long']]],
 } ],
-  '__unnamed_1821' : [ 0x10, {
+  '__unnamed_1824' : [ 0x10, {
     'SecurityContext' : [ 0x0, ['pointer', ['_IO_SECURITY_CONTEXT']]],
     'Options' : [ 0x4, ['unsigned long']],
     'FileAttributes' : [ 0x8, ['unsigned short']],
     'ShareAccess' : [ 0xa, ['unsigned short']],
     'EaLength' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_1825' : [ 0x10, {
+  '__unnamed_1828' : [ 0x10, {
     'SecurityContext' : [ 0x0, ['pointer', ['_IO_SECURITY_CONTEXT']]],
     'Options' : [ 0x4, ['unsigned long']],
     'Reserved' : [ 0x8, ['unsigned short']],
     'ShareAccess' : [ 0xa, ['unsigned short']],
     'Parameters' : [ 0xc, ['pointer', ['_NAMED_PIPE_CREATE_PARAMETERS']]],
 } ],
-  '__unnamed_1829' : [ 0x10, {
+  '__unnamed_182c' : [ 0x10, {
     'SecurityContext' : [ 0x0, ['pointer', ['_IO_SECURITY_CONTEXT']]],
     'Options' : [ 0x4, ['unsigned long']],
     'Reserved' : [ 0x8, ['unsigned short']],
     'ShareAccess' : [ 0xa, ['unsigned short']],
     'Parameters' : [ 0xc, ['pointer', ['_MAILSLOT_CREATE_PARAMETERS']]],
 } ],
-  '__unnamed_182b' : [ 0x10, {
+  '__unnamed_182e' : [ 0x10, {
     'Length' : [ 0x0, ['unsigned long']],
     'Key' : [ 0x4, ['unsigned long']],
     'ByteOffset' : [ 0x8, ['_LARGE_INTEGER']],
 } ],
-  '__unnamed_182f' : [ 0x10, {
+  '__unnamed_1832' : [ 0x10, {
     'Length' : [ 0x0, ['unsigned long']],
     'FileName' : [ 0x4, ['pointer', ['_UNICODE_STRING']]],
     'FileInformationClass' : [ 0x8, ['Enumeration', dict(target = 'long', choices = {1: 'FileDirectoryInformation', 2: 'FileFullDirectoryInformation', 3: 'FileBothDirectoryInformation', 4: 'FileBasicInformation', 5: 'FileStandardInformation', 6: 'FileInternalInformation', 7: 'FileEaInformation', 8: 'FileAccessInformation', 9: 'FileNameInformation', 10: 'FileRenameInformation', 11: 'FileLinkInformation', 12: 'FileNamesInformation', 13: 'FileDispositionInformation', 14: 'FilePositionInformation', 15: 'FileFullEaInformation', 16: 'FileModeInformation', 17: 'FileAlignmentInformation', 18: 'FileAllInformation', 19: 'FileAllocationInformation', 20: 'FileEndOfFileInformation', 21: 'FileAlternateNameInformation', 22: 'FileStreamInformation', 23: 'FilePipeInformation', 24: 'FilePipeLocalInformation', 25: 'FilePipeRemoteInformation', 26: 'FileMailslotQueryInformation', 27: 'FileMailslotSetInformation', 28: 'FileCompressionInformation', 29: 'FileObjectIdInformation', 30: 'FileCompletionInformation', 31: 'FileMoveClusterInformation', 32: 'FileQuotaInformation', 33: 'FileReparsePointInformation', 34: 'FileNetworkOpenInformation', 35: 'FileAttributeTagInformation', 36: 'FileTrackingInformation', 37: 'FileIdBothDirectoryInformation', 38: 'FileIdFullDirectoryInformation', 39: 'FileValidDataLengthInformation', 40: 'FileShortNameInformation', 41: 'FileMaximumInformation'})]],
     'FileIndex' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_1831' : [ 0x8, {
+  '__unnamed_1834' : [ 0x8, {
     'Length' : [ 0x0, ['unsigned long']],
     'CompletionFilter' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_1833' : [ 0x8, {
+  '__unnamed_1836' : [ 0x8, {
     'Length' : [ 0x0, ['unsigned long']],
     'FileInformationClass' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {1: 'FileDirectoryInformation', 2: 'FileFullDirectoryInformation', 3: 'FileBothDirectoryInformation', 4: 'FileBasicInformation', 5: 'FileStandardInformation', 6: 'FileInternalInformation', 7: 'FileEaInformation', 8: 'FileAccessInformation', 9: 'FileNameInformation', 10: 'FileRenameInformation', 11: 'FileLinkInformation', 12: 'FileNamesInformation', 13: 'FileDispositionInformation', 14: 'FilePositionInformation', 15: 'FileFullEaInformation', 16: 'FileModeInformation', 17: 'FileAlignmentInformation', 18: 'FileAllInformation', 19: 'FileAllocationInformation', 20: 'FileEndOfFileInformation', 21: 'FileAlternateNameInformation', 22: 'FileStreamInformation', 23: 'FilePipeInformation', 24: 'FilePipeLocalInformation', 25: 'FilePipeRemoteInformation', 26: 'FileMailslotQueryInformation', 27: 'FileMailslotSetInformation', 28: 'FileCompressionInformation', 29: 'FileObjectIdInformation', 30: 'FileCompletionInformation', 31: 'FileMoveClusterInformation', 32: 'FileQuotaInformation', 33: 'FileReparsePointInformation', 34: 'FileNetworkOpenInformation', 35: 'FileAttributeTagInformation', 36: 'FileTrackingInformation', 37: 'FileIdBothDirectoryInformation', 38: 'FileIdFullDirectoryInformation', 39: 'FileValidDataLengthInformation', 40: 'FileShortNameInformation', 41: 'FileMaximumInformation'})]],
 } ],
-  '__unnamed_1835' : [ 0x10, {
+  '__unnamed_1838' : [ 0x10, {
     'Length' : [ 0x0, ['unsigned long']],
     'FileInformationClass' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {1: 'FileDirectoryInformation', 2: 'FileFullDirectoryInformation', 3: 'FileBothDirectoryInformation', 4: 'FileBasicInformation', 5: 'FileStandardInformation', 6: 'FileInternalInformation', 7: 'FileEaInformation', 8: 'FileAccessInformation', 9: 'FileNameInformation', 10: 'FileRenameInformation', 11: 'FileLinkInformation', 12: 'FileNamesInformation', 13: 'FileDispositionInformation', 14: 'FilePositionInformation', 15: 'FileFullEaInformation', 16: 'FileModeInformation', 17: 'FileAlignmentInformation', 18: 'FileAllInformation', 19: 'FileAllocationInformation', 20: 'FileEndOfFileInformation', 21: 'FileAlternateNameInformation', 22: 'FileStreamInformation', 23: 'FilePipeInformation', 24: 'FilePipeLocalInformation', 25: 'FilePipeRemoteInformation', 26: 'FileMailslotQueryInformation', 27: 'FileMailslotSetInformation', 28: 'FileCompressionInformation', 29: 'FileObjectIdInformation', 30: 'FileCompletionInformation', 31: 'FileMoveClusterInformation', 32: 'FileQuotaInformation', 33: 'FileReparsePointInformation', 34: 'FileNetworkOpenInformation', 35: 'FileAttributeTagInformation', 36: 'FileTrackingInformation', 37: 'FileIdBothDirectoryInformation', 38: 'FileIdFullDirectoryInformation', 39: 'FileValidDataLengthInformation', 40: 'FileShortNameInformation', 41: 'FileMaximumInformation'})]],
     'FileObject' : [ 0x8, ['pointer', ['_FILE_OBJECT']]],
@@ -4347,207 +4347,207 @@ nt_types = {
     'ClusterCount' : [ 0xc, ['unsigned long']],
     'DeleteHandle' : [ 0xc, ['pointer', ['void']]],
 } ],
-  '__unnamed_1837' : [ 0x10, {
+  '__unnamed_183a' : [ 0x10, {
     'Length' : [ 0x0, ['unsigned long']],
     'EaList' : [ 0x4, ['pointer', ['void']]],
     'EaListLength' : [ 0x8, ['unsigned long']],
     'EaIndex' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_1839' : [ 0x4, {
+  '__unnamed_183c' : [ 0x4, {
     'Length' : [ 0x0, ['unsigned long']],
 } ],
-  '__unnamed_183d' : [ 0x8, {
+  '__unnamed_1840' : [ 0x8, {
     'Length' : [ 0x0, ['unsigned long']],
     'FsInformationClass' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {1: 'FileFsVolumeInformation', 2: 'FileFsLabelInformation', 3: 'FileFsSizeInformation', 4: 'FileFsDeviceInformation', 5: 'FileFsAttributeInformation', 6: 'FileFsControlInformation', 7: 'FileFsFullSizeInformation', 8: 'FileFsObjectIdInformation', 9: 'FileFsDriverPathInformation', 10: 'FileFsMaximumInformation'})]],
 } ],
-  '__unnamed_183f' : [ 0x10, {
+  '__unnamed_1842' : [ 0x10, {
     'OutputBufferLength' : [ 0x0, ['unsigned long']],
     'InputBufferLength' : [ 0x4, ['unsigned long']],
     'FsControlCode' : [ 0x8, ['unsigned long']],
     'Type3InputBuffer' : [ 0xc, ['pointer', ['void']]],
 } ],
-  '__unnamed_1841' : [ 0x10, {
+  '__unnamed_1844' : [ 0x10, {
     'Length' : [ 0x0, ['pointer', ['_LARGE_INTEGER']]],
     'Key' : [ 0x4, ['unsigned long']],
     'ByteOffset' : [ 0x8, ['_LARGE_INTEGER']],
 } ],
-  '__unnamed_1843' : [ 0x10, {
+  '__unnamed_1846' : [ 0x10, {
     'OutputBufferLength' : [ 0x0, ['unsigned long']],
     'InputBufferLength' : [ 0x4, ['unsigned long']],
     'IoControlCode' : [ 0x8, ['unsigned long']],
     'Type3InputBuffer' : [ 0xc, ['pointer', ['void']]],
 } ],
-  '__unnamed_1845' : [ 0x8, {
+  '__unnamed_1848' : [ 0x8, {
     'SecurityInformation' : [ 0x0, ['unsigned long']],
     'Length' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_1847' : [ 0x8, {
+  '__unnamed_184a' : [ 0x8, {
     'SecurityInformation' : [ 0x0, ['unsigned long']],
     'SecurityDescriptor' : [ 0x4, ['pointer', ['void']]],
 } ],
-  '__unnamed_1849' : [ 0x8, {
+  '__unnamed_184c' : [ 0x8, {
     'Vpb' : [ 0x0, ['pointer', ['_VPB']]],
     'DeviceObject' : [ 0x4, ['pointer', ['_DEVICE_OBJECT']]],
 } ],
-  '__unnamed_184d' : [ 0x4, {
+  '__unnamed_1850' : [ 0x4, {
     'Srb' : [ 0x0, ['pointer', ['_SCSI_REQUEST_BLOCK']]],
 } ],
-  '__unnamed_1851' : [ 0x10, {
+  '__unnamed_1854' : [ 0x10, {
     'Length' : [ 0x0, ['unsigned long']],
     'StartSid' : [ 0x4, ['pointer', ['void']]],
     'SidList' : [ 0x8, ['pointer', ['_FILE_GET_QUOTA_INFORMATION']]],
     'SidListLength' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_1855' : [ 0x4, {
+  '__unnamed_1858' : [ 0x4, {
     'Type' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'BusRelations', 1: 'EjectionRelations', 2: 'PowerRelations', 3: 'RemovalRelations', 4: 'TargetDeviceRelation', 5: 'SingleBusRelations'})]],
 } ],
-  '__unnamed_1857' : [ 0x10, {
+  '__unnamed_185a' : [ 0x10, {
     'InterfaceType' : [ 0x0, ['pointer', ['_GUID']]],
     'Size' : [ 0x4, ['unsigned short']],
     'Version' : [ 0x6, ['unsigned short']],
     'Interface' : [ 0x8, ['pointer', ['_INTERFACE']]],
     'InterfaceSpecificData' : [ 0xc, ['pointer', ['void']]],
 } ],
-  '__unnamed_185b' : [ 0x4, {
+  '__unnamed_185e' : [ 0x4, {
     'Capabilities' : [ 0x0, ['pointer', ['_DEVICE_CAPABILITIES']]],
 } ],
-  '__unnamed_185d' : [ 0x4, {
+  '__unnamed_1860' : [ 0x4, {
     'IoResourceRequirementList' : [ 0x0, ['pointer', ['_IO_RESOURCE_REQUIREMENTS_LIST']]],
 } ],
-  '__unnamed_185f' : [ 0x10, {
+  '__unnamed_1862' : [ 0x10, {
     'WhichSpace' : [ 0x0, ['unsigned long']],
     'Buffer' : [ 0x4, ['pointer', ['void']]],
     'Offset' : [ 0x8, ['unsigned long']],
     'Length' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_1861' : [ 0x1, {
+  '__unnamed_1864' : [ 0x1, {
     'Lock' : [ 0x0, ['unsigned char']],
 } ],
-  '__unnamed_1865' : [ 0x4, {
+  '__unnamed_1868' : [ 0x4, {
     'IdType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'BusQueryDeviceID', 1: 'BusQueryHardwareIDs', 2: 'BusQueryCompatibleIDs', 3: 'BusQueryInstanceID', 4: 'BusQueryDeviceSerialNumber'})]],
 } ],
-  '__unnamed_1869' : [ 0x8, {
+  '__unnamed_186c' : [ 0x8, {
     'DeviceTextType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'DeviceTextDescription', 1: 'DeviceTextLocationInformation'})]],
     'LocaleId' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_186d' : [ 0x8, {
+  '__unnamed_1870' : [ 0x8, {
     'InPath' : [ 0x0, ['unsigned char']],
     'Reserved' : [ 0x1, ['array', 3, ['unsigned char']]],
     'Type' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'DeviceUsageTypeUndefined', 1: 'DeviceUsageTypePaging', 2: 'DeviceUsageTypeHibernation', 3: 'DeviceUsageTypeDumpFile'})]],
 } ],
-  '__unnamed_186f' : [ 0x4, {
+  '__unnamed_1872' : [ 0x4, {
     'PowerState' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'PowerSystemUnspecified', 1: 'PowerSystemWorking', 2: 'PowerSystemSleeping1', 3: 'PowerSystemSleeping2', 4: 'PowerSystemSleeping3', 5: 'PowerSystemHibernate', 6: 'PowerSystemShutdown', 7: 'PowerSystemMaximum'})]],
 } ],
-  '__unnamed_1873' : [ 0x4, {
+  '__unnamed_1876' : [ 0x4, {
     'PowerSequence' : [ 0x0, ['pointer', ['_POWER_SEQUENCE']]],
 } ],
-  '__unnamed_1877' : [ 0x10, {
+  '__unnamed_187a' : [ 0x10, {
     'SystemContext' : [ 0x0, ['unsigned long']],
     'Type' : [ 0x4, ['Enumeration', dict(target = 'long', choices = {0: 'SystemPowerState', 1: 'DevicePowerState'})]],
     'State' : [ 0x8, ['_POWER_STATE']],
     'ShutdownType' : [ 0xc, ['Enumeration', dict(target = 'long', choices = {0: 'PowerActionNone', 1: 'PowerActionReserved', 2: 'PowerActionSleep', 3: 'PowerActionHibernate', 4: 'PowerActionShutdown', 5: 'PowerActionShutdownReset', 6: 'PowerActionShutdownOff', 7: 'PowerActionWarmEject'})]],
 } ],
-  '__unnamed_1879' : [ 0x8, {
+  '__unnamed_187c' : [ 0x8, {
     'AllocatedResources' : [ 0x0, ['pointer', ['_CM_RESOURCE_LIST']]],
     'AllocatedResourcesTranslated' : [ 0x4, ['pointer', ['_CM_RESOURCE_LIST']]],
 } ],
-  '__unnamed_187b' : [ 0x10, {
+  '__unnamed_187e' : [ 0x10, {
     'ProviderId' : [ 0x0, ['unsigned long']],
     'DataPath' : [ 0x4, ['pointer', ['void']]],
     'BufferSize' : [ 0x8, ['unsigned long']],
     'Buffer' : [ 0xc, ['pointer', ['void']]],
 } ],
-  '__unnamed_187d' : [ 0x10, {
+  '__unnamed_1880' : [ 0x10, {
     'Argument1' : [ 0x0, ['pointer', ['void']]],
     'Argument2' : [ 0x4, ['pointer', ['void']]],
     'Argument3' : [ 0x8, ['pointer', ['void']]],
     'Argument4' : [ 0xc, ['pointer', ['void']]],
 } ],
-  '__unnamed_187f' : [ 0x10, {
-    'Create' : [ 0x0, ['__unnamed_1821']],
-    'CreatePipe' : [ 0x0, ['__unnamed_1825']],
-    'CreateMailslot' : [ 0x0, ['__unnamed_1829']],
-    'Read' : [ 0x0, ['__unnamed_182b']],
-    'Write' : [ 0x0, ['__unnamed_182b']],
-    'QueryDirectory' : [ 0x0, ['__unnamed_182f']],
-    'NotifyDirectory' : [ 0x0, ['__unnamed_1831']],
-    'QueryFile' : [ 0x0, ['__unnamed_1833']],
-    'SetFile' : [ 0x0, ['__unnamed_1835']],
-    'QueryEa' : [ 0x0, ['__unnamed_1837']],
-    'SetEa' : [ 0x0, ['__unnamed_1839']],
-    'QueryVolume' : [ 0x0, ['__unnamed_183d']],
-    'SetVolume' : [ 0x0, ['__unnamed_183d']],
-    'FileSystemControl' : [ 0x0, ['__unnamed_183f']],
-    'LockControl' : [ 0x0, ['__unnamed_1841']],
-    'DeviceIoControl' : [ 0x0, ['__unnamed_1843']],
-    'QuerySecurity' : [ 0x0, ['__unnamed_1845']],
-    'SetSecurity' : [ 0x0, ['__unnamed_1847']],
-    'MountVolume' : [ 0x0, ['__unnamed_1849']],
-    'VerifyVolume' : [ 0x0, ['__unnamed_1849']],
-    'Scsi' : [ 0x0, ['__unnamed_184d']],
-    'QueryQuota' : [ 0x0, ['__unnamed_1851']],
-    'SetQuota' : [ 0x0, ['__unnamed_1839']],
-    'QueryDeviceRelations' : [ 0x0, ['__unnamed_1855']],
-    'QueryInterface' : [ 0x0, ['__unnamed_1857']],
-    'DeviceCapabilities' : [ 0x0, ['__unnamed_185b']],
-    'FilterResourceRequirements' : [ 0x0, ['__unnamed_185d']],
-    'ReadWriteConfig' : [ 0x0, ['__unnamed_185f']],
-    'SetLock' : [ 0x0, ['__unnamed_1861']],
-    'QueryId' : [ 0x0, ['__unnamed_1865']],
-    'QueryDeviceText' : [ 0x0, ['__unnamed_1869']],
-    'UsageNotification' : [ 0x0, ['__unnamed_186d']],
-    'WaitWake' : [ 0x0, ['__unnamed_186f']],
-    'PowerSequence' : [ 0x0, ['__unnamed_1873']],
-    'Power' : [ 0x0, ['__unnamed_1877']],
-    'StartDevice' : [ 0x0, ['__unnamed_1879']],
-    'WMI' : [ 0x0, ['__unnamed_187b']],
-    'Others' : [ 0x0, ['__unnamed_187d']],
+  '__unnamed_1882' : [ 0x10, {
+    'Create' : [ 0x0, ['__unnamed_1824']],
+    'CreatePipe' : [ 0x0, ['__unnamed_1828']],
+    'CreateMailslot' : [ 0x0, ['__unnamed_182c']],
+    'Read' : [ 0x0, ['__unnamed_182e']],
+    'Write' : [ 0x0, ['__unnamed_182e']],
+    'QueryDirectory' : [ 0x0, ['__unnamed_1832']],
+    'NotifyDirectory' : [ 0x0, ['__unnamed_1834']],
+    'QueryFile' : [ 0x0, ['__unnamed_1836']],
+    'SetFile' : [ 0x0, ['__unnamed_1838']],
+    'QueryEa' : [ 0x0, ['__unnamed_183a']],
+    'SetEa' : [ 0x0, ['__unnamed_183c']],
+    'QueryVolume' : [ 0x0, ['__unnamed_1840']],
+    'SetVolume' : [ 0x0, ['__unnamed_1840']],
+    'FileSystemControl' : [ 0x0, ['__unnamed_1842']],
+    'LockControl' : [ 0x0, ['__unnamed_1844']],
+    'DeviceIoControl' : [ 0x0, ['__unnamed_1846']],
+    'QuerySecurity' : [ 0x0, ['__unnamed_1848']],
+    'SetSecurity' : [ 0x0, ['__unnamed_184a']],
+    'MountVolume' : [ 0x0, ['__unnamed_184c']],
+    'VerifyVolume' : [ 0x0, ['__unnamed_184c']],
+    'Scsi' : [ 0x0, ['__unnamed_1850']],
+    'QueryQuota' : [ 0x0, ['__unnamed_1854']],
+    'SetQuota' : [ 0x0, ['__unnamed_183c']],
+    'QueryDeviceRelations' : [ 0x0, ['__unnamed_1858']],
+    'QueryInterface' : [ 0x0, ['__unnamed_185a']],
+    'DeviceCapabilities' : [ 0x0, ['__unnamed_185e']],
+    'FilterResourceRequirements' : [ 0x0, ['__unnamed_1860']],
+    'ReadWriteConfig' : [ 0x0, ['__unnamed_1862']],
+    'SetLock' : [ 0x0, ['__unnamed_1864']],
+    'QueryId' : [ 0x0, ['__unnamed_1868']],
+    'QueryDeviceText' : [ 0x0, ['__unnamed_186c']],
+    'UsageNotification' : [ 0x0, ['__unnamed_1870']],
+    'WaitWake' : [ 0x0, ['__unnamed_1872']],
+    'PowerSequence' : [ 0x0, ['__unnamed_1876']],
+    'Power' : [ 0x0, ['__unnamed_187a']],
+    'StartDevice' : [ 0x0, ['__unnamed_187c']],
+    'WMI' : [ 0x0, ['__unnamed_187e']],
+    'Others' : [ 0x0, ['__unnamed_1880']],
 } ],
   '_IO_STACK_LOCATION' : [ 0x24, {
     'MajorFunction' : [ 0x0, ['unsigned char']],
     'MinorFunction' : [ 0x1, ['unsigned char']],
     'Flags' : [ 0x2, ['unsigned char']],
     'Control' : [ 0x3, ['unsigned char']],
-    'Parameters' : [ 0x4, ['__unnamed_187f']],
+    'Parameters' : [ 0x4, ['__unnamed_1882']],
     'DeviceObject' : [ 0x14, ['pointer', ['_DEVICE_OBJECT']]],
     'FileObject' : [ 0x18, ['pointer', ['_FILE_OBJECT']]],
     'CompletionRoutine' : [ 0x1c, ['pointer', ['void']]],
     'Context' : [ 0x20, ['pointer', ['void']]],
 } ],
-  '__unnamed_1886' : [ 0x18, {
+  '__unnamed_1889' : [ 0x18, {
     'Length' : [ 0x0, ['unsigned long']],
     'Alignment' : [ 0x4, ['unsigned long']],
     'MinimumAddress' : [ 0x8, ['_LARGE_INTEGER']],
     'MaximumAddress' : [ 0x10, ['_LARGE_INTEGER']],
 } ],
-  '__unnamed_1888' : [ 0x8, {
+  '__unnamed_188b' : [ 0x8, {
     'MinimumVector' : [ 0x0, ['unsigned long']],
     'MaximumVector' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_188a' : [ 0x8, {
+  '__unnamed_188d' : [ 0x8, {
     'MinimumChannel' : [ 0x0, ['unsigned long']],
     'MaximumChannel' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_188c' : [ 0x10, {
+  '__unnamed_188f' : [ 0x10, {
     'Length' : [ 0x0, ['unsigned long']],
     'MinBusNumber' : [ 0x4, ['unsigned long']],
     'MaxBusNumber' : [ 0x8, ['unsigned long']],
     'Reserved' : [ 0xc, ['unsigned long']],
 } ],
-  '__unnamed_188e' : [ 0xc, {
+  '__unnamed_1891' : [ 0xc, {
     'Priority' : [ 0x0, ['unsigned long']],
     'Reserved1' : [ 0x4, ['unsigned long']],
     'Reserved2' : [ 0x8, ['unsigned long']],
 } ],
-  '__unnamed_1890' : [ 0x18, {
-    'Port' : [ 0x0, ['__unnamed_1886']],
-    'Memory' : [ 0x0, ['__unnamed_1886']],
-    'Interrupt' : [ 0x0, ['__unnamed_1888']],
-    'Dma' : [ 0x0, ['__unnamed_188a']],
-    'Generic' : [ 0x0, ['__unnamed_1886']],
-    'DevicePrivate' : [ 0x0, ['__unnamed_15db']],
-    'BusNumber' : [ 0x0, ['__unnamed_188c']],
-    'ConfigData' : [ 0x0, ['__unnamed_188e']],
+  '__unnamed_1893' : [ 0x18, {
+    'Port' : [ 0x0, ['__unnamed_1889']],
+    'Memory' : [ 0x0, ['__unnamed_1889']],
+    'Interrupt' : [ 0x0, ['__unnamed_188b']],
+    'Dma' : [ 0x0, ['__unnamed_188d']],
+    'Generic' : [ 0x0, ['__unnamed_1889']],
+    'DevicePrivate' : [ 0x0, ['__unnamed_15de']],
+    'BusNumber' : [ 0x0, ['__unnamed_188f']],
+    'ConfigData' : [ 0x0, ['__unnamed_1891']],
 } ],
   '_IO_RESOURCE_DESCRIPTOR' : [ 0x20, {
     'Option' : [ 0x0, ['unsigned char']],
@@ -4556,7 +4556,7 @@ nt_types = {
     'Spare1' : [ 0x3, ['unsigned char']],
     'Flags' : [ 0x4, ['unsigned short']],
     'Spare2' : [ 0x6, ['unsigned short']],
-    'u' : [ 0x8, ['__unnamed_1890']],
+    'u' : [ 0x8, ['__unnamed_1893']],
 } ],
   '_MI_VERIFIER_POOL_HEADER' : [ 0x4, {
     'VerifierPoolEntry' : [ 0x0, ['pointer', ['_VI_POOL_ENTRY']]],
@@ -4570,25 +4570,25 @@ nt_types = {
     'CallerAddress' : [ 0x14, ['array', 10, ['pointer', ['void']]]],
     'KeyBodyList' : [ 0x3c, ['_LIST_ENTRY']],
 } ],
-  '__unnamed_189f' : [ 0x4, {
+  '__unnamed_18a2' : [ 0x4, {
     'DataLength' : [ 0x0, ['short']],
     'TotalLength' : [ 0x2, ['short']],
 } ],
-  '__unnamed_18a1' : [ 0x4, {
-    's1' : [ 0x0, ['__unnamed_189f']],
+  '__unnamed_18a4' : [ 0x4, {
+    's1' : [ 0x0, ['__unnamed_18a2']],
     'Length' : [ 0x0, ['unsigned long']],
 } ],
-  '__unnamed_18a3' : [ 0x4, {
+  '__unnamed_18a6' : [ 0x4, {
     'Type' : [ 0x0, ['short']],
     'DataInfoOffset' : [ 0x2, ['short']],
 } ],
-  '__unnamed_18a5' : [ 0x4, {
-    's2' : [ 0x0, ['__unnamed_18a3']],
+  '__unnamed_18a8' : [ 0x4, {
+    's2' : [ 0x0, ['__unnamed_18a6']],
     'ZeroInit' : [ 0x0, ['unsigned long']],
 } ],
   '_PORT_MESSAGE' : [ 0x18, {
-    'u1' : [ 0x0, ['__unnamed_18a1']],
-    'u2' : [ 0x4, ['__unnamed_18a5']],
+    'u1' : [ 0x0, ['__unnamed_18a4']],
+    'u2' : [ 0x4, ['__unnamed_18a8']],
     'ClientId' : [ 0x8, ['_CLIENT_ID']],
     'DoNotUseThisField' : [ 0x8, ['double']],
     'MessageId' : [ 0x10, ['unsigned long']],
@@ -4732,17 +4732,17 @@ nt_types = {
     'Parameter3' : [ 0xc, ['unsigned long']],
     'Parameter4' : [ 0x10, ['unsigned long']],
 } ],
-  '__unnamed_18e2' : [ 0x4, {
-    'DeviceNumber' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 5)]],
-    'FunctionNumber' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 8)]],
-    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 32)]],
+  '__unnamed_18e5' : [ 0x4, {
+    'DeviceNumber' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 5, native_type='unsigned long')]],
+    'FunctionNumber' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 8, native_type='unsigned long')]],
+    'Reserved' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 32, native_type='unsigned long')]],
 } ],
-  '__unnamed_18e4' : [ 0x4, {
-    'bits' : [ 0x0, ['__unnamed_18e2']],
+  '__unnamed_18e7' : [ 0x4, {
+    'bits' : [ 0x0, ['__unnamed_18e5']],
     'AsULONG' : [ 0x0, ['unsigned long']],
 } ],
   '_PCI_SLOT_NUMBER' : [ 0x4, {
-    'u' : [ 0x0, ['__unnamed_18e4']],
+    'u' : [ 0x0, ['__unnamed_18e7']],
 } ],
   '_Wx86ThreadState' : [ 0xc, {
     'CallBx86Eip' : [ 0x0, ['pointer', ['unsigned long']]],
@@ -4755,9 +4755,9 @@ nt_types = {
     'PostList' : [ 0x8, ['_LIST_ENTRY']],
     'KeyControlBlock' : [ 0x10, ['pointer', ['_CM_KEY_CONTROL_BLOCK']]],
     'KeyBody' : [ 0x14, ['pointer', ['_CM_KEY_BODY']]],
-    'Filter' : [ 0x18, ['BitField', dict(start_bit = 0, end_bit = 30)]],
-    'WatchTree' : [ 0x18, ['BitField', dict(start_bit = 30, end_bit = 31)]],
-    'NotifyPending' : [ 0x18, ['BitField', dict(start_bit = 31, end_bit = 32)]],
+    'Filter' : [ 0x18, ['BitField', dict(start_bit = 0, end_bit = 30, native_type='unsigned long')]],
+    'WatchTree' : [ 0x18, ['BitField', dict(start_bit = 30, end_bit = 31, native_type='unsigned long')]],
+    'NotifyPending' : [ 0x18, ['BitField', dict(start_bit = 31, end_bit = 32, native_type='unsigned long')]],
     'SubjectContext' : [ 0x1c, ['_SECURITY_SUBJECT_CONTEXT']],
 } ],
   '_SID' : [ 0xc, {
@@ -4834,50 +4834,50 @@ nt_types = {
     'FsFilterCallbacks' : [ 0x18, ['pointer', ['_FS_FILTER_CALLBACKS']]],
 } ],
   '_PM_SUPPORT' : [ 0x1, {
-    'Rsvd2' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'D1' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'D2' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'PMED0' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'PMED1' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5)]],
-    'PMED2' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6)]],
-    'PMED3Hot' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7)]],
-    'PMED3Cold' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8)]],
+    'Rsvd2' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned char')]],
+    'D1' : [ 0x0, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned char')]],
+    'D2' : [ 0x0, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned char')]],
+    'PMED0' : [ 0x0, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned char')]],
+    'PMED1' : [ 0x0, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned char')]],
+    'PMED2' : [ 0x0, ['BitField', dict(start_bit = 5, end_bit = 6, native_type='unsigned char')]],
+    'PMED3Hot' : [ 0x0, ['BitField', dict(start_bit = 6, end_bit = 7, native_type='unsigned char')]],
+    'PMED3Cold' : [ 0x0, ['BitField', dict(start_bit = 7, end_bit = 8, native_type='unsigned char')]],
 } ],
   '_TEB_ACTIVE_FRAME_CONTEXT' : [ 0x8, {
     'Flags' : [ 0x0, ['unsigned long']],
     'FrameName' : [ 0x4, ['pointer', ['unsigned char']]],
 } ],
-  '__unnamed_1917' : [ 0xc, {
+  '__unnamed_191a' : [ 0xc, {
     'ArbitrationList' : [ 0x0, ['pointer', ['_LIST_ENTRY']]],
     'AllocateFromCount' : [ 0x4, ['unsigned long']],
     'AllocateFrom' : [ 0x8, ['pointer', ['_CM_PARTIAL_RESOURCE_DESCRIPTOR']]],
 } ],
-  '__unnamed_1919' : [ 0x4, {
+  '__unnamed_191c' : [ 0x4, {
     'ArbitrationList' : [ 0x0, ['pointer', ['_LIST_ENTRY']]],
 } ],
-  '__unnamed_191d' : [ 0x4, {
+  '__unnamed_1920' : [ 0x4, {
     'AllocatedResources' : [ 0x0, ['pointer', ['pointer', ['_CM_PARTIAL_RESOURCE_LIST']]]],
 } ],
-  '__unnamed_191f' : [ 0x10, {
+  '__unnamed_1922' : [ 0x10, {
     'PhysicalDeviceObject' : [ 0x0, ['pointer', ['_DEVICE_OBJECT']]],
     'ConflictingResource' : [ 0x4, ['pointer', ['_IO_RESOURCE_DESCRIPTOR']]],
     'ConflictCount' : [ 0x8, ['pointer', ['unsigned long']]],
     'Conflicts' : [ 0xc, ['pointer', ['pointer', ['_ARBITER_CONFLICT_INFO']]]],
 } ],
-  '__unnamed_1921' : [ 0x4, {
+  '__unnamed_1924' : [ 0x4, {
     'ReserveDevice' : [ 0x0, ['pointer', ['_DEVICE_OBJECT']]],
 } ],
-  '__unnamed_1923' : [ 0x10, {
-    'TestAllocation' : [ 0x0, ['__unnamed_1917']],
-    'RetestAllocation' : [ 0x0, ['__unnamed_1917']],
-    'BootAllocation' : [ 0x0, ['__unnamed_1919']],
-    'QueryAllocatedResources' : [ 0x0, ['__unnamed_191d']],
-    'QueryConflict' : [ 0x0, ['__unnamed_191f']],
-    'QueryArbitrate' : [ 0x0, ['__unnamed_1919']],
-    'AddReserved' : [ 0x0, ['__unnamed_1921']],
+  '__unnamed_1926' : [ 0x10, {
+    'TestAllocation' : [ 0x0, ['__unnamed_191a']],
+    'RetestAllocation' : [ 0x0, ['__unnamed_191a']],
+    'BootAllocation' : [ 0x0, ['__unnamed_191c']],
+    'QueryAllocatedResources' : [ 0x0, ['__unnamed_1920']],
+    'QueryConflict' : [ 0x0, ['__unnamed_1922']],
+    'QueryArbitrate' : [ 0x0, ['__unnamed_191c']],
+    'AddReserved' : [ 0x0, ['__unnamed_1924']],
 } ],
   '_ARBITER_PARAMETERS' : [ 0x10, {
-    'Parameters' : [ 0x0, ['__unnamed_1923']],
+    'Parameters' : [ 0x0, ['__unnamed_1926']],
 } ],
   '_HANDLE_TABLE_ENTRY_INFO' : [ 0x4, {
     'AuditMask' : [ 0x0, ['unsigned long']],
@@ -4955,25 +4955,25 @@ nt_types = {
   '_DEVICE_CAPABILITIES' : [ 0x40, {
     'Size' : [ 0x0, ['unsigned short']],
     'Version' : [ 0x2, ['unsigned short']],
-    'DeviceD1' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 1)]],
-    'DeviceD2' : [ 0x4, ['BitField', dict(start_bit = 1, end_bit = 2)]],
-    'LockSupported' : [ 0x4, ['BitField', dict(start_bit = 2, end_bit = 3)]],
-    'EjectSupported' : [ 0x4, ['BitField', dict(start_bit = 3, end_bit = 4)]],
-    'Removable' : [ 0x4, ['BitField', dict(start_bit = 4, end_bit = 5)]],
-    'DockDevice' : [ 0x4, ['BitField', dict(start_bit = 5, end_bit = 6)]],
-    'UniqueID' : [ 0x4, ['BitField', dict(start_bit = 6, end_bit = 7)]],
-    'SilentInstall' : [ 0x4, ['BitField', dict(start_bit = 7, end_bit = 8)]],
-    'RawDeviceOK' : [ 0x4, ['BitField', dict(start_bit = 8, end_bit = 9)]],
-    'SurpriseRemovalOK' : [ 0x4, ['BitField', dict(start_bit = 9, end_bit = 10)]],
-    'WakeFromD0' : [ 0x4, ['BitField', dict(start_bit = 10, end_bit = 11)]],
-    'WakeFromD1' : [ 0x4, ['BitField', dict(start_bit = 11, end_bit = 12)]],
-    'WakeFromD2' : [ 0x4, ['BitField', dict(start_bit = 12, end_bit = 13)]],
-    'WakeFromD3' : [ 0x4, ['BitField', dict(start_bit = 13, end_bit = 14)]],
-    'HardwareDisabled' : [ 0x4, ['BitField', dict(start_bit = 14, end_bit = 15)]],
-    'NonDynamic' : [ 0x4, ['BitField', dict(start_bit = 15, end_bit = 16)]],
-    'WarmEjectSupported' : [ 0x4, ['BitField', dict(start_bit = 16, end_bit = 17)]],
-    'NoDisplayInUI' : [ 0x4, ['BitField', dict(start_bit = 17, end_bit = 18)]],
-    'Reserved' : [ 0x4, ['BitField', dict(start_bit = 18, end_bit = 32)]],
+    'DeviceD1' : [ 0x4, ['BitField', dict(start_bit = 0, end_bit = 1, native_type='unsigned long')]],
+    'DeviceD2' : [ 0x4, ['BitField', dict(start_bit = 1, end_bit = 2, native_type='unsigned long')]],
+    'LockSupported' : [ 0x4, ['BitField', dict(start_bit = 2, end_bit = 3, native_type='unsigned long')]],
+    'EjectSupported' : [ 0x4, ['BitField', dict(start_bit = 3, end_bit = 4, native_type='unsigned long')]],
+    'Removable' : [ 0x4, ['BitField', dict(start_bit = 4, end_bit = 5, native_type='unsigned long')]],
+    'DockDevice' : [ 0x4, ['BitField', dict(start_bit = 5, end_bit = 6, native_type='unsigned long')]],
+    'UniqueID' : [ 0x4, ['BitField', dict(start_bit = 6, end_bit = 7, native_type='unsigned long')]],
+    'SilentInstall' : [ 0x4, ['BitField', dict(start_bit = 7, end_bit = 8, native_type='unsigned long')]],
+    'RawDeviceOK' : [ 0x4, ['BitField', dict(start_bit = 8, end_bit = 9, native_type='unsigned long')]],
+    'SurpriseRemovalOK' : [ 0x4, ['BitField', dict(start_bit = 9, end_bit = 10, native_type='unsigned long')]],
+    'WakeFromD0' : [ 0x4, ['BitField', dict(start_bit = 10, end_bit = 11, native_type='unsigned long')]],
+    'WakeFromD1' : [ 0x4, ['BitField', dict(start_bit = 11, end_bit = 12, native_type='unsigned long')]],
+    'WakeFromD2' : [ 0x4, ['BitField', dict(start_bit = 12, end_bit = 13, native_type='unsigned long')]],
+    'WakeFromD3' : [ 0x4, ['BitField', dict(start_bit = 13, end_bit = 14, native_type='unsigned long')]],
+    'HardwareDisabled' : [ 0x4, ['BitField', dict(start_bit = 14, end_bit = 15, native_type='unsigned long')]],
+    'NonDynamic' : [ 0x4, ['BitField', dict(start_bit = 15, end_bit = 16, native_type='unsigned long')]],
+    'WarmEjectSupported' : [ 0x4, ['BitField', dict(start_bit = 16, end_bit = 17, native_type='unsigned long')]],
+    'NoDisplayInUI' : [ 0x4, ['BitField', dict(start_bit = 17, end_bit = 18, native_type='unsigned long')]],
+    'Reserved' : [ 0x4, ['BitField', dict(start_bit = 18, end_bit = 32, native_type='unsigned long')]],
     'Address' : [ 0x8, ['unsigned long']],
     'UINumber' : [ 0xc, ['unsigned long']],
     'DeviceState' : [ 0x10, ['array', -28, ['Enumeration', dict(target = 'long', choices = {0: 'PowerDeviceUnspecified', 1: 'PowerDeviceD0', 2: 'PowerDeviceD1', 3: 'PowerDeviceD2', 4: 'PowerDeviceD3', 5: 'PowerDeviceMaximum'})]]],
@@ -5003,47 +5003,47 @@ nt_types = {
     'ContentionCount' : [ 0x14, ['unsigned long']],
     'Spare' : [ 0x18, ['array', 2, ['unsigned long']]],
 } ],
-  '__unnamed_1946' : [ 0x14, {
+  '__unnamed_1949' : [ 0x14, {
     'ClassGuid' : [ 0x0, ['_GUID']],
     'SymbolicLinkName' : [ 0x10, ['array', 1, ['unsigned short']]],
 } ],
-  '__unnamed_1948' : [ 0x2, {
+  '__unnamed_194b' : [ 0x2, {
     'DeviceIds' : [ 0x0, ['array', 1, ['unsigned short']]],
 } ],
-  '__unnamed_194a' : [ 0x2, {
+  '__unnamed_194d' : [ 0x2, {
     'DeviceId' : [ 0x0, ['array', 1, ['unsigned short']]],
 } ],
-  '__unnamed_194c' : [ 0x8, {
+  '__unnamed_194f' : [ 0x8, {
     'NotificationStructure' : [ 0x0, ['pointer', ['void']]],
     'DeviceIds' : [ 0x4, ['array', 1, ['unsigned short']]],
 } ],
-  '__unnamed_194e' : [ 0x4, {
+  '__unnamed_1951' : [ 0x4, {
     'Notification' : [ 0x0, ['pointer', ['void']]],
 } ],
-  '__unnamed_1950' : [ 0x8, {
+  '__unnamed_1953' : [ 0x8, {
     'NotificationCode' : [ 0x0, ['unsigned long']],
     'NotificationData' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_1952' : [ 0x8, {
+  '__unnamed_1955' : [ 0x8, {
     'VetoType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'PNP_VetoTypeUnknown', 1: 'PNP_VetoLegacyDevice', 2: 'PNP_VetoPendingClose', 3: 'PNP_VetoWindowsApp', 4: 'PNP_VetoWindowsService', 5: 'PNP_VetoOutstandingOpen', 6: 'PNP_VetoDevice', 7: 'PNP_VetoDriver', 8: 'PNP_VetoIllegalDeviceRequest', 9: 'PNP_VetoInsufficientPower', 10: 'PNP_VetoNonDisableable', 11: 'PNP_VetoLegacyDriver', 12: 'PNP_VetoInsufficientRights'})]],
     'DeviceIdVetoNameBuffer' : [ 0x4, ['array', 1, ['unsigned short']]],
 } ],
-  '__unnamed_1954' : [ 0x10, {
+  '__unnamed_1957' : [ 0x10, {
     'BlockedDriverGuid' : [ 0x0, ['_GUID']],
 } ],
-  '__unnamed_1956' : [ 0x2, {
+  '__unnamed_1959' : [ 0x2, {
     'ParentId' : [ 0x0, ['array', 1, ['unsigned short']]],
 } ],
-  '__unnamed_1958' : [ 0x14, {
-    'DeviceClass' : [ 0x0, ['__unnamed_1946']],
-    'TargetDevice' : [ 0x0, ['__unnamed_1948']],
-    'InstallDevice' : [ 0x0, ['__unnamed_194a']],
-    'CustomNotification' : [ 0x0, ['__unnamed_194c']],
-    'ProfileNotification' : [ 0x0, ['__unnamed_194e']],
-    'PowerNotification' : [ 0x0, ['__unnamed_1950']],
-    'VetoNotification' : [ 0x0, ['__unnamed_1952']],
-    'BlockedDriverNotification' : [ 0x0, ['__unnamed_1954']],
-    'InvalidIDNotification' : [ 0x0, ['__unnamed_1956']],
+  '__unnamed_195b' : [ 0x14, {
+    'DeviceClass' : [ 0x0, ['__unnamed_1949']],
+    'TargetDevice' : [ 0x0, ['__unnamed_194b']],
+    'InstallDevice' : [ 0x0, ['__unnamed_194d']],
+    'CustomNotification' : [ 0x0, ['__unnamed_194f']],
+    'ProfileNotification' : [ 0x0, ['__unnamed_1951']],
+    'PowerNotification' : [ 0x0, ['__unnamed_1953']],
+    'VetoNotification' : [ 0x0, ['__unnamed_1955']],
+    'BlockedDriverNotification' : [ 0x0, ['__unnamed_1957']],
+    'InvalidIDNotification' : [ 0x0, ['__unnamed_1959']],
 } ],
   '_PLUGPLAY_EVENT_BLOCK' : [ 0x38, {
     'EventGuid' : [ 0x0, ['_GUID']],
@@ -5052,7 +5052,7 @@ nt_types = {
     'Flags' : [ 0x18, ['unsigned long']],
     'TotalSize' : [ 0x1c, ['unsigned long']],
     'DeviceObject' : [ 0x20, ['pointer', ['void']]],
-    'u' : [ 0x24, ['__unnamed_1958']],
+    'u' : [ 0x24, ['__unnamed_195b']],
 } ],
   '_CACHED_CHILD_LIST' : [ 0x8, {
     'Count' : [ 0x0, ['unsigned long']],
@@ -5063,16 +5063,16 @@ nt_types = {
     'Range' : [ 0x0, ['_PO_MEMORY_RANGE_ARRAY_RANGE']],
     'Link' : [ 0x0, ['_PO_MEMORY_RANGE_ARRAY_LINK']],
 } ],
-  '__unnamed_196f' : [ 0x8, {
+  '__unnamed_1972' : [ 0x8, {
     'Signature' : [ 0x0, ['unsigned long']],
     'CheckSum' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_1971' : [ 0x10, {
+  '__unnamed_1974' : [ 0x10, {
     'DiskId' : [ 0x0, ['_GUID']],
 } ],
-  '__unnamed_1973' : [ 0x10, {
-    'Mbr' : [ 0x0, ['__unnamed_196f']],
-    'Gpt' : [ 0x0, ['__unnamed_1971']],
+  '__unnamed_1976' : [ 0x10, {
+    'Mbr' : [ 0x0, ['__unnamed_1972']],
+    'Gpt' : [ 0x0, ['__unnamed_1974']],
 } ],
   '_DUMP_INITIALIZATION_CONTEXT' : [ 0x70, {
     'Length' : [ 0x0, ['unsigned long']],
@@ -5093,7 +5093,7 @@ nt_types = {
     'TargetAddress' : [ 0x50, ['pointer', ['void']]],
     'WritePendingRoutine' : [ 0x54, ['pointer', ['void']]],
     'PartitionStyle' : [ 0x58, ['unsigned long']],
-    'DiskInfo' : [ 0x5c, ['__unnamed_1973']],
+    'DiskInfo' : [ 0x5c, ['__unnamed_1976']],
 } ],
   '_IO_CLIENT_EXTENSION' : [ 0x8, {
     'NextExtension' : [ 0x0, ['pointer', ['_IO_CLIENT_EXTENSION']]],
@@ -5190,7 +5190,7 @@ nt_types = {
     'ReadyS0' : [ 0x38, ['_LIST_ENTRY']],
     'WaitS0' : [ 0x40, ['_LIST_ENTRY']],
 } ],
-  '__unnamed_19a3' : [ 0x8, {
+  '__unnamed_19a6' : [ 0x8, {
     'Base' : [ 0x0, ['unsigned long']],
     'Limit' : [ 0x4, ['unsigned long']],
 } ],
@@ -5203,7 +5203,7 @@ nt_types = {
     'SecondaryBus' : [ 0x9, ['unsigned char']],
     'SubordinateBus' : [ 0xa, ['unsigned char']],
     'SecondaryLatency' : [ 0xb, ['unsigned char']],
-    'Range' : [ 0xc, ['array', 4, ['__unnamed_19a3']]],
+    'Range' : [ 0xc, ['array', 4, ['__unnamed_19a6']]],
     'InterruptLine' : [ 0x2c, ['unsigned char']],
     'InterruptPin' : [ 0x2d, ['unsigned char']],
     'BridgeControl' : [ 0x2e, ['unsigned short']],
@@ -5467,18 +5467,18 @@ nt_types = {
     'ModifiedId' : [ 0x10, ['_LUID']],
     'TokenSource' : [ 0x18, ['_TOKEN_SOURCE']],
 } ],
-  '__unnamed_1a31' : [ 0x8, {
+  '__unnamed_1a34' : [ 0x8, {
     'EndingOffset' : [ 0x0, ['pointer', ['_LARGE_INTEGER']]],
     'ResourceToRelease' : [ 0x4, ['pointer', ['pointer', ['_ERESOURCE']]]],
 } ],
-  '__unnamed_1a33' : [ 0x4, {
+  '__unnamed_1a36' : [ 0x4, {
     'ResourceToRelease' : [ 0x0, ['pointer', ['_ERESOURCE']]],
 } ],
-  '__unnamed_1a37' : [ 0x8, {
+  '__unnamed_1a3a' : [ 0x8, {
     'SyncType' : [ 0x0, ['Enumeration', dict(target = 'long', choices = {0: 'SyncTypeOther', 1: 'SyncTypeCreateSection'})]],
     'PageProtection' : [ 0x4, ['unsigned long']],
 } ],
-  '__unnamed_1a39' : [ 0x14, {
+  '__unnamed_1a3c' : [ 0x14, {
     'Argument1' : [ 0x0, ['pointer', ['void']]],
     'Argument2' : [ 0x4, ['pointer', ['void']]],
     'Argument3' : [ 0x8, ['pointer', ['void']]],
@@ -5486,10 +5486,10 @@ nt_types = {
     'Argument5' : [ 0x10, ['pointer', ['void']]],
 } ],
   '_FS_FILTER_PARAMETERS' : [ 0x14, {
-    'AcquireForModifiedPageWriter' : [ 0x0, ['__unnamed_1a31']],
-    'ReleaseForModifiedPageWriter' : [ 0x0, ['__unnamed_1a33']],
-    'AcquireForSectionSynchronization' : [ 0x0, ['__unnamed_1a37']],
-    'Others' : [ 0x0, ['__unnamed_1a39']],
+    'AcquireForModifiedPageWriter' : [ 0x0, ['__unnamed_1a34']],
+    'ReleaseForModifiedPageWriter' : [ 0x0, ['__unnamed_1a36']],
+    'AcquireForSectionSynchronization' : [ 0x0, ['__unnamed_1a3a']],
+    'Others' : [ 0x0, ['__unnamed_1a3c']],
 } ],
   '_COMPRESSED_DATA_INFO' : [ 0xc, {
     'CompressionFormatAndEngine' : [ 0x0, ['unsigned short']],
