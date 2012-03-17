@@ -275,7 +275,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
                 if pad:
                     buf = '\x00' * chunk_len
                 else:
-                    return obj.NoneObject("Could not read_chunks from addr " + str(vaddr) + " of size " + str(chunk_len))
+                    return obj.NoneObject("Could not read_chunks from addr " + hex(vaddr) + " of size " + hex(chunk_len))
 
             ret += buf
             vaddr += chunk_len
