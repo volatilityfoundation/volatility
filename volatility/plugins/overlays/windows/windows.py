@@ -340,11 +340,11 @@ class _EPROCESS(obj.CType):
 
     def get_token(self):
         """Return the process's TOKEN object if its valid"""
-    
+
         # The dereference checks if the address is valid  
         # and returns obj.NoneObject if it fails 
         token = self.Token.dereference_as("_TOKEN")
-        
+
         # This check fails if the above dereference failed 
         # or if any of the _TOKEN specific validity tests failed. 
         if token.is_valid():
@@ -367,7 +367,7 @@ class _TOKEN(obj.CType):
                 sid = sa.Sid.dereference_as('_SID')
                 for i in sid.IdentifierAuthority.Value:
                     id_auth = i
-                yield "S-" + "-".join(str(i) for i in (sid.Revision, id_auth) + 
+                yield "S-" + "-".join(str(i) for i in (sid.Revision, id_auth) +
                                       tuple(sid.SubAuthority))
 
 class _ETHREAD(obj.CType):
@@ -692,6 +692,12 @@ class IpAddress(obj.NativeType):
 
 class VolatilityKPCR(obj.VolatilityMagic):
     """A scanner for KPCR data within an address space"""
+
+    def __init__(self, *args, **kwargs):
+        # Remove the value kwarg since overlaying one 
+        # on the other would give the value precedence
+        kwargs.pop('value', None)
+        obj.VolatilityMagic.__init__(self, *args, **kwargs)
 
     def generate_suggestions(self):
         """Returns the results of KCPRScanner for an adderss space"""
