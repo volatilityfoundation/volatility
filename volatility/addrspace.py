@@ -127,7 +127,11 @@ class BaseAddressSpace(object):
         """ Read data from a certain offset padded with \x00 where data is not available """
 
     def get_available_addresses(self):
-        """ Return a generator of address ranges as (offset, size) covered by this AS """
+        """ Return a generator of address ranges as (offset, size) covered by this AS sorted by offset.
+
+            The address ranges produced must be disjoint (no overlaps) and not be continuous
+            (there must be a gap between two ranges).
+        """
         raise StopIteration
 
     def is_valid_address(self, _addr):
