@@ -606,6 +606,11 @@ class Pointer(NativeType):
         #    return result.m(attr)
         return getattr(result, attr)
 
+    def m(self, memname):
+        # Look for children on the dereferenced object
+        result = self.dereference()
+        return result.m(memname)
+
 class Void(NativeType):
     def __init__(self, theType, offset, vm, **kwargs):
         # Default to profile-endian unsigned long
