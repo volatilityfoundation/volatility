@@ -122,8 +122,6 @@ def get_bootkey(sysaddr):
     lsa_base = ["ControlSet{0:03}".format(cs), "Control", "Lsa"]
     lsa_keys = ["JD", "Skew1", "GBG", "Data"]
 
-
-
     root = rawreg.get_root(sysaddr)
     if not root:
         return None
