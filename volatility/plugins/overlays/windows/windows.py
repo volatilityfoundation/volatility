@@ -156,12 +156,25 @@ class _UNICODE_STRING(obj.CType):
       * The __str__ method returns the value of the Buffer.
     """
     def v(self):
+        """
+        If the claimed length of the string is acceptable, return a unicode string.
+        Otherwise, return a NoneObject.
+        """
+        data = self.dereference()
+        if data:
+            return unicode(data)
+        return data
+
+    def dereference(self):
         length = self.Length.v()
         if length > 0 and length <= 1024:
-            data = self.Buffer.dereference_as('String', length = length)
-            return data.v().decode("utf16", "ignore").encode("ascii", 'backslashreplace')
+            data = self.Buffer.dereference_as('String', encoding = 'utf16', length = length)
+            return data
         else:
-            return ''
+            return obj.NoneObject("Buffer length {0} for _UNICODE_STRING not within bounds".format(length))
+
+    def proxied(self, _name):
+        return str(self)
 
     def __nonzero__(self):
         ## Unicode strings are valid if they point at a valid memory
@@ -171,9 +184,10 @@ class _UNICODE_STRING(obj.CType):
         return format(self.v(), formatspec)
 
     def __str__(self):
-        if not self.v():
-            return ''
-        return self.v()
+        return str(self.dereference())
+
+    def __unicode__(self):
+        return unicode(self.dereference())
 
 class _LIST_ENTRY(obj.CType):
     """ Adds iterators for _LIST_ENTRY types """
@@ -535,9 +549,9 @@ class _FILE_OBJECT(obj.CType):
                             self.DeviceObject - self.obj_vm.profile.get_obj_offset("_OBJECT_HEADER", "Body"),
                             self.obj_native_vm)
             if object_hdr:
-                name = "\\Device\\{0}".format(object_hdr.NameInfo.Name.v())
+                name = "\\Device\\{0}".format(str(object_hdr.NameInfo.Name))
         if self.FileName:
-            name += self.FileName.v()
+            name += str(self.FileName)
         return name
 
     def access_string(self):

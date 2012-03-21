@@ -80,10 +80,10 @@ class ModScan(filescan.FileScan):
         for ldr_entry in data:
             outfd.write("{0:#010x} {1:50} {2:#012x} {3:#08x} {4}\n".format(
                          ldr_entry.obj_offset,
-                         repr(ldr_entry.FullDllName.v()),
+                         str(ldr_entry.FullDllName),
                          ldr_entry.DllBase,
                          ldr_entry.SizeOfImage,
-                         repr(ldr_entry.BaseDllName.v())))
+                         str(ldr_entry.BaseDllName)))
 
 class CheckThreads(scan.ScannerCheck):
     """ Check sanity of _ETHREAD """

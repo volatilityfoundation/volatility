@@ -72,7 +72,7 @@ class Handles(taskmods.DllList):
                     object_type = handle.get_object_type()
                     if object_type == "File":
                         file_obj = handle.dereference_as("_FILE_OBJECT")
-                        name = repr(file_obj.file_name_with_device())
+                        name = str(file_obj.file_name_with_device())
                     elif object_type == "Key":
                         key_obj = handle.dereference_as("_CM_KEY_BODY")
                         name = key_obj.full_key_name()
@@ -83,8 +83,8 @@ class Handles(taskmods.DllList):
                         thrd_obj = handle.dereference_as("_ETHREAD")
                         name = "TID {0} PID {1}".format(thrd_obj.Cid.UniqueThread, thrd_obj.Cid.UniqueProcess)
                     elif handle.NameInfo.Name == None:
-                        name = repr('')
+                        name = ''
                     else:
-                        name = repr(str(handle.NameInfo.Name.v()))
+                        name = str(handle.NameInfo.Name)
 
                     yield pid, handle, object_type, name

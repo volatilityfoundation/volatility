@@ -27,31 +27,59 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.constants as constants
 import volatility.plugins.overlays.native_types as native_types
 
-class String(obj.NativeType):
+class String(obj.BaseObject):
     """Class for dealing with Strings"""
-    def __init__(self, theType, offset, vm = None,
+    def __init__(self, theType, offset, vm = None, encoding = 'ascii',
                  length = 1, parent = None, profile = None, **kwargs):
+
         ## Allow length to be a callable:
         if callable(length):
             length = length(parent)
 
         self.length = length
+        self.encoding = encoding
 
         ## length must be an integer
-        obj.NativeType.__init__(self, theType, offset, vm, parent = parent, profile = profile,
-                                format_string = "{0}s".format(length), **kwargs)
+        obj.BaseObject.__init__(self, theType, offset, vm, parent = parent, profile = profile, **kwargs)
 
     def proxied(self, name):
         """ Return an object to be proxied """
         return self.__str__()
 
-    def __str__(self):
-        data = self.v()
-        ## Make sure its null terminated:
-        result = data.split("\x00")[0]
+    def v(self):
+        """
+        Use zread to help emulate reading null-terminated C
+        strings across page boundaries.
+
+        @returns: If all bytes are available, return the full string
+        as a raw byte buffer. If the end of the string is in a page
+        that isn't available, return as much of the string as possible,
+        padded with nulls to the string's length.
+
+        If the string length is 0, vtop() fails, or the physical addr
+        of the string is not valid, return NoneObject.
+
+        Note: to get a null terminated string, use the __str__ method.
+        """
+        result = self.obj_vm.zread(self.obj_offset, self.length)
         if not result:
-            return ""
+            return obj.NoneObject("Cannot read string length {0} at {1:#x}".format(self.length, self.obj_offset))
         return result
+
+    def __str__(self):
+        """
+        This function ensures that we always return a string from the __str__ method.
+        Any unusual/unicode characters in the input are replaced with ?.
+
+        Note: this effectively masks the NoneObject alert from .v()
+        """
+        return unicode(self).encode('ascii', 'replace') or ""
+
+    def __unicode__(self):
+        """ This function returns the unicode encoding of the data retrieved by .v()
+            Any unusual characters in the input are replaced with \ufffd.
+        """
+        return self.v().decode(self.encoding, 'replace').split("\x00", 1)[0] or u''
 
     def __format__(self, formatspec):
         return format(self.__str__(), formatspec)

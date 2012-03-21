@@ -100,7 +100,7 @@ class FileScan(commands.Command):
         for object_obj, file_obj in data:
             outfd.write("{0:#010x} {1:4} {2:4} {3:6} {4}\n".format(
                          file_obj.obj_offset, object_obj.PointerCount,
-                         object_obj.HandleCount, file_obj.access_string(), repr(file_obj.FileName.v())))
+                         object_obj.HandleCount, file_obj.access_string(), str(file_obj.FileName)))
 
 class PoolScanDriver(PoolScanFile):
     """ Scanner for _DRIVER_OBJECT """
@@ -171,9 +171,9 @@ class DriverScan(FileScan):
                          driver_obj.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount,
                          driver_obj.DriverStart, driver_obj.DriverSize,
-                         repr(extension_obj.ServiceKeyName.v()),
-                         repr(object_obj.NameInfo.Name.v() if object_obj.NameInfo.Name.v() else ''),
-                         repr(driver_obj.DriverName.v())))
+                         str(extension_obj.ServiceKeyName),
+                         str(object_obj.NameInfo.Name or ''),
+                         str(driver_obj.DriverName)))
 
 class PoolScanSymlink(PoolScanFile):
     """ Scanner for symbolic link objects """
@@ -231,8 +231,8 @@ class SymLinkScan(FileScan):
             outfd.write("{0:#010x} {1:4} {2:4} {3:<24} {4:<20} {5}\n".format(
                         link.obj_offset, objct.PointerCount,
                         objct.HandleCount, link.CreationTime or '',
-                        repr(objct.NameInfo.Name.v() if objct.NameInfo.Name.v() else ''),
-                        repr(link.LinkTarget.v())))
+                        str(objct.NameInfo.Name or ''),
+                        str(link.LinkTarget)))
 
 class PoolScanMutant(PoolScanDriver):
     """ Scanner for Mutants _KMUTANT """
@@ -287,7 +287,7 @@ class MutantScan(FileScan):
             ##   continue
 
             if self._config.SILENT:
-                if len(object_obj.NameInfo.Name.v()) == 0:
+                if len(object_obj.NameInfo.Name) == 0:
                     continue
 
             yield (object_obj, mutant)
@@ -310,7 +310,7 @@ class MutantScan(FileScan):
                          mutant.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount, mutant.Header.SignalState,
                          mutant.OwnerThread, CID,
-                         repr(object_obj.NameInfo.Name.v() if object_obj.NameInfo.Name.v() else '')
+                         str(object_obj.NameInfo.Name or '')
                          ))
 
 class CheckProcess(scan.ScannerCheck):
