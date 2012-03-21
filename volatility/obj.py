@@ -569,7 +569,7 @@ class Pointer(NativeType):
 
     def is_valid(self):
         """ Returns if what we are pointing to is valid """
-        return self.obj_vm.is_valid_address(self.v())
+        return self.obj_native_vm.is_valid_address(self.v())
 
     def dereference(self):
         offset = self.v()
