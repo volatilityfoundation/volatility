@@ -153,10 +153,10 @@ class NoneObject(object):
     def __str__(self):
         ## If we are strict we blow up here
         if self.strict:
-            debug.error("{0} n{1}".format(self.reason, self.bt))
+            debug.error("Strict NoneObject string failure: {0} n{1}".format(self.reason, self.bt))
             sys.exit(0)
         else:
-            debug.warning("{0}".format(self.reason))
+            debug.warning("NoneObject as string: {0}".format(self.reason))
 
         return ""
 
