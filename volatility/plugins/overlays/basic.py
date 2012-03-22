@@ -84,6 +84,12 @@ class String(obj.BaseObject):
     def __format__(self, formatspec):
         return format(self.__str__(), formatspec)
 
+    def __eq__(self, other):
+        return str(self) == other
+
+    def __req__(self, other):
+        return other == str(self)
+
     def __add__(self, other):
         """Set up mappings for concat"""
         return str(self) + other
