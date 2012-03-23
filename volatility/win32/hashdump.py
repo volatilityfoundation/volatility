@@ -178,11 +178,11 @@ def get_user_keys(samaddr):
 
     root = rawreg.get_root(samaddr)
     if not root:
-        return None
+        return []
 
     user_key = rawreg.open_key(root, user_key_path)
     if not user_key:
-        return None
+        return []
 
     return [k for k in rawreg.subkeys(user_key) if k.Name != "Names"]
 
