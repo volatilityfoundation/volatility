@@ -100,7 +100,7 @@ class FileScan(commands.Command):
         for object_obj, file_obj in data:
             outfd.write("{0:#010x} {1:4} {2:4} {3:6} {4}\n".format(
                          file_obj.obj_offset, object_obj.PointerCount,
-                         object_obj.HandleCount, file_obj.access_string(), str(file_obj.FileName)))
+                         object_obj.HandleCount, file_obj.access_string(), str(file_obj.FileName or '')))
 
 class PoolScanDriver(PoolScanFile):
     """ Scanner for _DRIVER_OBJECT """
@@ -171,9 +171,9 @@ class DriverScan(FileScan):
                          driver_obj.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount,
                          driver_obj.DriverStart, driver_obj.DriverSize,
-                         str(extension_obj.ServiceKeyName),
+                         str(extension_obj.ServiceKeyName or ''),
                          str(object_obj.NameInfo.Name or ''),
-                         str(driver_obj.DriverName)))
+                         str(driver_obj.DriverName or '')))
 
 class PoolScanSymlink(PoolScanFile):
     """ Scanner for symbolic link objects """
@@ -232,7 +232,7 @@ class SymLinkScan(FileScan):
                         link.obj_offset, objct.PointerCount,
                         objct.HandleCount, link.CreationTime or '',
                         str(objct.NameInfo.Name or ''),
-                        str(link.LinkTarget)))
+                        str(link.LinkTarget or '')))
 
 class PoolScanMutant(PoolScanDriver):
     """ Scanner for Mutants _KMUTANT """
