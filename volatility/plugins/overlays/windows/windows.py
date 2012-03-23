@@ -178,7 +178,7 @@ class _UNICODE_STRING(obj.CType):
 
     def __nonzero__(self):
         ## Unicode strings are valid if they point at a valid memory
-        return bool(self.Buffer)
+        return bool(self.Buffer and self.Length.v() > 0 and self.Length.v() <= 1024)
 
     def __format__(self, formatspec):
         return format(self.v(), formatspec)
