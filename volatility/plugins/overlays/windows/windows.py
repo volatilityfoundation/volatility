@@ -662,18 +662,12 @@ class _MMVAD_SHORT(obj.CType):
         start = self.get_start()
         end = self.get_end()
 
-        # avoid potential situations that would cause num_pages to 
-        # overflow and then be too large to pass to xrange
+        # avoid potential invalid values 
         if start > 0xFFFFFFFF or end > (0xFFFFFFFF << 12):
             return ''
 
-        num_pages = (end - start + 1) >> 12
-
-        blank_page = '\x00' * 0x1000
-        pages_list = [(self.obj_vm.read(start + index * 0x1000, 0x1000) if self.obj_vm.is_valid_address(start + index * 0x1000) else blank_page) for index in xrange(num_pages)]
-        if None in pages_list:
-            pages_list = [a_page if a_page != None else blank_page for a_page in pages_list]
-        return ''.join(pages_list)
+        # obj_vm is process space 
+        return self.obj_vm.zread(start, end - start + 1)
 
 class _MMVAD_LONG(_MMVAD_SHORT):
     """Subclasses _MMVAD_LONG based on _MMVAD_SHORT"""
