@@ -646,7 +646,7 @@ class _MMVAD_SHORT(obj.CType):
 
     def get_file_object(self):
         """Returns the FilePointer of the ControlArea of the MMVAD"""
-        return self.ControlArea.FilePointer
+        return self.ControlArea.FilePointer.dereference()
 
     def get_start(self):
         """Get the starting virtual address"""
