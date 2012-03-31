@@ -129,7 +129,6 @@ class VADInfo(taskmods.DllList):
 
         control_area = vad.get_control_area()
         if not control_area:
-            #debug.b()
             return
 
         outfd.write("ControlArea @{0:08x} Segment {1:08x}\n".format(control_area.dereference().obj_offset, control_area.Segment))
@@ -142,7 +141,7 @@ class VADInfo(taskmods.DllList):
         file_object = vad.get_file_object()
 
         if file_object:
-            outfd.write("FileObject @{0:08x} FileBuffer @ {1:08x}          , Name: {2}\n".format(file_object.obj_offset, file_object.FileName.Buffer, file_object.FileName))
+            outfd.write("FileObject @{0:08x}, Name: {1}\n".format(file_object.obj_offset, file_object.FileName))
 
     def write_vad_ext(self, outfd, vad):
         """Renders a text version of a Long Vad"""
