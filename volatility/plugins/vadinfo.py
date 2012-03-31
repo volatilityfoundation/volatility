@@ -127,22 +127,22 @@ class VADInfo(taskmods.DllList):
         if vad.u.VadFlags.PrivateMemory == 1:
             return
 
-        CA = vad.get_control_area()
-        if not CA:
+        control_area = vad.get_control_area()
+        if not control_area:
             #debug.b()
             return
 
-        outfd.write("ControlArea @{0:08x} Segment {1:08x}\n".format(CA.dereference().obj_offset, CA.Segment))
-        outfd.write("Dereference list: Flink {0:08x}, Blink {1:08x}\n".format(CA.DereferenceList.Flink, CA.DereferenceList.Blink))
-        outfd.write("NumberOfSectionReferences: {0:10} NumberOfPfnReferences:  {1:10}\n".format(CA.NumberOfSectionReferences, CA.NumberOfPfnReferences))
-        outfd.write("NumberOfMappedViews:       {0:10} NumberOfUserReferences: {1:10}\n".format(CA.NumberOfMappedViews, CA.NumberOfUserReferences))
-        outfd.write("WaitingForDeletion Event:  {0:08x}\n".format(CA.WaitingForDeletion))
-        outfd.write("Control Flags: {0}\n".format(str(CA.u.Flags)))
+        outfd.write("ControlArea @{0:08x} Segment {1:08x}\n".format(control_area.dereference().obj_offset, control_area.Segment))
+        outfd.write("Dereference list: Flink {0:08x}, Blink {1:08x}\n".format(control_area.DereferenceList.Flink, control_area.DereferenceList.Blink))
+        outfd.write("NumberOfSectionReferences: {0:10} NumberOfPfnReferences:  {1:10}\n".format(control_area.NumberOfSectionReferences, control_area.NumberOfPfnReferences))
+        outfd.write("NumberOfMappedViews:       {0:10} NumberOfUserReferences: {1:10}\n".format(control_area.NumberOfMappedViews, control_area.NumberOfUserReferences))
+        outfd.write("WaitingForDeletion Event:  {0:08x}\n".format(control_area.WaitingForDeletion))
+        outfd.write("Control Flags: {0}\n".format(str(control_area.u.Flags)))
 
-        FO = vad.get_file_object()
+        file_object = vad.get_file_object()
 
-        if FO:
-            outfd.write("FileObject @{0:08x} FileBuffer @ {1:08x}          , Name: {2}\n".format(FO.obj_offset, FO.FileName.Buffer, FO.FileName))
+        if file_object:
+            outfd.write("FileObject @{0:08x} FileBuffer @ {1:08x}          , Name: {2}\n".format(file_object.obj_offset, file_object.FileName.Buffer, file_object.FileName))
 
     def write_vad_ext(self, outfd, vad):
         """Renders a text version of a Long Vad"""
