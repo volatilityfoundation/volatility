@@ -143,7 +143,7 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
         pass
 
     def get_available_pages(self):
-        """A generator that returns (addr, size) for each of the virtual addresses present"""
+        """A generator that returns (addr, size) for each of the virtual addresses present, sorted by offset"""
         pass
 
     def get_available_addresses(self):
@@ -155,8 +155,8 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
                 runLength = size
                 currentOffset = offset
             else:
-                if (offset == (currentOffset + runLength)):
-                    runLength += size
+                if (offset <= (currentOffset + runLength)):
+                    runLength += (currentOffset + runLength - offset) + size
                 else:
                     yield (currentOffset, runLength)
                     runLength = size
@@ -171,7 +171,7 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
             return False
         try:
             paddr = self.vtop(vaddr)
-        except:
+        except BaseException:
             return False
         if paddr == None:
             return False
