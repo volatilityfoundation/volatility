@@ -308,13 +308,17 @@ def dump_hashes(sysaddr, samaddr):
 
     if hbootkey:
         for user in get_user_keys(samaddr):
-            lmhash, nthash = get_user_hashes(user, hbootkey)
-            if not lmhash:
-                lmhash = empty_lm
-            if not nthash:
-                nthash = empty_nt
-            yield "{0}:{1}:{2}:{3}:::".format(get_user_name(user), int(str(user.Name), 16),
-                                              lmhash.encode('hex'), nthash.encode('hex'))
+            ret = get_user_hashes(user, hbootkey)
+            if not ret:
+                yield obj.NoneObject("Cannot get user hashes for {0}".format(user))
+            else:
+                lmhash, nthash = ret
+                if not lmhash:
+                    lmhash = empty_lm
+                if not nthash:
+                    nthash = empty_nt
+                yield "{0}:{1}:{2}:{3}:::".format(get_user_name(user), int(str(user.Name), 16),
+                                                  lmhash.encode('hex'), nthash.encode('hex'))
     else:
         yield obj.NoneObject("Hbootkey is not valid")
 
