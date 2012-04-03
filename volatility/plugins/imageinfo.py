@@ -44,7 +44,7 @@ class ImageInfo(kdbg.KDBGScan):
         suglist = [ s for s, _, _ in kdbg.KDBGScan.calculate(self)]
         if suglist:
             bestguess = suglist[0]
-        suggestion = ", ".join(suglist)
+        suggestion = ", ".join(set(suglist))
 
         # Set our suggested profile first, then run through the list
         if bestguess in profilelist:
