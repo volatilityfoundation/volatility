@@ -308,7 +308,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         except IOError:
             string = None
         if not string:
-            return obj.NoneObject("Could not read_long_phys at offset " + str(addr))
+            return obj.NoneObject("Could not read_long_phys at offset " + hex(addr))
         (longval,) = struct.unpack('<I', string)
         return longval
 
@@ -469,7 +469,7 @@ class JKIA32PagedMemoryPae(JKIA32PagedMemory):
         except IOError:
             string = None
         if not string:
-            return obj.NoneObject("Unable to read_long_long_phys at " + str(addr))
+            return obj.NoneObject("Unable to read_long_long_phys at " + hex(addr))
         (longlongval,) = struct.unpack('<Q', string)
         return longlongval
 
