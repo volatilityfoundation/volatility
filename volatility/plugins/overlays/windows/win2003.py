@@ -60,7 +60,9 @@ class _MM_AVL_TABLE(obj.CType):
             yield c
 
 class _MMVAD_SHORT(windows._MMVAD_SHORT):
-    def get_parent(self):
+
+    @property
+    def Parent(self):
         return self.u1.Parent
 
 class _MMVAD_LONG(_MMVAD_SHORT):

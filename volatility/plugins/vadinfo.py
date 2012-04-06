@@ -110,7 +110,7 @@ class VADInfo(taskmods.DllList):
     def write_vad_short(self, outfd, vad):
         """Renders a text version of a Short Vad"""
         outfd.write("VAD node @{0:08x} Start {1:08x} End {2:08x} Tag {3:4}\n".format(
-            vad.obj_offset, vad.get_start(), vad.get_end(), vad.Tag))
+            vad.obj_offset, vad.Start, vad.End, vad.Tag))
         outfd.write("Flags: {0}\n".format(str(vad.u.VadFlags)))
         # although the numeric value of Protection is printed above with VadFlags,
         # let's show the user a human-readable translation of the protection 
@@ -127,7 +127,7 @@ class VADInfo(taskmods.DllList):
         if vad.u.VadFlags.PrivateMemory == 1:
             return
 
-        control_area = vad.get_control_area()
+        control_area = vad.ControlArea
         if not control_area:
             return
 
@@ -138,7 +138,7 @@ class VADInfo(taskmods.DllList):
         outfd.write("WaitingForDeletion Event:  {0:08x}\n".format(control_area.WaitingForDeletion))
         outfd.write("Control Flags: {0}\n".format(str(control_area.u.Flags)))
 
-        file_object = vad.get_file_object()
+        file_object = vad.FileObject
 
         if file_object:
             outfd.write("FileObject @{0:08x}, Name: {1}\n".format(file_object.obj_offset, file_object.FileName))
@@ -158,11 +158,11 @@ class VADTree(VADInfo):
             levels = {}
             for vad in task.get_vads():
                 if vad:
-                    level = levels.get(vad.get_parent().dereference().obj_offset, -1) + 1
+                    level = levels.get(vad.Parent.dereference().obj_offset, -1) + 1
                     levels[vad.obj_offset] = level
                     outfd.write(" " * level + "{0:08x} - {1:08x}\n".format(
-                                vad.get_start(),
-                                vad.get_end()))
+                                vad.Start,
+                                vad.End))
 
     def render_dot(self, outfd, data):
         for task in data:
@@ -172,14 +172,14 @@ class VADTree(VADInfo):
             outfd.write("graph [rankdir = \"TB\"];\n")
             for vad in task.get_vads():
                 if vad:
-                    if vad.get_parent() and vad.get_parent().dereference():
-                        outfd.write("vad_{0:08x} -> vad_{1:08x}\n".format(vad.get_parent().dereference().obj_offset or 0, vad.obj_offset))
+                    if vad.Parent and vad.Parent.dereference():
+                        outfd.write("vad_{0:08x} -> vad_{1:08x}\n".format(vad.Parent.dereference().obj_offset or 0, vad.obj_offset))
                     outfd.write("vad_{0:08x} [label = \"{{ {1}\\n{2:08x} - {3:08x} }}\""
                                 "shape = \"record\" color = \"blue\"];\n".format(
                         vad.obj_offset,
                         vad.Tag,
-                        vad.get_start(),
-                        vad.get_end()))
+                        vad.Start,
+                        vad.End))
 
             outfd.write("}\n")
 
@@ -196,11 +196,11 @@ class VADWalk(VADInfo):
                 if vad:
                     outfd.write("{0:08x} {1:08x} {2:08x} {3:08x} {4:08x} {5:08x} {6:4}\n".format(
                         vad.obj_offset,
-                        vad.get_parent().dereference().obj_offset or 0,
+                        vad.Parent.dereference().obj_offset or 0,
                         vad.LeftChild.dereference().obj_offset or 0,
                         vad.RightChild.dereference().obj_offset or 0,
-                        vad.get_start(),
-                        vad.get_end(),
+                        vad.Start,
+                        vad.End,
                         vad.Tag))
 
 class VADDump(VADInfo):
@@ -235,15 +235,11 @@ class VADDump(VADInfo):
                 if vad == None:
                     continue
 
-                # Find the start and end range
-                start = vad.get_start()
-                end = vad.get_end()
-
                 # Open the file and initialize the data
-                f = open(os.path.join(self._config.DUMP_DIR, "{0}.{1:x}.{2:08x}-{3:08x}.dmp".format(name, offset, start, end)), 'wb')
+                f = open(os.path.join(self._config.DUMP_DIR, "{0}.{1:x}.{2:08x}-{3:08x}.dmp".format(name, offset, vad.Start, vad.End)), 'wb')
                 range_data = vad.get_data()
 
                 if self._config.VERBOSE:
-                    outfd.write("Writing VAD for " + ("{0}.{1:x}.{2:08x}-{3:08x}.dmp".format(name, offset, start, end)) + "\n")
+                    outfd.write("Writing VAD for " + ("{0}.{1:x}.{2:08x}-{3:08x}.dmp".format(name, offset, vad.Start, vad.End)) + "\n")
                 f.write(range_data)
                 f.close()

@@ -639,31 +639,36 @@ class _MMVAD_SHORT(obj.CType):
             visited.add(c.obj_offset)
             yield c
 
-    def get_parent(self):
+    @property
+    def Parent(self):
         """Returns the Parent of the MMVAD"""
-        return self.Parent
+        return self.m('Parent')
 
-    def get_control_area(self):
+    @property
+    def ControlArea(self):
         """Returns the ControlArea of the MMVAD"""
-        return self.ControlArea
+        return self.m('ControlArea')
 
-    def get_file_object(self):
+    @property
+    def FileObject(self):
         """Returns the FilePointer of the ControlArea of the MMVAD"""
         return self.ControlArea.FilePointer.dereference()
 
-    def get_start(self):
+    @property
+    def Start(self):
         """Get the starting virtual address"""
         return self.StartingVpn << 12
 
-    def get_end(self):
+    @property
+    def End(self):
         """Get the ending virtual address"""
         return ((self.EndingVpn + 1) << 12) - 1
 
     def get_data(self):
         """Get the data in a vad region"""
 
-        start = self.get_start()
-        end = self.get_end()
+        start = self.Start
+        end = self.End 
 
         # avoid potential invalid values 
         if start > 0xFFFFFFFF or end > (0xFFFFFFFF << 12):

@@ -33,13 +33,17 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.obj as obj
 
 class _MMVAD_SHORT(windows._MMVAD_SHORT):
-    def get_parent(self):
+
+    @property
+    def Parent(self):
         return self.u1.Parent
 
-    def get_control_area(self):
+    @property
+    def ControlArea(self):
         return self.Subsection.ControlArea
 
-    def get_file_object(self):
+    @property
+    def FileObject(self):
         return self.Subsection.ControlArea.FilePointer.dereference_as("_FILE_OBJECT")
 
 class _MMVAD_LONG(_MMVAD_SHORT):
