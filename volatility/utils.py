@@ -30,7 +30,12 @@ def load_as(config, astype = 'virtual', **kwargs):
 
     base_as = None
     error = exceptions.AddrSpaceError()
-    while 1:
+
+    # Start off requiring another round    
+    found = True
+    ## A full iteration through all the classes without anyone
+    ## selecting us means we are done:
+    while found:
         debug.debug("Voting round")
         found = False
         for cls in sorted(registry.get_plugin_classes(addrspace.BaseAddressSpace).values(),
@@ -49,11 +54,6 @@ def load_as(config, astype = 'virtual', **kwargs):
                 debug.debug("Failed instantiating (exception): {0}".format(e))
                 error.append_reason(cls.__name__ + " - EXCEPTION", e)
                 continue
-
-        ## A full iteration through all the classes without anyone
-        ## selecting us means we are done:
-        if not found:
-            break
 
     if not isinstance(base_as, addrspace.AbstractVirtualAddressSpace) and (astype == 'virtual'):
         base_as = None
