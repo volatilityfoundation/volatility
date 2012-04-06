@@ -185,25 +185,18 @@ class VolatilityDTB(obj.VolatilityMagic):
 
     def generate_suggestions(self):
         offset = 0
-        while 1:
-            data = self.obj_vm.read(offset, constants.SCAN_BLOCKSIZE)
-            found = 0
-            if not data:
-                break
-
-            while 1:
+        data = self.obj_vm.read(offset, constants.SCAN_BLOCKSIZE)
+        while data:
+            found = data.find(str(self.obj_parent.DTBSignature), 0)
+            while found >= 0:
+                proc = obj.Object("_EPROCESS", offset = offset + found,
+                                  vm = self.obj_vm)
+                if 'Idle' in proc.ImageFileName.v():
+                    yield proc.Pcb.DirectoryTableBase.v()
                 found = data.find(str(self.obj_parent.DTBSignature), found + 1)
-                if found >= 0:
-                    # (_type, _size) = unpack('=HH', data[found:found+4])
-                    proc = obj.Object("_EPROCESS", offset = offset + found,
-                                      vm = self.obj_vm)
-                    if 'Idle' in proc.ImageFileName.v():
-                        yield proc.Pcb.DirectoryTableBase.v()
-                else:
-                    break
 
             offset += len(data)
-
+            data = self.obj_vm.read(offset, constants.SCAN_BLOCKSIZE)
 
 class BasicObjectClasses(obj.ProfileModification):
 
