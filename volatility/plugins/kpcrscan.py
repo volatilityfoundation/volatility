@@ -112,8 +112,8 @@ class KPCRScannerCheck(scan.ScannerCheck):
 
         return len(data) - offset
 
-class KPCRScanner(scan.DiscontigScanner):
+class KPCRScanner(scan.BaseScanner):
     checks = [ ("KPCRScannerCheck", {})
                ]
     def scan(self, address_space, offset = 0, maxlen = None):
-        return scan.DiscontigScanner.scan(self, address_space, max(offset, 0x80000000), maxlen)
+        return scan.BaseScanner.scan(self, address_space, max(offset, 0x80000000), maxlen)

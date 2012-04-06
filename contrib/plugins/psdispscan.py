@@ -102,7 +102,7 @@ class CheckSynchronization(scan.ScannerCheck):
         if event.Size == 0x4 and event.Type == 0x1:
             return True
 
-class PSDispScanner(scan.DiscontigScanner):
+class PSDispScanner(scan.BaseScanner):
     """ This scanner carves things that look like _EPROCESS structures.
 
     Since the _EPROCESS does not need to be linked to the process

@@ -55,16 +55,16 @@ class MultiStringFinderCheck(scan.ScannerCheck):
                 nextval = min(nextval, dindex)
         return nextval - offset
 
-class KDBGScanner(scan.DiscontigScanner):
+class KDBGScanner(scan.BaseScanner):
     checks = [ ]
 
     def __init__(self, window_size = 8, needles = None):
         self.needles = needles
         self.checks = [ ("MultiStringFinderCheck", {'needles':needles})]
-        scan.DiscontigScanner.__init__(self, window_size)
+        scan.BaseScanner.__init__(self, window_size)
 
     def scan(self, address_space, offset = 0, maxlen = None):
-        for offset in scan.DiscontigScanner.scan(self, address_space, offset, maxlen):
+        for offset in scan.BaseScanner.scan(self, address_space, offset, maxlen):
             # Compensate for KDBG appearing within the searched for structure
             # (0x10 should really be the offset of OwnerTag from with the structure,
             #  however we don't know which profile to read it from, so it's hardwired)

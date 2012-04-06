@@ -56,8 +56,6 @@ class BaseScanner(object):
             check = registry.get_plugin_classes(ScannerCheck)[class_name](self.buffer, **args)
             self.constraints.append(check)
 
-        self.max_length = None
-        self.base_offset = None
         self.error_count = 0
 
     def check_addr(self, found):
@@ -88,62 +86,64 @@ class BaseScanner(object):
     overlap = 20
     def scan(self, address_space, offset = 0, maxlen = None):
         self.buffer.profile = address_space.profile
-        self.base_offset = offset
-        self.max_length = maxlen
+        current_offset = offset
         ## Which checks also have skippers?
         skippers = [ c for c in self.constraints if hasattr(c, "skip") ]
-        while 1:
-            #if not address_space.is_valid_address(self.base_offset):
-            #    break
-            if (self.max_length != None):
-                l = min(constants.SCAN_BLOCKSIZE + self.overlap, self.max_length)
-            else:
-                l = constants.SCAN_BLOCKSIZE + self.overlap
 
-            data = address_space.read(self.base_offset, l)
-            if not data:
-                break
+        for (range_start, range_size) in sorted(address_space.get_available_addresses()):
+            # Jump to the next available point to scan from
+            # self.base_offset jumps up to be at least range_start
+            current_offset = max(range_start, current_offset)
+            range_end = range_start + range_size
 
-            length = min(constants.SCAN_BLOCKSIZE, len(data))
+            # If we have a maximum length, we make sure it's less than the range_end
+            if maxlen:
+                range_end = min(range_end, offset + maxlen)
 
-            self.buffer.assign_buffer(data, self.base_offset)
-            i = 0
-            ## Find all occurances of the pool tag in this buffer and
-            ## check them:
-            while i < length:
-                if self.check_addr(i + self.base_offset):
-                    ## yield the offset to the start of the memory
-                    ## (after the pool tag)
-                    yield i + self.base_offset
+            while (current_offset < range_end):
+                # We've now got range_start <= self.base_offset < range_end
 
-                ## Where should we go next? By default we go 1 byte
-                ## ahead, but if some of the checkers have skippers,
-                ## we may actually go much farther. Checkers with
-                ## skippers basically tell us that there is no way
-                ## they can match anything before the skipped result,
-                ## so there is no point in trying them on all the data
-                ## in between. This optimization is useful to really
-                ## speed things up. FIXME - currently skippers assume
-                ## that the check must match, therefore we can skip
-                ## the unmatchable region, but its possible that a
-                ## scanner needs to match only some checkers.
-                skip = 1
-                for s in skippers:
-                    skip = max(skip, s.skip(data, i))
+                # Figure out how much data to read
+                l = min(constants.SCAN_BLOCKSIZE + self.overlap, range_end - current_offset)
 
-                i += skip
+                # Populate the buffer with data
+                # We use zread to scan what we can because there are often invalid
+                # pages in the DTB
+                data = address_space.zread(current_offset, l)
+                self.buffer.assign_buffer(data, current_offset)
 
-            self.base_offset += min(constants.SCAN_BLOCKSIZE, l)
-            if (self.max_length != None):
-                self.max_length -= min(constants.SCAN_BLOCKSIZE, l)
+                ## Run checks throughout this block of data
+                i = 0
+                while i < l:
+                    if self.check_addr(i + current_offset):
+                        ## yield the offset to the start of the memory
+                        ## (after the pool tag)
+                        yield i + current_offset
+
+                    ## Where should we go next? By default we go 1 byte
+                    ## ahead, but if some of the checkers have skippers,
+                    ## we may actually go much farther. Checkers with
+                    ## skippers basically tell us that there is no way
+                    ## they can match anything before the skipped result,
+                    ## so there is no point in trying them on all the data
+                    ## in between. This optimization is useful to really
+                    ## speed things up. FIXME - currently skippers assume
+                    ## that the check must match, therefore we can skip
+                    ## the unmatchable region, but its possible that a
+                    ## scanner needs to match only some checkers.
+                    skip = 1
+                    for s in skippers:
+                        skip = max(skip, s.skip(data, i))
+
+                    i += skip
+
+                current_offset += min(constants.SCAN_BLOCKSIZE, l)
 
 class DiscontigScanner(BaseScanner):
     def scan(self, address_space, offset = 0, maxlen = None):
-        for (o, l) in address_space.get_available_addresses():
-            # Rely on shortcutting
-            if (o + l > offset) and ((maxlen == None) or (o < offset + maxlen)):
-                for match in BaseScanner.scan(self, address_space, o, l):
-                    yield match
+        debug.warning("DiscontigScanner has been deprecated, all functionality is now contained in BaseScanner")
+        for match in BaseScanner.scan(self, address_space, offset, maxlen):
+            yield match
 
 class ScannerCheck(object):
     """ A scanner check is a special class which is invoked on an AS to check for a specific condition.
@@ -170,7 +170,7 @@ class ScannerCheck(object):
     #def skip(self, data, offset):
     #    return -1
 
-class PoolScanner(DiscontigScanner):
+class PoolScanner(BaseScanner):
 
     def object_offset(self, found, address_space):
         """ 
@@ -215,5 +215,5 @@ class PoolScanner(DiscontigScanner):
         return found - self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
 
     def scan(self, address_space, offset = 0, maxlen = None):
-        for i in DiscontigScanner.scan(self, address_space, offset, maxlen):
+        for i in BaseScanner.scan(self, address_space, offset, maxlen):
             yield self.object_offset(i, address_space)
