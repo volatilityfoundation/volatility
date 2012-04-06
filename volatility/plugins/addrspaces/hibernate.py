@@ -75,20 +75,27 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
         self.PageCache = Store(50)
         self.MemRangeCnt = 0
         self.offset = 0
+        self.entry_count = 0xFF
 
         # Extract header information
-        self.as_assert(self.profile.has_type("_IMAGE_HIBER_HEADER"), "_IMAGE_HIBER_HEADER not available in profile")
-        self.header = obj.Object('_IMAGE_HIBER_HEADER', 0, base)
+        self.as_assert(self.profile.has_type("PO_MEMORY_IMAGE"), "PO_MEMORY_IMAGE is not available in profile")
+        self.header = obj.Object('PO_MEMORY_IMAGE', 0, base)
 
         ## Is the signature right?
         if self.header.Signature.lower() not in ['hibr', 'wake']:
             self.header = obj.NoneObject("Invalid hibernation header")
+            volmag = obj.NoneObject("Invalid hibernation header")
+        else:
+            volmag = obj.VolMagic(base)
+            self.entry_count = volmag.HibrEntryCount.v()
+
+        PROC_PAGE = volmag.HibrProcPage.v()
 
         # Check it's definitely a hibernation file
         self.as_assert(self._get_first_table_page() is not None, "No xpress signature found")
 
         # Extract processor state
-        self.ProcState = obj.Object("_KPROCESSOR_STATE", 2 * 4096, base)
+        self.ProcState = obj.Object("_KPROCESSOR_STATE", PROC_PAGE * 4096, base)
 
         ## This is a pointer to the page table - any ASs above us dont
         ## need to search for it.
@@ -131,7 +138,7 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
         MemoryArrayOffset = self._get_first_table_page() * 4096
 
         while MemoryArrayOffset:
-            MemoryArray = obj.Object('_MEMORY_RANGE_ARRAY', MemoryArrayOffset, self.base)
+            MemoryArray = obj.Object('_PO_MEMORY_RANGE_ARRAY', MemoryArrayOffset, self.base)
 
             EntryCount = MemoryArray.MemArrayLink.EntryCount.v()
             for i in MemoryArray.RangeTable:
@@ -146,11 +153,11 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
 
                 for j in range(0, LocalPageCnt):
                     if (XpressIndex and ((XpressIndex % 0x10) == 0)):
-                        XpressHeader, XpressBlockSize = self.next_xpress(XpressHeader, XpressBlockSize)
+                        XpressHeader, XpressBlockSize = \
+                                      self.next_xpress(XpressHeader, XpressBlockSize)
 
                     PageNumber = start + j
                     XpressPage = XpressIndex % 0x10
-                    #print [(PageNumber,XpressBlockSize,XpressPage)]
                     if XpressHeader.obj_offset not in self.PageDict:
                         self.PageDict[XpressHeader.obj_offset] = [
                             (PageNumber, XpressBlockSize, XpressPage)]
@@ -167,10 +174,17 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
 
             NextTable = MemoryArray.MemArrayLink.NextTable.v()
 
-            if (NextTable and (EntryCount == 0xFF)):
+            # This entry count (EntryCount) should probably be calculated
+            if (NextTable and (EntryCount == self.entry_count)):
                 MemoryArrayOffset = NextTable * 0x1000
                 self.MemRangeCnt += 1
-                XpressHeader, XpressBlockSize = self.next_xpress(XpressHeader, XpressBlockSize)
+                XpressHeader, XpressBlockSize = \
+                                             self.next_xpress(XpressHeader, XpressBlockSize)
+
+                # Make sure the xpress block is after the Memory Table
+                while (XpressHeader.obj_offset < MemoryArrayOffset):
+                    XpressHeader, XpressBlockSize = \
+                        self.next_xpress(XpressHeader, 0)
 
                 XpressIndex = 0
             else:
@@ -193,7 +207,8 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
             yield page_count
 
     def next_xpress(self, XpressHeader, XpressBlockSize):
-        XpressHeaderOffset = XpressBlockSize + XpressHeader.obj_offset + XpressHeader.size()
+        XpressHeaderOffset = XpressBlockSize + XpressHeader.obj_offset + \
+                             XpressHeader.size()
 
         ## We only search this far
         BLOCKSIZE = 1024
@@ -335,7 +350,6 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
         return result
 
     def zread(self, addr, length):
-        raise NotImplementedError("Hibernation zread is not yet implemented")
         first_block = 0x1000 - addr % 0x1000
         full_blocks = ((length + (addr % 0x1000)) / 0x1000) - 1
         left_over = (length + addr) % 0x1000
@@ -408,3 +422,4 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
         if not self._config.WRITE:
             return False
         raise NotImplementedError("Writing to hibernation files has not been implemented yet")
+

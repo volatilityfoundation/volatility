@@ -43,6 +43,9 @@ windows_overlay = {
     'IA32ValidAS': [ 0x0, ['VolatilityIA32ValidAS']],
     # Pool allocations are aligned to this many bytes.
     'PoolAlignment': [0x0, ['VolatilityMagic', dict(value = 8)]],
+    #hibrfil.sys values
+    'HibrProcPage': [0x0, ['VolatilityMagic', dict(value = 0x0)]],
+    'HibrEntryCount': [0x0, ['VolatilityMagic', dict(value = 0x0)]],
     }],
 
     '_EPROCESS' : [ None, {
@@ -111,7 +114,7 @@ windows_overlay = {
     'List' : [ None, ['array', lambda x: x.Count.v() * 2, ['pointer', ['_CM_KEY_NODE']]]],
     }],
 
-    '_IMAGE_HIBER_HEADER' : [ None, {
+    'PO_MEMORY_IMAGE' : [ None, {
     'Signature':   [ None, ['String', dict(length = 4)]],
     'SystemTime' : [ None, ['WinTimeStamp', {}]],
     }],

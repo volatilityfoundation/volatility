@@ -159,12 +159,39 @@ class Win7ObjectClasses(obj.ProfileModification):
     def modification(self, profile):
         profile.object_classes.update({'_OBJECT_HEADER': _OBJECT_HEADER})
 
+class Win7x86Hiber(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 1}
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x1)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0x1ff)]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
+class Win7x64Hiber(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 1}
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x1)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0xff)]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
 class Win7SP0x86(obj.Profile):
     """ A Profile for Windows 7 SP0 x86 """
     _md_memory_model = '32bit'
     _md_os = 'windows'
     _md_major = 6
     _md_minor = 1
+    _md_build = 7600
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp0_x86_vtypes'
 
 class Win7SP1x86(obj.Profile):
@@ -173,6 +200,7 @@ class Win7SP1x86(obj.Profile):
     _md_os = 'windows'
     _md_major = 6
     _md_minor = 1
+    _md_build = 7601
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x86_vtypes'
 
 class Win7SP0x64(obj.Profile):
@@ -181,6 +209,7 @@ class Win7SP0x64(obj.Profile):
     _md_os = 'windows'
     _md_major = 6
     _md_minor = 1
+    _md_build = 7600
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp0_x64_vtypes'
 
 class Win7SP1x64(obj.Profile):
@@ -189,6 +218,7 @@ class Win7SP1x64(obj.Profile):
     _md_os = 'windows'
     _md_major = 6
     _md_minor = 1
+    _md_build = 7601
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x64_vtypes'
 
 class Win2008R2SP0x64(Win7SP0x64):

@@ -41,6 +41,8 @@ class XPOverlay(obj.ProfileModification):
         overlay = {'VOLATILITY_MAGIC': [ None, {
                         'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\x1b\x00")]],
                         'KDBGHeader'   : [ None, ['VolatilityMagic', dict(value = '\x00\x00\x00\x00\x00\x00\x00\x00KDBG\x90\x02')]],
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x2)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0xff)]],
                                                 }],
                    '_EPROCESS'        : [ None, {
                         'VadRoot'      : [ None, ['pointer', ['_MMVAD']]]

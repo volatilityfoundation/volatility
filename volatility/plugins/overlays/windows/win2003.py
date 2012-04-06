@@ -95,6 +95,32 @@ class Win2003MMVad(obj.ProfileModification):
                                        '_MMVAD_LONG': _MMVAD_LONG,
                                        '_EPROCESS': _EPROCESS})
 
+class Win2003x86Hiber(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x: x == 5,
+                  'minor': lambda x: x == 2}
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x2)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0xff)]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
+class Win2003x64Hiber(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x: x == 5,
+                  'minor': lambda x: x == 2}
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x2)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0x7f)]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
 class Win2003KDBG(windows.AbstractKDBGMod):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x : x == 'windows',
@@ -176,6 +202,7 @@ class Win2003SP1x86(obj.Profile):
     _md_os = 'windows'
     _md_major = 5
     _md_minor = 2
+    _md_build = 3790
     _md_memory_model = '32bit'
     _md_vtype_module = 'volatility.plugins.overlays.windows.win2003_sp1_x86_vtypes'
 
@@ -184,6 +211,7 @@ class Win2003SP2x86(obj.Profile):
     _md_os = 'windows'
     _md_major = 5
     _md_minor = 2
+    _md_build = 3790
     _md_memory_model = '32bit'
     _md_vtype_module = 'volatility.plugins.overlays.windows.win2003_sp2_x86_vtypes'
 
@@ -193,6 +221,7 @@ class Win2003SP1x64(obj.Profile):
     _md_os = 'windows'
     _md_major = 5
     _md_minor = 2
+    _md_build = 3790
     _md_vtype_module = 'volatility.plugins.overlays.windows.win2003_sp1_x64_vtypes'
 
 class Win2003SP2x64(obj.Profile):
@@ -201,6 +230,7 @@ class Win2003SP2x64(obj.Profile):
     _md_os = 'windows'
     _md_major = 5
     _md_minor = 2
+    _md_build = 3790
     _md_vtype_module = 'volatility.plugins.overlays.windows.win2003_sp2_x64_vtypes'
 
 class WinXPSP1x64(Win2003SP1x64):

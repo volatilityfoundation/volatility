@@ -120,6 +120,92 @@ class VistaSP1KDBG(windows.AbstractKDBGMod):
                   }
     kdbgsize = 0x330
 
+class VistaSP0x86Hiber(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 0,
+                  'build': lambda x: x == 6000}
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x4)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0xff)]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
+class VistaSP1x86Hiber(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 0,
+                  'build': lambda x: x == 6001}
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x1)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0xff)]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
+class VistaSP2x86Hiber(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 0,
+                  'build': lambda x: x == 6002}
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x1)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0x1fe)]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
+
+class VistaSP0x64Hiber(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 0,
+                  'build': lambda x: x == 6000}
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x4)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0x7f)]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
+
+class VistaSP1x64Hiber(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 0,
+                  'build': lambda x: x == 6001}
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x1)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0x7f)]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
+class VistaSP2x64Hiber(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 0,
+                  'build': lambda x: x == 6002}
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x1)]],
+                        'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0xfe)]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
 class VistaSP0x86(obj.Profile):
     """ A Profile for Windows Vista SP0 x86 """
     _md_major = 6
