@@ -11,11 +11,11 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details. 
+# General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
 """pstree example file"""
@@ -41,8 +41,13 @@ class PSTree(commands.Command):
     """Print process list as a tree"""
 
     def find_root(self, pid_dict, pid):
-        while pid in pid_dict:
+        # Prevent circular loops.
+        seen = set()
+
+        while pid in pid_dict and pid not in seen:
+            seen.add(pid)
             pid = int(pid_dict[pid]['inherited_from'])
+
         return pid
 
     def render_text(self, outfd, data):
