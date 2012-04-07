@@ -343,18 +343,6 @@ class _EPROCESS(obj.CType):
     def get_load_modules(self):
         return self._get_modules(self.Peb.Ldr.InLoadOrderModuleList, "InLoadOrderLinks")
 
-    def get_vads(self):
-        """Generator for MMVADs that does not rely on named AS"""
-        procspace = self.get_process_address_space()
-
-        # Potentially get_process_address_space will return obj.NoneObject
-        if procspace:
-            vadroot = obj.Object('_MMVAD', offset = self.VadRoot, vm = procspace)
-
-            if vadroot:
-                for v in vadroot.traverse():
-                    yield v
-
     def get_token(self):
         """Return the process's TOKEN object if its valid"""
 
@@ -593,8 +581,6 @@ class _MMVAD(obj.CType):
         ## completely different object here (including
         ## NoneObject). This also means that we can not add any
         ## specialist methods to the _MMVAD class.
-        if vm.name.startswith('Kernel'):
-            debug.warning("Instantiating _MMVAD objects from the wrong address has been deprecated\nPlease use _EPROCESS.get_vads() instead")
 
         ## We must not polute Object's constructor by providing the
         ## members or struct_size we were instantiated with
@@ -663,19 +649,6 @@ class _MMVAD_SHORT(obj.CType):
     def End(self):
         """Get the ending virtual address"""
         return ((self.EndingVpn + 1) << 12) - 1
-
-    def get_data(self):
-        """Get the data in a vad region"""
-
-        start = self.Start
-        end = self.End 
-
-        # avoid potential invalid values 
-        if start > 0xFFFFFFFF or end > (0xFFFFFFFF << 12):
-            return ''
-
-        # obj_vm is process space 
-        return self.obj_vm.zread(start, end - start + 1)
 
 class _MMVAD_LONG(_MMVAD_SHORT):
     """Subclasses _MMVAD_LONG based on _MMVAD_SHORT"""

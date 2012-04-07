@@ -91,7 +91,7 @@ class VADInfo(taskmods.DllList):
         for task in data:
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
-            for vad in task.get_vads():
+            for vad in task.VadRoot.traverse():
                 if vad == None:
                     outfd.write("Error: {0}".format(vad))
                 else:
@@ -156,7 +156,7 @@ class VADTree(VADInfo):
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
             levels = {}
-            for vad in task.get_vads():
+            for vad in task.VadRoot.traverse():
                 if vad:
                     level = levels.get(vad.Parent.dereference().obj_offset, -1) + 1
                     levels[vad.obj_offset] = level
@@ -170,7 +170,7 @@ class VADTree(VADInfo):
             outfd.write("/* Pid: {0:6} */\n".format(task.UniqueProcessId))
             outfd.write("digraph processtree {\n")
             outfd.write("graph [rankdir = \"TB\"];\n")
-            for vad in task.get_vads():
+            for vad in task.VadRoot.traverse():
                 if vad:
                     if vad.Parent and vad.Parent.dereference():
                         outfd.write("vad_{0:08x} -> vad_{1:08x}\n".format(vad.Parent.dereference().obj_offset or 0, vad.obj_offset))
@@ -191,7 +191,7 @@ class VADWalk(VADInfo):
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
             outfd.write("Address  Parent   Left     Right    Start    End      Tag\n")
-            for vad in task.get_vads():
+            for vad in task.VadRoot.traverse():
                 # Ignore Vads with bad tags (which we explicitly include as None)
                 if vad:
                     outfd.write("{0:08x} {1:08x} {2:08x} {3:08x} {4:08x} {5:08x} {6:4}\n".format(
@@ -224,22 +224,40 @@ class VADDump(VADInfo):
 
         for task in data:
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
-            # Get the task and all process specific information
+
+            # Walking the VAD tree can be done in kernel AS, but to 
+            # carve the actual data, we need a valid process AS. 
             task_space = task.get_process_address_space()
+            if not task_space:
+                outfd.write("Unable to get process AS\n")
+                continue 
+
             name = task.ImageFileName
             offset = task_space.vtop(task.obj_offset)
 
             outfd.write("*" * 72 + "\n")
-            for vad in task.get_vads():
+            for vad in task.VadRoot.traverse():
                 # Ignore Vads with bad tags (which we explicitly include as None)
                 if vad == None:
                     continue
 
-                # Open the file and initialize the data
-                f = open(os.path.join(self._config.DUMP_DIR, "{0}.{1:x}.{2:08x}-{3:08x}.dmp".format(name, offset, vad.Start, vad.End)), 'wb')
-                range_data = vad.get_data()
+                # avoid potential invalid values 
+                if vad.Start > 0xFFFFFFFF or vad.End > (0xFFFFFFFF << 12):
+                    continue 
 
-                if self._config.VERBOSE:
-                    outfd.write("Writing VAD for " + ("{0}.{1:x}.{2:08x}-{3:08x}.dmp".format(name, offset, vad.Start, vad.End)) + "\n")
-                f.write(range_data)
-                f.close()
+                # Open the file and initialize the data
+                path = os.path.join(
+                    self._config.DUMP_DIR, "{0}.{1:x}.{2:08x}-{3:08x}.dmp".format(
+                    name, offset, vad.Start, vad.End))
+
+                f = open(path, 'wb')
+                if f:
+                    range_data = task_space.zread(vad.Start, vad.End - vad.Start + 1)
+    
+                    if self._config.VERBOSE:
+                        outfd.write("Writing VAD for {0}\n".format(path))
+
+                    f.write(range_data)
+                    f.close()
+                else:
+                    outfd.write("Cannot open {0} for writing\n".format(path))
