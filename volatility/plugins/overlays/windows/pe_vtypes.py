@@ -319,7 +319,7 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
     def getprocaddress(self, func):
         """Return the RVA of func"""
         for _, f, n in self.exports():
-            if str(n) == func:
+            if str(n or '') == func:
                 return f
         return None
 

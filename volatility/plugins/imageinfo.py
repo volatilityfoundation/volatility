@@ -142,8 +142,9 @@ class ImageInfo(kdbg.KDBGScan):
         cdsresult = obj.NoneObject("Unable to find version")
 
         for task in tasks.pslist(addr_space):
-            if task.Peb.CSDVersion != None:
-                csdvers[str(task.Peb.CSDVersion)] = csdvers.get(str(task.Peb.CSDVersion), 0) + 1
+            ver = str(task.Peb.CSDVersion or '')
+            if ver:
+                csdvers[ver] = csdvers.get(ver, 0) + 1
 
             if task.Peb.NumberOfProcessors != None:
                 procnumdict[int(task.Peb.NumberOfProcessors)] = procnumdict.get(int(task.Peb.NumberOfProcessors), 0) + 1
