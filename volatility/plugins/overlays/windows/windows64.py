@@ -64,6 +64,10 @@ class Windows64Overlay(obj.ProfileModification):
                                })
         profile.vtypes["_IMAGE_NT_HEADERS"] = profile.vtypes["_IMAGE_NT_HEADERS64"]
 
+        profile.merge_overlay({'_DBGKD_GET_VERSION64' : [  None, {
+            'DebuggerDataList' : [ None, ['pointer', ['unsigned long long']]],
+            }]})
+
         # Note: the following method of profile modification is strongly discouraged
         #
         # Nasty hack because pointer64 has a special structure,

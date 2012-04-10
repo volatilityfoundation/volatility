@@ -53,12 +53,17 @@ def get_kdbg(addr_space):
         return kdbg
     else:
         # Fall back to finding it via the KPCR
-        kpcra = obj.VolMagic(addr_space).KDBG.v()
+        kpcra = obj.VolMagic(addr_space).KPCR.v()
         kpcrval = obj.Object("_KPCR", offset = kpcra, vm = addr_space)
 
         DebuggerDataList = kpcrval.KdVersionBlock.dereference_as("_DBGKD_GET_VERSION64").DebuggerDataList
 
-        kobj = DebuggerDataList.dereference_as("_KDDEBUGGER_DATA64")
+        # DebuggerDataList is a pointer to unsigned long on x86 
+        # and a pointer to unsigned long long on x64. The first 
+        # dereference() dereferences the pointer, and the second 
+        # dereference() dereferences the unsigned long or long long
+        # as the actual KDBG address. 
+        kobj = DebuggerDataList.dereference().dereference_as("_KDDEBUGGER_DATA64")
         if verify_kdbg(kobj):
             return kobj
 

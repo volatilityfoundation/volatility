@@ -59,8 +59,7 @@ class _ETHREAD(windows._ETHREAD):
 class VistaWin7KPCR(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os' : lambda x: x == 'windows',
-                  'major': lambda x: x == 6,
-                  'memory_model': lambda x: x == '32bit'}
+                  'major': lambda x: x == 6}
 
     def modification(self, profile):
         overlay = {'VOLATILITY_MAGIC': [ None, {
