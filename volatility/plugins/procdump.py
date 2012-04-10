@@ -134,7 +134,7 @@ class ProcExeDump(taskmods.DllList):
                                        base_addr = base_addr)
 
         soh = nt_header.OptionalHeader.SizeOfHeaders
-        header = addr_space.read(base_addr, soh)
+        header = addr_space.zread(base_addr, soh)
         yield (0, header)
 
         fa = nt_header.OptionalHeader.FileAlignment
