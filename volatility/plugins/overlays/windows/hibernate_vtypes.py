@@ -144,7 +144,7 @@ class HiberWin2003x64(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 5,
                   'minor': lambda x: x == 2,
-                  'build': lambda x: x <= 3790,
+                  'build': lambda x: x <= 3791,
                   'memory_model': lambda x: x == '64bit'}
     def modification(self, profile):
         profile.vtypes.update(hibernate_x64_vtypes)
