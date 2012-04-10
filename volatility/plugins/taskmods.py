@@ -52,12 +52,12 @@ class DllList(commands.Command, cache.Testable):
             outfd.write("{0} pid: {1:6}\n".format(task.ImageFileName, pid))
 
             if task.Peb:
-                outfd.write("Command line : {0}\n".format(task.Peb.ProcessParameters.CommandLine))
-                outfd.write("{0}\n".format(task.Peb.CSDVersion))
+                outfd.write("Command line : {0}\n".format(str(task.Peb.ProcessParameters.CommandLine or '')))
+                outfd.write("{0}\n".format(str(task.Peb.CSDVersion or '')))
                 outfd.write("\n")
                 outfd.write("{0:12} {1:12} {2}\n".format('Base', 'Size', 'Path'))
                 for m in task.get_load_modules():
-                    outfd.write("0x{0:08x}   0x{1:06x}     {2}\n".format(m.DllBase, m.SizeOfImage, m.FullDllName))
+                    outfd.write("0x{0:08x}   0x{1:06x}     {2}\n".format(m.DllBase, m.SizeOfImage, str(m.FullDllName or '')))
             else:
                 outfd.write("Unable to read PEB for task.\n")
 
