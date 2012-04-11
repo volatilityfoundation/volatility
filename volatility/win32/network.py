@@ -143,8 +143,10 @@ def determine_connections(addr_space):
                     if table:
                         for entry in table:
                             conn = entry.dereference()
-                            while conn.is_valid():
+                            seen = set()
+                            while conn.is_valid() and conn.obj_offset not in seen:
                                 yield conn
+                                seen.add(conn.obj_offset)
                                 conn = conn.Next
 
 def determine_sockets(addr_space):
@@ -181,7 +183,7 @@ def determine_sockets(addr_space):
                         for entry in table:
                             sock = entry.dereference()
                             seen = set()
-                            while sock.is_valid() and sock not in seen:
+                            while sock.is_valid() and sock.obj_offset not in seen:
                                 yield sock
-                                seen.add(sock)
+                                seen.add(sock.obj_offset)
                                 sock = sock.Next
