@@ -180,6 +180,8 @@ def determine_sockets(addr_space):
                     if table:
                         for entry in table:
                             sock = entry.dereference()
-                            while sock.is_valid():
+                            seen = set()
+                            while sock.is_valid() and sock not in seen:
                                 yield sock
+                                seen.add(sock)
                                 sock = sock.Next
