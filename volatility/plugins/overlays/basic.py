@@ -66,6 +66,10 @@ class String(obj.BaseObject):
             return obj.NoneObject("Cannot read string length {0} at {1:#x}".format(self.length, self.obj_offset))
         return result
 
+    def __len__(self):
+        """This returns the length of the string"""
+        return len(unicode(self))
+
     def __str__(self):
         """
         This function ensures that we always return a string from the __str__ method.

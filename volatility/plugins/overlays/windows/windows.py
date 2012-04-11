@@ -192,6 +192,9 @@ class _UNICODE_STRING(obj.CType):
     def __unicode__(self):
         return unicode(self.dereference())
 
+    def __len__(self):
+        return len(self.dereference())
+
 class _LIST_ENTRY(obj.CType):
     """ Adds iterators for _LIST_ENTRY types """
     def list_of_type(self, type, member, forward = True):
