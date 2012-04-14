@@ -38,7 +38,7 @@ class MultiStringFinderCheck(scan.ScannerCheck):
         for needle in needles:
             self.maxlen = max(self.maxlen, len(needle))
         if not self.maxlen:
-            raise RuntimeError("No needles of any length were found for the MultiStringFinderCheck")
+            raise RuntimeError("No needles of any length were found for the " + self.__class__.__name__)
 
     def check(self, offset):
         verify = self.address_space.read(offset, self.maxlen)
@@ -55,12 +55,28 @@ class MultiStringFinderCheck(scan.ScannerCheck):
                 nextval = min(nextval, dindex)
         return nextval - offset
 
+class MultiPrefixFinderCheck(MultiStringFinderCheck):
+    """ Checks for multiple strings per page, finishing at the offset """
+    def check(self, offset):
+        verify = self.address_space.read(offset - self.maxlen, self.maxlen)
+        for match in self.needles:
+            if verify.endswith(match):
+                return True
+        return False
+
 class KDBGScanner(scan.BaseScanner):
     checks = [ ]
 
     def __init__(self, window_size = 8, needles = None):
-        self.needles = needles
-        self.checks = [ ("MultiStringFinderCheck", {'needles':needles})]
+        oses = set()
+        arches = set()
+        for needle in needles:
+            header = str(needle).split('KDBG')
+            arches.add(header[0])
+            oses.add('KDBG' + header[1])
+        self.checks = [ ("PoolTagCheck", {'tag': "KDBG"}),
+                        ("MultiPrefixFinderCheck", {'needles':arches}),
+                        ("MultiStringFinderCheck", {'needles':oses})]
         scan.BaseScanner.__init__(self, window_size)
 
     def scan(self, address_space, offset = 0, maxlen = None):
@@ -70,8 +86,7 @@ class KDBGScanner(scan.BaseScanner):
             #  however we don't know which profile to read it from, so it's hardwired)
             # NOTE: this will not work correctly for _KDDEBUGGER_DATA32 structures
             #       however they're only necessary for NT or older
-            val = address_space.read(offset, max([len(needle) for needle in self.needles]))
-            offset = offset + val.find('KDBG') - 0x10
+            offset = offset - 0x10
             yield offset
 
 class KDBGScan(commands.Command):
