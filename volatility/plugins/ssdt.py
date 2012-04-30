@@ -88,8 +88,8 @@ def find_tables(start_addr, vm):
     else:
         vm.profile.add_types({
             '_INSTRUCTION' : [ 9, {
-            'opcode' : [ 0, ['String', dict(length = 4)]], 
-            'disp'   : [ 4, ['int']], 
+            'opcode' : [ 0, ['String', dict(length = 4)]],
+            'disp'   : [ 4, ['int']],
             'value'  : [ 8, ['unsigned char']],
         }]})
         # The variations assume (which happens to be correct on all OS)
