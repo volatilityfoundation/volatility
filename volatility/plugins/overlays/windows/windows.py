@@ -197,40 +197,39 @@ class _UNICODE_STRING(obj.CType):
 
 class _LIST_ENTRY(obj.CType):
     """ Adds iterators for _LIST_ENTRY types """
-    def list_of_type(self, type, member, forward = True):
+    def list_of_type(self, type, member, forward = True, head_sentinel = True):
         if not self.is_valid():
             return
 
         ## Get the first element
         if forward:
-            lst = self.Flink.dereference()
+            nxt = self.Flink.dereference()
         else:
-            lst = self.Blink.dereference()
+            nxt = self.Blink.dereference()
 
         offset = self.obj_vm.profile.get_obj_offset(type, member)
 
         seen = set()
-        seen.add(lst.obj_offset)
+        if head_sentinel:
+            # We're a header element and not to be included in the list
+            seen.add(self.obj_offset)
 
-        while 1:
+        while nxt.is_valid() and nxt.obj_offset not in seen:
             ## Instantiate the object
-            item = obj.Object(type, offset = lst.obj_offset - offset,
+            item = obj.Object(type, offset = nxt.obj_offset - offset,
                                     vm = self.obj_vm,
                                     parent = self.obj_parent,
                                     native_vm = self.obj_native_vm,
                                     name = type)
 
-
-            if forward:
-                lst = item.m(member).Flink.dereference()
-            else:
-                lst = item.m(member).Blink.dereference()
-
-            if not lst.is_valid() or lst.obj_offset in seen:
-                return
-            seen.add(lst.obj_offset)
+            seen.add(nxt.obj_offset)
 
             yield item
+
+            if forward:
+                nxt = item.m(member).Flink.dereference()
+            else:
+                nxt = item.m(member).Blink.dereference()
 
     def __nonzero__(self):
         ## List entries are valid when both Flinks and Blink are valid
