@@ -839,7 +839,7 @@ class WindowsVTypes(obj.ProfileModification):
         profile.vtypes.update(ssdt_vtypes.ssdt_vtypes)
 
 class WindowsObjectClasses(obj.ProfileModification):
-    constratints = {'os': lambda x: x == 'windows'}
+    conditions = {'os': lambda x: x == 'windows'}
     before = ['BasicObjectClasses', 'WindowsVTypes', 'WindowsOverlay']
 
     def modification(self, profile):
