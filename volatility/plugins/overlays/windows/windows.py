@@ -17,8 +17,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
-import datetime
-import socket, struct
+import datetime, struct
+import volatility.plugins.overlays.basic as basic
 import volatility.plugins.kpcrscan as kpcr
 import volatility.plugins.kdbgscan as kdbg
 import volatility.timefmt as timefmt
@@ -672,15 +672,6 @@ class ThreadCreateTimeStamp(WinTimeStamp):
     def as_windows_timestamp(self):
         return obj.NativeType.v(self) >> 3
 
-class IpAddress(obj.NativeType):
-    """Provides proper output for IpAddress objects"""
-
-    def __init__(self, theType, offset, vm, **kwargs):
-        obj.NativeType.__init__(self, theType, offset, vm, format_string = vm.profile.native_types['unsigned long'][1], **kwargs)
-
-    def v(self):
-        return socket.inet_ntoa(struct.pack("<I", obj.NativeType.v(self)))
-
 class VolatilityKPCR(obj.VolatilityMagic):
     """A scanner for KPCR data within an address space"""
 
@@ -856,7 +847,7 @@ class WindowsObjectClasses(obj.ProfileModification):
             '_MMVAD_LONG': _MMVAD_LONG,
             '_EX_FAST_REF': _EX_FAST_REF,
             'ThreadCreateTimeStamp': ThreadCreateTimeStamp,
-            'IpAddress': IpAddress,
+            'IpAddress': basic.IpAddress,
             'VolatilityKPCR': VolatilityKPCR,
             'VolatilityKDBG': VolatilityKDBG,
             'VolatilityIA32ValidAS': VolatilityIA32ValidAS,

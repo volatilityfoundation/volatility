@@ -22,6 +22,8 @@
 """ This file defines some basic types which might be useful for many
 OS's
 """
+import struct, socket
+
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.constants as constants
@@ -147,6 +149,14 @@ class Flags(obj.NativeType):
 
         return self.v() & mask
 
+class IpAddress(obj.NativeType):
+    """Provides proper output for IpAddress objects"""
+
+    def __init__(self, theType, offset, vm, **kwargs):
+        obj.NativeType.__init__(self, theType, offset, vm, format_string = vm.profile.native_types['unsigned long'][1], **kwargs)
+
+    def v(self):
+        return socket.inet_ntoa(struct.pack("<I", obj.NativeType.v(self)))
 
 class Enumeration(obj.NativeType):
     """Enumeration class for handling multiple possible meanings for a single value"""
