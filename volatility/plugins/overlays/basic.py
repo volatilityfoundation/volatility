@@ -156,7 +156,15 @@ class IpAddress(obj.NativeType):
         obj.NativeType.__init__(self, theType, offset, vm, format_string = vm.profile.native_types['unsigned long'][1], **kwargs)
 
     def v(self):
-        return socket.inet_ntoa(struct.pack("<I", obj.NativeType.v(self)))
+        return socket.inet_ntop(socket.AF_INET, struct.pack("<I", obj.NativeType.v(self)))
+
+class Ipv6Address(obj.NativeType):
+    """Provides proper output for Ipv6Address objects"""
+    def __init__(self, theType, offset, vm, **kwargs):
+        obj.NativeType.__init__(self, theType, offset, vm, format_string = "16s", **kwargs)
+
+    def v(self):
+        return socket.inet_ntop(socket.AF_INET6, obj.NativeType.v(self))
 
 class Enumeration(obj.NativeType):
     """Enumeration class for handling multiple possible meanings for a single value"""
