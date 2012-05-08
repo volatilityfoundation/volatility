@@ -70,9 +70,17 @@ class KPCRScannerCheck(scan.ScannerCheck):
     def __init__(self, address_space):
         scan.ScannerCheck.__init__(self, address_space)
         kpcr = obj.Object("_KPCR", vm = self.address_space, offset = 0)
-        self.SelfPcr_offset = kpcr.SelfPcr.obj_offset
-        self.Prcb_offset = kpcr.Prcb.obj_offset
-        self.PrcbData_offset = kpcr.PrcbData.obj_offset
+        if address_space.profile.metadata.get('memory_model', '') == '32bit':
+            self.SelfPcr_offset = kpcr.SelfPcr.obj_offset
+            self.Prcb_offset = kpcr.Prcb.obj_offset
+            self.PrcbData_offset = kpcr.PrcbData.obj_offset
+        else:
+            # The self-referencing member of _KPCR is Self on x64
+            self.SelfPcr_offset = kpcr.Self.obj_offset
+            # The pointer to _KPRCB is CurrentPrcb on x64
+            self.Prcb_offset = kpcr.CurrentPrcb.obj_offset
+            # The nested _KPRCB in Prcb on x64
+            self.PrcbData_offset = kpcr.Prcb.obj_offset    
         self.KPCR = None
 
     def check(self, offset):
@@ -81,9 +89,9 @@ class KPCRScannerCheck(scan.ScannerCheck):
         paPRCBDATA = offset + self.PrcbData_offset
 
         try:
-            pSelfPCR = obj.Object('unsigned long', offset = (offset + self.SelfPcr_offset), vm = self.address_space)
-            pPrcb = obj.Object('unsigned long', offset = (offset + self.Prcb_offset), vm = self.address_space)
-            if (pSelfPCR == paKCPR and pPrcb == paPRCBDATA):
+            pSelfPCR = obj.Object('Pointer', offset = (offset + self.SelfPcr_offset), vm = self.address_space)
+            pPrcb = obj.Object('Pointer', offset = (offset + self.Prcb_offset), vm = self.address_space)
+            if pSelfPCR == paKCPR and pPrcb == paPRCBDATA:
                 self.KPCR = pSelfPCR
                 return True
 
