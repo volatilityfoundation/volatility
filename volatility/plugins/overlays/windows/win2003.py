@@ -63,7 +63,19 @@ class _MMVAD_SHORT(windows._MMVAD_SHORT):
 
     @property
     def Parent(self):
-        return self.u1.Parent
+        """
+        Return the Vad's parent node, being sure to chop off the 
+        lower 3 bits, because _MMADDRESS_NODE.u1.Parent is a 
+        packed union with _MMADDRESS_NODE.u1.Balanced. We do not
+        want the Balanced part of the value. 
+
+        Not chopping off these 3 bits is the reason why our vadtree
+        plugin didn't work since introduction of profiles other 
+        than Windows XP. 
+        """
+        return obj.Object("_MMADDRESS_NODE", vm = self.obj_vm, 
+                    offset = self.u1.Parent.v() & ~0x3, 
+                    parent = self.obj_parent)
 
 class _MMVAD_LONG(_MMVAD_SHORT):
     pass

@@ -630,7 +630,7 @@ class _MMVAD_SHORT(obj.CType):
     @property
     def Parent(self):
         """Returns the Parent of the MMVAD"""
-        return self.m('Parent')
+        return self.m('Parent').dereference()
 
     @property
     def ControlArea(self):

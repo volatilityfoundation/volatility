@@ -36,7 +36,9 @@ class _MMVAD_SHORT(windows._MMVAD_SHORT):
 
     @property
     def Parent(self):
-        return self.u1.Parent
+        return obj.Object("_MMADDRESS_NODE", vm = self.obj_vm, 
+                    offset = self.u1.Parent.v() & ~0x3, 
+                    parent = self.obj_parent)
 
     @property
     def ControlArea(self):

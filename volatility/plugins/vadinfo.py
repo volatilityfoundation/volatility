@@ -158,7 +158,7 @@ class VADTree(VADInfo):
             levels = {}
             for vad in task.VadRoot.traverse():
                 if vad:
-                    level = levels.get(vad.Parent.dereference().obj_offset, -1) + 1
+                    level = levels.get(vad.Parent.obj_offset, -1) + 1
                     levels[vad.obj_offset] = level
                     outfd.write(" " * level + "{0:08x} - {1:08x}\n".format(
                                 vad.Start,
@@ -172,9 +172,9 @@ class VADTree(VADInfo):
             outfd.write("graph [rankdir = \"TB\"];\n")
             for vad in task.VadRoot.traverse():
                 if vad:
-                    if vad.Parent and vad.Parent.dereference():
-                        outfd.write("vad_{0:08x} -> vad_{1:08x}\n".format(vad.Parent.dereference().obj_offset or 0, vad.obj_offset))
-                    outfd.write("vad_{0:08x} [label = \"{{ {1}\\n{2:08x} - {3:08x} }}\""
+                    if vad.Parent:
+                        outfd.write("vad_{0:08x} -> vad_{1:08x}\n".format(vad.Parent.obj_offset or 0, vad.obj_offset))
+                        outfd.write("vad_{0:08x} [label = \"{{ {1}\\n{2:08x} - {3:08x} }}\""
                                 "shape = \"record\" color = \"blue\"];\n".format(
                         vad.obj_offset,
                         vad.Tag,
@@ -196,7 +196,7 @@ class VADWalk(VADInfo):
                 if vad:
                     outfd.write("{0:08x} {1:08x} {2:08x} {3:08x} {4:08x} {5:08x} {6:4}\n".format(
                         vad.obj_offset,
-                        vad.Parent.dereference().obj_offset or 0,
+                        vad.Parent.obj_offset or 0,
                         vad.LeftChild.dereference().obj_offset or 0,
                         vad.RightChild.dereference().obj_offset or 0,
                         vad.Start,
