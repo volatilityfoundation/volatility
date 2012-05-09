@@ -95,12 +95,12 @@ class Netscan(commands.Command):
             raise StopIteration
 
         if LocalAddr != None:
-            inaddr = LocalAddr.pData.dereference().dereference().v()
+            inaddr = LocalAddr.pData.dereference().dereference()
             if InetAF.AddressFamily == AF_INET:
-                laddr = utils.inet_ntop(socket.AF_INET, theObject.obj_native_vm.zread(inaddr, 4))
+                laddr = inaddr.addr4
                 yield "v4", laddr, inaddr_any, Owner
             else:
-                laddr = utils.inet_ntop(socket.AF_INET6, theObject.obj_native_vm.zread(inaddr, 16))
+                laddr = inaddr.addr6
                 yield "v6", laddr, inaddr6_any, Owner
         else:
             yield "v4", inaddr_any, inaddr_any, Owner
@@ -141,17 +141,17 @@ class Netscan(commands.Command):
             rport = socket.ntohs(tcpentry.RemotePort)
             state = tcpentry.State
 
-            l_inaddr = AddrInfo.Local.pData.dereference().dereference().v()
-            r_inaddr = AddrInfo.Remote.dereference().v()
+            l_inaddr = AddrInfo.Local.pData.dereference().dereference()
+            r_inaddr = AddrInfo.Remote.dereference()
 
             if InetAF.AddressFamily == AF_INET:
                 proto = "TCPv4"
-                laddr = utils.inet_ntop(socket.AF_INET, vspace.zread(l_inaddr, 4))
-                raddr = utils.inet_ntop(socket.AF_INET, vspace.zread(r_inaddr, 4))
+                laddr = l_inaddr.addr4
+                raddr = r_inaddr.addr4
             elif InetAF.AddressFamily == AF_INET6:
                 proto = "TCPv6"
-                laddr = utils.inet_ntop(socket.AF_INET6, vspace.zread(l_inaddr, 16))
-                raddr = utils.inet_ntop(socket.AF_INET6, vspace.zread(r_inaddr, 16))
+                laddr = l_inaddr.addr6
+                raddr = r_inaddr.addr6
             else:
                 continue
 

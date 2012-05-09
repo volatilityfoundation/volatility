@@ -70,8 +70,8 @@ TCP_STATE_ENUM = {
 # Structures used by netscan for x86 Vista and 2008. 
 tcpip_vtypes_vista = {
     '_IN_ADDR' : [ None, {
-    'addr4' : [ 0x0, ['array', 4, ['unsigned char']]],
-    'addr6' : [ 0x0, ['array', 16, ['unsigned char']]],
+    'addr4' : [ 0x0, ['IpAddress']],
+    'addr6' : [ 0x0, ['Ipv6Address']],
     }],
     '_LOCAL_ADDRESS' : [ None, {
     'pData' : [ 0xC, ['pointer', ['pointer', ['_IN_ADDR']]]],
