@@ -28,6 +28,7 @@ import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.constants as constants
 import volatility.plugins.overlays.native_types as native_types
+import volatility.utils as utils
 
 class String(obj.BaseObject):
     """Class for dealing with Strings"""
@@ -156,7 +157,7 @@ class IpAddress(obj.NativeType):
         obj.NativeType.__init__(self, theType, offset, vm, format_string = vm.profile.native_types['unsigned long'][1], **kwargs)
 
     def v(self):
-        return socket.inet_ntop(socket.AF_INET, struct.pack("<I", obj.NativeType.v(self)))
+        return utils.inet_ntop(socket.AF_INET, struct.pack("<I", obj.NativeType.v(self)))
 
 class Ipv6Address(obj.NativeType):
     """Provides proper output for Ipv6Address objects"""
@@ -164,7 +165,7 @@ class Ipv6Address(obj.NativeType):
         obj.NativeType.__init__(self, theType, offset, vm, format_string = "16s", **kwargs)
 
     def v(self):
-        return socket.inet_ntop(socket.AF_INET6, obj.NativeType.v(self))
+        return utils.inet_ntop(socket.AF_INET6, obj.NativeType.v(self))
 
 class Enumeration(obj.NativeType):
     """Enumeration class for handling multiple possible meanings for a single value"""
