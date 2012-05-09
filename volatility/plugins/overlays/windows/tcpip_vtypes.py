@@ -60,6 +60,13 @@ tcpip_vtypes_2003_sp1_sp2 = {
     }],
 }
 
+TCP_STATE_ENUM = {
+    0: 'CLOSED', 1: 'LISTENING', 2: 'SYN_SENT', 
+    3: 'SYN_RCVD', 4: 'ESTABLISHED', 5: 'FIN_WAIT1', 
+    6: 'FIN_WAIT2', 7: 'CLOSE_WAIT', 8: 'CLOSING', 
+    9: 'LAST_ACK', 12: 'TIME_WAIT', 13: 'DELETE_TCB'
+}
+
 # Structures used by netscan for x86 Vista and 2008. 
 tcpip_vtypes_vista = {
     '_IN_ADDR' : [ None, {
@@ -79,7 +86,7 @@ tcpip_vtypes_vista = {
     '_TCP_ENDPOINT': [ None, { # TcpE
     'InetAF' : [ 0xC, ['pointer', ['_INETAF']]],
     'AddrInfo' : [ 0x10, ['pointer', ['_ADDRINFO']]],
-    'State' : [ 0x28, ['unsigned int']],
+    'State' : [ 0x28, ['Enumeration', dict(target = 'long', choices = TCP_STATE_ENUM)]],
     'LocalPort' : [ 0x2C, ['unsigned short']],
     'RemotePort' : [ 0x2E, ['unsigned short']],
     'Owner' : [ 0x160, ['pointer', ['_EPROCESS']]],
@@ -106,7 +113,7 @@ tcpip_vtypes_7 = {
     '_TCP_ENDPOINT': [ None, { # TcpE
     'InetAF' : [ 0xC, ['pointer', ['_INETAF']]],
     'AddrInfo' : [ 0x10, ['pointer', ['_ADDRINFO']]],
-    'State' : [ 0x34, ['unsigned int']],
+    'State' : [ 0x34, ['Enumeration', dict(target = 'long', choices = TCP_STATE_ENUM)]],
     'LocalPort' : [ 0x38, ['unsigned short']],
     'RemotePort' : [ 0x3A, ['unsigned short']],
     'Owner' : [ 0x174, ['pointer', ['_EPROCESS']]],
@@ -138,7 +145,7 @@ tcpip_vtypes_7_64 = {
     '_TCP_ENDPOINT': [ None, { # TcpE
     'InetAF' : [ 0x18, ['pointer', ['_INETAF']]],
     'AddrInfo' : [ 0x20, ['pointer', ['_ADDRINFO']]],
-    'State' : [ 0x68, ['unsigned int']],
+    'State' : [ 0x68, ['Enumeration', dict(target = 'long', choices = TCP_STATE_ENUM)]],
     'LocalPort' : [ 0x6c, ['unsigned short']],
     'RemotePort' : [ 0x6e, ['unsigned short']],
     'Owner' : [ 0x20, ['pointer', ['_EPROCESS']]],

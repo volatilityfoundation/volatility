@@ -155,11 +155,7 @@ class Netscan(commands.Command):
 
             lport = socket.ntohs(tcpentry.LocalPort)
             rport = socket.ntohs(tcpentry.RemotePort)
-
-            try:
-                state = tcp_states[tcpentry.State + 1]
-            except IndexError:
-                state = hex(tcpentry.State)
+            state = tcpentry.State
 
             l_inaddr = AddrInfo.Local.pData.dereference().dereference().v()
             r_inaddr = AddrInfo.Remote.dereference().v()
