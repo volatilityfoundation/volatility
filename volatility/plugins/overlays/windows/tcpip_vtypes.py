@@ -27,6 +27,27 @@ tcpip_vtypes = {
     }],
 }
 
+# 2003 SP1 and SP2 x64. May also apply to SP0 and 
+# Windows XP x64. 
+tcpip_vtypes_2003_x64 = {
+    '_ADDRESS_OBJECT' : [ None, {
+    'Next' : [ 0x0, ['pointer', ['_ADDRESS_OBJECT']]],
+    'LocalIpAddress' : [ 0x58, ['IpAddress']], 
+    'LocalPort' : [ 0x5c, ['unsigned be short']], 
+    'Protocol'  : [ 0x5e, ['unsigned short']], 
+    'Pid' : [ 0x238, ['unsigned long']], 
+    'CreateTime' : [ 0x248, ['WinTimeStamp', {}]],
+  }],
+    '_TCPT_OBJECT' : [ None, {
+    'Next' : [ 0x0, ['pointer', ['_TCPT_OBJECT']]],
+    'RemoteIpAddress' : [ 0x14, ['IpAddress']], 
+    'LocalIpAddress' : [ 0x18, ['IpAddress']], 
+    'RemotePort' : [ 0x1c, ['unsigned be short']], 
+    'LocalPort' : [ 0x1e, ['unsigned be short']], 
+    'Pid' : [ 0x20, ['unsigned long']], 
+    }],
+}
+
 # Structures specific to x86 Win2003 profiles. 
 tcpip_vtypes_2003_sp1_sp2 = {
     '_ADDRESS_OBJECT' : [ 0x68, {
@@ -131,6 +152,15 @@ tcpip_vtypes_7_64 = {
     'Port' : [ 0x80, ['unsigned short']],
     }],
 }
+
+class WinXP2003Tcpipx64(obj.ProfileModification):
+    before = ['WindowsVTypes']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 5,
+                  'minor': lambda x : x == 2}
+    def modification(self, profile):
+        profile.vtypes.update(tcpip_vtypes_2003_x64)
 
 class Win2003SP12Tcpip(obj.ProfileModification):
     before = ['WindowsVTypes']
