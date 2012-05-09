@@ -848,6 +848,7 @@ class WindowsObjectClasses(obj.ProfileModification):
             '_EX_FAST_REF': _EX_FAST_REF,
             'ThreadCreateTimeStamp': ThreadCreateTimeStamp,
             'IpAddress': basic.IpAddress,
+            'Ipv6Address': basic.Ipv6Address,
             'VolatilityKPCR': VolatilityKPCR,
             'VolatilityKDBG': VolatilityKDBG,
             'VolatilityIA32ValidAS': VolatilityIA32ValidAS,
