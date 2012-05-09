@@ -25,22 +25,6 @@ import volatility.obj as obj
 import volatility.cache as cache
 import socket
 
-tcp_states = [
-    "", # This must be empty, so the first enum starts at 1
-    "CLOSED",
-    "LISTENING",
-    "SYN_SENT",
-    "SYN_RCVD",
-    "ESTABLISHED",
-    "FIN_WAIT1",
-    "FIN_WAIT2",
-    "CLOSE_WAIT",
-    "CLOSING",
-    "LAST_ACK",
-    "TIME_WAIT",
-    "DELETE_TCB",
-]
-
 # Python's socket.AF_INET6 is 0x1e but MSFT's is 0x17..and we need to use MSFT's
 AF_INET = 2
 AF_INET6 = 0x17
