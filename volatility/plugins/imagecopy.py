@@ -64,8 +64,13 @@ class ImageCopy(commands.Command):
             for o, block in data:
                 f.seek(o)
                 f.write(block)
+                f.flush()
                 outfd.write(".")
                 outfd.flush()
         except TypeError:
             debug.error("Error when reading from address space")
+        except BaseException, e:
+            debug.error("Unexpected error ({1}) during copy, recorded data up to offset {0:0x}".format(o, str(e)))
+        finally:
+            f.close()
         outfd.write("|\n")
