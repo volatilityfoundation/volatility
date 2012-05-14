@@ -68,6 +68,15 @@ class Windows64Overlay(obj.ProfileModification):
             'DebuggerDataList' : [ None, ['pointer', ['unsigned long long']]],
             }]})
 
+        # In some auto-generated vtypes, the DTB is an array of 2 unsigned longs 
+        # (for x86) or an array of 2 unsigned long long (for x64). We have an overlay
+        # in windows.windows_overlay which sets the DTB to a single unsigned long,
+        # but we do not want that bleeding through to the x64 profiles. Instead we 
+        # want the x64 DTB to be a single unsigned long long. 
+        profile.merge_overlay({'_KPROCESS' : [ None, {
+            'DirectoryTableBase' : [ None, ['unsigned long long']],
+            }]})
+
         # Note: the following method of profile modification is strongly discouraged
         #
         # Nasty hack because pointer64 has a special structure,
