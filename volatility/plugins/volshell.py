@@ -152,7 +152,7 @@ class volshell(commands.Command):
             """
             self.set_context(offset = offset, pid = pid, name = name)
 
-        def db(address, length = 0x80, width = 16, space = None):
+        def db(address, length = 0x80, space = None):
             """Print bytes as canonical hexdump.
             
             This function prints bytes at the given virtual address as a canonical
