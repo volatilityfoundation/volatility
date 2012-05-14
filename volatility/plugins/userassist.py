@@ -258,7 +258,7 @@ class UserAssist(printkey.PrintKey, hivelist.HiveList):
                         dat = "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(dat)])
                         try:
                             subname = subname.encode('rot_13')
-                        except:
+                        except UnicodeDecodeError:
                             pass
                         if win7:
                             guid = subname.split("\\")[0]

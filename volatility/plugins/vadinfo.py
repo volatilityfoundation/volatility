@@ -230,7 +230,7 @@ class VADDump(VADInfo):
             task_space = task.get_process_address_space()
             if not task_space:
                 outfd.write("Unable to get process AS\n")
-                continue 
+                continue
 
             name = task.ImageFileName
             offset = task_space.vtop(task.obj_offset)
@@ -243,7 +243,7 @@ class VADDump(VADInfo):
 
                 # avoid potential invalid values 
                 if vad.Start > 0xFFFFFFFF or vad.End > (0xFFFFFFFF << 12):
-                    continue 
+                    continue
 
                 # Open the file and initialize the data
                 path = os.path.join(
@@ -253,7 +253,7 @@ class VADDump(VADInfo):
                 f = open(path, 'wb')
                 if f:
                     range_data = task_space.zread(vad.Start, vad.End - vad.Start + 1)
-    
+
                     if self._config.VERBOSE:
                         outfd.write("Writing VAD for {0}\n".format(path))
 

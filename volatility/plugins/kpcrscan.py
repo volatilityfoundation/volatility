@@ -80,7 +80,7 @@ class KPCRScannerCheck(scan.ScannerCheck):
             # The pointer to _KPRCB is CurrentPrcb on x64
             self.Prcb_offset = kpcr.CurrentPrcb.obj_offset
             # The nested _KPRCB in Prcb on x64
-            self.PrcbData_offset = kpcr.Prcb.obj_offset    
+            self.PrcbData_offset = kpcr.Prcb.obj_offset
         self.KPCR = None
 
     def check(self, offset):
@@ -95,7 +95,7 @@ class KPCRScannerCheck(scan.ScannerCheck):
                 self.KPCR = pSelfPCR
                 return True
 
-        except Exception:
+        except BaseException:
             return False
 
         return False

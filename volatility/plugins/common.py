@@ -68,9 +68,9 @@ class CheckPoolSize(scan.ScannerCheck):
 
         block_size = pool_hdr.BlockSize.v()
 
-        pool_align = obj.VolMagic(self.address_space).PoolAlignment.v()
+        pool_alignment = obj.VolMagic(self.address_space).PoolAlignment.v()
 
-        return self.condition(block_size * pool_align)
+        return self.condition(block_size * pool_alignment)
 
 class CheckPoolType(scan.ScannerCheck):
     """ Check the pool type """

@@ -45,7 +45,7 @@ class String(obj.BaseObject):
         ## length must be an integer
         obj.BaseObject.__init__(self, theType, offset, vm, parent = parent, profile = profile, **kwargs)
 
-    def proxied(self, name):
+    def proxied(self, name): #pylint: disable-msg=W0613
         """ Return an object to be proxied """
         return self.__str__()
 

@@ -105,7 +105,7 @@ def find_tables(start_addr, vm):
             op = obj.Object("_INSTRUCTION", offset = start_addr + i, vm = vm)
             if op.value == 0:
                 for s in ops_list:
-                    if op.opcode.v().startswith(s): 
+                    if op.opcode.v().startswith(s):
                         service_tables.append(op.disp)
 
     return service_tables

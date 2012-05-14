@@ -173,8 +173,8 @@ class volshell(commands.Command):
                 print "Memory unreadable at {0:08x}".format(address)
                 return
 
-            for offset, hex, chars in utils.Hexdump(data):
-                print "{0:#010x}  {1:<48}  {2}".format(address + offset, hex, ''.join(chars))
+            for offset, hexchars, chars in utils.Hexdump(data):
+                print "{0:#010x}  {1:<48}  {2}".format(address + offset, hexchars, ''.join(chars))
 
         def dd(address, length = 0x80, space = None):
             """Print dwords at address.
@@ -326,7 +326,7 @@ class volshell(commands.Command):
                 space = self.eproc.get_process_address_space()
             data = space.read(address, length)
             iterable = distorm3.DecodeGenerator(address, data, distorm3.Decode32Bits)
-            for (offset, size, instruction, hexdump) in iterable:
+            for (offset, _size, instruction, hexdump) in iterable:
                 print "{0:<#8x} {1:<32} {2}".format(offset, hexdump, instruction)
 
         shell_funcs = { 'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis}

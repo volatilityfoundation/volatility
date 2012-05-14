@@ -21,6 +21,9 @@ import copy
 import volatility.obj as obj
 import volatility.plugins.overlays.windows.windows as windows
 
+# File-wide pylint message disable because we have a few situations where we access structs starting _
+#pylint: disable-msg=W0212
+
 class Pointer64Decorator(object):
     def __init__(self, f):
         self.f = f

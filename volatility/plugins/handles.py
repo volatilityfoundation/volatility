@@ -19,8 +19,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
-#pylint: disable-msg=C0111
-
 import volatility.plugins.taskmods as taskmods
 
 # Inherit from Dlllist for command line options
