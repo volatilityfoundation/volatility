@@ -42,11 +42,11 @@ class ModDump(procdump.ProcExeDump):
         config.add_option('IGNORE-CASE', short_option = 'i',
                       help = 'Ignore case in pattern match',
                       action = 'store_true', default = False)
-        config.add_option('OFFSET', short_option = 'o', default = None,
-                          help = 'Dump driver with base address OFFSET (in hex)',
+        config.add_option('BASE', short_option = 'b', default = None,
+                          help = 'Dump driver with BASE address (in hex)',
                           action = 'store', type = 'int')
 
-    @cache.CacheDecorator(lambda self: "tests/moddump/regex={0}/ignore-case={1}/offset={2}".format(self._config.REGEX, self._config.IGNORE_CASE, self._config.OFFSET))
+    @cache.CacheDecorator(lambda self: "tests/moddump/regex={0}/ignore-case={1}/base={2}".format(self._config.REGEX, self._config.IGNORE_CASE, self._config.BASE))
     def calculate(self):
         addr_space = utils.load_as(self._config)
 
@@ -64,12 +64,12 @@ class ModDump(procdump.ProcExeDump):
         # instead of inside the find_space function, so we only have to do it once. 
         procs = list(tasks.pslist(addr_space))
 
-        if self._config.OFFSET:
-            if mods.has_key(self._config.OFFSET):
-                mod_name = mods[self._config.OFFSET].BaseDllName
+        if self._config.BASE:
+            if mods.has_key(self._config.BASE):
+                mod_name = mods[self._config.BASE].BaseDllName
             else:
                 mod_name = "UNKNOWN"
-            yield addr_space, procs, int(self._config.OFFSET), mod_name
+            yield addr_space, procs, int(self._config.BASE), mod_name
         else:
             for mod in mods.values():
                 if self._config.REGEX:
