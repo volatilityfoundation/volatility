@@ -118,14 +118,9 @@ class Netscan(commands.Command):
             tcpentry = obj.Object('_TCP_LISTENER', offset = offset,
                                   vm = flat_space, native_vm = kernel_space)
 
-            lport = tcpentry.Port
-
             # For TcpL, the state is always listening and the remote port is zero
-            state = "LISTENING"
-            rport = 0
-
             for ver, laddr, raddr, owner in self.enumerate_listeners(tcpentry):
-                yield tcpentry.obj_offset, "TCP" + ver, laddr, lport, raddr, rport, state, owner, tcpentry.CreateTime
+                yield tcpentry.obj_offset, "TCP" + ver, laddr, tcpentry.Port, raddr, 0, "LISTENING", owner, tcpentry.CreateTime
 
         for offset in PoolScanTcpEndpoint().scan(flat_space):
             tcpentry = obj.Object('_TCP_ENDPOINT', offset = offset,
@@ -136,10 +131,6 @@ class Netscan(commands.Command):
             AddrInfo = tcpentry.AddrInfo.dereference()
             InetAF = tcpentry.InetAF.dereference()
             Owner = tcpentry.Owner.dereference()
-
-            lport = tcpentry.LocalPort
-            rport = tcpentry.RemotePort
-            state = tcpentry.State
 
             l_inaddr = AddrInfo.Local.pData.dereference().dereference()
             r_inaddr = AddrInfo.Remote.dereference()
@@ -155,20 +146,15 @@ class Netscan(commands.Command):
             else:
                 continue
 
-            yield tcpentry.obj_offset, proto, laddr, lport, raddr, rport, state, Owner, tcpentry.CreateTime
+            yield tcpentry.obj_offset, proto, laddr, tcpentry.LocalPort, raddr, tcpentry.RemotePort, tcpentry.State, Owner, tcpentry.CreateTime
 
         for offset in PoolScanUdpEndpoint().scan(flat_space):
             udpentry = obj.Object('_UDP_ENDPOINT', offset = offset,
                                   vm = flat_space, native_vm = kernel_space)
 
-            lport = udpentry.Port
-
             # For UdpA, the state is always blank and the remote end is asterisks
-            state = ""
-            raddr = rport = "*"
-
             for ver, laddr, _, owner in self.enumerate_listeners(udpentry):
-                yield udpentry.obj_offset, "UDP" + ver, laddr, lport, raddr, rport, state, owner, udpentry.CreateTime
+                yield udpentry.obj_offset, "UDP" + ver, laddr, udpentry.Port, "*", "*", "", owner, udpentry.CreateTime
 
     def render_text(self, outfd, data):
         outfd.write("{0:<10} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
