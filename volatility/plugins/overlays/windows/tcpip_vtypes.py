@@ -12,7 +12,7 @@ tcpip_vtypes = {
     '_ADDRESS_OBJECT' : [ 0x68, {
     'Next' : [ 0x0, ['pointer', ['_ADDRESS_OBJECT']]],
     'LocalIpAddress' : [ 0x2c, ['IpAddress']],
-    'LocalPort' : [ 0x30, ['unsigned short']],
+    'LocalPort' : [ 0x30, ['unsigned be short']],
     'Protocol'  : [ 0x32, ['unsigned short']],
     'Pid' : [ 0x148, ['unsigned long']],
     'CreateTime' : [ 0x158, ['WinTimeStamp', {}]],
