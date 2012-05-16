@@ -110,13 +110,13 @@ class Netscan(commands.Command):
     @cache.CacheDecorator("tests/netscan")
     def calculate(self):
         # Virtual kernel space for dereferencing pointers
-        vspace = utils.load_as(self._config)
+        kernel_space = utils.load_as(self._config)
         # Physical space for scanning 
-        pspace = utils.load_as(self._config, astype = 'physical')
+        flat_space = utils.load_as(self._config, astype = 'physical')
 
-        for offset in PoolScanTcpListener().scan(pspace):
+        for offset in PoolScanTcpListener().scan(flat_space):
             tcpentry = obj.Object('_TCP_LISTENER', offset = offset,
-                                  vm = pspace, native_vm = vspace)
+                                  vm = flat_space, native_vm = kernel_space)
 
             lport = tcpentry.Port
 
@@ -127,9 +127,9 @@ class Netscan(commands.Command):
             for ver, laddr, raddr, owner in self.enumerate_listeners(tcpentry):
                 yield tcpentry.obj_offset, "TCP" + ver, laddr, lport, raddr, rport, state, owner, tcpentry.CreateTime
 
-        for offset in PoolScanTcpEndpoint().scan(pspace):
+        for offset in PoolScanTcpEndpoint().scan(flat_space):
             tcpentry = obj.Object('_TCP_ENDPOINT', offset = offset,
-                                  vm = pspace, native_vm = vspace)
+                                  vm = flat_space, native_vm = kernel_space)
 
             # These pointers are dereferenced in kernel space since we set
             # native_vm when the objects were created. 
@@ -157,9 +157,9 @@ class Netscan(commands.Command):
 
             yield tcpentry.obj_offset, proto, laddr, lport, raddr, rport, state, Owner, tcpentry.CreateTime
 
-        for offset in PoolScanUdpEndpoint().scan(pspace):
+        for offset in PoolScanUdpEndpoint().scan(flat_space):
             udpentry = obj.Object('_UDP_ENDPOINT', offset = offset,
-                                  vm = pspace, native_vm = vspace)
+                                  vm = flat_space, native_vm = kernel_space)
 
             lport = udpentry.Port
 
