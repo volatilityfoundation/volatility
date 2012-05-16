@@ -168,7 +168,7 @@ def determine_connections(addr_space):
                             while conn.is_valid() and conn.obj_offset not in seen:
                                 yield conn
                                 seen.add(conn.obj_offset)
-                                conn = conn.Next
+                                conn = conn.Next.dereference()
 
 def determine_sockets(addr_space):
     """Determines all sockets for each module"""
@@ -207,4 +207,4 @@ def determine_sockets(addr_space):
                             while sock.is_valid() and sock.obj_offset not in seen:
                                 yield sock
                                 seen.add(sock.obj_offset)
-                                sock = sock.Next
+                                sock = sock.Next.dereference()
