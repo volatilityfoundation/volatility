@@ -133,10 +133,12 @@ tcpip_vtypes_7 = {
     }],
 }
 
-# Structures for netscan on x64 Windows 7. These may also apply 
-# to x64 Vista and 2008 but that has not yet been determined. Naming
-# will be updated accordingly once we figure out the rest. 
-tcpip_vtypes_7_64 = {
+# Structures for netscan on x64 Vista, 2008, and 7 (all service packs).
+tcpip_vtypes_vista_64 = {
+    '_IN_ADDR' : [ None, {
+    'addr4' : [ 0x0, ['IpAddress']],
+    'addr6' : [ 0x0, ['Ipv6Address']],
+    }],
     '_TCP_LISTENER': [ None, { # TcpL
     'Owner' : [ 0x28, ['pointer', ['_EPROCESS']]],
     'CreateTime' : [ 0x20, ['WinTimeStamp', {}]],
@@ -208,10 +210,10 @@ class Win7Tcpip(obj.ProfileModification):
     def modification(self, profile):
         profile.vtypes.update(tcpip_vtypes_7)
 
-class Win7x64Tcpip(obj.ProfileModification):
+class Win7Vista2008x64Tcpip(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows',
                   'memory_model': lambda x: x == '64bit',
                   'major': lambda x : x == 6,
-                  'minor': lambda x : x == 1}
+                  'minor': lambda x : x >= 0}
     def modification(self, profile):
-        profile.vtypes.update(tcpip_vtypes_7_64)
+        profile.vtypes.update(tcpip_vtypes_vista_64)
