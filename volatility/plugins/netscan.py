@@ -118,7 +118,7 @@ class Netscan(commands.Command):
             tcpentry = obj.Object('_TCP_LISTENER', offset = offset,
                                   vm = pspace, native_vm = vspace)
 
-            lport = socket.ntohs(tcpentry.Port)
+            lport = tcpentry.Port
 
             # For TcpL, the state is always listening and the remote port is zero
             state = "LISTENING"
@@ -137,8 +137,8 @@ class Netscan(commands.Command):
             InetAF = tcpentry.InetAF.dereference()
             Owner = tcpentry.Owner.dereference()
 
-            lport = socket.ntohs(tcpentry.LocalPort)
-            rport = socket.ntohs(tcpentry.RemotePort)
+            lport = tcpentry.LocalPort
+            rport = tcpentry.RemotePort
             state = tcpentry.State
 
             l_inaddr = AddrInfo.Local.pData.dereference().dereference()
@@ -161,7 +161,7 @@ class Netscan(commands.Command):
             udpentry = obj.Object('_UDP_ENDPOINT', offset = offset,
                                   vm = pspace, native_vm = vspace)
 
-            lport = socket.ntohs(udpentry.Port)
+            lport = udpentry.Port
 
             # For UdpA, the state is always blank and the remote end is asterisks
             state = ""
