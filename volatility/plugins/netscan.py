@@ -25,13 +25,19 @@ import volatility.obj as obj
 import volatility.cache as cache
 import socket
 
-# Python's socket.AF_INET6 is 0x1e but MSFT's is 0x17..and we need to use MSFT's
+# Python's socket.AF_INET6 is 0x1e but Microsoft defines it 
+# as a constant value of 0x17 in their source code. Thus we 
+# need Microsoft's since that's what is found in memory.
 AF_INET = 2
 AF_INET6 = 0x17
 
 # String representations of INADDR_ANY and INADDR6_ANY
 inaddr_any = utils.inet_ntop(socket.AF_INET, '\0' * 4)
 inaddr6_any = utils.inet_ntop(socket.AF_INET6, '\0' * 16)
+
+#--------------------------------------------------------------------------------
+# pool scanners 
+#--------------------------------------------------------------------------------
 
 class PoolScanUdpEndpoint(scan.PoolScanner):
     """PoolScanner for Udp Endpoints"""
@@ -69,101 +75,169 @@ class PoolScanTcpEndpoint(PoolScanUdpEndpoint):
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
+#--------------------------------------------------------------------------------
+# object classes 
+#--------------------------------------------------------------------------------
+
+class _TCP_LISTENER(obj.CType):
+    """Class for objects found in TcpL pools"""
+
+    @property
+    def AddressFamily(self):
+        return self.InetAF.dereference().AddressFamily
+
+    @property
+    def Owner(self):
+        return self.m('Owner').dereference()
+
+    def dual_stack_sockets(self):
+        """Handle Windows dual-stack sockets"""
+
+        # If this pointer is valid, the socket is bound to 
+        # a specific IP address. Otherwise, the socket is 
+        # listening on all IP addresses of the address family. 
+        local_addr = self.LocalAddr.dereference()
+
+        # Note the remote address is always INADDR_ANY or 
+        # INADDR6_ANY for sockets. The moment a client 
+        # connects to the listener, a TCP_ENDPOINT is created
+        # and that structure contains the remote address.
+        if local_addr != None:
+            inaddr = local_addr.pData.dereference().dereference()
+            if self.AddressFamily == AF_INET:
+                yield "v4", inaddr.addr4, inaddr_any
+            else:
+                yield "v6", inaddr.addr6, inaddr6_any
+        else:
+            yield "v4", inaddr_any, inaddr_any
+            if self.AddressFamily == AF_INET6:
+                yield "v6", inaddr6_any, inaddr6_any
+
+class _TCP_ENDPOINT(_TCP_LISTENER):
+    """Class for objects found in TcpE pools"""
+
+    def _ipv4_or_ipv6(self, in_addr):
+
+        if self.AddressFamily == AF_INET:
+            return in_addr.addr4
+        else:
+            return in_addr.addr6
+
+    @property
+    def LocalAddress(self):
+        inaddr = self.AddrInfo.dereference().Local.\
+                            pData.dereference().dereference()  
+    
+        return self._ipv4_or_ipv6(inaddr)
+        
+    @property
+    def RemoteAddress(self):
+        inaddr = self.AddrInfo.dereference().\
+                            Remote.dereference()
+
+        return self._ipv4_or_ipv6(inaddr)
+
+class _UDP_ENDPOINT(_TCP_LISTENER):
+    """Class for objects found in UdpA pools"""
+
+#--------------------------------------------------------------------------------
+# profile modifications 
+#--------------------------------------------------------------------------------
+
+class NetscanObjectClasses(obj.ProfileModification):
+    """Network OCs for Vista, 2008, and 7 x86 and x64"""
+
+    before = ['WindowsObjectClasses']
+
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x >= 0}
+
+    def modification(self, profile):
+        profile.object_classes.update({
+            '_TCP_LISTENER': _TCP_LISTENER, 
+            '_TCP_ENDPOINT': _TCP_ENDPOINT,
+            '_UDP_ENDPOINT': _UDP_ENDPOINT,
+            })
+
+#--------------------------------------------------------------------------------
+# netscan plugin 
+#--------------------------------------------------------------------------------
+
 class Netscan(commands.Command):
     """Scan a Vista, 2008 or Windows 7 image for connections and sockets"""
 
-    def enumerate_listeners(self, theObject):
-        """
-        Enumerate the listening IPv4 and IPv6 information. 
-
-        Unlike XP, where you needed to create two sockets (one for IPv4 and
-        one for IPv4), starting with Vista, Windows supports dual-stack sockets
-        (http://msdn.microsoft.com/en-us/library/bb513665.aspx) which allows one
-        socket to be created that can use both protocols. This is why our plugin
-        prints an IPv4 address for all IPv6 sockets, however its also possible
-        to create an IPv6 only socket by calling setsockopt with IPV6_V6ONLY.
-        """
-
-        # These pointers are dereferenced in kernel space since we set
-        # native_vm when the objects were created. 
-        LocalAddr = theObject.LocalAddr.dereference()
-        InetAF = theObject.InetAF.dereference()
-        Owner = theObject.Owner.dereference()
-
-        # We only handle IPv4 and IPv6 sockets at the moment
-        if InetAF.AddressFamily != AF_INET and InetAF.AddressFamily != AF_INET6:
-            raise StopIteration
-
-        if LocalAddr != None:
-            inaddr = LocalAddr.pData.dereference().dereference()
-            if InetAF.AddressFamily == AF_INET:
-                laddr = inaddr.addr4
-                yield "v4", laddr, inaddr_any, Owner
-            else:
-                laddr = inaddr.addr6
-                yield "v6", laddr, inaddr6_any, Owner
-        else:
-            yield "v4", inaddr_any, inaddr_any, Owner
-            if InetAF.AddressFamily == AF_INET6:
-                yield "v6", inaddr6_any, inaddr6_any, Owner
-
     @cache.CacheDecorator("tests/netscan")
     def calculate(self):
+
         # Virtual kernel space for dereferencing pointers
         kernel_space = utils.load_as(self._config)
         # Physical space for scanning 
         flat_space = utils.load_as(self._config, astype = 'physical')
 
+        # Scan for TCP listeners also known as sockets
         for offset in PoolScanTcpListener().scan(flat_space):
+
             tcpentry = obj.Object('_TCP_LISTENER', offset = offset,
                                   vm = flat_space, native_vm = kernel_space)
 
-            # For TcpL, the state is always listening and the remote port is zero
-            for ver, laddr, raddr, owner in self.enumerate_listeners(tcpentry):
-                yield tcpentry.obj_offset, "TCP" + ver, laddr, tcpentry.Port, raddr, 0, "LISTENING", owner, tcpentry.CreateTime
+            # Only accept IPv4 or IPv6
+            if tcpentry.AddressFamily not in (AF_INET, AF_INET6):
+                continue 
 
+            # For TcpL, the state is always listening and the remote port is zero
+            for ver, laddr, raddr in tcpentry.dual_stack_sockets():
+                yield tcpentry, "TCP" + ver, laddr, tcpentry.Port, raddr, 0, "LISTENING"
+
+        # Scan for TCP endpoints also known as connections 
         for offset in PoolScanTcpEndpoint().scan(flat_space):
+
             tcpentry = obj.Object('_TCP_ENDPOINT', offset = offset,
                                   vm = flat_space, native_vm = kernel_space)
 
-            # These pointers are dereferenced in kernel space since we set
-            # native_vm when the objects were created. 
-            AddrInfo = tcpentry.AddrInfo.dereference()
-            InetAF = tcpentry.InetAF.dereference()
-            Owner = tcpentry.Owner.dereference()
-
-            l_inaddr = AddrInfo.Local.pData.dereference().dereference()
-            r_inaddr = AddrInfo.Remote.dereference()
-
-            if InetAF.AddressFamily == AF_INET:
+            if tcpentry.AddressFamily == AF_INET:
                 proto = "TCPv4"
-                laddr = l_inaddr.addr4
-                raddr = r_inaddr.addr4
-            elif InetAF.AddressFamily == AF_INET6:
+            elif tcpentry.AddressFamily == AF_INET6:
                 proto = "TCPv6"
-                laddr = l_inaddr.addr6
-                raddr = r_inaddr.addr6
             else:
-                continue
+                ## MHL needs to FIXME. I have reason to believe that 
+                ## there are multiple versions of the _TCP_ENDPOINT 
+                ## structure with members at different offsets, but 
+                ## that all exist in TcpE pools. 
+                continue 
 
-            yield tcpentry.obj_offset, proto, laddr, tcpentry.LocalPort, raddr, tcpentry.RemotePort, tcpentry.State, Owner, tcpentry.CreateTime
+            yield tcpentry, proto, tcpentry.LocalAddress, tcpentry.LocalPort, \
+                    tcpentry.RemoteAddress, tcpentry.RemotePort, tcpentry.State
 
+        # Scan for UDP endpoints 
         for offset in PoolScanUdpEndpoint().scan(flat_space):
+
             udpentry = obj.Object('_UDP_ENDPOINT', offset = offset,
                                   vm = flat_space, native_vm = kernel_space)
 
+            # Only accept IPv4 or IPv6
+            if udpentry.AddressFamily not in (AF_INET, AF_INET6):
+                continue 
+
             # For UdpA, the state is always blank and the remote end is asterisks
-            for ver, laddr, _, owner in self.enumerate_listeners(udpentry):
-                yield udpentry.obj_offset, "UDP" + ver, laddr, udpentry.Port, "*", "*", "", owner, udpentry.CreateTime
+            for ver, laddr, _ in udpentry.dual_stack_sockets():
+                yield udpentry, "UDP" + ver, laddr, udpentry.Port, "*", "*", ""
 
     def render_text(self, outfd, data):
-        outfd.write("{0:<10} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
-            "Offset(P)", "Proto", "Local Address", "Foreign Address", "State", "Pid", "Owner", "Created"))
 
-        for offset, proto, laddr, lport, raddr, rport, state, p, ctime in data:
+        outfd.write("{0:<10} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
+            "Offset(P)", "Proto", "Local Address", "Foreign Address", 
+            "State", "Pid", "Owner", "Created"))
+
+        for net_object, proto, laddr, lport, raddr, rport, state in data:
+
             lendpoint = "{0}:{1}".format(laddr, lport)
             rendpoint = "{0}:{1}".format(raddr, rport)
-            process = p.ImageFileName if p.UniqueProcessId < 0xFFFF else ""
+
             outfd.write("{0:<#10x} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
-                offset, proto, lendpoint, rendpoint, state, p.UniqueProcessId, process, ctime if ctime.v() else ""))
+                net_object.obj_offset, proto, lendpoint, 
+                rendpoint, state, net_object.Owner.UniqueProcessId, 
+                net_object.Owner.ImageFileName, 
+                str(net_object.CreateTime or '')
+                ))
 
