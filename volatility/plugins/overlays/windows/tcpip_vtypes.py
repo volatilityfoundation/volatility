@@ -1,13 +1,24 @@
-'''
-Created on 31 Dec 2010
-
-@author: mike
-'''
+# Volatility
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
 
 import volatility.obj as obj
 
 # Structures used by connections, connscan, sockets, sockscan.
-# Used by x86 XP and Win2003 profiles. 
+# Used by x86 XP (all service packs) and x86 2003 SP0. 
 tcpip_vtypes = {
     '_ADDRESS_OBJECT' : [ 0x68, {
     'Next' : [ 0x0, ['pointer', ['_ADDRESS_OBJECT']]],
@@ -27,8 +38,8 @@ tcpip_vtypes = {
     }],
 }
 
-# 2003 SP1 and SP2 x64. May also apply to SP0 and 
-# Windows XP x64. 
+# Structures used by connections, connscan, sockets, sockscan.
+# Used by x64 XP and x64 2003 (all service packs). 
 tcpip_vtypes_2003_x64 = {
     '_ADDRESS_OBJECT' : [ None, {
     'Next' : [ 0x0, ['pointer', ['_ADDRESS_OBJECT']]],
@@ -48,7 +59,8 @@ tcpip_vtypes_2003_x64 = {
     }],
 }
 
-# Structures specific to x86 Win2003 profiles. 
+# Structures used by sockets and sockscan.
+# Used by x86 2003 SP1 and SP2 only. 
 tcpip_vtypes_2003_sp1_sp2 = {
     '_ADDRESS_OBJECT' : [ 0x68, {
     'Next' : [ 0x0, ['pointer', ['_ADDRESS_OBJECT']]],
@@ -67,7 +79,7 @@ TCP_STATE_ENUM = {
     9: 'LAST_ACK', 12: 'TIME_WAIT', 13: 'DELETE_TCB'
 }
 
-# Structures used by netscan for x86 Vista and 2008. 
+# Structures used by netscan for x86 Vista and 2008 (all service packs). 
 tcpip_vtypes_vista = {
     '_IN_ADDR' : [ None, {
     'addr4' : [ 0x0, ['IpAddress']],
@@ -108,7 +120,7 @@ tcpip_vtypes_vista = {
     }],
 }
 
-# Structures for netscan on x86 Windows 7. 
+# Structures for netscan on x86 Windows 7 (all service packs).
 tcpip_vtypes_7 = {
     '_TCP_ENDPOINT': [ None, { # TcpE
     'InetAF' : [ 0xC, ['pointer', ['_INETAF']]],
