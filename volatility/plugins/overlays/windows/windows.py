@@ -803,6 +803,20 @@ class _MMSECTION_FLAGS(_MMVAD_FLAGS):
     """This is for _CONTROL_AREA.u.Flags"""
     pass
 
+class _POOL_HEADER(obj.CType):
+    """A class for pool headers"""
+
+    @property
+    def FreePool(self):
+        return self.PoolType.v() == 0
+
+    @property
+    def NonPagedPool(self):
+        return self.PoolType.v() % 2 == 1 
+
+    @property
+    def PagedPool(self):
+        return self.PoolType.v() % 2 == 0 and self.PoolType.v() > 0
 
 import crash_vtypes
 import hibernate_vtypes
@@ -860,6 +874,7 @@ class WindowsObjectClasses(obj.ProfileModification):
             '_MMVAD_FLAGS2': _MMVAD_FLAGS2,
             '_MMSECTION_FLAGS': _MMSECTION_FLAGS,
             '_TOKEN': _TOKEN,
+            '_POOL_HEADER': _POOL_HEADER,
             })
 
 class AbstractKDBGMod(obj.ProfileModification):

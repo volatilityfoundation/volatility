@@ -58,6 +58,17 @@ class _ETHREAD(windows._ETHREAD):
         """Return the EPROCESS that owns this thread"""
         return self.Tcb.Process.dereference_as("_EPROCESS")
 
+class _POOL_HEADER(windows._POOL_HEADER):
+    """A class for pool headers"""
+
+    @property
+    def NonPagedPool(self):
+        return self.PoolType.v() % 2 == 0 and self.PoolType.v() > 0
+
+    @property
+    def PagedPool(self):
+        return self.PoolType.v() % 2 == 1
+
 class VistaWin7KPCR(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os' : lambda x: x == 'windows',
@@ -107,7 +118,8 @@ class VistaMMVAD(obj.ProfileModification):
     def modification(self, profile):
         profile.object_classes.update({'_MMVAD_SHORT': _MMVAD_SHORT,
                                        '_MMVAD_LONG' : _MMVAD_LONG,
-                                       '_ETHREAD'    : _ETHREAD})
+                                       '_ETHREAD'    : _ETHREAD, 
+                                       '_POOL_HEADER': _POOL_HEADER})
 
 class VistaKDBG(windows.AbstractKDBGMod):
     before = ['WindowsOverlay']

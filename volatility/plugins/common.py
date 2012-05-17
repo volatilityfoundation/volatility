@@ -85,16 +85,9 @@ class CheckPoolType(scan.ScannerCheck):
         pool_hdr = obj.Object('_POOL_HEADER', vm = self.address_space,
                              offset = offset - 4)
 
-        ptype = pool_hdr.PoolType.v()
-
-        if self.non_paged and (ptype % 2) == 1:
-            return True
-
-        if self.free and ptype == 0:
-            return True
-
-        if self.paged and (ptype % 2) == 0 and ptype > 0:
-            return True
+        return ((self.non_paged and pool_hdr.NonPagedPool) or 
+               (self.free and pool_hdr.FreePool) or 
+               (self.paged and pool_hdr.PagedPool))
 
 class CheckPoolIndex(scan.ScannerCheck):
     """ Checks the pool index """
