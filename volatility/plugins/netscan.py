@@ -50,7 +50,7 @@ class PoolScanUdpEndpoint(scan.PoolScanner):
                # Seen as 0xa8 on Vista SP0, 0xb0 on Vista SP2, and 0xb8 on 7
                # Seen as 0x150 on Win7 SP0 x64
                ('CheckPoolSize', dict(condition = lambda x: x >= 0xa8)),
-               ('CheckPoolType', dict(non_paged = True, paged = True, free = True)),
+               ('CheckPoolType', dict(non_paged = True, free = True)),
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
@@ -60,7 +60,7 @@ class PoolScanTcpListener(PoolScanUdpEndpoint):
     checks = [ ('PoolTagCheck', dict(tag = "TcpL")),
                # Seen as 0x120 on Win7 SP0 x64
                ('CheckPoolSize', dict(condition = lambda x: x >= 0xa8)),
-               ('CheckPoolType', dict(non_paged = True, paged = True, free = True)),
+               ('CheckPoolType', dict(non_paged = True, free = True)),
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
@@ -71,7 +71,7 @@ class PoolScanTcpEndpoint(PoolScanUdpEndpoint):
                # Seen as 0x1f0 on Vista SP0, 0x1f8 on Vista SP2 and 0x210 on 7
                # Seen as 0x320 on Win7 SP0 x64
                ('CheckPoolSize', dict(condition = lambda x: x >= 0x1f0)),
-               ('CheckPoolType', dict(non_paged = True, paged = True, free = True)),
+               ('CheckPoolType', dict(non_paged = True, free = True)),
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
