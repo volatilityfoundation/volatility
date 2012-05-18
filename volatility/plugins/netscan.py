@@ -167,6 +167,11 @@ class NetscanObjectClasses(obj.ProfileModification):
 class Netscan(common.AbstractWindowsCommand):
     """Scan a Vista, 2008 or Windows 7 image for connections and sockets"""
 
+    @staticmethod
+    def is_valid_profile(profile):
+        return (profile.metadata.get('os', 'unknown') == 'windows' and
+                profile.metadata.get('major', 0) == 6)
+
     @cache.CacheDecorator("tests/netscan")
     def calculate(self):
 
