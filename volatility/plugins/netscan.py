@@ -24,6 +24,7 @@ import volatility.scan as scan
 import volatility.obj as obj
 import volatility.cache as cache
 import socket
+import volatility.plugins.overlays.windows.tcpip_vtypes as tcpip_vtypes
 
 # Python's socket.AF_INET6 is 0x1e but Microsoft defines it 
 # as a constant value of 0x17 in their source code. Thus we 
@@ -205,10 +206,13 @@ class Netscan(common.AbstractWindowsCommand):
             elif tcpentry.AddressFamily == AF_INET6:
                 proto = "TCPv6"
             else:
-                ## MHL needs to FIXME. I have reason to believe that 
-                ## there are multiple versions of the _TCP_ENDPOINT 
-                ## structure with members at different offsets, but 
-                ## that all exist in TcpE pools. 
+                continue
+
+            # These are our sanity checks 
+            if (tcpentry.State.v() not in tcpip_vtypes.TCP_STATE_ENUM or 
+                    (not tcpentry.LocalAddress and (not tcpentry.Owner or
+                    tcpentry.Owner.UniqueProcessId == 0 or 
+                    tcpentry.Owner.UniqueProcessId > 65535))):
                 continue
 
             yield tcpentry, proto, tcpentry.LocalAddress, tcpentry.LocalPort, \
