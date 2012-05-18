@@ -21,7 +21,7 @@
 import volatility.obj as obj
 import volatility.scan as scan
 import volatility.cache as cache
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.addrspace as addrspace
 import volatility.registry as registry
 import volatility.utils as utils
@@ -89,7 +89,7 @@ class KDBGScanner(scan.BaseScanner):
             offset = offset - 0x10
             yield offset
 
-class KDBGScan(commands.Command):
+class KDBGScan(common.AbstractWindowsCommand):
     """Search for and dump potential KDBG values"""
 
     @staticmethod

@@ -19,7 +19,7 @@
 #
 
 import volatility.utils as utils
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.scan as scan
 import volatility.obj as obj
 import volatility.cache as cache
@@ -126,10 +126,10 @@ class _TCP_ENDPOINT(_TCP_LISTENER):
     @property
     def LocalAddress(self):
         inaddr = self.AddrInfo.dereference().Local.\
-                            pData.dereference().dereference()  
-    
+                            pData.dereference().dereference()
+
         return self._ipv4_or_ipv6(inaddr)
-        
+
     @property
     def RemoteAddress(self):
         inaddr = self.AddrInfo.dereference().\
@@ -155,7 +155,7 @@ class NetscanObjectClasses(obj.ProfileModification):
 
     def modification(self, profile):
         profile.object_classes.update({
-            '_TCP_LISTENER': _TCP_LISTENER, 
+            '_TCP_LISTENER': _TCP_LISTENER,
             '_TCP_ENDPOINT': _TCP_ENDPOINT,
             '_UDP_ENDPOINT': _UDP_ENDPOINT,
             })
@@ -164,7 +164,7 @@ class NetscanObjectClasses(obj.ProfileModification):
 # netscan plugin 
 #--------------------------------------------------------------------------------
 
-class Netscan(commands.Command):
+class Netscan(common.AbstractWindowsCommand):
     """Scan a Vista, 2008 or Windows 7 image for connections and sockets"""
 
     @cache.CacheDecorator("tests/netscan")
@@ -183,7 +183,7 @@ class Netscan(commands.Command):
 
             # Only accept IPv4 or IPv6
             if tcpentry.AddressFamily not in (AF_INET, AF_INET6):
-                continue 
+                continue
 
             # For TcpL, the state is always listening and the remote port is zero
             for ver, laddr, raddr in tcpentry.dual_stack_sockets():
@@ -204,7 +204,7 @@ class Netscan(commands.Command):
                 ## there are multiple versions of the _TCP_ENDPOINT 
                 ## structure with members at different offsets, but 
                 ## that all exist in TcpE pools. 
-                continue 
+                continue
 
             yield tcpentry, proto, tcpentry.LocalAddress, tcpentry.LocalPort, \
                     tcpentry.RemoteAddress, tcpentry.RemotePort, tcpentry.State
@@ -217,7 +217,7 @@ class Netscan(commands.Command):
 
             # Only accept IPv4 or IPv6
             if udpentry.AddressFamily not in (AF_INET, AF_INET6):
-                continue 
+                continue
 
             # For UdpA, the state is always blank and the remote end is asterisks
             for ver, laddr, _ in udpentry.dual_stack_sockets():
@@ -226,7 +226,7 @@ class Netscan(commands.Command):
     def render_text(self, outfd, data):
 
         outfd.write("{0:<10} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
-            "Offset(P)", "Proto", "Local Address", "Foreign Address", 
+            "Offset(P)", "Proto", "Local Address", "Foreign Address",
             "State", "Pid", "Owner", "Created"))
 
         for net_object, proto, laddr, lport, raddr, rport, state in data:
@@ -235,9 +235,9 @@ class Netscan(commands.Command):
             rendpoint = "{0}:{1}".format(raddr, rport)
 
             outfd.write("{0:<#10x} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
-                net_object.obj_offset, proto, lendpoint, 
-                rendpoint, state, net_object.Owner.UniqueProcessId, 
-                net_object.Owner.ImageFileName, 
+                net_object.obj_offset, proto, lendpoint,
+                rendpoint, state, net_object.Owner.UniqueProcessId,
+                net_object.Owner.ImageFileName,
                 str(net_object.CreateTime or '')
                 ))
 

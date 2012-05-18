@@ -28,7 +28,7 @@
 
 import common
 import volatility.scan as scan
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.utils as utils
 import volatility.obj as obj
@@ -41,7 +41,7 @@ class PoolScanFile(scan.PoolScanner):
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
-class FileScan(commands.Command):
+class FileScan(common.AbstractWindowsCommand):
     """ Scan Physical memory for _FILE_OBJECT pool allocations
     """
     # Declare meta information associated with this plugin
@@ -382,7 +382,7 @@ class PoolScanProcess(scan.PoolScanner):
                ]
 
 
-class PSScan(commands.Command):
+class PSScan(common.AbstractWindowsCommand):
     """ Scan Physical memory for _EPROCESS pool allocations
     """
     # Declare meta information associated with this plugin

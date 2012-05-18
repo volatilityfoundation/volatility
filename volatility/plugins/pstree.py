@@ -22,7 +22,7 @@
 
 import volatility.win32.tasks as tasks
 import volatility.utils as utils
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.cache as cache
 
 #pylint: disable-msg=C0111
@@ -37,7 +37,7 @@ pslist_types = {
     } ],
     }
 
-class PSTree(commands.Command):
+class PSTree(common.AbstractWindowsCommand):
     """Print process list as a tree"""
 
     def find_root(self, pid_dict, pid):

@@ -20,15 +20,15 @@
 
 #pylint: disable-msg=C0111
 
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.cache as cache
 import volatility.win32 as win32
 import volatility.utils as utils
 
-class Modules(commands.Command):
+class Modules(common.AbstractWindowsCommand):
     """Print list of loaded modules"""
     def __init__(self, config, *args, **kwargs):
-        commands.Command.__init__(self, config, *args, **kwargs)
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
                           cache_invalidator = False, help = "Physical Offset", action = "store_true")
 

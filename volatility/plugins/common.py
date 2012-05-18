@@ -29,7 +29,7 @@ import volatility.commands as commands
 class AbstractWindowsCommand(commands.Command):
     @staticmethod
     def is_valid_profile(profile):
-        return profile.metadata.get('os', 'Unknown').lower() == 'windows'
+        return profile.metadata.get('os', 'unknown') == 'windows'
 
 def pool_align(vm, object_name, align):
     """Returns the size of the object accounting for pool alignment."""
@@ -91,8 +91,8 @@ class CheckPoolType(scan.ScannerCheck):
         pool_hdr = obj.Object('_POOL_HEADER', vm = self.address_space,
                              offset = offset - 4)
 
-        return ((self.non_paged and pool_hdr.NonPagedPool) or 
-               (self.free and pool_hdr.FreePool) or 
+        return ((self.non_paged and pool_hdr.NonPagedPool) or
+               (self.free and pool_hdr.FreePool) or
                (self.paged and pool_hdr.PagedPool))
 
 class CheckPoolIndex(scan.ScannerCheck):

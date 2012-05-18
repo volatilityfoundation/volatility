@@ -29,7 +29,7 @@
 import volatility.scan as scan
 import volatility.obj as obj
 import volatility.utils as utils
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.cache as cache
 
 class CheckHiveSig(scan.ScannerCheck):
@@ -65,7 +65,7 @@ class PoolScanHiveFast2(scan.PoolScanner):
         self.checks[1] = ('CheckPoolSize', dict(condition = lambda x: x >= poolsize))
         scan.PoolScanner.__init__(self)
 
-class HiveScan(commands.Command):
+class HiveScan(common.AbstractWindowsCommand):
     """ Scan Physical memory for _CMHIVE objects (registry hives)
 
     You will need to obtain these offsets to feed into the hivelist command.

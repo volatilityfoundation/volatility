@@ -23,18 +23,18 @@
 #pylint: disable-msg=C0111
 
 import os
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.win32 as win32
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.utils as utils
 import volatility.cache as cache
 
-class DllList(commands.Command, cache.Testable):
+class DllList(common.AbstractWindowsCommand, cache.Testable):
     """Print list of loaded dlls for each process"""
 
     def __init__(self, config, *args, **kwargs):
-        commands.Command.__init__(self, config, *args, **kwargs)
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
         cache.Testable.__init__(self)
         config.add_option('OFFSET', short_option = 'o', default = None,
                           help = 'EPROCESS offset (in hex) in the physical address space',

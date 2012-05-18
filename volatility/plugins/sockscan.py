@@ -29,7 +29,7 @@ This module implements the fast socket scanning
 #pylint: disable-msg=C0111
 
 import volatility.scan as scan
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.utils as utils
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
@@ -71,7 +71,7 @@ class PoolScanSockFast(scan.PoolScanner):
                ('CheckPoolIndex', dict(value = 0))
                ]
 
-class SockScan(commands.Command):
+class SockScan(common.AbstractWindowsCommand):
     """ Scan Physical memory for _ADDRESS_OBJECT objects (tcp sockets)
     """
 
