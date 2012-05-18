@@ -67,6 +67,11 @@ config.add_option("INFO", default = None, action = "store_true",
 def list_plugins():
     result = "\n\tSupported Plugin Commands:\n\n"
     cmds = registry.get_plugin_classes(commands.Command, lower = True)
+    profs = registry.get_plugin_classes(obj.Profile)
+    if config.PROFILE not in profs:
+        raise BaseException("Invalid profile " + config.PROFILE + " selected")
+    profile = profs[config.PROFILE]()
+    wrongprofile = ""
     for cmdname in sorted(cmds):
         command = cmds[cmdname]
         helpline = command.help() or ''
@@ -76,7 +81,14 @@ def list_plugins():
             if line:
                 helpline = line
                 break
-        result += "\t\t{0:15}\t{1}\n".format(cmdname, helpline)
+        if command.is_valid_profile(profile):
+            result += "\t\t{0:15}\t{1}\n".format(cmdname, helpline)
+        else:
+            wrongprofile += "\t\t{0:15}\t{1}\n".format(cmdname, helpline)
+
+    if wrongprofile and config.VERBOSE:
+        result += "\n\tPlugins requiring a different profile:\n\n"
+        result += wrongprofile
 
     return result
 

@@ -60,6 +60,10 @@ class Command(object):
         except (AttributeError, TypeError):
             return ""
 
+    @staticmethod
+    def is_valid_profile(profile):
+        return True
+
     def calculate(self):
         """ This function is responsible for performing all calculations
 

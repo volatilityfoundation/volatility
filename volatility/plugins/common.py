@@ -22,8 +22,14 @@
 import volatility.scan as scan
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
+import volatility.commands as commands
 
 #pylint: disable-msg=C0111
+
+class AbstractWindowsCommand(commands.Command):
+    @staticmethod
+    def is_valid_profile(profile):
+        return profile.metadata.get('os', 'Unknown').lower() == 'windows'
 
 def pool_align(vm, object_name, align):
     """Returns the size of the object accounting for pool alignment."""
