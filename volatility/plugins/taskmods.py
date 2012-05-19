@@ -55,9 +55,13 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
                 outfd.write("Command line : {0}\n".format(str(task.Peb.ProcessParameters.CommandLine or '')))
                 outfd.write("{0}\n".format(str(task.Peb.CSDVersion or '')))
                 outfd.write("\n")
-                outfd.write("{0:12} {1:12} {2}\n".format('Base', 'Size', 'Path'))
+                self.table_header(outfd,
+                                  [("Base", "[addrpad]"),
+                                   ("Size", "[addr]"),
+                                   ("Path", ""),
+                                   ])
                 for m in task.get_load_modules():
-                    outfd.write("0x{0:08x}   0x{1:06x}     {2}\n".format(m.DllBase, m.SizeOfImage, str(m.FullDllName or '')))
+                    self.table_row(outfd, m.DllBase, m.SizeOfImage, str(m.FullDllName or ''))
             else:
                 outfd.write("Unable to read PEB for task.\n")
 
@@ -116,8 +120,15 @@ class PSList(DllList):
     def render_text(self, outfd, data):
 
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        outfd.write(" Offset{0}  Name                 PID    PPID   Thds   Hnds   Time \n".format(offsettype) +
-                    "---------- -------------------- ------ ------ ------ ------ ------------------- \n")
+        self.table_header(outfd,
+                          [("Offset{0}".format(offsettype), "[addrpad]"),
+                           ("Name", "20s"),
+                           ("PID", ">6"),
+                           ("PPID", ">6"),
+                           ("Thds", ">6"),
+                           ("Hnds", ">6"),
+                           ("Time", "20")]
+                          )
 
         for task in data:
             # PHYSICAL_OFFSET must STRICTLY only be used in the results.  If it's used for anything else,
@@ -126,14 +137,14 @@ class PSList(DllList):
                 offset = task.obj_offset
             else:
                 offset = task.obj_vm.vtop(task.obj_offset)
-            outfd.write("{0:#010x} {1:20} {2:6} {3:6} {4:6} {5:6} {6:26}\n".format(
+            self.table_row(outfd,
                 offset,
                 task.ImageFileName,
                 task.UniqueProcessId,
                 task.InheritedFromUniqueProcessId,
                 task.ActiveThreads,
                 task.ObjectTable.HandleCount,
-                task.CreateTime))
+                task.CreateTime)
 
 
 # Inherit from files just for the config options (__init__)
@@ -151,13 +162,16 @@ class MemMap(DllList):
             first = False
 
             if pagedata:
-                outfd.write("{0:12} {1:12} {2:12}\n".format('Virtual', 'Physical', 'Size'))
+                self.table_header(outfd,
+                                  [("Virtual", "[addrpad]"),
+                                   ("Physical", "[addrpad]"),
+                                   ("Size", "[addr]")])
 
                 for p in pagedata:
                     pa = task_space.vtop(p[0])
                     # pa can be 0, according to the old memmap, but can't == None(NoneObject)
                     if pa != None:
-                        outfd.write("0x{0:010x} 0x{1:010x} 0x{2:012x}\n".format(p[0], pa, p[1]))
+                        self.table_row(outfd, p[0], pa, p[1])
                     #else:
                     #    outfd.write("0x{0:10x} 0x000000     0x{1:12x}\n".format(p[0], p[1]))
             else:
