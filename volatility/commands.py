@@ -110,6 +110,7 @@ class Command(object):
 
     def _formatlookup(self, profile, code):
         """Code to turn profile specific values into format specifications"""
+        code = code or ""
         if not code.startswith('['):
             return code
         code = code[1:-1].lower()
@@ -117,11 +118,17 @@ class Command(object):
             if profile.metadata.get('memory_model', '32bit') == '64bit':
                 return "#018x"
             return "#010x"
+        elif code == 'address':
+            if profile.metadata.get('memory_model', '32bit') == '64bit':
+                return "#18x"
+            return "#10x"
         debug.warning("Unknown proprietary format specification")
         return ""
 
     def _elide(self, string, length):
         """Adds three dots in the middle of a string if it is longer than length"""
+        if length == -1:
+            return string
         if length < 5:
             debug.error("Cannot elide a string to length less than 5")
         if len(string) < length:
@@ -147,19 +154,17 @@ class Command(object):
 
         for (k, v) in title_format_list:
             spec = fmtspec.FormatSpec(self._formatlookup(profile, v))
-            # Ensure parameters aren't always forcibly elided
-            if not spec.minwidth:
-                spec.minwidth = 1000
-            spec.minwidth = max(spec.minwidth, len(k))
+            # If spec.minwidth = -1, this field is unbounded length
+            if spec.minwidth != -1:
+                spec.minwidth = max(spec.minwidth, len(k))
 
-            # Get the title specification to follow the alignment/padding of the field
-            titlespec = copy.deepcopy(spec)
-            titlespec.altform = None
-            titlespec.formtype = "s"
+            # Get the title specification to follow the alignment of the field
+            titlespec = fmtspec.FormatSpec(formtype = 's', minwidth = max(spec.minwidth, len(k)))
+            titlespec.align = spec.align if spec.align in "<>^" else "<"
 
             # Add this to the titles, rules, and formatspecs lists
             titles.append(("{:" + titlespec.to_string() + "}").format(k))
-            rules.append("-" * spec.minwidth)
+            rules.append("-" * titlespec.minwidth)
             self._formatlist.append(spec)
 
         # Write out the titles and line rules
