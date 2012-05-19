@@ -113,16 +113,19 @@ class Command(object):
         code = code or ""
         if not code.startswith('['):
             return code
+
+        # Strip off the square brackets
         code = code[1:-1].lower()
-        if code == 'pointer':
+        if code.startswith('addr'):
+            spec = fmtspec.FormatSpec("#10x")
             if profile.metadata.get('memory_model', '32bit') == '64bit':
-                return "#018x"
-            return "#010x"
-        elif code == 'address':
-            if profile.metadata.get('memory_model', '32bit') == '64bit':
-                return "#18x"
-            return "#10x"
-        debug.warning("Unknown proprietary format specification")
+                spec.minwidth += 8
+            if 'pad' in code:
+                spec.fill = "0"
+            return spec.to_string()
+
+        # Something went wrong
+        debug.warning("Unknown table format specification: " + code)
         return ""
 
     def _elide(self, string, length):
