@@ -16,10 +16,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
+
 import sys, textwrap
-import volatility.debug as debug
-import volatility.fmtspec as fmtspec
-import volatility.addrspace as addrspace
 
 class Command(object):
     """ Base class for each plugin command """
@@ -36,8 +34,6 @@ class Command(object):
         command line. Options are stored in the self.opts attribute.
         """
         self._config = config
-        self._formatlist = []
-        self.tablesep = " "
 
     @staticmethod
     def register_options(config):
@@ -108,84 +104,6 @@ class Command(object):
 
         func(outfd, data)
 
-    def _formatlookup(self, profile, code):
-        """Code to turn profile specific values into format specifications"""
-        code = code or ""
-        if not code.startswith('['):
-            return code
-
-        # Strip off the square brackets
-        code = code[1:-1].lower()
-        if code.startswith('addr'):
-            spec = fmtspec.FormatSpec("#10x")
-            if profile.metadata.get('memory_model', '32bit') == '64bit':
-                spec.minwidth += 8
-            if 'pad' in code:
-                spec.fill = "0"
-                spec.align = spec.align if spec.align else "="
-            return spec.to_string()
-
-        # Something went wrong
-        debug.warning("Unknown table format specification: " + code)
-        return ""
-
-    def _elide(self, string, length):
-        """Adds three dots in the middle of a string if it is longer than length"""
-        if length == -1:
-            return string
-        if len(string) < length:
-            return (" " * (length - len(string))) + string
-        elif len(string) == length:
-            return string
-        else:
-            if length < 5:
-                debug.error("Cannot elide a string to length less than 5")
-            even = (length % 2)
-            length = (length - 3) / 2
-            return string[:length + even] + "..." + string[-length:]
-
-    def table_header(self, outfd, title_format_list = None):
-        """Table header renders the title row of a table
-
-           This also stores the header types to ensure
-           everything is formatted appropriately.
-           It must be a list of tuples rather than a dict for ordering purposes.
-        """
-        titles = []
-        rules = []
-        self._formatlist = []
-        profile = addrspace.BufferAddressSpace(self._config).profile
-
-        for (k, v) in title_format_list:
-            spec = fmtspec.FormatSpec(self._formatlookup(profile, v))
-            # If spec.minwidth = -1, this field is unbounded length
-            if spec.minwidth != -1:
-                spec.minwidth = max(spec.minwidth, len(k))
-
-            # Get the title specification to follow the alignment of the field
-            titlespec = fmtspec.FormatSpec(formtype = 's', minwidth = max(spec.minwidth, len(k)))
-            titlespec.align = spec.align if spec.align in "<>^" else "<"
-
-            # Add this to the titles, rules, and formatspecs lists
-            titles.append(("{:" + titlespec.to_string() + "}").format(k))
-            rules.append("-" * titlespec.minwidth)
-            self._formatlist.append(spec)
-
-        # Write out the titles and line rules
-        if outfd:
-            outfd.write(self.tablesep.join(titles) + "\n")
-            outfd.write(self.tablesep.join(rules) + "\n")
-
-    def table_row(self, outfd, *args):
-        """Outputs a single row of a table"""
-        reslist = []
-        if len(args) > len(self._formatlist):
-            debug.error("Too many values for the table")
-        for index in range(len(args)):
-            spec = self._formatlist[index]
-            result = self._elide(("{:" + spec.to_string() + "}").format(args[index]), spec.minwidth)
-            reslist.append(result)
-        outfd.write(self.tablesep.join(reslist) + "\n")
 
 ### Deprecated components
 #

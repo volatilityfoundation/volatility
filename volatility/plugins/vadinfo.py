@@ -109,24 +109,8 @@ class VADInfo(taskmods.DllList):
 
     def write_vad_short(self, outfd, vad):
         """Renders a text version of a Short Vad"""
-        self.table_header(None,
-                          [("VAD node @", str(len("VAD node @"))),
-                           ("address", "[addrpad]"),
-                           ("Start", "5"),
-                           ("startaddr", "[addrpad]"),
-                           ("End", "3"),
-                           ("endaddr", "[addrpad]"),
-                           ("Tag", "3"),
-                           ("tagval", ""),
-                           ])
-        self.table_row(outfd, "VAD node @",
-                              vad.obj_offset,
-                              "Start",
-                              vad.Start,
-                              "End",
-                              vad.End,
-                              "Tag",
-                              vad.Tag)
+        outfd.write("VAD node @{0:08x} Start {1:08x} End {2:08x} Tag {3:4}\n".format(
+            vad.obj_offset, vad.Start, vad.End, vad.Tag))
         outfd.write("Flags: {0}\n".format(str(vad.u.VadFlags)))
         # although the numeric value of Protection is printed above with VadFlags,
         # let's show the user a human-readable translation of the protection 
@@ -172,21 +156,13 @@ class VADTree(VADInfo):
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
             levels = {}
-            self.table_header(None,
-                              [("indent", ""),
-                               ("Start", "[addrpad]"),
-                               ("-", "1"),
-                               ("End", "[addrpad]")
-                              ])
             for vad in task.VadRoot.traverse():
                 if vad:
                     level = levels.get(vad.Parent.obj_offset, -1) + 1
                     levels[vad.obj_offset] = level
-                    self.table_row(outfd,
-                                   " " * level,
-                                   vad.Start,
-                                   "-",
-                                   vad.End)
+                    outfd.write(" " * level + "{0:08x} - {1:08x}\n".format(
+                                vad.Start,
+                                vad.End))
 
     def render_dot(self, outfd, data):
         for task in data:
@@ -214,26 +190,18 @@ class VADWalk(VADInfo):
         for task in data:
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
-            self.table_header(outfd,
-                              [("Address", "[addrpad]"),
-                               ("Parent", "[addrpad]"),
-                               ("Left", "[addrpad]"),
-                               ("Right", "[addrpad]"),
-                               ("Start", "[addrpad]"),
-                               ("End", "[addrpad]"),
-                               ("Tag", "4"),
-                               ])
+            outfd.write("Address  Parent   Left     Right    Start    End      Tag\n")
             for vad in task.VadRoot.traverse():
                 # Ignore Vads with bad tags (which we explicitly include as None)
                 if vad:
-                    self.table_row(outfd,
+                    outfd.write("{0:08x} {1:08x} {2:08x} {3:08x} {4:08x} {5:08x} {6:4}\n".format(
                         vad.obj_offset,
                         vad.Parent.obj_offset or 0,
                         vad.LeftChild.dereference().obj_offset or 0,
                         vad.RightChild.dereference().obj_offset or 0,
                         vad.Start,
                         vad.End,
-                        vad.Tag)
+                        vad.Tag))
 
 class VADDump(VADInfo):
     """Dumps out the vad sections to a file"""
