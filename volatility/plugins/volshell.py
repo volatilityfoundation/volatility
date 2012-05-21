@@ -210,6 +210,35 @@ class volshell(commands.Command):
                 lwords = dwords[i * 4:i * 4 + 4]
                 print ("{0:08x}  ".format(ad)) + " ".join("{0:08x}".format(l) for l in lwords)
 
+        def dq(address, length = 0x80, space = None):
+            """Print qwords at address.
+
+            This function prints the data at the given address, interpreted as
+            a series of qwords (unsigned eight-byte integers) in hexadecimal.
+            The address will be translated in the current process context
+            (see help on cc for information on how to change contexts).
+            
+            The optional length parameter (default: 0x80) controls how many bytes
+            to display, and space allows you to optionally specify the address space
+            to read the data from.
+            """
+            if not space:
+                space = self.eproc.get_process_address_space()
+
+            # round up 
+            if length % 8 != 0:
+                length = (length + 8) - (length % 8)
+
+            qwords = obj.Object("Array", targetType = "unsigned long long", 
+                offset = address, count = length / 8, vm = space)
+
+            if not qwords:
+                print "Memory unreadable at {0:08x}".format(address)
+                return
+
+            for qword in qwords:
+                print "{0:#x} {1:#x}".format(qword.obj_offset, qword.v())
+    
         def ps():
             """Print a process listing.
 
@@ -329,7 +358,7 @@ class volshell(commands.Command):
             for (offset, _size, instruction, hexdump) in iterable:
                 print "{0:<#8x} {1:<32} {2}".format(offset, hexdump, instruction)
 
-        shell_funcs = { 'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis}
+        shell_funcs = { 'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis, 'dq': dq}
         def hh(cmd = None):
             """Get help on a command."""
             shell_funcs['hh'] = hh
