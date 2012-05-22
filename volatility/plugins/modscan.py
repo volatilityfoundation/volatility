@@ -76,14 +76,20 @@ class ModScan(filescan.FileScan):
             yield ldr_entry
 
     def render_text(self, outfd, data):
-        outfd.write("{0:10} {1:50} {2:12} {3:8} {4}\n".format('Offset(P)', 'File', 'Base', 'Size', 'Name'))
+        self.table_header(outfd,
+                          [("Offset(P)", "[addrpad]"),
+                           ('Name', "20"),
+                           ('Base', "[addrpad]"),
+                           ('Size', "[addr]"),
+                           ('File', "")
+                           ])
         for ldr_entry in data:
-            outfd.write("{0:#010x} {1:50} {2:#012x} {3:#08x} {4}\n".format(
+            self.table_row(outfd,
                          ldr_entry.obj_offset,
-                         str(ldr_entry.FullDllName or ''),
+                         str(ldr_entry.BaseDllName or ''),
                          ldr_entry.DllBase,
                          ldr_entry.SizeOfImage,
-                         str(ldr_entry.BaseDllName or '')))
+                         str(ldr_entry.FullDllName or ''))
 
 class CheckThreads(scan.ScannerCheck):
     """ Check sanity of _ETHREAD """
@@ -170,13 +176,20 @@ class ThrdScan(ModScan):
             yield thread
 
     def render_text(self, outfd, data):
-        outfd.write("Offset(P)  PID    TID    Create Time               Exit Time                 StartAddr\n" +
-                    "---------- ------ ------ ------------------------- ------------------------- ----------\n")
+        self.table_header(outfd,
+                          [("Offset(P)", "[addrpad]"),
+                           ("PID", ">6"),
+                           ("TID", ">6"),
+                           ("Start Address", "[addr]"),
+                           ("Create Time", "25"),
+                           ("Exit Time", "25"),
+                           ])
 
         for thread in data:
-            outfd.write("{0:#010x} {1:6} {2: <6} {3: <25} {4: <25} {5:#010x}\n".format(thread.obj_offset,
-                                                                                     thread.Cid.UniqueProcess,
-                                                                                     thread.Cid.UniqueThread,
-                                                                                     thread.CreateTime or '',
-                                                                                     thread.ExitTime or '',
-                                                                                     thread.StartAddress))
+            self.table_row(outfd, thread.obj_offset,
+                           thread.Cid.UniqueProcess,
+                           thread.Cid.UniqueThread,
+                           thread.StartAddress,
+                           thread.CreateTime or '',
+                           thread.ExitTime or '',
+                           )
