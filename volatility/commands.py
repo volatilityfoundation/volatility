@@ -167,7 +167,7 @@ class Command(object):
             titlespec.align = spec.align if spec.align in "<>^" else "<"
 
             # Add this to the titles, rules, and formatspecs lists
-            titles.append(("{:" + titlespec.to_string() + "}").format(k))
+            titles.append(("{0:" + titlespec.to_string() + "}").format(k))
             rules.append("-" * titlespec.minwidth)
             self._formatlist.append(spec)
 
@@ -183,7 +183,7 @@ class Command(object):
             debug.error("Too many values for the table")
         for index in range(len(args)):
             spec = self._formatlist[index]
-            result = self._elide(("{:" + spec.to_string() + "}").format(args[index]), spec.minwidth)
+            result = self._elide(("{0:" + spec.to_string() + "}").format(args[index]), spec.minwidth)
             reslist.append(result)
         outfd.write(self.tablesep.join(reslist) + "\n")
 
