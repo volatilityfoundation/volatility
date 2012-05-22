@@ -35,8 +35,15 @@ class Sockets(common.AbstractWindowsCommand):
 
     def render_text(self, outfd, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        outfd.write(" Offset{0}  PID    Port   Proto               Address        Create Time               \n".format(offsettype) +
-                    "---------- ------ ------ ------------------- -------------- -------------------------- \n")
+        self.table_header(outfd,
+                          [("Offset{0}".format(offsettype), "[addrpad]"),
+                           ("PID", ">6"),
+                           ("Port", ">6"),
+                           ("Proto", ">6"),
+                           ("Protocol", "15"),
+                           ("Address", "15"),
+                           ("Create Time", "")
+                           ])
 
         for sock in data:
             if not self._config.PHYSICAL_OFFSET:
@@ -44,8 +51,9 @@ class Sockets(common.AbstractWindowsCommand):
             else:
                 offset = sock.obj_vm.vtop(sock.obj_offset)
 
-            outfd.write("{0:#010x} {1:6} {2:6} {3:6} {4:14} {5:18} {6:26}\n".format(offset, sock.Pid,
-                sock.LocalPort, sock.Protocol, protos.protos.get(sock.Protocol.v(), "-"), sock.LocalIpAddress, sock.CreateTime))
+            self.table_row(outfd, offset, sock.Pid, sock.LocalPort, sock.Protocol,
+                           protos.protos.get(sock.Protocol.v(), "-"),
+                           sock.LocalIpAddress, sock.CreateTime)
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
