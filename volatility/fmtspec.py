@@ -73,10 +73,10 @@ class FormatSpec(object):
         if match.group(3):
             self.altform = len(match.group(3)) > 0
         if len(match.group(4)):
-            if self.fill == "":
-                self.fill = " "
-                if self.align == "":
-                    self.align = "<"
+            if not self.fill:
+                self.fill = "0"
+                if not self.align:
+                    self.align = "="
         if match.group(5):
             self.minwidth = int(match.group(5))
         if match.group(6):
