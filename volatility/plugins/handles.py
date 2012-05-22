@@ -38,8 +38,14 @@ class Handles(taskmods.DllList):
     def render_text(self, outfd, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
 
-        outfd.write("{0:6}{1:6} {2:6} {3:10} {4:10} {5:<16} {6}\n".format(
-            "Offset", offsettype, "Pid", "Handle", "Access", "Type", "Details"))
+        self.table_header(outfd,
+                          [("Offset{0}".format(offsettype), "[addrpad]"),
+                           ("Pid", ">6"),
+                           ("Handle", "[addr]"),
+                           ("Access", "[addr]"),
+                           ("Type", "16"),
+                           ("Details", "")
+                           ])
 
         if self._config.OBJECT_TYPE:
             object_list = [s for s in self._config.OBJECT_TYPE.split(',')]
@@ -57,8 +63,7 @@ class Handles(taskmods.DllList):
             else:
                 offset = handle.obj_vm.vtop(handle.Body.obj_offset)
 
-            outfd.write("{0:#010x}   {1:<6} {2:<#10x} {3:<#10x} {4:<16} {5}\n".format(
-                offset, pid, handle.HandleValue, handle.GrantedAccess, object_type, name))
+            self.table_row(outfd, offset, pid, handle.HandleValue, handle.GrantedAccess, object_type, name)
 
     def calculate(self):
 
