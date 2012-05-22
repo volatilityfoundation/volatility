@@ -16,7 +16,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
-import sys, textwrap, copy
+import sys, textwrap
 import volatility.debug as debug
 import volatility.fmtspec as fmtspec
 import volatility.addrspace as addrspace
@@ -122,6 +122,7 @@ class Command(object):
                 spec.minwidth += 8
             if 'pad' in code:
                 spec.fill = "0"
+                spec.align = spec.align if spec.align else "="
             return spec.to_string()
 
         # Something went wrong
@@ -132,13 +133,13 @@ class Command(object):
         """Adds three dots in the middle of a string if it is longer than length"""
         if length == -1:
             return string
-        if length < 5:
-            debug.error("Cannot elide a string to length less than 5")
         if len(string) < length:
             return (" " * (length - len(string))) + string
         elif len(string) == length:
             return string
         else:
+            if length < 5:
+                debug.error("Cannot elide a string to length less than 5")
             even = (length % 2)
             length = (length - 3) / 2
             return string[:length + even] + "..." + string[-length:]
@@ -171,8 +172,9 @@ class Command(object):
             self._formatlist.append(spec)
 
         # Write out the titles and line rules
-        outfd.write(self.tablesep.join(titles) + "\n")
-        outfd.write(self.tablesep.join(rules) + "\n")
+        if outfd:
+            outfd.write(self.tablesep.join(titles) + "\n")
+            outfd.write(self.tablesep.join(rules) + "\n")
 
     def table_row(self, outfd, *args):
         """Outputs a single row of a table"""
