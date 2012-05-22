@@ -53,7 +53,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
 
             if task.Peb:
                 outfd.write("Command line : {0}\n".format(str(task.Peb.ProcessParameters.CommandLine or '')))
-                if hasattr(task, "Wow64Process") and task.Wow64Process != 0:
+                if task.IsWow64:
                     outfd.write("Note: use ldrmodules for listing DLLs in Wow64 processes\n")
                 outfd.write("{0}\n".format(str(task.Peb.CSDVersion or '')))
                 outfd.write("\n")
