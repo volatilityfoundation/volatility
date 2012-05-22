@@ -123,6 +123,10 @@ class Command(object):
             if 'pad' in code:
                 spec.fill = "0"
                 spec.align = spec.align if spec.align else "="
+            else:
+                # Non-padded addresses will come out as numbers,
+                # so titles should align >
+                spec.align = ">"
             return spec.to_string()
 
         # Something went wrong
