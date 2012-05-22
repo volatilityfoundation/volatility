@@ -33,23 +33,26 @@ class Modules(common.AbstractWindowsCommand):
                           cache_invalidator = False, help = "Physical Offset", action = "store_true")
 
     def render_text(self, outfd, data):
-        header = False
+        offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
+        self.table_header(outfd,
+                          [("Offset{0}".format(offsettype), "[addrpad]"),
+                           ("Name", "20"),
+                           ('Base', "[addrpad]"),
+                           ('Size', "[addr]"),
+                           ('File', "")
+                           ])
 
         for module in data:
-            if not header:
-                offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-                outfd.write("Offset{0}  {1:50} {2:12} {3:8} {4}\n".format(offsettype, 'File', 'Base', 'Size', 'Name'))
-                header = True
             if not self._config.PHYSICAL_OFFSET:
                 offset = module.obj_offset
             else:
                 offset = module.obj_vm.vtop(module.obj_offset)
-            outfd.write("{0:#010x} {1:50} {2:#012x} {3:#08x} {4}\n".format(
+            self.table_row(outfd,
                          offset,
-                         module.FullDllName,
+                         module.BaseDllName,
                          module.DllBase,
                          module.SizeOfImage,
-                         module.BaseDllName))
+                         module.FullDllName)
 
 
     @cache.CacheDecorator("tests/lsmod")
