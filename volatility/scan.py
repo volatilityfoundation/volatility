@@ -50,12 +50,6 @@ class BaseScanner(object):
         self.window_size = window_size
         self.constraints = []
 
-        ## Build our constraints from the specified ScannerCheck
-        ## classes:
-        for class_name, args in self.checks:
-            check = registry.get_plugin_classes(ScannerCheck)[class_name](self.buffer, **args)
-            self.constraints.append(check)
-
         self.error_count = 0
 
     def check_addr(self, found):
@@ -87,6 +81,14 @@ class BaseScanner(object):
     def scan(self, address_space, offset = 0, maxlen = None):
         self.buffer.profile = address_space.profile
         current_offset = offset
+
+        ## Build our constraints from the specified ScannerCheck
+        ## classes:
+        self.constraints = []
+        for class_name, args in self.checks:
+            check = registry.get_plugin_classes(ScannerCheck)[class_name](self.buffer, **args)
+            self.constraints.append(check)
+
         ## Which checks also have skippers?
         skippers = [ c for c in self.constraints if hasattr(c, "skip") ]
 
