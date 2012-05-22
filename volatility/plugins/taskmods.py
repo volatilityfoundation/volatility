@@ -129,7 +129,10 @@ class PSList(DllList):
                            ("PPID", ">6"),
                            ("Thds", ">6"),
                            ("Hnds", ">6"),
-                           ("Time", "20")]
+                           ("Sess", ">6"),
+                           ("Wow64", ">6"),
+                           ("Start", "20"),
+                           ("Exit", "20")]
                           )
 
         for task in data:
@@ -146,7 +149,11 @@ class PSList(DllList):
                 task.InheritedFromUniqueProcessId,
                 task.ActiveThreads,
                 task.ObjectTable.HandleCount,
-                task.CreateTime)
+                task.SessionId, 
+                task.IsWow64, 
+                str(task.CreateTime or ''), 
+                str(task.ExitTime or ''),
+                )
 
 
 # Inherit from files just for the config options (__init__)
