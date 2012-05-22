@@ -16,7 +16,6 @@
 #
 
 import re
-import volatility.debug as debug
 
 class FormatSpec(object):
     def __init__(self, string = '', **kwargs):
@@ -58,7 +57,7 @@ class FormatSpec(object):
         match = re.search(regexp, formatspec)
 
         if match is None:
-            raise ValueError("Invalid format specification")
+            raise ValueError("Invalid format specification: " + formatspec)
 
         if match.group(1):
             fillalign = match.group(1)
@@ -85,7 +84,10 @@ class FormatSpec(object):
             self.formtype = match.group(7)
 
     def to_string(self):
-        formatspec = self.fill + self.align + self.sign
+        formatspec = ""
+        if self.align:
+            formatspec = self.fill + self.align
+        formatspec += self.sign
         if self.sign == '(':
             formatspec += ')'
         if self.altform:
