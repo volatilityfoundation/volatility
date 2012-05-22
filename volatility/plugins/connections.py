@@ -51,8 +51,12 @@ class Connections(common.AbstractWindowsCommand):
 
     def render_text(self, outfd, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        outfd.write(" Offset{0}  Local Address             Remote Address            Pid   \n".format(offsettype) +
-                    "---------- ------------------------- ------------------------- ------ \n")
+        self.table_header(outfd,
+                          [("Offset{0}".format(offsettype), "[addrpad]"),
+                           ("Local Address", "25"),
+                           ("Remote Address", "25"),
+                           ("Pid", ">6")
+                           ])
 
         for conn in data:
             if not self._config.PHYSICAL_OFFSET:
@@ -61,7 +65,7 @@ class Connections(common.AbstractWindowsCommand):
                 offset = conn.obj_vm.vtop(conn.obj_offset)
             local = "{0}:{1}".format(conn.LocalIpAddress, conn.LocalPort)
             remote = "{0}:{1}".format(conn.RemoteIpAddress, conn.RemotePort)
-            outfd.write("{0:#010x} {1:25} {2:25} {3:6}\n".format(offset, local, remote, conn.Pid))
+            self.table_row(outfd, offset, local, remote, conn.Pid)
 
 
     @cache.CacheDecorator("tests/connections")
