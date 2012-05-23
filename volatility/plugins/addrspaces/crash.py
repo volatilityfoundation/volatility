@@ -205,3 +205,62 @@ class WindowsCrashDumpSpace32(standard.FileAddressSpace):
 
     def close(self):
         self.base.close()
+
+
+class WindowsCrashDumpSpace64(WindowsCrashDumpSpace32):
+    """ This AS supports windows Crash Dump format """
+    order = 30
+    def __init__(self, base, config, **kwargs):
+        ## We must have an AS below us
+        self.as_assert(base, "No base Address Space")
+
+        standard.FileAddressSpace.__init__(self, base, config, layered = True, **kwargs)
+
+        ## Must start with the magic PAGEDU64
+        self.as_assert((base.read(0, 8) == 'PAGEDU64'), "Header signature invalid")
+        self.runs = []
+        # I have the feeling config.OFFSET will interfere with plugin options...
+        self.offset = 0 # config.OFFSET
+        self.fname = ''
+
+        self.as_assert(self.profile.has_type("_DMP_HEADER64"), "_DMP_HEADER64 not available in profile")
+        self.header = obj.Object("_DMP_HEADER64", self.offset, base)
+
+        self.runs = [ (x.BasePage.v(), x.PageCount.v())
+                      for x in self.header.PhysicalMemoryBlockBuffer.Run ]
+
+        self.dtb = self.header.DirectoryTableBase.v()
+
+    def convert_to_raw(self, ofile):
+        page_count = 0
+        #current_file_page = 0x1000
+        current_file_page = 0x2000  
+        for run in self.runs:
+            page, count = run
+
+            ofile.seek(page * 0x1000)
+            for j in xrange(0, count * 0x1000, 0x1000):
+                data = self.base.read(current_file_page + j, 0x1000)
+                ofile.write(data)
+                page_count += 1
+                # If there's only one run, this leaves the user in the dark,
+                # so instead we yield for every page
+                yield page_count
+            current_file_page += (count * 0x1000)
+
+    def get_addr(self, addr):
+        page_offset = (addr & 0x00000FFF)
+        page = addr >> page_shift
+
+        # This is the offset to account for the header file
+        #offset = 1
+        offset = 2
+        for run in self.runs:
+            if ((page >= run[0]) and (page < (run[0] + run[1]))):
+                run_offset = page - run[0]
+                offset = offset + run_offset
+                baseoffset = (offset * 0x1000) + page_offset
+                return baseoffset
+            offset += run[1]
+        return None
+
