@@ -531,7 +531,7 @@ class Pointer(NativeType):
     def __eq__(self, other):
         if other == None:
             return False
-        return (0xffffffffffff & self.v()) == (0xffffffffffff & other)
+        return (0xffffffffffff & int(self)) == (0xffffffffffff & int(other))
 
     def __ne__(self, other):
         return not self.__eq__(other)
