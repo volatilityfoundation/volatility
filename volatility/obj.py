@@ -281,6 +281,9 @@ class BaseObject(object):
         return self.v() == other or ((self.__class__ == other.__class__) and
                                      (self.obj_offset == other.obj_offset) and (self.obj_vm == other.obj_vm))
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __hash__(self):
         # This should include the critical components of self.obj_vm
         return hash(self.obj_name) ^ hash(self.obj_offset)
