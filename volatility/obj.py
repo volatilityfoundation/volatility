@@ -438,6 +438,12 @@ class NativeType(BaseObject, NumericProxyMixIn):
 
         (val,) = struct.unpack(self.format_string, data)
 
+        # Ensure that integer NativeTypes are converted to longs
+        # to avoid integer boundaries when doing __rand__ proxying
+        # (see issue 265)
+        if isinstance(val, int):
+            val = long(val)
+
         return val
 
     def cdecl(self):
@@ -690,7 +696,10 @@ class CType(BaseObject):
     def v(self):
         """ When a struct is evaluated we just return our offset.
         """
-        return self.obj_offset
+        # Ensure that proxied offsets are converted to longs
+        # to avoid integer boundaries when doing __rand__ proxying
+        # (see issue 265)
+        return long(self.obj_offset)
 
     def m(self, attr):
         if attr in self.members:
