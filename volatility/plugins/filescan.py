@@ -94,13 +94,18 @@ class FileScan(common.AbstractWindowsCommand):
             yield (object_obj, file_obj)
 
     def render_text(self, outfd, data):
-        outfd.write("{0:10} {1:4} {2:4} {3:6} {4}\n".format(
-                     'Offset(P)', '#Ptr', '#Hnd', 'Access', 'Name'))
+
+        self.table_header(outfd, [('Offset(P)', '[addrpad]'),
+                                  ('#Ptr', '>6'),
+                                  ('#Hnd', '>6'),
+                                  ('Access', '>6'),
+                                  ('Name', '')
+                                  ])
 
         for object_obj, file_obj in data:
-            outfd.write("{0:#010x} {1:4} {2:4} {3:6} {4}\n".format(
+            self.table_row(outfd,
                          file_obj.obj_offset, object_obj.PointerCount,
-                         object_obj.HandleCount, file_obj.access_string(), str(file_obj.FileName or '')))
+                         object_obj.HandleCount, file_obj.access_string(), str(file_obj.FileName or ''))
 
 class PoolScanDriver(PoolScanFile):
     """ Scanner for _DRIVER_OBJECT """
