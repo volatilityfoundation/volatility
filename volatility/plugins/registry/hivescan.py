@@ -92,6 +92,6 @@ class HiveScan(common.AbstractWindowsCommand):
         return PoolScanHiveFast2(poolsize).scan(pspace)
 
     def render_text(self, outfd, data):
-        outfd.write("{0:15} {1:15}\n".format("Offset(P)", "(hex)"))
+        self.table_header(outfd, [('Offset(P)', '[addrpad]')])
         for offset in data:
-            outfd.write("{0:<15} {1:#010x}\n".format(offset, offset))
+            self.table_row(outfd, offset)
