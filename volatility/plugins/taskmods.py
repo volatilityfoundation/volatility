@@ -128,7 +128,7 @@ class PSList(DllList):
                            ("PID", ">6"),
                            ("PPID", ">6"),
                            ("Thds", ">6"),
-                           ("Hnds", ">6"),
+                           ("Hnds", ">8"),
                            ("Sess", ">6"),
                            ("Wow64", ">6"),
                            ("Start", "20"),
@@ -149,9 +149,9 @@ class PSList(DllList):
                 task.InheritedFromUniqueProcessId,
                 task.ActiveThreads,
                 task.ObjectTable.HandleCount,
-                task.SessionId, 
-                task.IsWow64, 
-                str(task.CreateTime or ''), 
+                task.SessionId,
+                task.IsWow64,
+                str(task.CreateTime or ''),
                 str(task.ExitTime or ''),
                 )
 
