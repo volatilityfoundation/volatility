@@ -301,9 +301,15 @@ class MutantScan(FileScan):
 
     def render_text(self, outfd, data):
         """Renders the output"""
-        outfd.write("{0:10} {1:4} {2:4} {3:6} {4:10} {5:10} {6}\n".format(
-                     'Offset(P)', '#Ptr', '#Hnd', 'Signal',
-                     'Thread', 'CID', 'Name'))
+
+        self.table_header(outfd, [('Offset(P)', '[addrpad]'),
+                                  ('#Ptr', '>4'),
+                                  ('#Hnd', '>4'),
+                                  ('Signal', '4'),
+                                  ('Thread', '[addrpad]'),
+                                  ('CID', '>9'),
+                                  ('Name', '')
+                                  ])
 
         for object_obj, mutant in data:
             if mutant.OwnerThread > 0x80000000:
@@ -312,12 +318,12 @@ class MutantScan(FileScan):
             else:
                 CID = ""
 
-            outfd.write("0x{0:08x} {1:4} {2:4} {3:6} 0x{4:08x} {5:10} {6}\n".format(
+            self.table_row(outfd,
                          mutant.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount, mutant.Header.SignalState,
                          mutant.OwnerThread, CID,
                          str(object_obj.NameInfo.Name or '')
-                         ))
+                         )
 
 class CheckProcess(scan.ScannerCheck):
     """ Check sanity of _EPROCESS """
