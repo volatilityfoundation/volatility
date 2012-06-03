@@ -421,18 +421,25 @@ class PSScan(common.AbstractWindowsCommand):
 
 
     def render_text(self, outfd, data):
-        outfd.write(" Offset(P)  Name             PID    PPID   PDB        Time created             Time exited             \n" +
-                    "---------- ---------------- ------ ------ ---------- ------------------------ ------------------------ \n")
+
+        self.table_header(outfd, [('Offset(P)', '[addrpad]'),
+                                  ('Name', '16'),
+                                  ('PID', '>6'),
+                                  ('PPID', '>6'),
+                                  ('PDB', '[addrpad]'),
+                                  ('Time created', '20'),
+                                  ('Time exited', '20')
+                                  ])
 
         for eprocess in data:
-            outfd.write("0x{0:08x} {1:16} {2:6} {3:6} 0x{4:08x} {5:24} {6:24}\n".format(
+            self.table_row(outfd,
                 eprocess.obj_offset,
                 eprocess.ImageFileName,
                 eprocess.UniqueProcessId,
                 eprocess.InheritedFromUniqueProcessId,
                 eprocess.Pcb.DirectoryTableBase,
                 eprocess.CreateTime or '',
-                eprocess.ExitTime or ''))
+                eprocess.ExitTime or '')
 
     def render_dot(self, outfd, data):
         objects = set()
