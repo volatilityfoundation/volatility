@@ -230,15 +230,20 @@ class SymLinkScan(FileScan):
     def render_text(self, outfd, data):
         """ Renders text-based output """
 
-        outfd.write("{0:10} {1:4} {2:4} {3:24} {4:<20} {5}\n".format(
-            'Offset(P)', '#Ptr', '#Hnd', 'CreateTime', 'From', 'To'))
+        self.table_header(outfd, [('Offset(P)', '[addrpad]'),
+                                  ('#Ptr', '>6'),
+                                  ('#Hnd', '>6'),
+                                  ('Creation time', '24'),
+                                  ('From', '<20'),
+                                  ('To', '60'),
+                                  ])
 
         for objct, link in data:
-            outfd.write("{0:#010x} {1:4} {2:4} {3:<24} {4:<20} {5}\n".format(
+            self.table_row(outfd,
                         link.obj_offset, objct.PointerCount,
                         objct.HandleCount, link.CreationTime or '',
                         str(objct.NameInfo.Name or ''),
-                        str(link.LinkTarget or '')))
+                        str(link.LinkTarget or ''))
 
 class PoolScanMutant(PoolScanDriver):
     """ Scanner for Mutants _KMUTANT """
