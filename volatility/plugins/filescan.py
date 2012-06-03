@@ -161,19 +161,25 @@ class DriverScan(FileScan):
 
     def render_text(self, outfd, data):
         """Renders the text-based output"""
-        outfd.write("{0:10} {1:4} {2:4} {3:10} {4:>6} {5:20} {6}\n".format(
-                     'Offset(P)', '#Ptr', '#Hnd',
-                     'Start', 'Size', 'Service key', 'Name'))
+        self.table_header(outfd, [('Offset(P)', '[addrpad]'),
+                                  ('#Ptr', '>4'),
+                                  ('#Hnd', '>4'),
+                                  ('Start', '[addrpad]'),
+                                  ('Size', '[addr]'),
+                                  ('Service Key', '20'),
+                                  ('Name', '12'),
+                                  ('Driver Name', '')
+                                  ])
 
         for object_obj, driver_obj, extension_obj in data:
 
-            outfd.write("0x{0:08x} {1:4} {2:4} 0x{3:08x} {4:6} {5:20} {6:12} {7}\n".format(
+            self.table_row(outfd,
                          driver_obj.obj_offset, object_obj.PointerCount,
                          object_obj.HandleCount,
                          driver_obj.DriverStart, driver_obj.DriverSize,
                          str(extension_obj.ServiceKeyName or ''),
                          str(object_obj.NameInfo.Name or ''),
-                         str(driver_obj.DriverName or '')))
+                         str(driver_obj.DriverName or ''))
 
 class PoolScanSymlink(PoolScanFile):
     """ Scanner for symbolic link objects """
