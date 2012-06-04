@@ -29,6 +29,9 @@ class Command(object):
     cmdname = ""
     # meta_info will be removed
     meta_info = {}
+    # Make these class variables so they can be modified across every plugin
+    elide_data = True
+    tablesep = " "
 
     def __init__(self, config, *_args, **_kwargs):
         """ Constructor uses args as an initializer. It creates an instance
@@ -37,7 +40,6 @@ class Command(object):
         """
         self._config = config
         self._formatlist = []
-        self.tablesep = " "
 
     @staticmethod
     def register_options(config):
@@ -135,6 +137,10 @@ class Command(object):
 
     def _elide(self, string, length):
         """Adds three dots in the middle of a string if it is longer than length"""
+        # Only elide data if we've been asked to (which we are by default)
+        if not self.elide_data:
+            return string
+
         if length == -1:
             return string
         if len(string) < length:
