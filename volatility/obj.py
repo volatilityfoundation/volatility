@@ -621,6 +621,10 @@ class Array(BaseObject):
         return "<Array[{0} {1}] {2}>".format(self.__class__.__name__, self.obj_name or '', ",".join(result))
 
     def __eq__(self, other):
+        # Check we can carry out further tests for equality/inequality
+        if not (hasattr(other, '__len__') and hasattr(other, '__getitem__')):
+            return False
+
         if self.count != len(other):
             return False
 
