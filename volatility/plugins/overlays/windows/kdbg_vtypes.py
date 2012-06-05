@@ -1,3 +1,120 @@
+# Volatility
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details. 
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+#
+
+import volatility.obj as obj
+
+class _KDDEBUGGER_DATA64(obj.CType):
+    """A class for KDBG"""
+
+    def is_valid(self):
+        """Returns true if the kdbg_object appears valid"""
+        # Check the OwnerTag is in fact the string KDBG
+        return obj.CType.is_valid(self) and self.Header.OwnerTag == 0x4742444B
+
+    @property
+    def ServicePack(self):
+        """Get the service pack number. This is something
+        like 0x100 for SP1, 0x200 for SP2 etc. 
+        """
+        csdresult = obj.Object("unsigned long", offset = self.CmNtCSDVersion, vm = self.obj_vm)
+        return (csdresult >> 8) & 0xffffffff  
+
+    def dbgkd_version64(self):
+        """Scan backwards from the base of KDBG to find the 
+        _DBGKD_GET_VERSION64. We have a winner when kernel 
+        base addresses and process list head match."""
+
+        # Account for address masking differences in x86 and x64
+        memory_model = self.obj_vm.profile.metadata.get('memory_model', '32bit')
+
+        dbgkd_off = self.obj_offset & 0xFFFFFFFFFFFFF000 
+        dbgkd_end = dbgkd_off + 0x1000
+        dbgkd_size = self.obj_vm.profile.get_obj_size("_DBGKD_GET_VERSION64")
+
+        while dbgkd_off <= (dbgkd_end - dbgkd_size):
+
+            dbgkd = obj.Object("_DBGKD_GET_VERSION64",
+                        offset = dbgkd_off,
+                        vm = self.obj_vm)
+
+            if memory_model == "32bit":
+                KernBase = dbgkd.KernBase & 0xFFFFFFFF
+                PsLoadedModuleList = dbgkd.PsLoadedModuleList & 0xFFFFFFFF
+            else:
+                KernBase = dbgkd.KernBase
+                PsLoadedModuleList = dbgkd.PsLoadedModuleList
+
+            if ((KernBase == self.KernBase) and (PsLoadedModuleList == self.PsLoadedModuleList)):
+                return dbgkd
+                
+            dbgkd_off += 1
+
+        return obj.NoneObject("Cannot find _DBGKD_GET_VERSION64")
+
+    def kpcrs(self):
+        """Generator for KPCRs referenced by this KDBG. 
+
+        These are returned in the order in which the 
+        processors were registered. 
+        """
+
+        if self.obj_vm.profile.metadata.get('memory_model', '32bit') == '32bit':
+            prcb_member = "PrcbData"
+        else:
+            prcb_member = "Prcb"
+
+        cpu_array = self.KiProcessorBlock.dereference()
+
+        for p in cpu_array:
+
+            # A null pointer indicates the end of the CPU list. Since 
+            # the 0 page is not valid in kernel AS, this single check       
+            # should match both NoneObject and null pointers.  
+            if not p:
+                break 
+
+            kpcrb = p.dereference_as("_KPRCB")
+            
+            yield obj.Object("_KPCR", offset = kpcrb.obj_offset - 
+                    self.obj_vm.profile.get_obj_offset("_KPCR", prcb_member), 
+                    vm = self.obj_vm, 
+                    )
+
+class KDBGObjectClass(obj.ProfileModification):
+    """Add the KDBG object class to all Windows profiles"""
+
+    before = ["WindowsObjectClasses"]
+    conditions = {'os': lambda x: x == 'windows'}
+
+    def modification(self, profile):
+        profile.object_classes.update({'_KDDEBUGGER_DATA64': _KDDEBUGGER_DATA64})
+
+        # This value is stored in nt!_KeMaximumProcessors
+        if profile.metadata.get('memory_model', '32bit'):
+            max_processors = 32
+        else:
+            max_processors = 64
+
+        profile.merge_overlay({
+            '_KDDEBUGGER_DATA64': [ None, { 
+            'NtBuildLab': [ None, ['pointer', ['String', dict(length = 32)]]], 
+            'KiProcessorBlock': [ None, ['pointer', ['array', max_processors, ['pointer', ['_KPRCB']]]]], 
+            }]})
+
 kdbg_vtypes = {
 '_DBGKD_DEBUG_DATA_HEADER64' : [  0x18, {
   'List' : [ 0x0, ['LIST_ENTRY64']],
