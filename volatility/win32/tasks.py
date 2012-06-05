@@ -33,7 +33,18 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 from bisect import bisect_right
 
 def get_kdbg(addr_space):
-    """A function designed to return the KDDEBUGGER structure from an address space"""
+    """A function designed to return the KDBG structure from 
+    an address space. First we try scanning for KDBG and if 
+    that fails, we try scanning for KPCR and bouncing back to
+    KDBG from there. Please note the backup method only works
+    on x86.
+
+    Also note, both the primary and backup methods rely on the 
+    4-byte KDBG.Header.OwnerTag. If someone overwrites this 
+    value, then neither method will succeed. The same is true 
+    even if a user specifies --kdbg, because we check for the 
+    OwnerTag even in that case. 
+    """
 
     kdbgo = obj.VolMagic(addr_space).KDBG.v()
 
@@ -41,21 +52,14 @@ def get_kdbg(addr_space):
 
     if kdbg.is_valid():
         return kdbg
-    else:
-        # Fall back to finding it via the KPCR
-        kpcra = obj.VolMagic(addr_space).KPCR.v()
-        kpcrval = obj.Object("_KPCR", offset = kpcra, vm = addr_space)
 
-        DebuggerDataList = kpcrval.KdVersionBlock.dereference_as("_DBGKD_GET_VERSION64").DebuggerDataList
+    # Fall back to finding it via the KPCR
+    kpcr = obj.Object("_KPCR", offset = obj.VolMagic(addr_space).KPCR.v(), vm = addr_space)
 
-        # DebuggerDataList is a pointer to unsigned long on x86 
-        # and a pointer to unsigned long long on x64. The first 
-        # dereference() dereferences the pointer, and the second 
-        # dereference() dereferences the unsigned long or long long
-        # as the actual KDBG address. 
-        kobj = DebuggerDataList.dereference().dereference_as("_KDDEBUGGER_DATA64")
-        if kobj.is_valid():
-            return kobj
+    kdbg = kpcr.get_kdbg()
+
+    if kdbg.is_valid():
+        return kdbg
 
     return obj.NoneObject("KDDEBUGGER structure not found using either KDBG signature or KPCR pointer")
 
