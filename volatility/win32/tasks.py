@@ -54,7 +54,7 @@ def get_kdbg(addr_space):
         # dereference() dereferences the unsigned long or long long
         # as the actual KDBG address. 
         kobj = DebuggerDataList.dereference().dereference_as("_KDDEBUGGER_DATA64")
-        if verify_kdbg(kobj):
+        if kobj.is_valid():
             return kobj
 
     return obj.NoneObject("KDDEBUGGER structure not found using either KDBG signature or KPCR pointer")
