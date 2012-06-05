@@ -206,7 +206,6 @@ class WindowsCrashDumpSpace32(standard.FileAddressSpace):
     def close(self):
         self.base.close()
 
-
 class WindowsCrashDumpSpace64(WindowsCrashDumpSpace32):
     """ This AS supports windows Crash Dump format """
     order = 30
@@ -263,4 +262,3 @@ class WindowsCrashDumpSpace64(WindowsCrashDumpSpace32):
                 return baseoffset
             offset += run[1]
         return None
-

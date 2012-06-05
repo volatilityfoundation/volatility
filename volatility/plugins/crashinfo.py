@@ -1,7 +1,6 @@
 # Volatility
-#
-# Authors:
-# Mike Auty <mike.auty@gmail.com>
+# Copyright (C) 2009-2012 Volatile Systems
+# Copyright (C) Mike Auty <mike.auty@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +21,7 @@ import volatility.utils as utils
 import volatility.commands as commands
 import volatility.cache as cache
 import volatility.debug as debug
+import volatility.obj as obj
 
 class CrashInfo(commands.Command):
     """Dump crash-dump information"""
@@ -34,7 +34,8 @@ class CrashInfo(commands.Command):
         result = None
         adrs = addr_space
         while adrs:
-            if adrs.__class__.__name__ == 'WindowsCrashDumpSpace32':
+            if adrs.__class__.__name__ == 'WindowsCrashDumpSpace32' or \
+               adrs.__class__.__name__ == 'WindowsCrashDumpSpace64':
                 result = adrs
             adrs = adrs.base
 
@@ -47,8 +48,9 @@ class CrashInfo(commands.Command):
         """Renders the crashdump header as text"""
 
         hdr = data.get_header()
+        hdr_type = hdr.obj_name
 
-        outfd.write("DUMP_HEADER32:\n")
+        outfd.write("{0}:\n".format(hdr.obj_name))
         outfd.write(" Majorversion:         0x{0:08x} ({1})\n".format(hdr.MajorVersion, hdr.MajorVersion))
         outfd.write(" Minorversion:         0x{0:08x} ({1})\n".format(hdr.MinorVersion, hdr.MinorVersion))
         outfd.write(" KdSecondaryVersion    0x{0:08x}\n".format(hdr.KdSecondaryVersion))
@@ -59,17 +61,30 @@ class CrashInfo(commands.Command):
         outfd.write(" MachineImageType      0x{0:08x}\n".format(hdr.MachineImageType))
         outfd.write(" NumberProcessors      0x{0:08x}\n".format(hdr.NumberProcessors))
         outfd.write(" BugCheckCode          0x{0:08x}\n".format(hdr.BugCheckCode))
-        outfd.write(" PaeEnabled            0x{0:08x}\n".format(hdr.PaeEnabled))
+        if hdr.obj_name != "_DMP_HEADER64":
+            outfd.write(" PaeEnabled            0x{0:08x}\n".format(hdr.PaeEnabled))
         outfd.write(" KdDebuggerDataBlock   0x{0:08x}\n".format(hdr.KdDebuggerDataBlock))
         outfd.write(" ProductType           0x{0:08x}\n".format(hdr.ProductType))
         outfd.write(" SuiteMask             0x{0:08x}\n".format(hdr.SuiteMask))
         outfd.write(" WriterStatus          0x{0:08x}\n".format(hdr.WriterStatus))
+        comment_offset =  hdr.obj_vm.profile.get_obj_offset(hdr_type, "Comment")
+        comment = obj.Object("String",
+                      offset = comment_offset,
+                      vm = hdr.obj_vm, length = 128)
+        outfd.write(" Comment               {0}\n".format(comment))
 
         outfd.write("\nPhysical Memory Description:\n")
         outfd.write("Number of runs: {0}\n".format(len(data.get_runs())))
         outfd.write("FileOffset    Start Address    Length\n")
-        foffset = 0x1000
+        if hdr.obj_name != "_DMP_HEADER64":
+            foffset = 0x1000
+        else:
+            foffset = 0x2000
         run = []
+
+        ## FIXME. These runs differ for x86 vs x64. This is a reminder
+        ## for MHL or AW to fix it. 
+
         for run in data.get_runs():
             outfd.write("{0:08x}      {1:08x}         {2:08x}\n".format(foffset, run[0] * 0x1000, run[1] * 0x1000))
             foffset += (run[1] * 0x1000)
