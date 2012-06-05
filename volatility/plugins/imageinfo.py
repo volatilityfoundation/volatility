@@ -95,12 +95,8 @@ class ImageInfo(kdbgscan.KDBGScan):
                 kpcr_list = list(kdbg.kpcrs())
                 yield ('Number of Processors', len(kpcr_list))
                 yield ('Image Type (Service Pack)', kdbg.ServicePack)
-
-                # Temporarily we use the KPCR array index to indicate CPU
-                # number. Although this is an accurate technique, we might
-                # later print the CPU number from KPCR.PrcbData.Number. 
-                for i, kpcr in enumerate(kpcr_list):
-                    yield ('KPCR for CPU {0}'.format(i), hex(kpcr.obj_offset))
+                for kpcr in kpcr_list:
+                    yield ('KPCR for CPU {0}'.format(kpcr.ProcessorBlock.Number), hex(kpcr.obj_offset))
 
             KUSER_SHARED_DATA = volmagic.KUSER_SHARED_DATA.v()
             if KUSER_SHARED_DATA:
