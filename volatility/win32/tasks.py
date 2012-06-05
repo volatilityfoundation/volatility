@@ -35,16 +35,11 @@ from bisect import bisect_right
 def get_kdbg(addr_space):
     """A function designed to return the KDDEBUGGER structure from an address space"""
 
-    def verify_kdbg(kdbgobj):
-        """Returns true if the kdbg_object handed in appears valid"""
-        # Check the OwnerTag is in fact the string KDBG
-        return kdbgobj.Header.OwnerTag == 0x4742444B
-
     kdbgo = obj.VolMagic(addr_space).KDBG.v()
 
     kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = kdbgo, vm = addr_space)
 
-    if verify_kdbg(kdbg):
+    if kdbg.is_valid():
         return kdbg
     else:
         # Fall back to finding it via the KPCR
