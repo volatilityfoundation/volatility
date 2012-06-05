@@ -96,22 +96,23 @@ class ImageInfo(kdbg.KDBGScan):
             kpcroffset = volmagic.KPCR.v()
             if kpcroffset:
                 yield ('KPCR', hex(kpcroffset))
-                KUSER_SHARED_DATA = volmagic.KUSER_SHARED_DATA.v()
-                if KUSER_SHARED_DATA:
-                    yield ('KUSER_SHARED_DATA', hex(KUSER_SHARED_DATA))
 
-                data = self.get_image_time(addr_space)
+            KUSER_SHARED_DATA = volmagic.KUSER_SHARED_DATA.v()
+            if KUSER_SHARED_DATA:
+                yield ('KUSER_SHARED_DATA', hex(KUSER_SHARED_DATA))
 
-                if data:
-                    yield ('Image date and time', data['ImageDatetime'])
-                    yield ('Image local date and time', timefmt.display_datetime(data['ImageDatetime'].as_datetime(), data['ImageTz']))
+            data = self.get_image_time(addr_space)
 
-                for csdversion, numprocessors in self.find_task_items(addr_space):
-                    try:
-                        yield ('Number of Processors', numprocessors)
-                        yield ('Image Type', csdversion)
-                    except tasks.TasksNotFound:
-                        pass
+            if data:
+                yield ('Image date and time', data['ImageDatetime'])
+                yield ('Image local date and time', timefmt.display_datetime(data['ImageDatetime'].as_datetime(), data['ImageTz']))
+
+            for csdversion, numprocessors in self.find_task_items(addr_space):
+                try:
+                    yield ('Number of Processors', numprocessors)
+                    yield ('Image Type', csdversion)
+                except tasks.TasksNotFound:
+                    pass
 
         # Make sure to reset the profile to its original value to keep the invalidator from blocking the cache
         self._config.update('PROFILE', origprofile)
