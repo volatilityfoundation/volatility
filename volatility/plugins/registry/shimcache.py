@@ -211,6 +211,7 @@ class ShimCacheTypesWin7x64(obj.ProfileModification):
 
 
 class ShimCache(commands.Command):
+    """Parses the Application Compatibility Shim Cache registry key"""
 
     @staticmethod
     def is_valid_profile(profile):
