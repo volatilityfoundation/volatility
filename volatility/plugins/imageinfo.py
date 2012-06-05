@@ -25,9 +25,9 @@ import volatility.debug as debug
 import volatility.obj as obj
 import volatility.cache as cache
 import volatility.registry as registry
-import volatility.plugins.kdbgscan as kdbg
+import volatility.plugins.kdbgscan as kdbgscan
 
-class ImageInfo(kdbg.KDBGScan):
+class ImageInfo(kdbgscan.KDBGScan):
     """ Identify information for the image """
     def render_text(self, outfd, data):
         """Renders the calculated data as text to outfd"""
@@ -41,7 +41,7 @@ class ImageInfo(kdbg.KDBGScan):
         profilelist = [ p.__name__ for p in registry.get_plugin_classes(obj.Profile).values() ]
 
         bestguess = None
-        suglist = [ s for s, _, _ in kdbg.KDBGScan.calculate(self)]
+        suglist = [ s for s, _, _ in kdbgscan.KDBGScan.calculate(self)]
         if suglist:
             bestguess = suglist[0]
         suggestion = ", ".join(set(suglist))
