@@ -339,7 +339,7 @@ class volshell(commands.Command):
                 print
                 hh(dt)
 
-        def dis(address, length = 128, space = None):
+        def dis(address, length = 128, space = None, mode = None):
             """Disassemble code at a given address.
 
             Disassembles code starting at address for a number of bytes
@@ -347,14 +347,26 @@ class volshell(commands.Command):
 
             Note: This feature requires distorm, available at
                 http://www.ragestorm.net/distorm/
+
+            The mode is '32bit' or '64bit'. If not supplied, the disasm
+            mode is taken from the profile. 
             """
             if not sys.modules.has_key("distorm3"):
                 print "ERROR: Disassembly unavailable, distorm not found"
                 return
             if not space:
                 space = self.eproc.get_process_address_space()
+
+            if not mode:
+                mode = space.profile.metadata.get('memory_model', '32bit')
+            
+            if mode == '32bit':
+                distorm_mode = distorm3.Decode32Bits
+            else:
+                distorm_mode = distorm3.Decode64Bits                
+
             data = space.read(address, length)
-            iterable = distorm3.DecodeGenerator(address, data, distorm3.Decode32Bits)
+            iterable = distorm3.DecodeGenerator(address, data, distorm_mode)
             for (offset, _size, instruction, hexdump) in iterable:
                 print "{0:<#8x} {1:<32} {2}".format(offset, hexdump, instruction)
 
