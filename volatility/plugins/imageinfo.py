@@ -87,15 +87,20 @@ class ImageInfo(kdbgscan.KDBGScan):
             yield ('DTB', hex(addr_space.dtb))
 
         volmagic = obj.VolMagic(addr_space)
-        kpcroffset = None
         if hasattr(addr_space, "dtb"):
             kdbgoffset = volmagic.KDBG.v()
             if kdbgoffset:
                 yield ('KDBG', hex(kdbgoffset))
+                kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = kdbgoffset, vm = addr_space)
+                kpcr_list = list(kdbg.kpcrs())
+                yield ('Number of Processors', len(kpcr_list))
+                yield ('Image Type (Service Pack)', kdbg.ServicePack)
 
-            kpcroffset = volmagic.KPCR.v()
-            if kpcroffset:
-                yield ('KPCR', hex(kpcroffset))
+                # Temporarily we use the KPCR array index to indicate CPU
+                # number. Although this is an accurate technique, we might
+                # later print the CPU number from KPCR.PrcbData.Number. 
+                for i, kpcr in enumerate(kpcr_list):
+                    yield ('KPCR for CPU {0}'.format(i), hex(kpcr.obj_offset))
 
             KUSER_SHARED_DATA = volmagic.KUSER_SHARED_DATA.v()
             if KUSER_SHARED_DATA:
@@ -106,13 +111,6 @@ class ImageInfo(kdbgscan.KDBGScan):
             if data:
                 yield ('Image date and time', data['ImageDatetime'])
                 yield ('Image local date and time', timefmt.display_datetime(data['ImageDatetime'].as_datetime(), data['ImageTz']))
-
-            for csdversion, numprocessors in self.find_task_items(addr_space):
-                try:
-                    yield ('Number of Processors', numprocessors)
-                    yield ('Image Type', csdversion)
-                except tasks.TasksNotFound:
-                    pass
 
         # Make sure to reset the profile to its original value to keep the invalidator from blocking the cache
         self._config.update('PROFILE', origprofile)
@@ -131,30 +129,3 @@ class ImageInfo(kdbgscan.KDBGScan):
         result['ImageTz'] = timefmt.OffsetTzInfo(-k.TimeZoneBias.as_windows_timestamp() / 10000000)
 
         return result
-
-    #I don't know what's better, but I don't think we need to go through all tasks twice
-    #so I combined finding csdvers and MaxNumberOfProcessors into one
-    def find_task_items(self, addr_space):
-        """Find items that require task list traversal"""
-        csdvers = {}
-        procnumdict = {}
-
-        procnumresult = obj.NoneObject("Unable to find number of processors")
-        cdsresult = obj.NoneObject("Unable to find version")
-
-        for task in tasks.pslist(addr_space):
-            ver = str(task.Peb.CSDVersion or '')
-            if ver:
-                csdvers[ver] = csdvers.get(ver, 0) + 1
-
-            if task.Peb.NumberOfProcessors != None:
-                procnumdict[int(task.Peb.NumberOfProcessors)] = procnumdict.get(int(task.Peb.NumberOfProcessors), 0) + 1
-
-        #I don't know if you can actually get the number of CPUs w/o CSDVersion, but just in case...
-        if csdvers:
-            _, _, cdsresult = max([(v, k, str(k)) for k, v in csdvers.items()])
-        if procnumdict:
-            _, procnumresult = max([(v, k) for k, v in procnumdict.items()])
-
-        yield (cdsresult, procnumresult)
-
