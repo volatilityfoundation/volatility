@@ -27,14 +27,7 @@
 import volatility.win32.tasks as tasks
 
 def lsmod(addr_space):
-    """ A Generator for modules (uses _KPCR symbols) """
-    ## Locate the kpcr struct - either hard coded or specified by the command line
+    """ A Generator for modules """
 
-    PsLoadedModuleList = tasks.get_kdbg(addr_space).PsLoadedModuleList
-
-    if PsLoadedModuleList.is_valid():
-        ## Try to iterate over the process list in PsActiveProcessHead
-        ## (its really a pointer to a _LIST_ENTRY)
-        for l in PsLoadedModuleList.dereference_as("_LIST_ENTRY").list_of_type(
-            "_LDR_DATA_TABLE_ENTRY", "InLoadOrderLinks"):
-            yield l
+    for m in tasks.get_kdbg(addr_space).modules():
+        yield m

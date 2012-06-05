@@ -30,12 +30,7 @@
 
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
-import volatility.exceptions as exceptions
 from bisect import bisect_right
-
-class TasksNotFound(exceptions.VolatilityException):
-    """Thrown when a tasklist cannot be determined"""
-    pass
 
 def get_kdbg(addr_space):
     """A function designed to return the KDDEBUGGER structure from an address space"""
@@ -70,18 +65,10 @@ def get_kdbg(addr_space):
     return obj.NoneObject("KDDEBUGGER structure not found using either KDBG signature or KPCR pointer")
 
 def pslist(addr_space):
-    """ A Generator for _EPROCESS objects (uses _KPCR symbols) """
+    """ A Generator for _EPROCESS objects """
 
-    PsActiveProcessHead = get_kdbg(addr_space).PsActiveProcessHead
-
-    PsActiveList = PsActiveProcessHead.dereference_as("_LIST_ENTRY")
-    if PsActiveList:
-        # Try to iterate over the process list in PsActiveProcessHead
-        # (its really a pointer to a _LIST_ENTRY)
-        for l in PsActiveList.list_of_type("_EPROCESS", "ActiveProcessLinks"):
-            yield l
-    else:
-        raise TasksNotFound("Could not list tasks, please verify the --profile option and whether this image is valid")
+    for p in get_kdbg(addr_space).processes():
+        yield p
 
 def find_space(addr_space, procs, mod_base):
     """Search for an address space (usually looking for a GUI process)"""

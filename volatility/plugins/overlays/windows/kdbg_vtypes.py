@@ -33,6 +33,25 @@ class _KDDEBUGGER_DATA64(obj.CType):
         csdresult = obj.Object("unsigned long", offset = self.CmNtCSDVersion, vm = self.obj_vm)
         return (csdresult >> 8) & 0xffffffff  
 
+    def processes(self):
+        """Enumerate processes"""
+        list_head = self.PsActiveProcessHead.dereference_as("_LIST_ENTRY")
+        if not list_head:
+            raise AttributeError("Could not list tasks, please verify your --profile with kdbgscan")
+
+        for l in list_head.list_of_type("_EPROCESS", "ActiveProcessLinks"):
+            yield l            
+        
+    def modules(self):
+        """Enumerate modules"""
+        list_head = self.PsLoadedModuleList.dereference_as("_LIST_ENTRY")
+        if not list_head:
+            raise AttributeError("Could not list modules, please verify your --profile with kdbgscan")
+
+        for l in list_head.dereference_as("_LIST_ENTRY").list_of_type(
+            "_LDR_DATA_TABLE_ENTRY", "InLoadOrderLinks"):
+            yield l
+
     def dbgkd_version64(self):
         """Scan backwards from the base of KDBG to find the 
         _DBGKD_GET_VERSION64. We have a winner when kernel 
