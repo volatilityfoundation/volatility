@@ -22,8 +22,6 @@ import volatility.obj as obj
 import volatility.utils as utils
 import volatility.addrspace as addrspace
 import volatility.plugins.imagecopy as imagecopy
-import volatility.plugins.imageinfo as imageinfo
-import volatility.win32.tasks as tasks
 
 class Raw2dmp(imagecopy.ImageCopy):
     """Converts a physical memory sample to a windbg crash dump"""
@@ -61,14 +59,14 @@ class Raw2dmp(imagecopy.ImageCopy):
         for i in range(len("PAGE")):
             header.Signature[i] = [ ord(x) for x in "PAGE"][i]
 
+        # Write the KeDebuggerDataBlock and ValidDump headers
+        dumptext = "DUMP"
+        header.KdDebuggerDataBlock = kdbg.obj_offset
         if memory_model == "64bit":
-            header.KdDebuggerDataBlock = kdbg.v() | 0xFFFF000000000000
-            for i in range(len("DU64")):
-                header.ValidDump[i] = [ ord(x) for x in "DU64"][i]
-        else:
-            header.KdDebuggerDataBlock = kdbg.v()
-            for i in range(len("DUMP")):
-                header.ValidDump[i] = [ ord(x) for x in "DUMP"][i]
+            dumptext = "DU64"
+            header.KdDebuggerDataBlock = kdbg.obj_offset | 0xFFFF000000000000
+        for i in range(len(dumptext)):
+            header.ValidDump[i] = ord(dumptext[i])
 
         # The PaeEnabled member is essential for x86 crash files
         if memory_model == "32bit":
@@ -78,13 +76,13 @@ class Raw2dmp(imagecopy.ImageCopy):
                 header.PaeEnabled = 0x0
 
         # Set members of the crash header
-        header.MajorVersion = dbgkd.MajorVersion.v()
-        header.MinorVersion = dbgkd.MinorVersion.v()
+        header.MajorVersion = dbgkd.MajorVersion
+        header.MinorVersion = dbgkd.MinorVersion
         header.DirectoryTableBase = vspace.dtb
-        header.PfnDataBase = kdbg.MmPfnDatabase.v()
-        header.PsLoadedModuleList = kdbg.PsLoadedModuleList.v()
-        header.PsActiveProcessHead = kdbg.PsActiveProcessHead.v()
-        header.MachineImageType = dbgkd.MachineType.v()
+        header.PfnDataBase = kdbg.MmPfnDatabase
+        header.PsLoadedModuleList = kdbg.PsLoadedModuleList
+        header.PsActiveProcessHead = kdbg.PsActiveProcessHead
+        header.MachineImageType = dbgkd.MachineType
 
         # Find the number of processors 
         header.NumberProcessors = len(list(kdbg.kpcrs()))
