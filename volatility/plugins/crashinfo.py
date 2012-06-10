@@ -1,6 +1,5 @@
 # Volatility
 # Copyright (C) 2009-2012 Volatile Systems
-# Copyright (C) Mike Auty <mike.auty@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,7 +66,7 @@ class CrashInfo(commands.Command):
         outfd.write(" ProductType           0x{0:08x}\n".format(hdr.ProductType))
         outfd.write(" SuiteMask             0x{0:08x}\n".format(hdr.SuiteMask))
         outfd.write(" WriterStatus          0x{0:08x}\n".format(hdr.WriterStatus))
-        comment_offset =  hdr.obj_vm.profile.get_obj_offset(hdr_type, "Comment")
+        comment_offset = hdr.obj_vm.profile.get_obj_offset(hdr_type, "Comment")
         comment = obj.Object("String",
                       offset = comment_offset,
                       vm = hdr.obj_vm, length = 128)

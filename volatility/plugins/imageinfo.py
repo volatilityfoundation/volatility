@@ -116,8 +116,8 @@ class ImageInfo(kdbgscan.KDBGScan):
         result = {}
         KUSER_SHARED_DATA = obj.VolMagic(addr_space).KUSER_SHARED_DATA.v()
         k = obj.Object("_KUSER_SHARED_DATA",
-                              offset = KUSER_SHARED_DATA,
-                              vm = addr_space)
+                       offset = KUSER_SHARED_DATA,
+                       vm = addr_space)
 
         if k == None:
             return k

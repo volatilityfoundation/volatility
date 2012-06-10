@@ -75,7 +75,7 @@ class Raw2dmp(imagecopy.ImageCopy):
             if hasattr(vspace, "pae"):
                 header.PaeEnabled = 0x1
             else:
-                header.PaeEnabled = 0x0    
+                header.PaeEnabled = 0x0
 
         # Set members of the crash header
         header.MajorVersion = dbgkd.MajorVersion.v()
@@ -104,22 +104,22 @@ class Raw2dmp(imagecopy.ImageCopy):
 
         # Set the sample run information
         path = self._config.LOCATION[7:]
-        num_pages = os.path.getsize(path)/0x1000
+        num_pages = os.path.getsize(path) / 0x1000
         header.PhysicalMemoryBlockBuffer.NumberOfRuns = 0x00000001
         header.PhysicalMemoryBlockBuffer.NumberOfPages = num_pages
         header.PhysicalMemoryBlockBuffer.Run[0].BasePage = 0x0000000000000000
         header.PhysicalMemoryBlockBuffer.Run[0].PageCount = num_pages
         header.RequiredDumpSpace = (num_pages + 2) * 0x1000
-        
+
         # Zero out the remaining non-essential fields
         ContextRecordOffset = headerspace.profile.get_obj_offset(header_format, "ContextRecord")
         ExceptionOffset = headerspace.profile.get_obj_offset(header_format, "Exception")
-        headerspace.write(ContextRecordOffset,"\x00" * (ExceptionOffset-ContextRecordOffset))
+        headerspace.write(ContextRecordOffset, "\x00" * (ExceptionOffset - ContextRecordOffset))
 
         # Set the "converted" comment
         CommentOffset = headerspace.profile.get_obj_offset(header_format, "Comment")
         headerspace.write(CommentOffset, "File was converted with Volatility" + "\x00")
-       
+
         # Yield the header
         yield 0, headerspace.read(0, headerlen)
 
