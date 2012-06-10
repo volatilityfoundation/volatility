@@ -755,6 +755,9 @@ class CType(BaseObject):
 class VolatilityMagic(BaseObject):
     """Class to contain Volatility Magic value"""
 
+    # TODO: At some point, make it possible to use these without requiring .v()
+    # by making them inherit from NumericProxyMixIn when they're supposed to be numeric values
+
     def __init__(self, theType, offset, vm, value = None, configname = None, **kwargs):
         try:
             BaseObject.__init__(self, theType, offset, vm, **kwargs)
