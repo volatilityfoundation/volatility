@@ -33,8 +33,9 @@ class _KPCROnx86(obj.CType):
         """Find this CPUs KDBG. 
 
         Please note the KdVersionBlock pointer is NULL on
-        all x64 that we've seen. Thus this technique of finding
-        KDBG via KPCR is only valid for x86 profiles.
+        all KPCR structures except the one for the first CPU. 
+        In some cases on x64, even the first CPU has a NULL
+        KdVersionBlock, so this is really a hit-or-miss. 
         """
         DebuggerDataList = self.KdVersionBlock.dereference_as("_DBGKD_GET_VERSION64").DebuggerDataList
     
@@ -51,9 +52,6 @@ class _KPCROnx86(obj.CType):
 
 class _KPCROnx64(_KPCROnx86):
     """KPCR for x64 windows"""
-    
-    def get_kdbg(self):
-        return obj.NoneObject("Finding KDBG via KPCR is not possible on x64")
 
     @property
     def ProcessorBlock(self):

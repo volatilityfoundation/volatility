@@ -36,8 +36,7 @@ def get_kdbg(addr_space):
     """A function designed to return the KDBG structure from 
     an address space. First we try scanning for KDBG and if 
     that fails, we try scanning for KPCR and bouncing back to
-    KDBG from there. Please note the backup method only works
-    on x86.
+    KDBG from there. 
 
     Also note, both the primary and backup methods rely on the 
     4-byte KDBG.Header.OwnerTag. If someone overwrites this 
@@ -53,13 +52,17 @@ def get_kdbg(addr_space):
     if kdbg.is_valid():
         return kdbg
 
-    # Fall back to finding it via the KPCR
-    kpcr = obj.Object("_KPCR", offset = obj.VolMagic(addr_space).KPCR.v(), vm = addr_space)
+    # Fall back to finding it via the KPCR. We cannot
+    # accept the first/best suggestion, because only 
+    # the KPCR for the first CPU allows us to find KDBG. 
+    for kpcr_off in obj.VolMagic(addr_space).KPCR.generate_suggestions():
+        
+        kpcr = obj.Object("_KPCR", offset = kpcr_off, vm = addr_space)
 
-    kdbg = kpcr.get_kdbg()
-
-    if kdbg.is_valid():
-        return kdbg
+        kdbg = kpcr.get_kdbg()
+    
+        if kdbg.is_valid():
+            return kdbg
 
     return obj.NoneObject("KDDEBUGGER structure not found using either KDBG signature or KPCR pointer")
 
