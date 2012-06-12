@@ -41,7 +41,7 @@ class ImageInfo(kdbgscan.KDBGScan):
         profilelist = [ p.__name__ for p in registry.get_plugin_classes(obj.Profile).values() ]
 
         bestguess = None
-        suglist = [ s for s, _, _ in kdbgscan.KDBGScan.calculate(self)]
+        suglist = [ s for s, _ in kdbgscan.KDBGScan.calculate(self)]
         if suglist:
             bestguess = suglist[0]
         suggestion = ", ".join(set(suglist))

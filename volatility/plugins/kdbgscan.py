@@ -120,16 +120,91 @@ class KDBGScan(common.AbstractWindowsCommand):
             val = aspace.read(offset, maxlen + 0x10)
             for l in proflens:
                 if val.find(proflens[l]) >= 0:
-                    if hasattr(aspace, 'vtop'):
-                        yield l, aspace.vtop(offset), offset
-                    else:
-                        yield l, offset, None
+                    kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = offset, vm = aspace)
+                    yield l, kdbg
 
     def render_text(self, outfd, data):
         """Renders the KPCR values as text"""
 
-        outfd.write("Potential KDBG structure addresses (P = Physical, V = Virtual):\n")
-        for n, o, v in data:
-            if v is not None:
-                outfd.write(" _KDBG: V {1:#010x}  ({2})\n".format(o, v, n))
-            outfd.write(" _KDBG: P {0:#010x}  ({2})\n".format(o, v, n))
+        for profile, kdbg in data:
+
+            outfd.write("*" * 50 + "\n")
+            outfd.write("Instantiating KDBG using: {0} {1} ({2}.{3}.{4} {5})\n".format(
+                        kdbg.obj_vm.name, kdbg.obj_vm.profile.__class__.__name__, 
+                        kdbg.obj_vm.profile.metadata.get('major', 0), 
+                        kdbg.obj_vm.profile.metadata.get('minor', 0), 
+                        kdbg.obj_vm.profile.metadata.get('build', 0), 
+                        kdbg.obj_vm.profile.metadata.get('memory_model', '32bit'), 
+                        ))
+
+            # Will spaces with vtop always have a dtb also? 
+            has_vtop = hasattr(kdbg.obj_vm, 'vtop')
+
+            # Always start out with the virtual and physical offsets
+            if has_vtop:
+                outfd.write("{0:<30}: {1:#x}\n".format("Offset (V)", kdbg.obj_offset))
+                outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kdbg.obj_vm.vtop(kdbg.obj_offset)))
+            else:
+                outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", offset))
+            
+            # These fields can be gathered without dereferencing
+            # any pointers, thus they're available always 
+            outfd.write("{0:<30}: {1}\n".format("KDBG owner tag check", str(kdbg.is_valid())))
+            outfd.write("{0:<30}: {1}\n".format("Profile suggestion (KDBGHeader)", profile))
+            verinfo = kdbg.dbgkd_version64()
+            if verinfo:
+                outfd.write("{0:<30}: {1:#x} (Major: {2}, Minor: {3})\n".format(
+                    "Version64", verinfo.obj_offset, verinfo.MajorVersion, 
+                    verinfo.MinorVersion))
+
+            # Print details only available when a DTB can be found
+            # and we have an AS with vtop. 
+            if has_vtop:
+                outfd.write("{0:<30}: {1}\n".format("Service Pack (CmNtCSDVersion)", kdbg.ServicePack))
+                outfd.write("{0:<30}: {1}\n".format("Build string (NtBuildLab)", kdbg.NtBuildLab.dereference()))
+
+                try:
+                    num_tasks = len(list(kdbg.processes()))
+                except AttributeError:
+                    num_tasks = 0
+                try:
+                    num_modules = len(list(kdbg.modules()))
+                except AttributeError:
+                    num_modules = 0
+
+                cpu_blocks = list(kdbg.kpcrs())
+
+                outfd.write("{0:<30}: {1:#x} ({2} processes)\n".format(
+                    "PsActiveProcessHead", kdbg.PsActiveProcessHead, num_tasks))
+
+                outfd.write("{0:<30}: {1:#x} ({2} modules)\n".format(
+                    "PsLoadedModuleList", kdbg.PsLoadedModuleList, num_modules))
+
+                outfd.write("{0:<30}: {1:#x} (Matches MZ: {2})\n".format(
+                    "KernelBase", kdbg.KernBase, str(kdbg.obj_vm.read(kdbg.KernBase, 2) == "MZ")))
+                
+                try:
+                    dos_header = obj.Object("_IMAGE_DOS_HEADER", 
+                                    offset = kdbg.KernBase, 
+                                    vm = kdbg.obj_vm)
+                    nt_header = dos_header.get_nt_header()
+                except ValueError:
+                    pass
+                else:
+                    outfd.write("{0:<30}: {1}\n".format(
+                        "Major (OptionalHeader)", 
+                        nt_header.OptionalHeader.MajorOperatingSystemVersion))
+                    outfd.write("{0:<30}: {1}\n".format(
+                        "Minor (OptionalHeader)", 
+                        nt_header.OptionalHeader.MinorOperatingSystemVersion))
+
+                for kpcr in cpu_blocks:
+                    outfd.write("{0:<30}: {1:#x} (CPU {2})\n".format(
+                        "KPCR", kpcr.obj_offset, kpcr.ProcessorBlock.Number))            
+            else:
+                outfd.write("{0:<30}: {1:#x}\n".format("PsActiveProcessHead", kdbg.PsActiveProcessHead))
+                outfd.write("{0:<30}: {1:#x}\n".format("PsLoadedModuleList", kdbg.PsLoadedModuleList))
+                outfd.write("{0:<30}: {1:#x}\n".format("KernelBase", kdbg.KernBase))
+
+            outfd.write("\n")
+            
