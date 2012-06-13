@@ -69,7 +69,7 @@ class PSTree(common.AbstractWindowsCommand):
                         task_info['handle_count'],
                         task_info['create_time']))
 
-                    if self._config.VERBOSE > 1:
+                    if self._config.VERBOSE:
                         try:
                             outfd.write("{0}    cmd: {1}\n".format(
                                 ' ' * pad, task_info['command_line']))
@@ -109,7 +109,7 @@ class PSTree(common.AbstractWindowsCommand):
             ## Get the Process Environment Block - Note that _EPROCESS
             ## will automatically switch to process address space by
             ## itself.
-            if self._config.VERBOSE > 1:
+            if self._config.VERBOSE:
                 peb = task.Peb
                 if peb:
                     task_info['command_line'] = peb.ProcessParameters.CommandLine
