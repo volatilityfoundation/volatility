@@ -83,8 +83,8 @@ class PSTree(common.AbstractWindowsCommand):
                         except KeyError:
                             pass
 
-                    draw_branch(pad + 1, task_info['process_id'])
                     del data[task]
+                    draw_branch(pad + 1, task_info['process_id']) 
 
         while len(data.keys()) > 0:
             keys = data.keys()
