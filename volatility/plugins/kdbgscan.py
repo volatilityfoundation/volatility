@@ -145,7 +145,7 @@ class KDBGScan(common.AbstractWindowsCommand):
                 outfd.write("{0:<30}: {1:#x}\n".format("Offset (V)", kdbg.obj_offset))
                 outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kdbg.obj_vm.vtop(kdbg.obj_offset)))
             else:
-                outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", offset))
+                outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kdbg.obj_offset))
             
             # These fields can be gathered without dereferencing
             # any pointers, thus they're available always 
