@@ -24,18 +24,21 @@ import volatility.win32.tasks as tasks
 import volatility.utils as utils
 import volatility.plugins.common as common
 import volatility.cache as cache
+import volatility.obj as obj
 
 #pylint: disable-msg=C0111
 
-pslist_types = {
-    '_SE_AUDIT_PROCESS_CREATION_INFO' : [ 0x4, {
-    'ImageFileName' : [ 0x0, ['pointer', ['_OBJECT_NAME_INFORMATION']]],
-    } ],
-
-    '_OBJECT_NAME_INFORMATION' : [ 0x8, {
-    'Name' : [ 0x0, ['_UNICODE_STRING']],
-    } ],
-    }
+class ProcessAuditVTypes(obj.ProfileModification):
+    before = ["WindowsVTypes"]
+    conditions = {'os': lambda x: x == 'windows'}
+    def modification(self, profile):
+        profile.vtypes.update({
+            '_SE_AUDIT_PROCESS_CREATION_INFO' : [ 0x4, {
+            'ImageFileName' : [ 0x0, ['pointer', ['_OBJECT_NAME_INFORMATION']]],
+            }],
+            '_OBJECT_NAME_INFORMATION' : [ 0x8, {
+            'Name' : [ 0x0, ['_UNICODE_STRING']],
+            }]})
 
 class PSTree(common.AbstractWindowsCommand):
     """Print process list as a tree"""
@@ -94,7 +97,6 @@ class PSTree(common.AbstractWindowsCommand):
 
         ## Load a new address space
         addr_space = utils.load_as(self._config)
-        addr_space.profile.add_types(pslist_types)
 
         for task in tasks.pslist(addr_space):
             task_info = {}
