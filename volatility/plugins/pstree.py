@@ -54,23 +54,26 @@ class PSTree(common.AbstractWindowsCommand):
         return pid
 
     def render_text(self, outfd, data):
-        max_pad = 10
-        outfd.write("{0:20}             {1} {2:6} {3:6} {4:6} {5:6} {6:6}\n".format(
-            'Name', " " * max_pad, 'Pid', 'PPid', 'Thds', 'Hnds', 'Time'))
+
+        self.table_header(outfd, 
+                         [("Name", "<50"), 
+                          ("Pid", ">6"),
+                          ("PPid", ">6"),
+                          ("Thds", ">6"),
+                          ("Hnds", ">6"),
+                          ("Time", "20")])
 
         def draw_branch(pad, inherited_from):
             for task, task_info in data.items():
                 if task_info['inherited_from'] == inherited_from:
-                    outfd.write("{0} 0x{1:08X}:{2:20} {3} {4:6} {5:6} {6:6} {7:6} {8:26}\n".format(
-                        "." * pad,
-                        task_info['eprocess'].obj_offset,
-                        task_info['image_file_name'],
-                        " " * (max_pad - pad),
+
+                    self.table_row(outfd, 
+                        "{0} {1:#x}:{2:20}".format("." * pad, task_info['eprocess'].obj_offset, task_info['image_file_name']),
                         task_info['process_id'],
                         task_info['inherited_from'],
                         task_info['active_threads'],
                         task_info['handle_count'],
-                        task_info['create_time']))
+                        task_info['create_time'])
 
                     if self._config.VERBOSE:
                         try:
