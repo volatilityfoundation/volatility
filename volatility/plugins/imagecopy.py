@@ -60,6 +60,7 @@ class ImageCopy(commands.Command):
 
         outfd.write("Writing data (" + self.human_readable(self._config.BLOCKSIZE) + " chunks): |")
         f = file(self._config.OUTPUT_IMAGE, "wb+")
+        progress = 0
         try:
             for o, block in data:
                 f.seek(o)
@@ -67,10 +68,11 @@ class ImageCopy(commands.Command):
                 f.flush()
                 outfd.write(".")
                 outfd.flush()
+                progress = o
         except TypeError:
             debug.error("Error when reading from address space")
         except BaseException, e:
-            debug.error("Unexpected error ({1}) during copy, recorded data up to offset {0:0x}".format(o, str(e)))
+            debug.error("Unexpected error ({1}) during copy, recorded data up to offset {0:0x}".format(progress, str(e)))
         finally:
             f.close()
         outfd.write("|\n")
