@@ -54,16 +54,62 @@ class KPCRScan(common.AbstractWindowsCommand):
         addr_space = utils.load_as(self._config, astype = 'any')
 
         scanner = KPCRScanner()
-        for o in scanner.scan(addr_space):
-            # print "Phys addr", "{0:08x}".format(addr_space.vtop(o)), "Virt addr", "{0:08x}".format(o)
-            yield o
+        for offset in scanner.scan(addr_space):
+            kpcr = obj.Object("_KPCR", offset = offset, vm = addr_space)
+            yield kpcr
 
     def render_text(self, outfd, data):
         """Renders the KPCR values as text"""
 
-        outfd.write("Potential KPCR structure virtual addresses:\n")
-        for o in data:
-            outfd.write(" _KPCR: {0:#010x}\n".format(o))
+        for kpcr in data:
+            outfd.write("*" * 50 + "\n")
+
+            if hasattr(kpcr.obj_vm, 'vtop'):
+                outfd.write("{0:<30}: {1:#x}\n".format("Offset (V)", kpcr.obj_offset))
+                outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kpcr.obj_vm.vtop(kpcr.obj_offset)))
+            else:
+                outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kpcr.obj_offset))
+
+            outfd.write("{0:<30}: {1:#x}\n".format("KdVersionBlock", kpcr.KdVersionBlock))
+            outfd.write("{0:<30}: {1:#x}\n".format("IDT", kpcr.IDT))
+            outfd.write("{0:<30}: {1:#x}\n".format("GDT", kpcr.GDT))
+
+            current_thread = kpcr.ProcessorBlock.CurrentThread.dereference_as("_ETHREAD")
+            idle_thread = kpcr.ProcessorBlock.IdleThread.dereference_as("_ETHREAD")
+            next_thread = kpcr.ProcessorBlock.NextThread.dereference_as("_ETHREAD")
+
+            if current_thread:
+                outfd.write("{0:<30}: {1:#x} TID {2} ({3}:{4})\n".format(
+                    "CurrentThread", 
+                    current_thread.obj_offset, current_thread.Cid.UniqueThread, 
+                    current_thread.owning_process().ImageFileName, 
+                    current_thread.Cid.UniqueProcess, 
+                    ))
+
+            if idle_thread:
+                outfd.write("{0:<30}: {1:#x} TID {2} ({3}:{4})\n".format(
+                    "IdleThread", 
+                    idle_thread.obj_offset, idle_thread.Cid.UniqueThread, 
+                    idle_thread.owning_process().ImageFileName, 
+                    idle_thread.Cid.UniqueProcess, 
+                    ))
+
+            if next_thread:
+                outfd.write("{0:<30}: {1:#x} TID {2} ({3}:{4})\n".format(
+                    "NextThread", 
+                    next_thread.obj_offset, 
+                    next_thread.Cid.UniqueThread, 
+                    next_thread.owning_process().ImageFileName, 
+                    next_thread.Cid.UniqueProcess, 
+                    ))
+
+            outfd.write("{0:<30}: CPU {1} ({2} @ {3} MHz)\n".format("Details", 
+                kpcr.ProcessorBlock.Number, 
+                kpcr.ProcessorBlock.VendorString,
+                kpcr.ProcessorBlock.MHz))
+
+            outfd.write("{0:<30}: {1:#x}\n".format("CR3/DTB", 
+                kpcr.ProcessorBlock.ProcessorState.SpecialRegisters.Cr3))            
 
 class KPCRScannerCheck(scan.ScannerCheck):
     """Checks the self referential pointers to find KPCRs"""

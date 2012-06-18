@@ -57,6 +57,14 @@ class _KPCROnx64(_KPCROnx86):
     def ProcessorBlock(self):
         return self.Prcb
 
+    @property
+    def IDT(self):
+        return self.IdtBase
+
+    @property
+    def GDT(self):
+        return self.GdtBase 
+
 class KPCRProfileModification(obj.ProfileModification):
     before = ['WindowsObjectClasses']
 
@@ -70,3 +78,8 @@ class KPCRProfileModification(obj.ProfileModification):
             kpcr_class = _KPCROnx64
 
         profile.object_classes.update({'_KPCR': kpcr_class})
+
+        profile.merge_overlay({
+            '_KPRCB': [ None, { 
+            'VendorString': [ None, ['String', dict(length = 13)]], 
+            }]})
