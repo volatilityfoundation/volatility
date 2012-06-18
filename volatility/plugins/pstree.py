@@ -49,7 +49,7 @@ class PSTree(common.AbstractWindowsCommand):
 
         while pid in pid_dict and pid not in seen:
             seen.add(pid)
-            pid = int(pid_dict[pid]['inherited_from'])
+            pid = int(pid_dict[pid].InheritedFromUniqueProcessId)
 
         return pid
 
@@ -64,30 +64,35 @@ class PSTree(common.AbstractWindowsCommand):
                           ("Time", "20")])
 
         def draw_branch(pad, inherited_from):
-            for task, task_info in data.items():
-                if task_info['inherited_from'] == inherited_from:
+            for task in data.values():
+                if task.InheritedFromUniqueProcessId == inherited_from:
+
+                    first_column = "{0} {1:#x}:{2:20}".format(
+                                        "." * pad, 
+                                        task.obj_offset, 
+                                        str(task.ImageFileName or '')
+                                        )
 
                     self.table_row(outfd, 
-                        "{0} {1:#x}:{2:20}".format("." * pad, task_info['eprocess'].obj_offset, task_info['image_file_name']),
-                        task_info['process_id'],
-                        task_info['inherited_from'],
-                        task_info['active_threads'],
-                        task_info['handle_count'],
-                        task_info['create_time'])
+                        first_column,
+                        task.UniqueProcessId,
+                        task.InheritedFromUniqueProcessId,
+                        task.ActiveThreads,
+                        task.ObjectTable.HandleCount,
+                        task.CreateTime)
 
                     if self._config.VERBOSE:
-                        try:
+                        outfd.write("{0}    audit: {1}\n".format(
+                                ' ' * pad, str(task.SeAuditProcessCreationInfo.ImageFileName.Name or '')))
+                        process_params = task.Peb.ProcessParameters
+                        if process_params:
                             outfd.write("{0}    cmd: {1}\n".format(
-                                ' ' * pad, task_info['command_line']))
+                                ' ' * pad, str(process_params.CommandLine or '')))
                             outfd.write("{0}    path: {1}\n".format(
-                                ' ' * pad, task_info['ImagePathName']))
-                            outfd.write("{0}    audit: {1}\n".format(
-                                ' ' * pad, task_info['Audit ImageFileName']))
-                        except KeyError:
-                            pass
+                                ' ' * pad, str(process_params.ImagePathName or '')))
 
-                    del data[task]
-                    draw_branch(pad + 1, task_info['process_id']) 
+                    del data[int(task.UniqueProcessId)]
+                    draw_branch(pad + 1, task.UniqueProcessId) 
 
         while len(data.keys()) > 0:
             keys = data.keys()
@@ -96,32 +101,11 @@ class PSTree(common.AbstractWindowsCommand):
 
     @cache.CacheDecorator(lambda self: "tests/pstree/verbose={0}".format(self._config.VERBOSE))
     def calculate(self):
-        result = {}
 
         ## Load a new address space
         addr_space = utils.load_as(self._config)
 
-        for task in tasks.pslist(addr_space):
-            task_info = {}
-            task_info['eprocess'] = task
-            task_info['image_file_name'] = task.ImageFileName or 'UNKNOWN'
-            task_info['process_id'] = task.UniqueProcessId
-            task_info['active_threads'] = task.ActiveThreads
-            task_info['inherited_from'] = task.InheritedFromUniqueProcessId
-            task_info['handle_count'] = task.ObjectTable.HandleCount
-            task_info['create_time'] = task.CreateTime
-
-            ## Get the Process Environment Block - Note that _EPROCESS
-            ## will automatically switch to process address space by
-            ## itself.
-            if self._config.VERBOSE:
-                peb = task.Peb
-                if peb:
-                    task_info['command_line'] = peb.ProcessParameters.CommandLine
-                    task_info['ImagePathName'] = peb.ProcessParameters.ImagePathName
-
-                task_info['Audit ImageFileName'] = task.SeAuditProcessCreationInfo.ImageFileName.Name or 'UNKNOWN'
-
-            result[int(task_info['process_id'])] = task_info
-
-        return result
+        return dict(
+                (int(task.UniqueProcessId), task) 
+                for task in tasks.pslist(addr_space)
+                )
