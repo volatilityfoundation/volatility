@@ -170,19 +170,22 @@ class MemMap(DllList):
             outfd.write("{0} pid: {1:6}\n".format(task.ImageFileName, pid))
             first = False
 
+            offset = 0
             if pagedata:
                 self.table_header(outfd,
                                   [("Virtual", "[addrpad]"),
                                    ("Physical", "[addrpad]"),
-                                   ("Size", "[addr]")])
+                                   ("Size", "[addr]"),
+                                   ("DumpFileOffset", "[addr]")])
 
                 for p in pagedata:
                     pa = task_space.vtop(p[0])
                     # pa can be 0, according to the old memmap, but can't == None(NoneObject)
                     if pa != None:
-                        self.table_row(outfd, p[0], pa, p[1])
+                        self.table_row(outfd, p[0], pa, p[1], offset)
                     #else:
                     #    outfd.write("0x{0:10x} 0x000000     0x{1:12x}\n".format(p[0], p[1]))
+                        offset += p[1]
             else:
                 outfd.write("Unable to read pages for task.\n")
 
