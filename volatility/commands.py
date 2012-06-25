@@ -154,6 +154,11 @@ class Command(object):
             length = (length - 3) / 2
             return string[:length + even] + "..." + string[-length:]
 
+    def format_value(self, value, fmt):
+        """ Formats an individual field using the table formatting codes"""
+        profile = addrspace.BufferAddressSpace(self._config).profile
+        return ("{0:" + self._formatlookup(profile, fmt) + "}").format(value)
+
     def table_header(self, outfd, title_format_list = None):
         """Table header renders the title row of a table
 
