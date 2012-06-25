@@ -32,6 +32,7 @@ import volatility.win32.rawreg as rawreg
 import volatility.debug as debug
 import volatility.utils as utils
 import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.plugins.registry.hivelist as hivelist
 
 def vol(k):
@@ -117,3 +118,29 @@ class PrintKey(hivelist.HiveList):
                     outfd.write("{0:13} {1:15} : {3:3s} {2}\n".format(tp, v.Name, dat, self.voltext(v)))
         if not keyfound:
             outfd.write("The requested key could not be found in the hive(s) searched\n")
+
+class HiveDump(common.AbstractWindowsCommand):
+    """Prints out a hive"""
+    def __init__(self, config, *args, **kwargs):
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
+        config.add_option('HIVE-OFFSET', short_option = 'o', type = 'int',
+                          help = 'Hive offset (virtual)')
+
+    def calculate(self):
+        addr_space = utils.load_as(self._config)
+
+        if not self._config.hive_offset:
+            debug.error("A Hive offset must be provided (--hive-offset)")
+
+        h = hivemod.HiveAddressSpace(addr_space, self._config, self._config.hive_offset)
+        return rawreg.get_root(h)
+
+    def render_text(self, outfd, data):
+        outfd.write("{0:20s} {1}\n".format("Last Written", "Key"))
+        self.print_key(outfd, '', data)
+
+    def print_key(self, outfd, keypath, key):
+        if key.Name != None:
+            outfd.write("{0:20s} {1}\n".format(key.LastWriteTime, keypath + "\\" + key.Name))
+        for k in rawreg.subkeys(key):
+            self.print_key(outfd, keypath + "\\" + key.Name, k)

@@ -26,8 +26,6 @@
 
 #pylint: disable-msg=C0111
 
-import volatility.win32.hive as hive
-import volatility.win32.rawreg as rawreg
 import volatility.win32.lsasecrets as lsasecrets
 import volatility.win32.hashdump as hashdumpmod
 import volatility.debug as debug
@@ -100,30 +98,3 @@ class HashDump(common.AbstractWindowsCommand):
                 debug.debug("Unable to read hashes from registry")
             else:
                 outfd.write(d + "\n")
-
-class HiveDump(common.AbstractWindowsCommand):
-    """Prints out a hive"""
-    def __init__(self, config, *args, **kwargs):
-        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
-        config.add_option('HIVE-OFFSET', short_option = 'o', type = 'int',
-                          help = 'Hive offset (virtual)')
-
-    @cache.CacheDecorator(lambda self: "tests/hivedump/hive_offset={0}".format(self._config.HIVE_OFFSET))
-    def calculate(self):
-        addr_space = utils.load_as(self._config)
-
-        if not self._config.hive_offset:
-            debug.error("A Hive offset must be provided (--hive-offset)")
-
-        h = hive.HiveAddressSpace(addr_space, self._config, self._config.hive_offset)
-        return rawreg.get_root(h)
-
-    def render_text(self, outfd, data):
-        outfd.write("{0:20s} {1}\n".format("Last Written", "Key"))
-        self.print_key(outfd, '', data)
-
-    def print_key(self, outfd, keypath, key):
-        if key.Name != None:
-            outfd.write("{0:20s} {1}\n".format(key.LastWriteTime, keypath + "\\" + key.Name))
-        for k in rawreg.subkeys(key):
-            self.print_key(outfd, keypath + "\\" + key.Name, k)
