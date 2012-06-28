@@ -269,13 +269,8 @@ class VADDump(VADInfo):
 
             outfd.write("*" * 72 + "\n")
             for vad in task.VadRoot.traverse():
-                # Ignore Vads with bad tags (which we explicitly include as None)
-                if vad == None:
-                    continue
-
-                # avoid potential invalid values 
-                if vad.Start > 0xFFFFFFFF or vad.End > (0xFFFFFFFF << 12):
-                    continue
+                if not vad.is_valid():
+                    continue 
 
                 # Open the file and initialize the data
 

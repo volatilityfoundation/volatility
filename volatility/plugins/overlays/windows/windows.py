@@ -46,6 +46,7 @@ windows_overlay = {
     #hibrfil.sys values
     'HibrProcPage': [0x0, ['VolatilityMagic', dict(value = 0x0)]],
     'HibrEntryCount': [0x0, ['VolatilityMagic', dict(value = 0x0)]],
+    'MaxAddress': [0x0, ['VolatilityMaxAddress']], 
     }],
 
     '_EPROCESS' : [ None, {
@@ -604,6 +605,12 @@ class _MMVAD(obj.CType):
 
 class _MMVAD_SHORT(obj.CType):
     """Class with convenience functions for _MMVAD_SHORT functions"""
+
+    def is_valid(self):
+        return (obj.CType.is_valid(self) and 
+                self.Start < obj.VolMagic(self.obj_vm).MaxAddress.v() and 
+                self.End < (obj.VolMagic(self.obj_vm).MaxAddress.v() << 12))
+
     def traverse(self, visited = None):
         """ Traverse the VAD tree by generating all the left items,
         then the right items.
@@ -686,6 +693,22 @@ class VolatilityKPCR(obj.VolatilityMagic):
         scanner = kpcr.KPCRScanner()
         for val in scanner.scan(self.obj_vm):
             yield val
+
+class VolatilityMaxAddress(obj.VolatilityMagic):
+    """The maximum address of a profile's 
+    underlying AS. 
+
+    On x86 this is 0xFFFFFFFF (2 ** 32) - 1
+    On x64 this is 0xFFFFFFFFFFFFFFFF (2 ** 64) - 1 
+
+    We use a VolatilityMagic to calculate this 
+    based on the size of an address, since that's 
+    something we can already rely on being set
+    properly for the AS. 
+    """
+
+    def generate_suggestions(self):
+        yield 2 ** (self.obj_vm.profile.get_obj_size("address") * 8) - 1
 
 class VolatilityKDBG(obj.VolatilityMagic):
     """A Scanner for KDBG data within an address space"""
@@ -866,6 +889,7 @@ class WindowsObjectClasses(obj.ProfileModification):
             'VolatilityKPCR': VolatilityKPCR,
             'VolatilityKDBG': VolatilityKDBG,
             'VolatilityIA32ValidAS': VolatilityIA32ValidAS,
+            'VolatilityMaxAddress': VolatilityMaxAddress,
             '_IMAGE_DOS_HEADER': _IMAGE_DOS_HEADER,
             '_IMAGE_NT_HEADERS': _IMAGE_NT_HEADERS,
             '_IMAGE_SECTION_HEADER': _IMAGE_SECTION_HEADER,
