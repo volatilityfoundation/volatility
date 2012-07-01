@@ -89,7 +89,7 @@ class NoneObject(object):
         return 0
 
     def __format__(self, formatspec):
-        spec = fmtspec.FormatSpec(string = formatspec, fill = "-", align = ">")
+        spec = fmtspec.FormatSpec(string = formatspec, altform = False, formtype = 's', fill = "-", align = ">")
         return format('-', str(spec))
 
     def next(self):
