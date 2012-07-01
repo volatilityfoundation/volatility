@@ -81,6 +81,9 @@ class NoneObject(object):
         """Write procedure only ever returns False"""
         return False
 
+    def __repr__(self):
+        return "<NoneObject: " + self.reason + ">"
+
     ## Behave like an empty set
     def __iter__(self):
         return self
