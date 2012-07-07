@@ -62,7 +62,8 @@ opts['packages'] = ["volatility",
                     "volatility.plugins.addrspaces",
                     "volatility.plugins.overlays",
                     "volatility.plugins.overlays.windows",
-                    "volatility.plugins.registry"]
+                    "volatility.plugins.registry",
+                    "volatility.plugins.malware"]
 opts['data_files'] = find_py_files(['contrib'])
 
 if py2exe_available:
@@ -74,7 +75,7 @@ if py2exe_available:
     # otherwise the help gets optimized out
     opts['options'] = {'py2exe':{'optimize': 1,
                                  'dist_dir': py2exe_distdir,
-                                 'packages': opts['packages'] + ['socket', 'ctypes', 'Crypto.Cipher', 'urllib', 'distorm3',  'yara', 'xml.etree.ElementTree'],
+                                 'packages': opts['packages'] + ['socket', 'ctypes', 'Crypto.Cipher', 'urllib', 'distorm3', 'yara', 'xml.etree.ElementTree'],
                                  # This, along with zipfile = None, ensures a single binary
                                  'bundle_files': 1,
                                 }
