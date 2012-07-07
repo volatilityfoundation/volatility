@@ -25,6 +25,7 @@ import volatility.plugins.common as common
 import volatility.addrspace as addrspace
 import volatility.registry as registry
 import volatility.utils as utils
+import volatility.exceptions as exceptions
 
 class MultiStringFinderCheck(scan.ScannerCheck):
     """ Checks for multiple strings per page """
@@ -130,11 +131,11 @@ class KDBGScan(common.AbstractWindowsCommand):
 
             outfd.write("*" * 50 + "\n")
             outfd.write("Instantiating KDBG using: {0} {1} ({2}.{3}.{4} {5})\n".format(
-                        kdbg.obj_vm.name, kdbg.obj_vm.profile.__class__.__name__, 
-                        kdbg.obj_vm.profile.metadata.get('major', 0), 
-                        kdbg.obj_vm.profile.metadata.get('minor', 0), 
-                        kdbg.obj_vm.profile.metadata.get('build', 0), 
-                        kdbg.obj_vm.profile.metadata.get('memory_model', '32bit'), 
+                        kdbg.obj_vm.name, kdbg.obj_vm.profile.__class__.__name__,
+                        kdbg.obj_vm.profile.metadata.get('major', 0),
+                        kdbg.obj_vm.profile.metadata.get('minor', 0),
+                        kdbg.obj_vm.profile.metadata.get('build', 0),
+                        kdbg.obj_vm.profile.metadata.get('memory_model', '32bit'),
                         ))
 
             # Will spaces with vtop always have a dtb also? 
@@ -146,7 +147,7 @@ class KDBGScan(common.AbstractWindowsCommand):
                 outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kdbg.obj_vm.vtop(kdbg.obj_offset)))
             else:
                 outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kdbg.obj_offset))
-            
+
             # These fields can be gathered without dereferencing
             # any pointers, thus they're available always 
             outfd.write("{0:<30}: {1}\n".format("KDBG owner tag check", str(kdbg.is_valid())))
@@ -154,7 +155,7 @@ class KDBGScan(common.AbstractWindowsCommand):
             verinfo = kdbg.dbgkd_version64()
             if verinfo:
                 outfd.write("{0:<30}: {1:#x} (Major: {2}, Minor: {3})\n".format(
-                    "Version64", verinfo.obj_offset, verinfo.MajorVersion, 
+                    "Version64", verinfo.obj_offset, verinfo.MajorVersion,
                     verinfo.MinorVersion))
 
             # Print details only available when a DTB can be found
@@ -182,29 +183,29 @@ class KDBGScan(common.AbstractWindowsCommand):
 
                 outfd.write("{0:<30}: {1:#x} (Matches MZ: {2})\n".format(
                     "KernelBase", kdbg.KernBase, str(kdbg.obj_vm.read(kdbg.KernBase, 2) == "MZ")))
-                
+
                 try:
-                    dos_header = obj.Object("_IMAGE_DOS_HEADER", 
-                                    offset = kdbg.KernBase, 
+                    dos_header = obj.Object("_IMAGE_DOS_HEADER",
+                                    offset = kdbg.KernBase,
                                     vm = kdbg.obj_vm)
                     nt_header = dos_header.get_nt_header()
-                except ValueError:
+                except (ValueError, exceptions.SanityCheckException):
                     pass
                 else:
                     outfd.write("{0:<30}: {1}\n".format(
-                        "Major (OptionalHeader)", 
+                        "Major (OptionalHeader)",
                         nt_header.OptionalHeader.MajorOperatingSystemVersion))
                     outfd.write("{0:<30}: {1}\n".format(
-                        "Minor (OptionalHeader)", 
+                        "Minor (OptionalHeader)",
                         nt_header.OptionalHeader.MinorOperatingSystemVersion))
 
                 for kpcr in cpu_blocks:
                     outfd.write("{0:<30}: {1:#x} (CPU {2})\n".format(
-                        "KPCR", kpcr.obj_offset, kpcr.ProcessorBlock.Number))            
+                        "KPCR", kpcr.obj_offset, kpcr.ProcessorBlock.Number))
             else:
                 outfd.write("{0:<30}: {1:#x}\n".format("PsActiveProcessHead", kdbg.PsActiveProcessHead))
                 outfd.write("{0:<30}: {1:#x}\n".format("PsLoadedModuleList", kdbg.PsLoadedModuleList))
                 outfd.write("{0:<30}: {1:#x}\n".format("KernelBase", kdbg.KernBase))
 
             outfd.write("\n")
-            
+

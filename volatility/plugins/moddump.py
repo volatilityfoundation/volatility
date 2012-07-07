@@ -28,6 +28,7 @@ import volatility.win32.modules as modules
 import volatility.win32.tasks as tasks
 import volatility.utils as utils
 import volatility.debug as debug
+import volatility.exceptions as exceptions
 
 class ModDump(procdump.ProcExeDump):
     """Dump a kernel driver to an executable file sample"""
@@ -95,8 +96,9 @@ class ModDump(procdump.ProcExeDump):
                         of.seek(offset)
                         of.write(code)
                 except ValueError, ve:
-                    outfd.write("Unable to dump executable; sanity check failed:\n")
-                    outfd.write("  " + str(ve) + "\n")
+                    outfd.write("Unable to dump executable: {0}\n".format(ve))
+                except exceptions.SanityCheckException, ve:
+                    outfd.write("Unable to dump executable: {0}\n".format(ve))
                     outfd.write("You can use -u to disable this check.\n")
                 of.close()
             else:

@@ -27,6 +27,7 @@ import volatility.obj as obj
 import volatility.utils as utils
 import volatility.addrspace as addrspace
 import volatility.debug as debug
+import volatility.exceptions as exceptions
 
 MAX_STRING_BYTES = 260
 
@@ -360,8 +361,10 @@ class VerInfo(procdump.ProcExeDump):
         try:
             nt_header = self.get_nt_header(addr_space = addr_space,
                                        base_addr = offset)
-        except ValueError:
-            return obj.NoneObject("PE file failed initial sanity checks")
+        except ValueError, ve:
+            return obj.NoneObject("PE file failed initial sanity checks: {0}".format(ve))
+        except exceptions.SanityCheckException, ve:
+            return obj.NoneObject("PE file failed initial sanity checks: {0}. Try -u or --unsafe".format(ve))
 
         # header = s.read(m.DllBase, nt_header.OptionalHeader.SizeOfHeaders)
 

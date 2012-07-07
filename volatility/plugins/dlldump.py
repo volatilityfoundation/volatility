@@ -27,6 +27,7 @@ import volatility.win32.tasks as tasks
 import volatility.debug as debug
 import volatility.utils as utils
 import volatility.cache as cache
+import volatility.exceptions as exceptions
 
 class DLLDump(procdump.ProcExeDump):
     """Dump DLLs from a process address space"""
@@ -103,9 +104,10 @@ class DLLDump(procdump.ProcExeDump):
                         of.seek(offset)
                         of.write(code)
                 except ValueError, ve:
-                    outfd.write("Unable to dump executable; sanity check failed:\n")
-                    outfd.write("  " + str(ve) + "\n")
+                    outfd.write("Unable to dump executable: {0}\n".format(ve))
+                except exceptions.SanityCheckException, ve:
+                    outfd.write("Unable to dump executable: {0}\n".format(ve))
                     outfd.write("You can use -u to disable this check.\n")
                 of.close()
             else:
-                outfd.write("Cannot dump {0}@{1} at {2:8x}\n".format(proc.ImageFileName, mod_name, mod_base))
+                outfd.write("Cannot dump {0}@{1}: ImageBase at {2:8x} is paged\n".format(proc.ImageFileName, mod_name, mod_base))

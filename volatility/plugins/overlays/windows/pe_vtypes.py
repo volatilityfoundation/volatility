@@ -1,3 +1,4 @@
+import volatility.exceptions as exceptions
 import volatility.obj as obj
 
 pe_vtypes = {
@@ -287,10 +288,15 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
     def _nt_header(self):
         """Return the _IMAGE_NT_HEADERS object"""
 
-        dos_header = obj.Object("_IMAGE_DOS_HEADER", offset = self.DllBase,
-                                vm = self.obj_native_vm)
+        try:
+            dos_header = obj.Object("_IMAGE_DOS_HEADER", offset = self.DllBase,
+                                    vm = self.obj_native_vm)
 
-        return dos_header.get_nt_header()
+            return dos_header.get_nt_header()
+        except ValueError:
+            return obj.NoneObject("Failed initial sanity checks")
+        except exceptions.SanityCheckException:
+            return obj.NoneObject("Failed initial sanity checks. Try -u or --unsafe")
 
     def _directory(self, dir_index):
         """Return the requested IMAGE_DATA_DIRECTORY"""

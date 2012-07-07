@@ -39,3 +39,5 @@ class AddrSpaceError(VolatilityException):
 class CacheRelativeURLException(VolatilityException):
     """Exception for gracefully not saving Relative URLs in the cache"""
 
+class SanityCheckException(VolatilityException):
+    """Exception for failed sanity checks (which can potentially be disabled)"""

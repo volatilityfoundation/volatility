@@ -25,6 +25,7 @@ import struct
 import volatility.plugins.taskmods as taskmods
 import volatility.debug as debug
 import volatility.obj as obj
+import volatility.exceptions as exceptions
 
 class ProcExeDump(taskmods.DllList):
     """Dump a process to an executable file sample"""
@@ -62,8 +63,9 @@ class ProcExeDump(taskmods.DllList):
                     of.seek(offset)
                     of.write(code)
             except ValueError, ve:
-                outfd.write("Unable to dump executable; sanity check failed:\n")
-                outfd.write("  " + str(ve) + "\n")
+                outfd.write("Unable to dump executable: {0}\n".format(ve))
+            except exceptions.SanityCheckException, ve:
+                outfd.write("Unable to dump executable: {0}\n".format(ve))
                 outfd.write("You can use -u to disable this check.\n")
             of.close()
 
