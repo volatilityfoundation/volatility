@@ -96,7 +96,7 @@ class DLLDump(procdump.ProcExeDump):
             if ps_ad.is_valid_address(mod_base):
                 process_offset = ps_ad.vtop(proc.obj_offset)
                 dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod_base)
-                outfd.write("Dumping {0}, Process: {1}, Base: {2:8x} output: {3}\n".format(mod_name, proc.ImageFileName, mod_base, dump_file))
+                outfd.write("Dumping {0}, Process: {1}, Base: {2:8x} output: {3}\n".format(str(mod_name or ''), proc.ImageFileName, mod_base, dump_file))
                 of = open(os.path.join(self._config.DUMP_DIR, dump_file), 'wb')
                 try:
                     for chunk in self.get_image(outfd, ps_ad, mod_base):
@@ -110,4 +110,4 @@ class DLLDump(procdump.ProcExeDump):
                     outfd.write("You can use -u to disable this check.\n")
                 of.close()
             else:
-                outfd.write("Cannot dump {0}@{1}: ImageBase at {2:8x} is paged\n".format(proc.ImageFileName, mod_name, mod_base))
+                outfd.write("Cannot dump {0}@{1}: ImageBase at {2:8x} is paged\n".format(proc.ImageFileName, str(mod_name or ''), mod_base))
