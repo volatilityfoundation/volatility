@@ -13,7 +13,7 @@ a = Analysis([os.path.join(HOMEPATH, 'support/_mountzlib.py'),
               os.path.join(projpath, 'vol.py')],
               pathex = [HOMEPATH],
               hookspath = [os.path.join(projpath, 'pyinstaller')])
-pyz = PYZ(a.pure - set(get_plugins(a.pure)),
+pyz = PYZ(a.pure,
           name = os.path.join(BUILDPATH, 'vol.pkz'))
 plugins = Tree(os.path.join(projpath, 'volatility', 'plugins'),
                os.path.join('plugins'))
