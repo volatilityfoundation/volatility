@@ -732,7 +732,10 @@ class CType(BaseObject):
             ## Otherwise its relative to the start of our struct
             offset = int(offset) + int(self.obj_offset)
 
-        result = cls(offset = offset, vm = self.obj_vm, parent = self, name = attr, native_vm = self.obj_native_vm)
+        try:
+            result = cls(offset = offset, vm = self.obj_vm, parent = self, name = attr, native_vm = self.obj_native_vm)
+        except InvalidOffsetError, e:
+            return NoneObject(str(e))
 
         return result
 
