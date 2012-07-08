@@ -1,6 +1,5 @@
 
 import os
-import sys
 
 projpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -12,14 +11,14 @@ for dirpath, _dirnames, filenames in os.walk(os.path.join(projpath, 'volatility'
         dirpath = dirpath[1:]
     for filename in filenames:
         path = os.path.join(dirpath, os.path.splitext(filename)[0])
-	if "/." in path:
-	    continue
-	if "__" in path:
-	    continue
+        if "/." in path:
+            continue
+        if "__" in path:
+            continue
 
-	path = path.replace("-", "_")
-	path = path.replace(os.path.sep, ".")
+        path = path.replace("-", "_")
+        path = path.replace(os.path.sep, ".")
 
-	modules.add("volatility.plugins." + path)
+        modules.add("volatility.plugins." + path)
 
 hiddenimports = list(modules)
