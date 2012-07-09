@@ -30,8 +30,7 @@ PLUGINPATH = os.path.dirname(__file__)
 # If we're in a pyinstaller executable 
 if hasattr(sys, "frozen"):
     try:
-        import iu, _mountzlib #pylint: disable=W0611,F0401
-        PLUGINPATH = os.environ["_MEIPASS2"]
+        PLUGINPATH = sys._MEIPASS #pylint: disable-msg=W0212,E1101
     except ImportError:
         pass
 PLUGINPATH = os.path.join(PLUGINPATH, 'plugins')
