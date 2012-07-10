@@ -92,22 +92,21 @@ class DLLDump(procdump.ProcExeDump):
         if not os.path.isdir(self._config.DUMP_DIR):
             debug.error(self._config.DUMP_DIR + " is not a directory")
 
+        self.table_header(outfd,
+                          [("Process(V)", "[addrpad]"),
+                           ("Name", "20"), 
+                           ("Module Base", "[addrpad]"),
+                           ("Module Name", "20"),
+                           ("Result", "")])
+
         for proc, ps_ad, mod_base, mod_name in data:
-            if ps_ad.is_valid_address(mod_base):
+            if not ps_ad.is_valid_address(mod_base):
+                result = "Error: DllBase is paged"
+            else:
                 process_offset = ps_ad.vtop(proc.obj_offset)
                 dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod_base)
-                outfd.write("Dumping {0}, Process: {1}, Base: {2:8x} output: {3}\n".format(str(mod_name or ''), proc.ImageFileName, mod_base, dump_file))
-                of = open(os.path.join(self._config.DUMP_DIR, dump_file), 'wb')
-                try:
-                    for chunk in self.get_image(outfd, ps_ad, mod_base):
-                        offset, code = chunk
-                        of.seek(offset)
-                        of.write(code)
-                except ValueError, ve:
-                    outfd.write("Unable to dump executable: {0}\n".format(ve))
-                except exceptions.SanityCheckException, ve:
-                    outfd.write("Unable to dump executable: {0}\n".format(ve))
-                    outfd.write("You can use -u to disable this check.\n")
-                of.close()
-            else:
-                outfd.write("Cannot dump {0}@{1}: ImageBase at {2:8x} is paged\n".format(proc.ImageFileName, str(mod_name or ''), mod_base))
+                result = self.dump_pe(outfd, ps_ad, mod_base, dump_file)
+            self.table_row(outfd, 
+                    proc.obj_offset, 
+                    proc.ImageFileName, 
+                    mod_base, str(mod_name or ''), result)

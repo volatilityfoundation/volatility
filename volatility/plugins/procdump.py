@@ -38,6 +38,33 @@ class ProcExeDump(taskmods.DllList):
         config.add_option("UNSAFE", short_option = "u", default = False, action = 'store_true',
                           help = 'Bypasses certain sanity checks when creating image')
 
+    def dump_pe(self, outfd, space, base, dump_file):
+        """
+        Dump a PE from an AS into a file. 
+        
+        @param outfd: output file handle 
+        @param space: an AS to use
+        @param base: PE base address
+        @param dump_file: dumped file name
+
+        @returns a string status message 
+        """
+
+        of = open(os.path.join(self._config.DUMP_DIR, dump_file), 'wb')
+        try:
+            for offset, code in self.get_image(outfd, space, base):
+                of.seek(offset)
+                of.write(code)
+            result = "OK: {0}".format(dump_file)
+        except ValueError, ve:
+            result = "Error: {0}".format(ve)
+        except exceptions.SanityCheckException, ve:
+            result = "Error: {0} Try -u/--unsafe".format(ve)
+        finally:
+            of.close()
+
+        return result
+
     def render_text(self, outfd, data):
         """Renders the tasks to disk images, outputting progress as they go"""
         if self._config.DUMP_DIR == None:
@@ -45,29 +72,32 @@ class ProcExeDump(taskmods.DllList):
         if not os.path.isdir(self._config.DUMP_DIR):
             debug.error(self._config.DUMP_DIR + " is not a directory")
 
+        self.table_header(outfd,
+                          [("Process(V)", "[addrpad]"),
+                           ("ImageBase", "[addrpad]"),
+                           ("Name", "20"),
+                           ("Result", "")])
+
         for task in data:
-            pid = task.UniqueProcessId
-            outfd.write("*" * 72 + "\n")
             task_space = task.get_process_address_space()
-            if task.Peb == None:
-                outfd.write("Error: PEB not memory resident for process [{0}]\n".format(pid))
-                continue
-            if task.Peb.ImageBaseAddress == None or task_space == None or task_space.vtop(task.Peb.ImageBaseAddress) == None:
-                outfd.write("Error: ImageBaseAddress not memory resident for process [{0}]\n".format(pid))
-                continue
-            outfd.write("Dumping {0}, pid: {1:6} output: {2}\n".format(task.ImageFileName, pid, "executable." + str(pid) + ".exe"))
-            of = open(os.path.join(self._config.DUMP_DIR, "executable." + str(pid) + ".exe"), 'wb')
-            try:
-                for chunk in self.get_image(outfd, task.get_process_address_space(), task.Peb.ImageBaseAddress):
-                    offset, code = chunk
-                    of.seek(offset)
-                    of.write(code)
-            except ValueError, ve:
-                outfd.write("Unable to dump executable: {0}\n".format(ve))
-            except exceptions.SanityCheckException, ve:
-                outfd.write("Unable to dump executable: {0}\n".format(ve))
-                outfd.write("You can use -u to disable this check.\n")
-            of.close()
+            if task_space == None:
+                result = "Error: Cannot acquire process AS"
+            elif task.Peb == None:
+                # we must use m() here, because any other attempt to 
+                # reference task.Peb will try to instantiate the _PEB
+                result = "Error: PEB at {0:#x} is paged".format(task.m('Peb'))
+            elif task_space.vtop(task.Peb.ImageBaseAddress) == None:    
+                result = "Error: ImageBaseAddress at {0:#x} is paged".format(task.Peb.ImageBaseAddress)
+            else:
+                dump_file = "executable." + str(task.UniqueProcessId) + ".exe"
+                result = self.dump_pe(outfd, task_space, 
+                                task.Peb.ImageBaseAddress, 
+                                dump_file)
+            self.table_row(outfd, 
+                            task.obj_offset, 
+                            task.Peb.ImageBaseAddress, 
+                            task.ImageFileName, 
+                            result)
 
     def round(self, addr, align, up = False):
         """Rounds down an address based on an alignment"""
