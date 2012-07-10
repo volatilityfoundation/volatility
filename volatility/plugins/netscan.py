@@ -181,6 +181,9 @@ class Netscan(common.AbstractWindowsCommand):
         # Physical space for scanning 
         flat_space = utils.load_as(self._config, astype = 'physical')
 
+        if not self.is_valid_profile(kernel_space.profile):
+            debug.error("This command does not support the selected profile.")
+
         # Scan for TCP listeners also known as sockets
         for offset in PoolScanTcpListener().scan(flat_space):
 

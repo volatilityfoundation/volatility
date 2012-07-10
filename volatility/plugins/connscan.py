@@ -29,7 +29,7 @@ This module implements the fast connection scanning
 #pylint: disable-msg=C0111
 
 import volatility.scan as scan
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.cache as cache
 import volatility.utils as utils
 import volatility.obj as obj
@@ -48,7 +48,7 @@ class PoolScanConnFast(scan.PoolScanner):
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
-class ConnScan(commands.Command):
+class ConnScan(common.AbstractWindowsCommand):
     """ Scan Physical memory for _TCPT_OBJECT objects (tcp connections)
     """
     meta_info = dict(
@@ -61,10 +61,18 @@ class ConnScan(commands.Command):
         version = '1.0',
         )
 
+    @staticmethod
+    def is_valid_profile(profile):
+        return (profile.metadata.get('os', 'unknown') == 'windows' and
+                profile.metadata.get('major', 0) == 5)
+
     @cache.CacheDecorator("scans/connscan2")
     def calculate(self):
         ## Just grab the AS and scan it using our scanner
         address_space = utils.load_as(self._config, astype = 'physical')
+
+        if not self.is_valid_profile(address_space.profile):
+            debug.error("This command does not support the selected profile.")
 
         scanner = PoolScanConnFast()
         for offset in scanner.scan(address_space):

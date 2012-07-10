@@ -87,10 +87,17 @@ class SockScan(common.AbstractWindowsCommand):
         version = '1.0',
         )
 
+    @staticmethod
+    def is_valid_profile(profile):
+        return (profile.metadata.get('os', 'unknown') == 'windows' and
+                profile.metadata.get('major', 0) == 5)
+
     @cache.CacheDecorator("tests/sockscan")
     def calculate(self):
         ## Just grab the AS and scan it using our scanner
         address_space = utils.load_as(self._config, astype = 'physical')
+        if not self.is_valid_profile(address_space.profile):
+            debug.error("This command does not support the selected profile.")
         scanner = PoolScanSockFast()
         for offset in scanner.scan(address_space):
             yield obj.Object('_ADDRESS_OBJECT', vm = address_space, offset = offset)

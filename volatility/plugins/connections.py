@@ -24,6 +24,7 @@ import volatility.plugins.common as common
 import volatility.win32.network as network
 import volatility.cache as cache
 import volatility.utils as utils
+import volatility.debug as debug
 
 class Connections(common.AbstractWindowsCommand):
     """
@@ -45,9 +46,8 @@ class Connections(common.AbstractWindowsCommand):
 
     @staticmethod
     def is_valid_profile(profile):
-        return (profile.metadata.get('os', 'Unknown').lower() == 'windows' and
-                profile.metadata.get('major', 0) == 5 and
-                profile.metadata.get('minor', 0) == 1)
+        return (profile.metadata.get('os', 'unknown') == 'windows' and
+                profile.metadata.get('major', 0) == 5)
 
     def render_text(self, outfd, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
@@ -67,9 +67,11 @@ class Connections(common.AbstractWindowsCommand):
             remote = "{0}:{1}".format(conn.RemoteIpAddress, conn.RemotePort)
             self.table_row(outfd, offset, local, remote, conn.Pid)
 
-
     @cache.CacheDecorator("tests/connections")
     def calculate(self):
         addr_space = utils.load_as(self._config)
+
+        if not self.is_valid_profile(addr_space.profile):
+            debug.error("This command does not support the selected profile.")
 
         return network.determine_connections(addr_space)
