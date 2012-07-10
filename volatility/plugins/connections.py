@@ -28,15 +28,15 @@ import volatility.debug as debug
 
 class Connections(common.AbstractWindowsCommand):
     """
-    Print list of open connections [Windows XP Only]
+    Print list of open connections [Windows XP and 2003 Only]
     ---------------------------------------------
 
-    This module follows the handle table of each task and prints
+    This module follows the handle table in tcpip.sys and prints
     current connections.
 
     Note that if you are using a hibernated image this might not work
-    because Windows closes all sockets before hibernating. You might
-    find it more effective to do conscan instead.
+    because Windows closes all connections before hibernating. You might
+    find it more effective to do connscan instead.
     """
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
