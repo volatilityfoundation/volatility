@@ -60,7 +60,7 @@ class HiveList(hs.HiveScan):
         for hive in result:
             if hive.obj_offset not in hive_offsets:
                 try:
-                    name = hive.FileFullPath.v() or hive.FileUserName.v() or hive.HiveRootPath.v() or "[no name]"
+                    name = str(hive.FileFullPath or '') or str(hive.FileUserName or '') or str(hive.HiveRootPath or '') or "[no name]"
                 except AttributeError:
                     name = "[no name]"
                 # Spec of 10 rather than 8 width, since the # puts 0x at the start, which is included in the width
