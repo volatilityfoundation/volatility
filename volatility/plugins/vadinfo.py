@@ -270,7 +270,7 @@ class VADDump(VADInfo):
             outfd.write("*" * 72 + "\n")
             for vad in task.VadRoot.traverse():
                 if not vad.is_valid():
-                    continue 
+                    continue
 
                 # Open the file and initialize the data
 

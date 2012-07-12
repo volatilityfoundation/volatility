@@ -23,6 +23,7 @@ import volatility.plugins.common as common
 import volatility.scan as scan
 import volatility.obj as obj
 import volatility.cache as cache
+import volatility.debug as debug
 import socket
 import volatility.plugins.overlays.windows.tcpip_vtypes as tcpip_vtypes
 
@@ -212,9 +213,9 @@ class Netscan(common.AbstractWindowsCommand):
                 continue
 
             # These are our sanity checks 
-            if (tcpentry.State.v() not in tcpip_vtypes.TCP_STATE_ENUM or 
+            if (tcpentry.State.v() not in tcpip_vtypes.TCP_STATE_ENUM or
                     (not tcpentry.LocalAddress and (not tcpentry.Owner or
-                    tcpentry.Owner.UniqueProcessId == 0 or 
+                    tcpentry.Owner.UniqueProcessId == 0 or
                     tcpentry.Owner.UniqueProcessId > 65535))):
                 continue
 

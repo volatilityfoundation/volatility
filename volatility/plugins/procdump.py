@@ -86,17 +86,17 @@ class ProcExeDump(taskmods.DllList):
                 # we must use m() here, because any other attempt to 
                 # reference task.Peb will try to instantiate the _PEB
                 result = "Error: PEB at {0:#x} is paged".format(task.m('Peb'))
-            elif task_space.vtop(task.Peb.ImageBaseAddress) == None:    
+            elif task_space.vtop(task.Peb.ImageBaseAddress) == None:
                 result = "Error: ImageBaseAddress at {0:#x} is paged".format(task.Peb.ImageBaseAddress)
             else:
                 dump_file = "executable." + str(task.UniqueProcessId) + ".exe"
-                result = self.dump_pe(outfd, task_space, 
-                                task.Peb.ImageBaseAddress, 
+                result = self.dump_pe(outfd, task_space,
+                                task.Peb.ImageBaseAddress,
                                 dump_file)
-            self.table_row(outfd, 
-                            task.obj_offset, 
-                            task.Peb.ImageBaseAddress, 
-                            task.ImageFileName, 
+            self.table_row(outfd,
+                            task.obj_offset,
+                            task.Peb.ImageBaseAddress,
+                            task.ImageFileName,
                             result)
 
     def round(self, addr, align, up = False):

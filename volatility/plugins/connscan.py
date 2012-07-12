@@ -92,7 +92,7 @@ class ConnScan(common.AbstractWindowsCommand):
         for tcp_obj in data:
             local = "{0}:{1}".format(tcp_obj.LocalIpAddress, tcp_obj.LocalPort)
             remote = "{0}:{1}".format(tcp_obj.RemoteIpAddress, tcp_obj.RemotePort)
-            self.table_row(outfd, 
-                            tcp_obj.obj_offset, 
-                            local, remote, 
+            self.table_row(outfd,
+                            tcp_obj.obj_offset,
+                            local, remote,
                             tcp_obj.Pid)

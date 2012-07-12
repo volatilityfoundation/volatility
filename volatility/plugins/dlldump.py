@@ -27,7 +27,6 @@ import volatility.win32.tasks as tasks
 import volatility.debug as debug
 import volatility.utils as utils
 import volatility.cache as cache
-import volatility.exceptions as exceptions
 
 class DLLDump(procdump.ProcExeDump):
     """Dump DLLs from a process address space"""
@@ -94,7 +93,7 @@ class DLLDump(procdump.ProcExeDump):
 
         self.table_header(outfd,
                           [("Process(V)", "[addrpad]"),
-                           ("Name", "20"), 
+                           ("Name", "20"),
                            ("Module Base", "[addrpad]"),
                            ("Module Name", "20"),
                            ("Result", "")])
@@ -106,7 +105,7 @@ class DLLDump(procdump.ProcExeDump):
                 process_offset = ps_ad.vtop(proc.obj_offset)
                 dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod_base)
                 result = self.dump_pe(outfd, ps_ad, mod_base, dump_file)
-            self.table_row(outfd, 
-                    proc.obj_offset, 
-                    proc.ImageFileName, 
+            self.table_row(outfd,
+                    proc.obj_offset,
+                    proc.ImageFileName,
                     mod_base, str(mod_name or ''), result)
