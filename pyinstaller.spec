@@ -16,7 +16,7 @@ pyz = PYZ(a.pure,
 plugins = Tree(os.path.join(projpath, 'volatility', 'plugins'),
                os.path.join('plugins'))
 exe = EXE(pyz,
-          a.scripts,
+          a.scripts + [('u', '', 'OPTION')],
           a.binaries,
           a.zipfiles,
           a.datas,

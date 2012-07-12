@@ -82,7 +82,7 @@ if py2exe_available:
                       }
     opts['zipfile'] = None
 
-distrib = setup(**opts)
+distrib = setup(**opts) #pylint: disable-msg=W0142
 
 if 'py2exe' in sys.argv:
     # Any py2exe specific files or things that need doing can go in here
