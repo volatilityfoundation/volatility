@@ -229,7 +229,7 @@ class volshell(commands.Command):
             if length % 8 != 0:
                 length = (length + 8) - (length % 8)
 
-            qwords = obj.Object("Array", targetType = "unsigned long long", 
+            qwords = obj.Object("Array", targetType = "unsigned long long",
                 offset = address, count = length / 8, vm = space)
 
             if not qwords:
@@ -238,7 +238,7 @@ class volshell(commands.Command):
 
             for qword in qwords:
                 print "{0:#x} {1:#x}".format(qword.obj_offset, qword.v())
-    
+
         def ps():
             """Print a process listing.
 
@@ -332,6 +332,10 @@ class volshell(commands.Command):
 
                 for o, m, val in offsets:
                     print "{0:6}: {1:30} {2}".format(hex(o), m, val)
+            elif isinstance(objct, obj.NoneObject):
+                print "ERROR: could not instantiate object"
+                print
+                print "Reason: ", objct.reason
             else:
                 print "ERROR: first argument not an object or known type"
                 print
@@ -359,11 +363,11 @@ class volshell(commands.Command):
 
             if not mode:
                 mode = space.profile.metadata.get('memory_model', '32bit')
-            
+
             if mode == '32bit':
                 distorm_mode = distorm3.Decode32Bits
             else:
-                distorm_mode = distorm3.Decode64Bits                
+                distorm_mode = distorm3.Decode64Bits
 
             data = space.read(address, length)
             iterable = distorm3.DecodeGenerator(address, data, distorm_mode)
