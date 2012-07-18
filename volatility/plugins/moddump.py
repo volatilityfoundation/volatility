@@ -73,7 +73,7 @@ class ModDump(procdump.ProcExeDump):
         else:
             for mod in mods.values():
                 if self._config.REGEX:
-                    if not mod_re.search(str(mod.FullDllName)) and not mod_re.search(str(mod.BaseDllName)):
+                    if not mod_re.search(str(mod.FullDllName or '')) and not mod_re.search(str(mod.BaseDllName or '')):
                         continue
                 yield addr_space, procs, mod.DllBase.v(), mod.BaseDllName
 
