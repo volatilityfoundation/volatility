@@ -659,6 +659,11 @@ class _MMVAD_SHORT(obj.CType):
         """Get the ending virtual address"""
         return ((self.EndingVpn + 1) << 12) - 1
 
+    @property
+    def Length(self):
+        """Get the length of the VAD memory region"""
+        return ((self.EndingVpn + 1) << 12) - self.Start 
+
 class _MMVAD_LONG(_MMVAD_SHORT):
     """Subclasses _MMVAD_LONG based on _MMVAD_SHORT"""
     pass
