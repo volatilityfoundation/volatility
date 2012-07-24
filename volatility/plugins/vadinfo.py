@@ -318,7 +318,11 @@ class VADDump(VADInfo):
                     self._config.DUMP_DIR, "{0}.{1:x}.{2}-{3}.dmp".format(
                     task.ImageFileName, offset, vad_start, vad_end))
 
-                result = self.dump_vad(path, vad, task_space)
+                if (task.IsWow64 and vad.u.VadFlags.CommitCharge == 0x7ffffffffffff and 
+                        vad.End > 0x7fffffff):
+                    result = "Skipping Wow64 MM_MAX_COMMIT range"
+                else:
+                    result = self.dump_vad(path, vad, task_space)
 
                 self.table_row(outfd, 
                                task.UniqueProcessId, 
