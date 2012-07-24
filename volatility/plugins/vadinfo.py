@@ -30,6 +30,7 @@
 import os.path
 import volatility.plugins.taskmods as taskmods
 import volatility.debug as debug #pylint: disable-msg=W0611
+import volatility.constants as constants
 
 # Vad Protections. Also known as page protections. _MMVAD_FLAGS.Protection,
 # 3-bits, is an index into nt!MmProtectToValue (the following list). 
@@ -244,30 +245,66 @@ class VADDump(VADInfo):
                           cache_invalidator = False,
                           help = 'Directory in which to dump the VAD files')
 
-        config.add_option('VERBOSE', short_option = 'v', default = False, type = 'bool',
-                          cache_invalidator = False,
-                          help = 'Print verbose progress information')
+    def dump_vad(self, path, vad, address_space):
+        """
+        Dump an MMVAD to a file. 
 
+        @param path: full path to output file 
+        @param vad: an MMVAD object
+        @param address_space: process AS for the vad
+
+        The purpose of this function is to read medium
+        sized vad chunks and write them immediately to 
+        a file, rather than building a large buffer in 
+        memory and then flushing it at once. This prevents
+        our own analysis process from consuming massive
+        amounts of memory for large vads. 
+
+        @returns path to the image file on success or
+        an error message stating why the file could not
+        be dumped. 
+        """
+
+        fh = open(path, "wb")
+        if fh:
+            offset = vad.Start
+            out_of_range = vad.Start + vad.Length 
+            while offset < out_of_range:
+                to_read = min(constants.SCAN_BLOCKSIZE, out_of_range - offset)
+                data = address_space.zread(offset, to_read)
+                if not data: 
+                    break
+                fh.write(data)
+                offset += to_read
+            fh.close()
+            return path
+        else:
+            return "Cannot open {0} for writing".format(path)
+        
     def render_text(self, outfd, data):
         if self._config.DUMP_DIR == None:
             debug.error("Please specify a dump directory (--dump-dir)")
         if not os.path.isdir(self._config.DUMP_DIR):
             debug.error(self._config.DUMP_DIR + " is not a directory")
 
-        for task in data:
-            outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
+        self.table_header(outfd,
+                          [("Pid", "10"),
+                           ("Process", "20"),
+                           ("Start", "[addrpad]"),
+                           ("End", "[addrpad]"),
+                           ("Result", ""),
+                           ])
 
+        for task in data:
             # Walking the VAD tree can be done in kernel AS, but to 
             # carve the actual data, we need a valid process AS. 
             task_space = task.get_process_address_space()
             if not task_space:
-                outfd.write("Unable to get process AS\n")
+                outfd.write("Unable to get process AS for {0}\n".format(task.UniqueProcessId))
                 continue
 
-            name = task.ImageFileName
             offset = task_space.vtop(task.obj_offset)
 
-            outfd.write("*" * 72 + "\n")
             for vad in task.VadRoot.traverse():
                 if not vad.is_valid():
                     continue
@@ -279,16 +316,11 @@ class VADDump(VADInfo):
 
                 path = os.path.join(
                     self._config.DUMP_DIR, "{0}.{1:x}.{2}-{3}.dmp".format(
-                    name, offset, vad_start, vad_end))
+                    task.ImageFileName, offset, vad_start, vad_end))
 
-                f = open(path, 'wb')
-                if f:
-                    range_data = task_space.zread(vad.Start, vad.End - vad.Start + 1)
+                result = self.dump_vad(path, vad, task_space)
 
-                    if self._config.VERBOSE:
-                        outfd.write("Writing VAD for {0}\n".format(path))
-
-                    f.write(range_data)
-                    f.close()
-                else:
-                    outfd.write("Cannot open {0} for writing\n".format(path))
+                self.table_row(outfd, 
+                               task.UniqueProcessId, 
+                               task.ImageFileName, 
+                               vad.Start, vad.End, result)
