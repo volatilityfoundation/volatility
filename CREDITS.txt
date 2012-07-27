@@ -1,23 +1,32 @@
-Volatility 2.0 Contributors (alphabetical):
+===============================================
+We would like to acknowledge individuals that 
+have made significant contributions, code, or 
+ideas toward the respective volatility releases. 
+
+All lists are alphabetical. 
+
+These lists exclude the core Volatility authors, 
+who are identified in AUTHORS.txt. 
+
+If you believe you've been left off, it is not 
+intentional. Please bring it to our attention!
+===============================================
+
+Volatility 2.1:
 ------------
 
-We would like to acknowledge individuals that have made significant
-contributions, code and ideas, to the 2.0 release of the 
-Volatility Framework 2.0:
+Alex Pease 
 
-Mike Auty
-Andrew Case
-Michael Cohen
-Brendan Dolan-Gavitt
-Michael Hale Ligh
-Jamie Levy
-AAron Walters
-
-Volatility 1.3 Contributors (alphabetical)
+Volatility 2.0:
 ------------
 
-We would like to acknowledge individuals that have made significant
-contributions, code and ideas, to the Volatility Framework:
+Frank Boldewin 
+Carl Pulley
+Andreas Schuster
+Bradley Shatz
+
+Volatility 1.3:
+------------
 
 Harlan Carvey
 Michael Cohen
@@ -33,7 +42,6 @@ Jide Abu
 Joseph Ayo Akinyele
 Tommaso Assandri
 Richard Austin
-Frank Boldewin 
 Cameron C Caffee
 Eoghan Casey
 Angelo Cavallini
@@ -42,7 +50,6 @@ Robert Guess
 Christian Herndler
 jeremie0
 Jesse Kornblum
-Jamie Levy
 Eugene Libster
 Erik Ligda
 Robert Lowe

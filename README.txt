@@ -13,18 +13,25 @@ from volatile memory samples and provide a platform for further work into
 this exciting area of research.
 
 The Volatility distribution is available from: 
-https://www.volatilesystems.com/default/volatility
+https://www.volatilesystems.com/default/volatility or 
+http://code.google.com/p/volatility/downloads/list
 
 Volatility should run on any platform that supports 
 Python (http://www.python.org)
 
-Volatility supports investigations of the following x86 bit memory images:
+Volatility supports investigations of the following memory images:
 
-* Microsoft Windows XP Service Pack 2 and 3
-* Microsoft Windows 2003 Server Service Pack 0, 1 and 2
-* Microsoft Vista Service Pack 0, 1 and 2
-* Microsoft 2008 Server Service Pack 1 and 2 (there is no SP 0)
-* Microsoft Windows 7 Service Pack 0 and 1
+* 32-bit Windows XP Service Pack 2 and 3
+* 32-bit Windows 2003 Server Service Pack 0, 1, 2
+* 32-bit Windows Vista Service Pack 0, 1, 2
+* 32-bit Windows 2008 Server Service Pack 1, 2 (there is no SP0)
+* 32-bit Windows 7 Service Pack 0, 1
+* 64-bit Windows XP Service Pack 1 and 2 (there is no SP0)
+* 64-bit Windows 2003 Server Service Pack 1 and 2 (there is no SP0)
+* 64-bit Windows Vista Service Pack 0, 1, 2
+* 64-bit Windows 2008 Server Service Pack 1 and 2 (there is no SP0)
+* 64-bit Windows 2008 R2 Server Service Pack 0 and 1
+* 64-bit Windows 7 Service Pack 0 and 1
 
 Volatility does not provide memory sample acquisition
 capabilities. For acquisition, there are both free and commercial
@@ -36,14 +43,15 @@ volatility (at) volatilesystems (dot) com
 Volatility currently provides the following extraction capabilities for 
 memory samples:
 
-  - Image date and time
+  - Image information (date, time, CPU count)
   - Running processes
+  - Process SIDs and environment variables 
   - Open network sockets
   - Open network connections
   - DLLs loaded for each process
-  - Open files for each process
-  - Open registry keys for each process
+  - Open handles to all kernel/executive objects (files, keys, mutexes)
   - OS kernel modules
+  - Dump any process, DLL, or module to disk 
   - Mapping physical offsets to virtual addresses
   - Virtual Address Descriptor information
   - Addressable memory for each process
@@ -51,6 +59,17 @@ memory samples:
   - Extract executable samples
   - Scanning examples: processes, threads, 
        sockets, connections, modules
+  - Command histories (cmd.exe) and console input/output buffers
+  - Imported and exported API functions 
+  - PE version information 
+  - System call tables (IDT, GDT, SSDT)
+  - API hooks in user- and kernel-mode (inline, IAT, EAT, NT syscall, winsock)
+  - Explore cached registry hives 
+  - Dump LM/NTLM hashes and LSA secrets
+  - User assist and shimcache exploration 
+  - Scan for byte patterns, regular expressions, or strings in memory
+  - Analyze kernel timers and callback functions 
+  - Report on windows services 
 
 Volatility also supports a variety of sample file formats and the
 ability to convert between these formats:
@@ -58,6 +77,11 @@ ability to convert between these formats:
   - Raw linear sample (dd)
   - Hibernation file
   - Crash dump file
+
+For a more detailed list of capabilities, see the following:
+
+    http://code.google.com/p/volatility/wiki/FeaturesByPlugin21
+    http://code.google.com/p/volatility/wiki/CommandReference21
 
 Example Data
 ============
@@ -69,7 +93,7 @@ data hosted by NIST at the following url:
 
 Links to other public memory images can be found at the following url:
 
-    http://code.google.com/p/volatility/wiki/FAQ
+    http://code.google.com/p/volatility/wiki/PublicMemoryImages
 
 Mailing Lists
 =============
@@ -97,134 +121,152 @@ Requirements
 - Python 2.6 or later, but not 3.0. http://www.python.org
 
 Some plugins may have other requirements which can be found at: 
-    http://code.google.com/p/volatility/wiki/FAQ
+    http://code.google.com/p/volatility/wiki/FAQ21
 
 Quick Start
 ===========
 1. Unpack the latest version of Volatility from
-   https://www.volatilesystems.com/default/volatility
-
+   https://www.volatilesystems.com/default/volatility or 
+   http://code.google.com/p/volatility/downloads/list
+   
 2. To see available options, run "python vol.py -h"  
 
    Example:
 
-> python vol.py -h
-Volatile Systems Volatility Framework 2.0
+> python vol.py -h 
+Volatile Systems Volatility Framework 2.1_rc3
 Usage: Volatility - A memory forensics analysis platform.
 
 Options:
   -h, --help            list all available options and their default values.
                         Default values may be set in the configuration file
                         (/etc/volatilityrc)
-  --conf-file=/Users/user/.volatilityrc
+  --conf-file=/Users/Michael/.volatilityrc
                         User based configuration file
   -d, --debug           Debug volatility
-  --info                Print information about all registered objects
   --plugins=PLUGINS     Additional plugin directories to use (colon separated)
-  --cache-directory=/Users/user/.cache/volatility
+  --info                Print information about all registered objects
+  --cache-directory=/Users/Michael/.cache/volatility
                         Directory where cache files are stored
-  --no-cache            Disable caching
+  --cache               Use caching
   --tz=TZ               Sets the timezone for displaying timestamps
   -f FILENAME, --filename=FILENAME
                         Filename to use when opening an image
-  -k KPCR, --kpcr=KPCR  Specify a specific KPCR address
+  --profile=WinXPSP2x86
+                        Name of the profile to load
+  -l LOCATION, --location=LOCATION
+                        A URN location from which to load an address space
+  -w, --write           Enable write support
+  --dtb=DTB             DTB Address
+  --cache-dtb           Cache virtual to physical mappings
+  --use-old-as          Use the legacy address spaces
   --output=text         Output in this format (format support is module
                         specific)
   --output-file=OUTPUT_FILE
                         write output in this file
   -v, --verbose         Verbose information
+  -k KPCR, --kpcr=KPCR  Specify a specific KPCR address
   -g KDBG, --kdbg=KDBG  Specify a specific KDBG virtual address
-  --dtb=DTB             DTB Address
-  --cache-dtb           Cache virtual to physical mappings
-  --use-old-as          Use the legacy address spaces
-  -w, --write           Enable write support
-  --profile=WinXPSP2x86
-                        Name of the profile to load
-  -l LOCATION, --location=LOCATION
-                        A URN location from which to load an address space
 
-    Supported Plugin Commands:
+	Supported Plugin Commands:
 
-        bioskbd         Reads the keyboard buffer from Real Mode memory
-        connections     Print list of open connections [Windows XP Only]
-        connscan2       Scan Physical memory for _TCPT_OBJECT objects (tcp connections)
-        crashinfo       Dump crash-dump information
-        dlldump         Dump DLLs from a process address space
-        dlllist         Print list of loaded dlls for each process
-        driverscan      Scan for driver objects _DRIVER_OBJECT 
-        files           Print list of open files for each process
-        filescan        Scan Physical memory for _FILE_OBJECT pool allocations
-        getsids         Print the SIDs owning each process
-        hashdump        Dumps passwords hashes (LM/NTLM) from memory
-        hibdump         Dumps the hibernation file to a raw file
-        hibinfo         Dump hibernation file information
-        hivedump        Prints out a hive
-        hivelist        Print list of registry hives.
-        hivescan        Scan Physical memory for _CMHIVE objects (registry hives)
-        imagecopy       Copies a physical address space out as a raw DD image
-        imageinfo       Identify information for the image 
-        inspectcache    Inspect the contents of a cache 
-        kdbgscan        Search for and dump potential KDBG values
-        kpcrscan        Search for and dump potential KPCR values
-        lsadump         Dump (decrypted) LSA secrets from the registry
-        memdump         Dump the addressable memory for a process
-        memmap          Print the memory map
-        moddump         Dump a kernel driver to an executable file sample
-        modscan2        Scan Physical memory for _LDR_DATA_TABLE_ENTRY objects
-        modules         Print list of loaded modules
-        mutantscan      Scan for mutant objects _KMUTANT 
-        netscan         Scan a Vista, 2008 or Windows 7 image for connections and sockets
-        patcher         Patches memory based on page scans
-        printkey        Print a registry key, and its subkeys and values
-        procexedump     Dump a process to an executable file sample
-        procmemdump     Dump a process to an executable memory sample
-        pslist          print all running processes by following the EPROCESS lists 
-        psscan          Scan Physical memory for _EPROCESS objects
-        psscan2         Scan Physical memory for _EPROCESS pool allocations
-        pstree          Print process list as a tree
-        regobjkeys      Print list of open regkeys for each process
-        sockets         Print list of open sockets
-        sockscan        Scan Physical memory for _ADDRESS_OBJECT objects (tcp sockets)
-        ssdt            Display SSDT entries
-        strings         Match physical offsets to virtual addresses (may take a while, VERY verbose)
-        testsuite       Run unit test suit using the Cache 
-        thrdscan2       Scan physical memory for _ETHREAD objects
-        vaddump         Dumps out the vad sections to a file
-        vadinfo         Dump the VAD info
-        vadtree         Walk the VAD tree and display in tree format
-        vadwalk         Walk the VAD tree
-        volshell        Shell in the memory image
+		apihooks       	Detect API hooks in process and kernel memory
+		bioskbd        	Reads the keyboard buffer from Real Mode memory
+		callbacks      	Print system-wide notification routines
+		cmdscan        	Extract command history by scanning for _COMMAND_HISTORY
+		connections    	Print list of open connections [Windows XP and 2003 Only]
+		connscan       	Scan Physical memory for _TCPT_OBJECT objects (tcp connections)
+		consoles       	Extract command history by scanning for _CONSOLE_INFORMATION
+		crashinfo      	Dump crash-dump information
+		devicetree     	Show device tree
+		dlldump        	Dump DLLs from a process address space
+		dlllist        	Print list of loaded dlls for each process
+		driverirp      	Driver IRP hook detection
+		driverscan     	Scan for driver objects _DRIVER_OBJECT 
+		envars         	Display process environment variables
+		filescan       	Scan Physical memory for _FILE_OBJECT pool allocations
+		gdt            	Display Global Descriptor Table
+		getsids        	Print the SIDs owning each process
+		handles        	Print list of open handles for each process
+		hashdump       	Dumps passwords hashes (LM/NTLM) from memory
+		hibinfo        	Dump hibernation file information
+		hivedump       	Prints out a hive
+		hivelist       	Print list of registry hives.
+		hivescan       	Scan Physical memory for _CMHIVE objects (registry hives)
+		idt            	Display Interrupt Descriptor Table
+		imagecopy      	Copies a physical address space out as a raw DD image
+		imageinfo      	Identify information for the image 
+		impscan        	Scan for calls to imported functions
+		kdbgscan       	Search for and dump potential KDBG values
+		kpcrscan       	Search for and dump potential KPCR values
+		ldrmodules     	Detect unlinked DLLs
+		lsadump        	Dump (decrypted) LSA secrets from the registry
+		malfind        	Find hidden and injected code
+		memdump        	Dump the addressable memory for a process
+		memmap         	Print the memory map
+		moddump        	Dump a kernel driver to an executable file sample
+		modscan        	Scan Physical memory for _LDR_DATA_TABLE_ENTRY objects
+		modules        	Print list of loaded modules
+		mutantscan     	Scan for mutant objects _KMUTANT 
+		patcher        	Patches memory based on page scans
+		printkey       	Print a registry key, and its subkeys and values
+		procexedump    	Dump a process to an executable file sample
+		procmemdump    	Dump a process to an executable memory sample
+		pslist         	print all running processes by following the EPROCESS lists 
+		psscan         	Scan Physical memory for _EPROCESS pool allocations
+		pstree         	Print process list as a tree
+		psxview        	Find hidden processes with various process listings
+		raw2dmp        	Converts a physical memory sample to a windbg crash dump
+		shimcache      	Parses the Application Compatibility Shim Cache registry key
+		sockets        	Print list of open sockets
+		sockscan       	Scan Physical memory for _ADDRESS_OBJECT objects (tcp sockets)
+		ssdt           	Display SSDT entries
+		strings        	Match physical offsets to virtual addresses (may take a while, VERY verbose)
+		svcscan        	Scan for Windows services
+		symlinkscan    	Scan for symbolic link objects 
+		thrdscan       	Scan physical memory for _ETHREAD objects
+		threads        	Investigate _ETHREAD and _KTHREADs
+		timers         	Print kernel timers and associated module DPCs
+		userassist     	Print userassist registry keys and information
+		vaddump        	Dumps out the vad sections to a file
+		vadinfo        	Dump the VAD info
+		vadtree        	Walk the VAD tree and display in tree format
+		vadwalk        	Walk the VAD tree
+		volshell       	Shell in the memory image
+		yarascan       	Scan process or kernel memory with Yara signatures
 
 3. To get more information on a sample and to make sure Volatility
    supports that sample type, run 'python vol.py imageinfo -f <imagename>'
 
    Example:
    
-    > python vol.py -f win7.dmp imageinfo
-    Volatile Systems Volatility Framework 2.0
+    > python vol.py imageinfo -f WIN-II7VOJTUNGL-20120324-193051.raw 
+    Volatile Systems Volatility Framework 2.1_rc3
     Determining profile based on KDBG search...
-             Suggested Profile : Win7SP0x86
-                     AS Layer1 : JKIA32PagedMemory (Kernel AS)
-                     AS Layer2 : FileAddressSpace (/Users/M/Desktop/win7.dmp)
-                      PAE type : No PAE
-                           DTB : 0x185000
-                          KDBG : 0x8296cbe8
-                          KPCR : 0x8296dc00
-             KUSER_SHARED_DATA : 0xffdf0000
-           Image date and time : 2010-07-06 22:40:28 
-     Image local date and time : 2010-07-06 22:40:28 
-                    Image Type : 
+    
+              Suggested Profile(s) : Win2008R2SP0x64, Win7SP1x64, Win7SP0x64, Win2008R2SP1x64 (Instantiated with Win7SP0x64)
+                         AS Layer1 : AMD64PagedMemory (Kernel AS)
+                         AS Layer2 : FileAddressSpace (/Users/Michael/Desktop/memory/WIN-II7VOJTUNGL-20120324-193051.raw)
+                          PAE type : PAE
+                               DTB : 0x187000L
+                              KDBG : 0xf800016460a0
+              Number of Processors : 1
+         Image Type (Service Pack) : 1
+                    KPCR for CPU 0 : 0xfffff80001647d00L
+                 KUSER_SHARED_DATA : 0xfffff78000000000L
+               Image date and time : 2012-03-24 19:30:53 UTC+0000
+         Image local date and time : 2012-03-25 03:30:53 +0800
 
 4. Run some other tools. -f is a required option for all tools. Some
    also require/accept other options. Run "python vol.py <cmd> -h" for
    more information on a particular command.  A Command Reference wiki
    is also available on the Google Code site:
 
-        http://code.google.com/p/volatility/wiki/CommandReference
+        http://code.google.com/p/volatility/wiki/CommandReference21
 
    as well as Basic Usage:
 
-        http://code.google.com/p/volatility/wiki/BasicUsage
+        http://code.google.com/p/volatility/wiki/BasicUsage21
 
 
 Licensing and Copyright
@@ -279,7 +321,7 @@ For Linux:
 * The suspected kernel version of the memory image
 
 Other options for communicaton can be found at:
-    http://code.google.com/p/volatility/wiki/FAQ
+    http://code.google.com/p/volatility/wiki/FAQ21
 
 Missing or Truncated Information
 ================================
@@ -296,6 +338,6 @@ Command Reference
 The following url contains a reference of all commands supported by 
 Volatility.
 
-    http://code.google.com/p/volatility/wiki/CommandReference
+    http://code.google.com/p/volatility/wiki/CommandReference21
 
 
