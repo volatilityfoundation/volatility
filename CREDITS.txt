@@ -23,7 +23,7 @@ Volatility 2.0:
 Frank Boldewin 
 Carl Pulley
 Andreas Schuster
-Bradley Shatz
+Bradley Schatz
 
 Volatility 1.3:
 ------------
