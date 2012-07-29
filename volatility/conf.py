@@ -450,11 +450,14 @@ if os.access(default_config, os.R_OK):
 else:
     config.add_file("volatilityrc")
 
+default_conf_path = ".volatilityrc"
 try:
-    config.add_option("CONF-FILE", default = os.environ['HOME'] + '/.volatilityrc',
-                      cache_invalidator = False,
-                      help = "User based configuration file")
-
-    config.add_file(config.CONF_FILE)
+    default_conf_path = os.environ['HOME'] + '/.volatilityrc'
 except KeyError:
     pass
+
+config.add_option("CONF-FILE", default = os.environ['HOME'] + '/.volatilityrc',
+                  cache_invalidator = False,
+                  help = "User based configuration file")
+
+config.add_file(config.CONF_FILE)
