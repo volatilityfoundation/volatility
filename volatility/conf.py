@@ -456,7 +456,7 @@ try:
 except KeyError:
     pass
 
-config.add_option("CONF-FILE", default = os.environ['HOME'] + '/.volatilityrc',
+config.add_option("CONF-FILE", default = default_conf_path,
                   cache_invalidator = False,
                   help = "User based configuration file")
 
