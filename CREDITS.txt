@@ -15,7 +15,7 @@ intentional. Please bring it to our attention!
 Volatility 2.1:
 ------------
 
-Alex Pease 
+--- 
 
 Volatility 2.0:
 ------------
