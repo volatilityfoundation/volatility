@@ -45,6 +45,7 @@ Richard Austin
 Cameron C Caffee
 Eoghan Casey
 Angelo Cavallini
+Andre' DiMino
 Jon Evans
 Robert Guess
 Christian Herndler
@@ -59,3 +60,4 @@ Bryan D. Payne
 Golden G. Richard III
 RB
 Sam F. Stover
+Marko Thure
