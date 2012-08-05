@@ -12,6 +12,11 @@ If you believe you've been left off, it is not
 intentional. Please bring it to our attention!
 ===============================================
 
+Volatility 2.2:
+------------
+
+Joe Sylve
+
 Volatility 2.1:
 ------------
 
@@ -58,6 +63,7 @@ Tony Martin
 Timothy Morgan
 Bryan D. Payne
 Golden G. Richard III
+Wyatt Roersma
 RB
 Sam F. Stover
 Marko Thure
