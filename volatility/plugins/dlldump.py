@@ -104,7 +104,7 @@ class DLLDump(procdump.ProcExeDump):
             else:
                 process_offset = ps_ad.vtop(proc.obj_offset)
                 dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod_base)
-                result = self.dump_pe(outfd, ps_ad, mod_base, dump_file)
+                result = self.dump_pe(ps_ad, mod_base, dump_file)
             self.table_row(outfd,
                     proc.obj_offset,
                     proc.ImageFileName,

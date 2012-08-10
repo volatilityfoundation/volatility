@@ -93,5 +93,5 @@ class ModDump(procdump.ProcExeDump):
                 result = "Error: Cannot acquire AS"
             else:
                 dump_file = "driver.{0:x}.sys".format(mod_base)
-                result = self.dump_pe(outfd, space, mod_base, dump_file)
+                result = self.dump_pe(space, mod_base, dump_file)
             self.table_row(outfd, mod_base, mod_name, result)

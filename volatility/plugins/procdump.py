@@ -38,11 +38,10 @@ class ProcExeDump(taskmods.DllList):
         config.add_option("UNSAFE", short_option = "u", default = False, action = 'store_true',
                           help = 'Bypasses certain sanity checks when creating image')
 
-    def dump_pe(self, outfd, space, base, dump_file):
+    def dump_pe(self, space, base, dump_file):
         """
         Dump a PE from an AS into a file. 
         
-        @param outfd: output file handle 
         @param space: an AS to use
         @param base: PE base address
         @param dump_file: dumped file name
@@ -52,7 +51,7 @@ class ProcExeDump(taskmods.DllList):
 
         of = open(os.path.join(self._config.DUMP_DIR, dump_file), 'wb')
         try:
-            for offset, code in self.get_image(outfd, space, base):
+            for offset, code in self.get_image(space, base):
                 of.seek(offset)
                 of.write(code)
             result = "OK: {0}".format(dump_file)
@@ -90,7 +89,7 @@ class ProcExeDump(taskmods.DllList):
                 result = "Error: ImageBaseAddress at {0:#x} is paged".format(task.Peb.ImageBaseAddress)
             else:
                 dump_file = "executable." + str(task.UniqueProcessId) + ".exe"
-                result = self.dump_pe(outfd, task_space,
+                result = self.dump_pe(task_space,
                                 task.Peb.ImageBaseAddress,
                                 dump_file)
             self.table_row(outfd,
@@ -116,7 +115,7 @@ class ProcExeDump(taskmods.DllList):
 
         return dos_header.get_nt_header()
 
-    def get_code(self, addr_space, data_start, data_size, offset, outfd):
+    def get_code(self, addr_space, data_start, data_size, offset):
         """Returns a single section of re-created data from a file image"""
         first_block = 0x1000 - data_start % 0x1000
         full_blocks = ((data_size + (data_start % 0x1000)) / 0x1000) - 1
@@ -130,14 +129,14 @@ class ProcExeDump(taskmods.DllList):
             data_read = addr_space.zread(data_start, data_size)
             if paddr == None:
                 if self._config.verbose:
-                    outfd.write("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(data_start, offset, data_size))
+                    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(data_start, offset, data_size))
             code += data_read
             return (offset, code)
 
         data_read = addr_space.zread(data_start, first_block)
         if paddr == None:
             if self._config.verbose:
-                outfd.write("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(data_start, offset, first_block))
+                debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(data_start, offset, first_block))
         code += data_read
 
         # The middle part of the read
@@ -147,7 +146,7 @@ class ProcExeDump(taskmods.DllList):
             data_read = addr_space.zread(new_vaddr, 0x1000)
             if addr_space.vtop(new_vaddr) == None:
                 if self._config.verbose:
-                    outfd.write("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(new_vaddr, offset, 0x1000))
+                    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(new_vaddr, offset, 0x1000))
             code += data_read
             new_vaddr = new_vaddr + 0x1000
 
@@ -156,11 +155,11 @@ class ProcExeDump(taskmods.DllList):
             data_read = addr_space.zread(new_vaddr, left_over)
             if addr_space.vtop(new_vaddr) == None:
                 if self._config.verbose:
-                    outfd.write("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(new_vaddr, offset, left_over))
+                    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(new_vaddr, offset, left_over))
             code += data_read
         return (offset, code)
 
-    def get_image(self, outfd, addr_space, base_addr):
+    def get_image(self, addr_space, base_addr):
         """Outputs an executable disk image of a process"""
         nt_header = self.get_nt_header(addr_space = addr_space,
                                        base_addr = base_addr)
@@ -173,11 +172,11 @@ class ProcExeDump(taskmods.DllList):
         for sect in nt_header.get_sections(self._config.UNSAFE):
             foa = self.round(sect.PointerToRawData, fa)
             if foa != sect.PointerToRawData:
-                outfd.write("Warning: section start on disk not aligned to file alignment.\n")
-                outfd.write("Warning: adjusted section start from {0} to {1}.\n".format(sect.PointerToRawData, foa))
+                debug.warning("Section start on disk not aligned to file alignment.\n")
+                debug.warning("Adjusted section start from {0} to {1}.\n".format(sect.PointerToRawData, foa))
             yield self.get_code(addr_space,
                                 sect.VirtualAddress + base_addr,
-                                sect.SizeOfRawData, foa, outfd)
+                                sect.SizeOfRawData, foa)
 
 class ProcMemDump(ProcExeDump):
     """Dump a process to an executable memory sample"""
@@ -191,14 +190,14 @@ class ProcMemDump(ProcExeDump):
         result = header[:start] + newval + header[end:]
         return result
 
-    def get_image(self, outfd, addr_space, base_addr):
+    def get_image(self, addr_space, base_addr):
         """Outputs an executable memory image of a process"""
         nt_header = self.get_nt_header(addr_space, base_addr)
 
         sa = nt_header.OptionalHeader.SectionAlignment
         shs = addr_space.profile.get_obj_size('_IMAGE_SECTION_HEADER')
 
-        yield self.get_code(addr_space, base_addr, nt_header.OptionalHeader.SizeOfImage, 0, outfd)
+        yield self.get_code(addr_space, base_addr, nt_header.OptionalHeader.SizeOfImage, 0)
 
         prevsect = None
         sect_sizes = []
