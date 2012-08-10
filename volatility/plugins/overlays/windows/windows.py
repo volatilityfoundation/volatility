@@ -916,12 +916,3 @@ class AbstractKDBGMod(obj.ProfileModification):
                                 'KDBGHeader': [ None, ['VolatilityMagic', dict(value = signature)]]
                                                             }
                                                     ]})
-
-### DEPRECATED FEATURES ###
-#
-# These are due from removal after version 2.2,
-# please do not rely upon them
-
-class AbstractWindows(obj.Profile):
-    """ A Profile for Windows systems """
-    _md_os = 'windows'
