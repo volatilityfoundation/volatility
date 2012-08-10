@@ -35,7 +35,8 @@ class _KDDEBUGGER_DATA64(obj.CType):
 
     def processes(self):
         """Enumerate processes"""
-        list_head = self.PsActiveProcessHead.dereference_as("_LIST_ENTRY")
+        # This is defined as a pointer to _LIST_ENTRY in the overlay
+        list_head = self.PsActiveProcessHead.dereference()
         if not list_head:
             raise AttributeError("Could not list tasks, please verify your --profile with kdbgscan")
 
@@ -44,7 +45,8 @@ class _KDDEBUGGER_DATA64(obj.CType):
 
     def modules(self):
         """Enumerate modules"""
-        list_head = self.PsLoadedModuleList.dereference_as("_LIST_ENTRY")
+        # This is defined as a pointer to _LIST_ENTRY in the overlay
+        list_head = self.PsLoadedModuleList.dereference()
         if not list_head:
             raise AttributeError("Could not list modules, please verify your --profile with kdbgscan")
 
@@ -134,6 +136,8 @@ class KDBGObjectClass(obj.ProfileModification):
             '_KDDEBUGGER_DATA64': [ None, {
             'NtBuildLab': [ None, ['pointer', ['String', dict(length = 32)]]],
             'KiProcessorBlock': [ None, ['pointer', ['array', max_processors, ['pointer', ['_KPRCB']]]]],
+            'PsActiveProcessHead': [ None, ['pointer', ['_LIST_ENTRY']]], 
+            'PsLoadedModuleList': [ None, ['pointer', ['_LIST_ENTRY']]], 
             }]})
 
 kdbg_vtypes = {

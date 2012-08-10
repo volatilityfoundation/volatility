@@ -543,10 +543,13 @@ class Pointer(NativeType):
     def __eq__(self, other):
         if other == None:
             return False
-        return (0xffffffffffff & self.v()) == (0xffffffffffff & other)
+        return self.v() == 0xffffffffffff & other
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def v(self):
+        return NativeType.v(self) & 0xffffffffffff
 
 class Void(NativeType):
     def __init__(self, theType, offset, vm, **kwargs):
