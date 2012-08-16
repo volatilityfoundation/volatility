@@ -1,0 +1,57 @@
+# Volatility
+# Copyright (c) 2011 Michael Cohen <scudette@gmail.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+"""
+Support for 64 bit Linux systems.
+
+@author:      Michael Cohen
+@license:      GNU General Public License 2.0 or later
+@contact:      scudette@gmail.com
+"""
+
+from volatility import obj
+
+class VolatilityDTB(obj.VolatilityMagic):
+    """A scanner for DTB values."""
+
+    def generate_suggestions(self):
+        """Tries to locate the DTB."""
+        profile = self.obj_vm.profile
+
+        # This is the difference between the virtual and physical addresses (aka
+        # PAGE_OFFSET). On linux there is a direct mapping between physical and
+        # virtual addressing in kernel mode:
+
+        #define __va(x) ((void *)((unsigned long) (x) + PAGE_OFFSET))
+
+        # We can also use the startup_64 but that seems to be defined twice (as
+        # a Text symbol and a read only symbol).
+        PAGE_OFFSET = profile.sysmap["_text"] - profile.sysmap["phys_startup_64"]
+
+        yield profile.sysmap["init_level4_pgt"] - PAGE_OFFSET
+
+
+class Linux64ObjectClasses(obj.ProfileModification):
+    """ Makes slight changes to the DTB checker """
+    conditions = {'os': lambda x: x == 'linux',
+                  'memory_model': lambda x: x == '64bit'}
+    before = ['LinuxObjectClasses']
+    def modification(self, profile):
+        profile.object_classes.update({
+            'VolatilityDTB': VolatilityDTB
+                                       })

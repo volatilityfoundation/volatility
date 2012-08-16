@@ -1,0 +1,89 @@
+# Volatility
+# Copyright (c) 2010, 2011, 2012 Michael Ligh <michael.ligh@mnin.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details. 
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+#
+
+import volatility.utils as utils
+import volatility.obj as obj
+import volatility.plugins.linux.pslist as linux_pslist
+import volatility.plugins.linux.pidhashtable as linux_pidhashtable
+import volatility.plugins.linux.common as linux_common
+
+'''
+based off the windows version from mhl
+
+INFO:
+    'pslist' does not get threads
+    'pid_hash' does
+    'kmem_cache' does
+    'runqueue' does
+'''
+
+class linux_psxview(linux_common.AbstractLinuxCommand):
+    "Find hidden processes with various process listings"
+
+    def __init__(self, config, *args):
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args)
+
+    def get_pslist(self):
+        return [x.obj_offset for x in linux_pslist.linux_pslist(self._config).calculate()]
+
+    def get_pid_hash(self):
+        return [x.obj_offset for x in linux_pidhashtable.linux_pidhashtable(self._config).calculate()]
+
+    def calculate(self):
+        
+        ps_sources = {}
+        
+        # The keys are names of process sources
+        # The values are the virtual offset of the task_struct
+ 
+        ps_sources['pslist']     = self.get_pslist()
+        ps_sources['pid_hash']   = self.get_pid_hash()
+        
+        # TODO
+        # ps_sources['kmem_cache'] = 
+        # ps_sources['run_queue']  = 
+
+        # Build a list of offsets from all sources
+        seen_offsets = []
+        for source in ps_sources:
+
+            tasks = ps_sources[source]
+
+            for offset in tasks:
+
+                if offset not in seen_offsets:
+                    seen_offsets.append(offset)
+                    yield offset, obj.Object("task_struct", offset=offset, vm=self.addr_space), ps_sources
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd, [('Offset(V)', '[addrpad]'),
+                                  ('Name', '<20'),
+                                  ('PID', '>6'),
+                                  ('pslist', '5'),
+                                  ('pid_hash', '5'),
+                                  ])
+
+        for offset, process, ps_sources in data:
+            self.table_row(outfd,
+                offset,
+                process.comm,
+                process.pid,
+                str(ps_sources['pslist'].__contains__(offset)),
+                str(ps_sources['pid_hash'].__contains__(offset)),
+                )
