@@ -105,7 +105,7 @@ class FileScan(common.AbstractWindowsCommand):
         for object_obj, file_obj in data:
             self.table_row(outfd,
                          file_obj.obj_offset, object_obj.PointerCount,
-                         object_obj.HandleCount, file_obj.access_string(), str(file_obj.FileName or ''))
+                         object_obj.HandleCount, file_obj.access_string(), str(file_obj.file_name_with_device() or ''))
 
 class PoolScanDriver(PoolScanFile):
     """ Scanner for _DRIVER_OBJECT """
