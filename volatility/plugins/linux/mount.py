@@ -37,11 +37,15 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
         # get each list_head out of the array
         for outerlist in mnt_list:
-            for vfsmnt in outerlist.list_of_type("vfsmount", "mnt_hash"):
 
+            for vfsmnt in outerlist.list_of_type("vfsmount", "mnt_hash"):
+                
                 dev_name = vfsmnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
 
                 path = linux_common.do_get_path(vfsmnt.mnt_sb.s_root, vfsmnt.mnt_parent, vfsmnt.mnt_root, vfsmnt)
+
+                if path == []:  
+                    continue
 
                 fstype = vfsmnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
                 mnt_string = self.calc_mnt_string(vfsmnt)
@@ -50,9 +54,8 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                     rr = "ro"
                 else:
                     rr = "rw"
-
+                
                 yield vfsmnt.mnt_sb, dev_name, path, fstype, rr, mnt_string
-
 
     def render_text(self, outfd, data):
 

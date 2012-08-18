@@ -30,10 +30,15 @@ import zipfile
 
 import volatility.plugins
 import volatility.plugins.overlays.basic as basic
+import volatility.plugins.overlays.native_types as native_types
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.dwarf as dwarf
 
+x64_native_types = copy.deepcopy(native_types.x64_native_types)
+
+x64_native_types['long'] = [8, '<q']
+x64_native_types['unsigned long'] = [8, '<Q']
 
 linux_overlay = {
     'task_struct' : [None, {
@@ -115,6 +120,9 @@ def LinuxProfileFactory(profpkg):
         __doc__ = "A Profile for Linux " + profilename + " " + arch
         _md_os = "linux"
         _md_memory_model = memmodel
+        # Override 64-bit native_types
+        native_mapping = {'32bit': native_types.x86_native_types,
+                          '64bit': x64_native_types}
 
         def __init__(self, *args, **kwargs):
             self.sysmap = {}
@@ -189,6 +197,7 @@ class linux_file(obj.CType):
 class hlist_node(obj.CType):
     """A hlist_node makes a doubly linked list."""
     def list_of_type(self, type, member, offset = -1, forward = True, head_sentinel = True):
+        
         if not self.is_valid():
             return
 
@@ -265,7 +274,7 @@ class list_head(obj.CType):
             else:
                 nxt = item.m(member).prev.dereference()
 
-
+            
     def __nonzero__(self):
         ## List entries are valid when both Flinks and Blink are valid
         return bool(self.next) or bool(self.prev)

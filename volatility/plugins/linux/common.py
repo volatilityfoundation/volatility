@@ -73,16 +73,23 @@ def walk_per_cpu_var(obj_ref, per_var, var_type):
     cpus = online_cpus(obj_ref.smap, obj_ref.addr_space)
 
     # get the highest numbered cpu
-    max_cpu = cpus[-1]
+    max_cpu = cpus[-1] + 1
 
-    per_offsets = obj.Object(theType = 'Array', targetType = 'unsigned long', count = max_cpu, offset = obj_ref.smap["__per_cpu_offset"], vm = obj_ref.addr_space)
+    offset_var = "__per_cpu_offset"
+    per_offsets = obj.Object(theType = 'Array', targetType = 'unsigned long', count = max_cpu, offset = obj_ref.smap[offset_var], vm = obj_ref.addr_space)
+
     i = 0
 
-    for i in cpus:
+    for i in range(max_cpu):
 
         offset = per_offsets[i]
+       
+        if "per_cpu__" + per_var in obj_ref.smap:
+            var = "per_cpu__" + per_var
+        else:
+            var = per_var
 
-        addr = obj_ref.smap["per_cpu__" + per_var] + offset.v()
+        addr = obj_ref.smap[var] + offset.v()
         var = obj.Object(var_type, offset = addr, vm = obj_ref.addr_space)
 
         yield i, var
@@ -144,7 +151,11 @@ def do_get_path(rdentry, rmnt, dentry, vfsmnt):
 
     inode = dentry.d_inode
 
+    if not rdentry.is_valid() or not dentry.is_valid():
+        return []
+
     while dentry != rdentry or vfsmnt != rmnt:
+        
         dname = dentry.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
         
         ret_path.append(dname.strip('/'))

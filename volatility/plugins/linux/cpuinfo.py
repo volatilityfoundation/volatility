@@ -31,7 +31,8 @@ class linux_cpuinfo(linux_common.AbstractLinuxCommand):
 
         cpus = linux_common.online_cpus(self.smap, self.addr_space)
 
-        if len(cpus) > 1 and "per_cpu__cpu_info" in self.smap:
+        
+        if len(cpus) > 1 and ("per_cpu__cpu_info" in self.smap or "cpu_info" in self.smap):
             func = self.get_info_smp
 
         elif "boot_cpu_data" in self.smap:
