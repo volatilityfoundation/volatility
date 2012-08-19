@@ -109,8 +109,9 @@ class KDBGScan(common.AbstractWindowsCommand):
         for p in profilelist:
             self._config.update('PROFILE', p)
             buf = addrspace.BufferAddressSpace(self._config)
-            proflens[p] = str(obj.VolMagic(buf).KDBGHeader)
-            maxlen = max(maxlen, len(proflens[p]))
+            if buf.profile.metadata.get('os', 'unknown') == 'windows':
+                proflens[p] = str(obj.VolMagic(buf).KDBGHeader)
+                maxlen = max(maxlen, len(proflens[p]))
         self._config.update('PROFILE', origprofile)
 
         scanner = KDBGScanner(needles = proflens.values())
