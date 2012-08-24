@@ -47,7 +47,7 @@ class linux_iomem(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
 
-        io_ptr = self.smap["iomem_resource"]
+        io_ptr = self.get_profile_symbol("iomem_resource")
 
         for r in self.yield_resource(io_ptr):
             yield r

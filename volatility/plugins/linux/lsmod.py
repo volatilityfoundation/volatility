@@ -95,7 +95,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
 
-        modules_addr = self.smap["modules"]
+        modules_addr = self.get_profile_symbol("modules")
 
         modules = obj.Object("list_head", vm = self.addr_space, offset = modules_addr)
 

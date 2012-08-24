@@ -114,13 +114,16 @@ class linux_route(linux_common.AbstractLinuxCommand):
 
     def get_fib_table(self):
 
-        # get pointer to table
-        if "fib_table_hash" in self.smap:
-            fib_table_ptr = self.smap["fib_table_hash"]
+        fib_table_addr = self.get_profile_symbol("fib_table_hash")
+        init_net_addr  = self.get_profile_symbol("init_net")
 
-        elif "init_net" in self.smap:
+        # get pointer to table
+        if fib_table_addr:
+            fib_table_ptr = self.get_profile_symbol("fib_table_hash")
+
+        elif init_net_addr:
             
-            init_net     = obj.Object("net", offset=self.smap["init_net"], vm=self.addr_space) 
+            init_net     = obj.Object("net", offset=init_net_addr, vm=self.addr_space) 
             fib_table_ptr = obj.Object("Pointer", offset=init_net.ipv4.fib_table_hash, vm=self.addr_space)
                 
         else:
@@ -129,7 +132,7 @@ class linux_route(linux_common.AbstractLinuxCommand):
             sys.exit(1)
 
         # get the size
-        if "fib_table_hash_symbol" in self.smap: # TODO "if fib_table_hash symbol is an array"
+        if self.get_profile_symbol("fib_table_hash"): # TODO "if fib_table_hash symbol is an array"
             fib_tbl_sz = -1 # BUG make it size of the array
             raise AttributeError, "please file a bug with kernel version and distribution that triggered this message"
 
@@ -149,8 +152,10 @@ class linux_route(linux_common.AbstractLinuxCommand):
 
         ret = []
         
-        if "fib_tables" in self.smap:
-            fib_tables  = obj.Object(theType = "Array", offset=self.smap["fib_tables"], vm=self.addr_space, targetType='fib_table', count=256)
+        fib_tables_addr = self.get_profile_symbol("fib_tables")
+
+        if fib_tables_addr:
+            fib_tables  = obj.Object(theType = "Array", offset=fib_tables_addr, vm=self.addr_space, targetType='fib_table', count=256)
             ret = [f for f in fib_tables if f]
 
         else:

@@ -39,7 +39,7 @@ class linux_arp(common.AbstractLinuxCommand):
 
     def calculate(self):
 
-        ntables_ptr = obj.Object("Pointer", offset = self.smap["neigh_tables"], vm = self.addr_space)
+        ntables_ptr = obj.Object("Pointer", offset = self.get_profile_symbol("neigh_tables"), vm = self.addr_space)
 
         for ntable in common.walk_internal_list("neigh_table", "next", ntables_ptr):
             yield self.handle_table(ntable)

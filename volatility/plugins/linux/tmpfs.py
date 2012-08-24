@@ -252,7 +252,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
         #print "inode: %x page: %x" % (inode, page)
 
-        mem_map_ptr = obj.Object("Pointer", offset=self.smap["mem_map"], vm=self.addr_space)
+        mem_map_ptr = obj.Object("Pointer", offset=self.get_profile_symbol("mem_map"), vm=self.addr_space)
 
         phys_offset = (page - mem_map_ptr) / self.profile.get_obj_size("page")
 

@@ -48,8 +48,8 @@ class linux_psaux(linux_pslist.linux_pslist):
 
     def calc_time(self, start_offset):
 
-        wall_to_monotonic = obj.Object("timespec", offset = self.smap["wall_to_monotonic"], vm = self.addr_space)
-        xtime = obj.Object("timespec", offset = self.smap["xtime"], vm = self.addr_space)
+        wall_to_monotonic = obj.Object("timespec", offset = self.get_profile_symbol("wall_to_monotonic"), vm = self.addr_space)
+        xtime = obj.Object("timespec", offset = self.get_profile_symbol("xtime"), vm = self.addr_space)
 
         # this emualtes old code I had from the kerenl
         boot_time = wall_to_monotonic.tv_sec + xtime.tv_sec

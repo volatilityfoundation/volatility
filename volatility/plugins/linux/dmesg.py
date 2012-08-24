@@ -29,9 +29,9 @@ class linux_dmesg(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
 
-        ptr_addr = self.smap["log_buf"]
+        ptr_addr = self.get_profile_symbol("log_buf")
         log_buf_addr = obj.Object("unsigned long", offset = ptr_addr, vm = self.addr_space)
-        log_buf_len = obj.Object("int", self.smap["log_buf_len"], vm = self.addr_space)
+        log_buf_len = obj.Object("int", self.get_profile_symbol("log_buf_len"), vm = self.addr_space)
 
         yield obj.Object("String", offset = log_buf_addr, vm = self.addr_space, length = log_buf_len)
 

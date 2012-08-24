@@ -48,7 +48,7 @@ class linux_netstat(linux_common.AbstractLinuxCommand):
         for (task, filp, _i) in openfiles:
 
             # its a socket!
-            if filp.f_op == self.smap["socket_file_ops"] or filp.dentry.d_op == self.smap["sockfs_dentry_operations"]:
+            if filp.f_op == self.get_profile_symbol("socket_file_ops") or filp.dentry.d_op == self.get_profile_symbol("sockfs_dentry_operations"):
 
                 iaddr = filp.dentry.d_inode
                 skt = self.SOCKET_I(iaddr)

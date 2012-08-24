@@ -29,8 +29,8 @@ class linux_route_cache(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
 
-        mask = obj.Object("unsigned int", offset = self.smap["rt_hash_mask"], vm = self.addr_space)
-        rt_pointer = obj.Object("Pointer", offset = self.smap["rt_hash_table"], vm = self.addr_space)
+        mask = obj.Object("unsigned int", offset = self.get_profile_symbol("rt_hash_mask"), vm = self.addr_space)
+        rt_pointer = obj.Object("Pointer", offset = self.get_profile_symbol("rt_hash_table"), vm = self.addr_space)
         rt_hash_table = obj.Object(theType = "Array", offset = rt_pointer, vm = self.addr_space, targetType = "rt_hash_bucket", count = mask)
 
         # rt_do_flush / rt_cache_seq_show

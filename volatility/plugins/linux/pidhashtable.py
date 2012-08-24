@@ -61,10 +61,10 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
 
         self.seen_pids = {}
 
-        pidhash_shift = obj.Object("unsigned int", offset=self.smap["pidhash_shift"], vm=self.addr_space)
+        pidhash_shift = obj.Object("unsigned int", offset=self.get_profile_symbol("pidhash_shift"), vm=self.addr_space)
         pidhash_size  = 1 << pidhash_shift 
 
-        pidhash_addr = self.smap["pid_hash"]
+        pidhash_addr = self.get_profile_symbol("pid_hash")
         pidhash_ptr  = obj.Object("Pointer", offset = pidhash_addr, vm=self.addr_space)
 
         # pidhash is an array of hlist_heads

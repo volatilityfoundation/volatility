@@ -104,7 +104,7 @@ class AbstractLinuxCommand(commands.Command):
                     ret = sym_list[0][0]
 
             else:
-                debug.info("Requested symbol {0:s} not found in module {1:s}\n".format(sym_name, module))
+                debug.debug("Requested symbol {0:s} not found in module {1:s}\n".format(sym_name, module))
         else:
             debug.info("Requested module {0:s} not found in symbol table\n".format(module))
 
