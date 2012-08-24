@@ -110,15 +110,29 @@ class AbstractLinuxCommand(commands.Command):
 
         return ret
 
+    # In 2.6.3x, Linux changed how the symbols for per_cpu variables were named
+    # This handles both formats so plugins needing per-cpu vars are cleaner
+    def get_per_cpu_symbol(self, sym_name, module="kernel"):
+
+        ret = self.get_profile_symbol(sym_name, module=module)
+
+        if not ret:
+            ret = self.get_profile_symbol("per_cpu__" + sym_name, module=module)
+
+        return ret
+        
 # returns a list of online cpus (the processor numbers)
-def online_cpus(smap, addr_space):
+def online_cpus(self):
+
+    cpu_online_bits_addr = self.get_profile_symbol("cpu_online_bits")
+    cpu_present_map_addr = self.get_profile_symbol("cpu_present_map")
 
     #later kernels..
-    if "cpu_online_bits" in smap:
-        bmap = obj.Object("unsigned long", offset = smap["cpu_online_bits"], vm = addr_space)
+    if cpu_online_bits_addr:
+        bmap = obj.Object("unsigned long", offset = cpu_online_bits_addr, vm = self.addr_space)
 
-    elif "cpu_present_map" in smap:
-        bmap = obj.Object("unsigned long", offset = smap["cpu_present_map"], vm = addr_space)
+    elif cpu_present_map_addr:
+        bmap = obj.Object("unsigned long", offset = cpu_present_map_addr, vm = self.addr_space)
 
     else:
         raise AttributeError, "Unable to determine number of online CPUs for memory capture"
@@ -132,15 +146,13 @@ def online_cpus(smap, addr_space):
 
 def walk_per_cpu_var(obj_ref, per_var, var_type):
 
-    cpus = online_cpus(obj_ref.smap, obj_ref.addr_space)
+    cpus = online_cpus(obj_ref)
 
     # get the highest numbered cpu
     max_cpu = cpus[-1] + 1
 
-    offset_var = "__per_cpu_offset"
-    per_offsets = obj.Object(theType = 'Array', targetType = 'unsigned long', count = max_cpu, offset = obj_ref.smap[offset_var], vm = obj_ref.addr_space)
-
-    i = 0
+    offset_var = obj_ref.get_profile_symbol("__per_cpu_offset")
+    per_offsets = obj.Object(theType = 'Array', targetType = 'unsigned long', count = max_cpu, offset = offset_var, vm = obj_ref.addr_space)
 
     for i in range(max_cpu):
 

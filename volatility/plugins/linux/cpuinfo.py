@@ -29,12 +29,12 @@ class linux_cpuinfo(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
 
-        cpus = linux_common.online_cpus(self.smap, self.addr_space)
+        cpus = linux_common.online_cpus(self)
         
-        if len(cpus) > 1 and ("per_cpu__cpu_info" in self.smap or "cpu_info" in self.smap):
+        if len(cpus) > 1 and self.get_per_cpu_symbol("cpu_info"):
             func = self.get_info_smp
 
-        elif "boot_cpu_data" in self.smap:
+        elif self.get_per_cpu_symbol("boot_cpu_data"):
             func = self.get_info_single
 
         else:
@@ -44,7 +44,7 @@ class linux_cpuinfo(linux_common.AbstractLinuxCommand):
 
     def get_info_single(self):
 
-        cpu = obj.Object("cpuinfo_x86", offset = self.smap["boot_cpu_data"], vm = self.addr_space)
+        cpu = obj.Object("cpuinfo_x86", offset = self.get_profile_symbol("boot_cpu_data"), vm = self.addr_space)
 
         yield 0, cpu
 
