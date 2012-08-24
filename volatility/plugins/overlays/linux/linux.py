@@ -69,18 +69,28 @@ linux_overlay = {
         }],
     }
 
-def parse_system_map(data):
+def parse_system_map(data, module):
     """Parse the symbol file."""
-    sys_map = {}
+    sys_map         = {}
+    sys_map[module] = {}
+    
     arch = None
+
     # get the system map
     for line in data.splitlines():
-        (address, _, symbol) = line.strip().split()
+        (str_addr, symbol_type, symbol) = line.strip().split()
+        
         try:
-            sys_map[symbol] = long(address, 16)
+            sym_addr = long(str_addr, 16)
         except ValueError:
-            pass
-    arch = str(len(address) * 4) + "bit"
+            continue
+
+        if not symbol in sys_map[module]:
+            sys_map[module][symbol] = []
+
+        sys_map[module][symbol].append([sym_addr, symbol_type])
+
+    arch = str(len(str_addr) * 4) + "bit"
 
     return arch, sys_map
 
@@ -106,7 +116,7 @@ def LinuxProfileFactory(profpkg):
             vtypesvar.update(dwarf.DWARFParser(data).finalize())
             debug.debug("{2}: Found dwarf file {0} with {1} symbols".format(f.filename, len(vtypesvar.keys()), profilename))
         elif 'system.map' in f.filename.lower():
-            memmodel, sysmap = parse_system_map(profpkg.read(f.filename))
+            memmodel, sysmap = parse_system_map(profpkg.read(f.filename), "kernel")
             if memmodel == "64bit":
                 arch = "x64"
             sysmapvar.update(sysmap)
@@ -125,12 +135,13 @@ def LinuxProfileFactory(profpkg):
                           '64bit': x64_native_types}
 
         def __init__(self, *args, **kwargs):
-            self.sysmap = {}
+            # change the name to catch any code referencing the old hash table
+            self.sy_smap = {}
             obj.Profile.__init__(self, *args, **kwargs)
 
         def clear(self):
             """Clear out the system map, and everything else"""
-            self.sysmap = {}
+            self.sys_map = {}
             obj.Profile.clear(self)
 
         def reset(self):
@@ -150,7 +161,7 @@ def LinuxProfileFactory(profpkg):
 
         def load_sysmap(self):
             """Loads up the system map data"""
-            self.sysmap.update(sysmapvar)
+            self.sys_map.update(sysmapvar)
 
     cls = AbstractLinuxProfile
     cls.__name__ = 'Linux' + profilename.replace('.', '_') + arch
@@ -377,7 +388,8 @@ class VolatilityDTB(obj.VolatilityMagic):
         else:
             shift = 0xffffffff80000000
 
-        yield profile.sysmap["swapper_pg_dir"] - shift
+        # this is the only code allowed to reference the internal sys_map!
+        yield profile.sys_map["kernel"]["swapper_pg_dir"][0][0] - shift
 
 class VolatilityArmValidAS(obj.VolatilityMagic):
     """An object to check that an address space is a valid Arm Paged space"""
