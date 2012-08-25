@@ -33,17 +33,7 @@ class VolatilityDTB(obj.VolatilityMagic):
         """Tries to locate the DTB."""
         profile = self.obj_vm.profile
 
-        # This is the difference between the virtual and physical addresses (aka
-        # PAGE_OFFSET). On linux there is a direct mapping between physical and
-        # virtual addressing in kernel mode:
-
-        #define __va(x) ((void *)((unsigned long) (x) + PAGE_OFFSET))
-
-        # We can also use the startup_64 but that seems to be defined twice (as
-        # a Text symbol and a read only symbol).
-        PAGE_OFFSET = profile.sysmap["_text"] - profile.sysmap["phys_startup_64"]
-
-        yield profile.sysmap["init_level4_pgt"] - PAGE_OFFSET
+        yield profile.sys_map["kernel"]["init_level4_pgt"][0][0] - 0xffffffff80000000 
 
 
 class Linux64ObjectClasses(obj.ProfileModification):
