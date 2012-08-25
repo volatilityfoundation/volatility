@@ -70,7 +70,7 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
 
         for task in data:
             outfd.write("0x{0:08x} {1:20s} {2:15s} {3:15s} {4:35s}\n".format(
-                task.obj_offset, task.comm, str(task.pid), str(task.uid), self.start_time(task)))
+                task.obj_offset, task.comm, str(task.pid), str(task.uid) if task.uid else "-", self.start_time(task)))
 
 class linux_memmap(linux_pslist):
     """Dumps the memory map for linux tasks."""
