@@ -30,7 +30,7 @@ class DWARFParser(object):
 
     dwarf_header_regex2 = re.compile(r'<(?P<level>\d+)><(?P<statement_id>0x[0-9a-fA-F]+)><(?P<kind>\w+)>')
 
-    sz2tp = {8: 'long long', 4: 'long', 2: 'short', 1: 'char'}
+    sz2tp = {8: 'long long', 4: 'int', 2: 'short', 1: 'char'}
     tp2vol = {
         '_Bool': 'unsigned char',
         'char': 'char',
@@ -47,7 +47,7 @@ class DWARFParser(object):
         'signed char': 'signed char',
         'unsigned char': 'unsigned char',
         'unsigned int': 'unsigned int',
-        'long unsigned int': 'unsigned int',
+        'long unsigned int': 'unsigned long',
         'sizetype' : 'unsigned long',
     }
 
