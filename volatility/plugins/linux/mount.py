@@ -39,7 +39,10 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         for outerlist in mnt_list:
 
             for vfsmnt in outerlist.list_of_type("vfsmount", "mnt_hash"):
+                yield vfsmnt
                 
+    def parse_vfsmnt(self, data):
+            for vfsmnt in data:                
                 dev_name = vfsmnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
 
                 path = linux_common.do_get_path(vfsmnt.mnt_sb.s_root, vfsmnt.mnt_parent, vfsmnt.mnt_root, vfsmnt)
@@ -58,6 +61,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                 yield vfsmnt.mnt_sb, dev_name, path, fstype, rr, mnt_string
 
     def render_text(self, outfd, data):
+        data = self.parse_vfsmnt(data)
 
         for (sb, dev_name, path, fstype, rr, mnt_string) in data:
             outfd.write("{0:15s} {1:35s} {2:12s} {3:2s}{4:64s}\n".format(dev_name, path, fstype, rr, mnt_string))
