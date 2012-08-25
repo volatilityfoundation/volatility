@@ -73,16 +73,10 @@ class DWARFParser(object):
         """Lookup anonymous member and replace it with a well known one."""
         # Reference to another type
         if isinstance(memb, str) and memb.startswith('<'):
-            if memb[:2] == "0x":
-                memb = "0x" + memb[2:].strip('0')
+            if memb[1:3] == "0x":
+                memb = "<0x" + memb[3:].lstrip('0')
 
-            try:
-                resolved = self.id_to_name[memb[1:]]
-            except KeyError:
-                try:
-                    resolved = self.id_to_name[int(memb[1:], self.base)]
-                except KeyError:
-                    resolved = self.id_to_name["%#x" % int(memb[1:], self.base)]
+            resolved = self.id_to_name[memb[1:]]
 
             return self.resolve(resolved)
 
