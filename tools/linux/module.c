@@ -3,6 +3,7 @@
 symbols and then read the DWARF symbols from it.
 */
 #include <linux/module.h>
+#include <linux/version.h>
 
 #include <linux/fs_struct.h>
 #include <linux/fs.h>
@@ -11,7 +12,6 @@ symbols and then read the DWARF symbols from it.
 #include <net/tcp.h>
 #include <net/route.h>
 #include <net/udp.h>
-#include <asm/alternative.h>
 #include <linux/mount.h>
 #include <linux/inetdevice.h>
 #include <linux/fdtable.h>
@@ -33,8 +33,11 @@ struct unix_sock unix_sock;
 struct pid pid;
 struct pid_namespace pid_namespace;
 struct radix_tree_root radix_tree_root;
+#ifdef CONFIG_NETFILTER
 struct nf_hook_ops nf_hook_ops;
 struct nf_sockopt_ops nf_sockopt_ops;
+#endif
+
 struct xt_table xt_table;
 
 /********************************************************************
@@ -132,4 +135,120 @@ struct module_sect_attrs
 };
 
 struct module_sect_attrs module_sect_attrs;
+
+#ifdef CONFIG_SLAB
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)
+/*
+ * struct kmem_cache
+ *
+ * manages a cache.
+ */
+
+struct kmem_cache {
+/* 1) per-cpu data, touched during every alloc/free */
+	struct array_cache *array[NR_CPUS];
+/* 2) Cache tunables. Protected by cache_chain_mutex */
+	unsigned int batchcount;
+	unsigned int limit;
+	unsigned int shared;
+
+	unsigned int buffer_size;
+	u32 reciprocal_buffer_size;
+/* 3) touched by every alloc & free from the backend */
+
+	unsigned int flags;		/* constant flags */
+	unsigned int num;		/* # of objs per slab */
+
+/* 4) cache_grow/shrink */
+	/* order of pgs per slab (2^n) */
+	unsigned int gfporder;
+
+	/* force GFP flags, e.g. GFP_DMA */
+	gfp_t gfpflags;
+
+	size_t colour;			/* cache colouring range */
+	unsigned int colour_off;	/* colour offset */
+	struct kmem_cache *slabp_cache;
+	unsigned int slab_size;
+	unsigned int dflags;		/* dynamic flags */
+
+	/* constructor func */
+	void (*ctor)(void *obj);
+
+/* 5) cache creation/removal */
+	const char *name;
+	struct list_head next;
+
+/* 6) statistics */
+#if STATS
+	unsigned long num_active;
+	unsigned long num_allocations;
+	unsigned long high_mark;
+	unsigned long grown;
+	unsigned long reaped;
+	unsigned long errors;
+	unsigned long max_freeable;
+	unsigned long node_allocs;
+	unsigned long node_frees;
+	unsigned long node_overflow;
+	atomic_t allochit;
+	atomic_t allocmiss;
+	atomic_t freehit;
+	atomic_t freemiss;
+#endif
+#if DEBUG
+	/*
+	 * If debugging is enabled, then the allocator can add additional
+	 * fields and/or padding to every object. buffer_size contains the total
+	 * object size including these internal fields, the following two
+	 * variables contain the offset to the user object and its size.
+	 */
+	int obj_offset;
+	int obj_size;
+#endif
+	/*
+	 * We put nodelists[] at the end of kmem_cache, because we want to size
+	 * this array to nr_node_ids slots instead of MAX_NUMNODES
+	 * (see kmem_cache_init())
+	 * We still use [MAX_NUMNODES] and not [1] or [0] because cache_cache
+	 * is statically defined, so we reserve the max number of nodes.
+	 */
+	struct kmem_list3 *nodelists[MAX_NUMNODES];
+	/*
+	 * Do not add fields after nodelists[]
+	 */
+};
+
+struct kmem_cache kmem_cache;
+#endif
+
+struct kmem_list3 {
+         struct list_head slabs_partial; /* partial list first, better asm code */
+         struct list_head slabs_full;
+         struct list_head slabs_free;
+        unsigned long free_objects;
+         unsigned int free_limit;
+         unsigned int colour_next;       /* Per-node cache coloring */
+         spinlock_t list_lock;
+         struct array_cache *shared;     /* shared per node */
+         struct array_cache **alien;     /* on other nodes */
+         unsigned long next_reap;        /* updated without locking */
+         int free_touched;               /* updated without locking */
+};
+
+struct kmem_list3 kmem_list3;
+
+struct slab {         
+     struct list_head list;
+     unsigned long colouroff;
+     void *s_mem;            /* including colour offset */
+     unsigned int inuse;     /* num of objs active in slab */
+     unsigned int free;
+     unsigned short nodeid;          
+ };
+ 
+struct slab slab;
+#endif
+
 

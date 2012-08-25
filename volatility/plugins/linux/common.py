@@ -53,7 +53,7 @@ class AbstractLinuxCommand(commands.Command):
 
     '''
     Gets a symbol out of the profile
-    sym_name -> name of the symbol
+    syn_name -> name of the symbol
     nm_tyes  -> types as defined by 'nm' (man nm for examples)
     sym_type -> the type of the symbol (passing Pointer will provide auto deref)
     module   -> which module to get the symbol from, default is kernel, otherwise can be any name seen in 'lsmod'
