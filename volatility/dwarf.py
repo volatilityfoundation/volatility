@@ -28,6 +28,8 @@ class DWARFParser(object):
     dwarf_key_val_regex = re.compile(
         '\s*(?P<keyname>\w+)<(?P<val>[^>]*)>')
 
+    dwarf_header_regex2 = re.compile(r'<(?P<level>\d+)><(?P<statement_id>0x[0-9a-fA-F]+)><(?P<kind>\w+)>')
+
     sz2tp = {8: 'long long', 4: 'long', 2: 'short', 1: 'char'}
     tp2vol = {
         '_Bool': 'unsigned char',
@@ -45,6 +47,7 @@ class DWARFParser(object):
         'signed char': 'signed char',
         'unsigned char': 'unsigned char',
         'unsigned int': 'unsigned int',
+        'long unsigned int': 'unsigned int',
     }
 
 
@@ -69,8 +72,26 @@ class DWARFParser(object):
         """Lookup anonymouse member and replace it with a well known one."""
         # Reference to another type
         if isinstance(memb, str) and memb.startswith('<'):
-            resolved = self.id_to_name[memb[1:]]
 
+            if memb[:2] == "0x":
+
+                memb = memb[2:]
+
+                while memb[0] == "0":
+                    memb = memb[1:]
+
+                memb = "0x" + memb
+
+            try:
+                resolved = self.id_to_name[memb[1:]]
+            except:
+                try:
+                    resolved = self.id_to_name[int(memb[1:], self.base)]
+                except:
+                    resolved = self.id_to_name["%#x" % int(memb[1:], self.base)]
+                        #for k in self.id_to_name.keys():
+                        #    print k, type(k)
+ 
             return self.resolve(resolved)
 
         elif isinstance(memb, list):
@@ -113,9 +134,15 @@ class DWARFParser(object):
     def base_type_name(self, data):
         """Replace references to base types."""
         if 'DW_AT_name' in data:
-            return self.tp2vol[data['DW_AT_name']]
+
+            name = data['DW_AT_name']
+
+            if name[0] == '"':
+                name = name[1:-1]
+
+            return self.tp2vol[name]
         else:
-            sz = int(data['DW_AT_byte_size'])
+            sz = int(data['DW_AT_byte_size'], self.base)
             if data['DW_AT_encoding'] == 'DW_ATE_unsigned':
                 return 'unsigned ' + self.sz2tp[sz]
             else:
@@ -130,22 +157,32 @@ class DWARFParser(object):
         The header is level, statement_id, and kind followed by key value pairs.
         """
         # Does the header match?
-        m = self.dwarf_header_regex.match(line)
-        if m:
-            parsed = m.groupdict()
-            parsed['data'] = {}
-            # Now parse the key value pairs
-            while m:
-                i = m.end()
-                m = self.dwarf_key_val_regex.search(line, i)
-                if m:
-                    d = m.groupdict()
-                    parsed['data'][d['keyname']] = d['val']
+        a = self.dwarf_header_regex.match(line)
+        b = self.dwarf_header_regex2.match(line)
 
-            if parsed['kind'] in ('DW_TAG_formal_parameter', 'DW_TAG_variable'):
-                self.process_variable(parsed['data'])
-            else:
-                self.process_statement(**parsed) #pylint: disable-msg=W0142
+        if a:
+            m = a
+            self.base = 10
+        elif b:
+            m = b
+            self.base = 16
+        else:
+            return
+
+        parsed = m.groupdict()
+        parsed['data'] = {}
+        # Now parse the key value pairs
+        while m:
+            i = m.end()
+            m = self.dwarf_key_val_regex.search(line, i)
+            if m:
+                d = m.groupdict()
+                parsed['data'][d['keyname']] = d['val']
+
+        if parsed['kind'] in ('DW_TAG_formal_parameter', 'DW_TAG_variable'):
+            self.process_variable(parsed['data'])
+        else:
+            self.process_statement(**parsed) #pylint: disable-msg=W0142
 
     def process_statement(self, kind, level, data, statement_id):
         """Process a single parsed statement."""
@@ -174,19 +211,23 @@ class DWARFParser(object):
 
         elif kind == 'DW_TAG_structure_type':
             name = data.get('DW_AT_name', "__unnamed_%s" % statement_id)
+
+            if name[0] == '"' and name[-1] == '"':
+                name = name[1:-1]
+
             self.name_stack[-1][1] = name
             self.id_to_name[statement_id] = [name]
 
             # If it's just a forward declaration, we want the name around,
             # but there won't be a size
             if 'DW_AT_declaration' not in data:
-                self.vtypes[name] = [ int(data['DW_AT_byte_size']), {} ]
+                self.vtypes[name] = [ int(data['DW_AT_byte_size'], self.base), {} ]
 
         elif kind == 'DW_TAG_union_type':
             name = data.get('DW_AT_name', "__unnamed_%s" % statement_id)
             self.name_stack[-1][1] = name
             self.id_to_name[statement_id] = [name]
-            self.vtypes[name] = [ int(data['DW_AT_byte_size']), {} ]
+            self.vtypes[name] = [ int(data['DW_AT_byte_size'], self.base), {} ]
 
         elif kind == 'DW_TAG_array_type':
             self.name_stack[-1][1] = statement_id
@@ -200,7 +241,7 @@ class DWARFParser(object):
             # If it's just a forward declaration, we want the name around,
             # but there won't be a size
             if 'DW_AT_declaration' not in data:
-                sz = int(data['DW_AT_byte_size'])
+                sz = int(data['DW_AT_byte_size'], self.base)
                 self.enums[name] = [sz, {}]
 
         elif kind == 'DW_TAG_pointer_type':
@@ -234,12 +275,15 @@ class DWARFParser(object):
 
         elif kind == 'DW_TAG_member' and parent_kind == 'DW_TAG_structure_type':
             name = data.get('DW_AT_name', "__unnamed_%s" % statement_id)
+            if name[0] == '"' and name[-1] == '"':
+                name = name[1:-1]
+
             off = int(data['DW_AT_data_member_location'].split()[1])
 
             if 'DW_AT_bit_size' in data and 'DW_AT_bit_offset' in data:
-                full_size = int(data['DW_AT_byte_size']) * 8
-                stbit = int(data['DW_AT_bit_offset'])
-                edbit = stbit + int(data['DW_AT_bit_size'])
+                full_size = int(data['DW_AT_byte_size'], self.base) * 8
+                stbit = int(data['DW_AT_bit_offset'], self.base)
+                edbit = stbit + int(data['DW_AT_bit_size'], self.base)
                 stbit = full_size - stbit
                 edbit = full_size - edbit
                 stbit, edbit = edbit, stbit
@@ -260,7 +304,7 @@ class DWARFParser(object):
             try:
                 val = int(data['DW_AT_const_value'])
             except ValueError:
-                val = int(data['DW_AT_const_value'].split('(')[0])
+                val = int(data['DW_AT_const_value'].split('(')[0], self.base)
 
             self.enums[parent_name][1][name] = val
 
@@ -290,7 +334,7 @@ class DWARFParser(object):
         if ('DW_AT_name' in data and 'DW_AT_decl_line' in data and
             'DW_AT_type' in data):
             self.local_vars.append(
-                (data['DW_AT_name'], int(data['DW_AT_decl_line']),
+                (data['DW_AT_name'], int(data['DW_AT_decl_line'], self.base),
                  data['DW_AT_decl_file'].split()[1], data['DW_AT_type']))
 
     def finalize(self):
