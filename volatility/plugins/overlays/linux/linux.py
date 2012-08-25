@@ -104,25 +104,24 @@ def LinuxProfileFactory(profpkg):
         dwarfdump -di vmlinux > output.dwarf
     """
 
-    vtypesvar = {}
-    sysmapvar = {}
+    dwarfdata = None
+    sysmapdata = None
 
     memmodel, arch = "32bit", "x86"
     profilename = os.path.splitext(os.path.basename(profpkg.filename))[0]
 
     for f in profpkg.filelist:
         if f.filename.lower().endswith('.dwarf'):
-            data = profpkg.read(f.filename)
-            vtypesvar.update(dwarf.DWARFParser(data).finalize())
-            debug.debug("{2}: Found dwarf file {0} with {1} symbols".format(f.filename, len(vtypesvar.keys()), profilename))
+            dwarfdata = profpkg.read(f.filename)
         elif 'system.map' in f.filename.lower():
-            memmodel, sysmap = parse_system_map(profpkg.read(f.filename), "kernel")
-            if memmodel == "64bit":
-                arch = "x64"
-            sysmapvar.update(sysmap)
-            debug.debug("{2}: Found system file {0} with {1} symbols".format(f.filename, len(sysmapvar.keys()), profilename))
+            sysmapdata = profpkg.read(f.filename)
+            (address, _a, _b) = sysmapdata.splitlines()[0].strip().split()
+            memmodel = str(len(address) * 4) + "bit"
 
-    if not sysmapvar or not vtypesvar:
+    if memmodel == "64bit":
+        arch = "x64"
+
+    if not sysmapdata or not dwarfdata:
         # Might be worth throwing an exception here?
         return None
 
@@ -157,10 +156,15 @@ def LinuxProfileFactory(profpkg):
             ntvar = self.metadata.get('memory_model', '32bit')
             self.native_types = copy.deepcopy(self.native_mapping.get(ntvar))
 
+            vtypesvar = dwarf.DWARFParser(dwarfdata).finalize()
+            debug.debug("{2}: Found dwarf file {0} with {1} symbols".format(f.filename, len(vtypesvar.keys()), profilename))
             self.vtypes.update(vtypesvar)
 
         def load_sysmap(self):
             """Loads up the system map data"""
+            _memmodel, sysmapvar = parse_system_map(sysmapdata, "kernel")
+            debug.debug("{2}: Found system file {0} with {1} symbols".format(f.filename, len(sysmapvar.keys()), profilename))
+
             self.sys_map.update(sysmapvar)
 
         def get_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
@@ -209,7 +213,7 @@ def LinuxProfileFactory(profpkg):
                                     break
 
                             if ret == None:
-                                 debug.error("Requested symbol {0:s} in module {1:s} of type {3:s} could not be found\n".format(sym_name, module, sym_type))
+                                debug.error("Requested symbol {0:s} in module {1:s} of type {3:s} could not be found\n".format(sym_name, module, sym_type))
 
                     else:
                         # get the address of the symbol
