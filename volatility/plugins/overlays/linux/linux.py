@@ -71,15 +71,15 @@ linux_overlay = {
 
 def parse_system_map(data, module):
     """Parse the symbol file."""
-    sys_map         = {}
+    sys_map = {}
     sys_map[module] = {}
-    
+
     arch = None
 
     # get the system map
     for line in data.splitlines():
         (str_addr, symbol_type, symbol) = line.strip().split()
-        
+
         try:
             sym_addr = long(str_addr, 16)
         except ValueError:
@@ -136,7 +136,7 @@ def LinuxProfileFactory(profpkg):
 
         def __init__(self, *args, **kwargs):
             # change the name to catch any code referencing the old hash table
-            self.sy_smap = {}
+            self.sys_map = {}
             obj.Profile.__init__(self, *args, **kwargs)
 
         def clear(self):
@@ -162,26 +162,26 @@ def LinuxProfileFactory(profpkg):
         def load_sysmap(self):
             """Loads up the system map data"""
             self.sys_map.update(sysmapvar)
+
+        def get_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
+            """Gets a symbol out of the profile
             
-        '''
-        Gets a symbol out of the profile
-        sym_name -> name of the symbol
-        nm_tyes  -> types as defined by 'nm' (man nm for examples)
-        sym_type -> the type of the symbol (passing Pointer will provide auto deref)
-        module   -> which module to get the symbol from, default is kernel, otherwise can be any name seen in 'lsmod'
-
-        This fixes a few issues from the old static hash table method:
-        1) Conflicting symbols can be handled, if a symbol is found to conflict on any profile, 
-           then the plugin will need to provide the nm_type to differentiate, otherwise the plugin will be errored out
-        2) Can handle symbols gathered from modules on disk as well from the static kernel
-
-        symtable is stored as a hash table of:
-        
-        symtable[module][sym_name] = [(symbol address, symbol type), (symbol addres, symbol type), ...]
-
-        The function has overly verbose error checking on purpose...
-        '''   
-        def get_symbol(self, sym_name, nm_type="", sym_type="", module="kernel"):
+            sym_name -> name of the symbol
+            nm_tyes  -> types as defined by 'nm' (man nm for examples)
+            sym_type -> the type of the symbol (passing Pointer will provide auto deref)
+            module   -> which module to get the symbol from, default is kernel, otherwise can be any name seen in 'lsmod'
+    
+            This fixes a few issues from the old static hash table method:
+            1) Conflicting symbols can be handled, if a symbol is found to conflict on any profile, 
+               then the plugin will need to provide the nm_type to differentiate, otherwise the plugin will be errored out
+            2) Can handle symbols gathered from modules on disk as well from the static kernel
+    
+            symtable is stored as a hash table of:
+            
+            symtable[module][sym_name] = [(symbol address, symbol type), (symbol addres, symbol type), ...]
+    
+            The function has overly verbose error checking on purpose...
+            """
 
             symtable = self.sys_map
 
@@ -194,7 +194,7 @@ def LinuxProfileFactory(profpkg):
 
                 # check if the requested symbol is in the module
                 if sym_name in mod:
-                    
+
                     sym_list = mod[sym_name]
 
                     # if a symbol has multiple definitions, then the plugin needs to specify the type
@@ -203,7 +203,7 @@ def LinuxProfileFactory(profpkg):
                             debug.error("Requested symbol {0:s} in module {1:s} has multiple definitions and no type given\n".format(sym_name, module))
                         else:
                             for (addr, stype) in sym_list:
-                            
+
                                 if stype == nm_type:
                                     ret = addr
                                     break
@@ -268,7 +268,7 @@ class linux_file(obj.CType):
 class hlist_node(obj.CType):
     """A hlist_node makes a doubly linked list."""
     def list_of_type(self, type, member, offset = -1, forward = True, head_sentinel = True):
-        
+
         if not self.is_valid():
             return
 
@@ -345,7 +345,7 @@ class list_head(obj.CType):
             else:
                 nxt = item.m(member).prev.dereference()
 
-            
+
     def __nonzero__(self):
         ## List entries are valid when both Flinks and Blink are valid
         return bool(self.next) or bool(self.prev)
@@ -469,76 +469,76 @@ class VolatilityArmValidAS(obj.VolatilityMagic):
 class kmem_cache(obj.CType):
     def __init__(self, theType, offset, vm, name = None, members = None, struct_size = 0, **kwargs):
         obj.CType.__init__(self, theType, offset, vm, name, members, struct_size, **kwargs)
-            
+
     def get_type(self):
         if self.members.has_key("next"):
             return "slab"
         elif self.members.has_key("list"):
             return "slub"
-            
+
         return None
-    
+
     def get_name(self):
-        return str(self.name.dereference_as("String", length=255))
+        return str(self.name.dereference_as("String", length = 255))
 
     def get_free_list(self):
         slablist = self.nodelists[0].slabs_free
-        
+
         for slab in slablist.list_of_type("slab", "list"):
             yield slab
-    
+
     def get_partial_list(self):
         slablist = self.nodelists[0].slabs_partial
-    
+
         for slab in slablist.list_of_type("slab", "list"):
             yield slab
 
     def get_full_list(self):
         slablist = self.nodelists[0].slabs_full
-                
+
         for slab in slablist.list_of_type("slab", "list"):
             yield slab
-        
+
     def get_objs_of_type(self, type, unalloc = 0):
         if not unalloc:
-            for slab in self.get_full_list():            
+            for slab in self.get_full_list():
                 for i in range(0, self.num):
-                    yield obj.Object(type, 
-                            offset = slab.s_mem.v() + i * self.buffer_size, 
-                            vm = self.obj_vm, 
-                            parent= self.obj_parent, 
+                    yield obj.Object(type,
+                            offset = slab.s_mem.v() + i * self.buffer_size,
+                            vm = self.obj_vm,
+                            parent = self.obj_parent,
                             name = type)
-        
+
         for slab in self.get_partial_list():
-            bufctl = obj.Object("Array", 
-                        offset = slab.v() + slab.size(), 
-                        vm = self.obj_vm, 
-                        parent= self.obj_parent, 
-                        targetType = "unsigned int", 
+            bufctl = obj.Object("Array",
+                        offset = slab.v() + slab.size(),
+                        vm = self.obj_vm,
+                        parent = self.obj_parent,
+                        targetType = "unsigned int",
                         count = self.num)
-            
+
             unallocated = [0] * self.num
-            
+
             i = slab.free
             while i != 0xFFFFFFFF:
                 unallocated[i] = 1
                 i = bufctl[i]
-                
+
             for i in range(0, self.num):
                 if unallocated[i] == unalloc:
-                    yield obj.Object(type, 
-                        offset = slab.s_mem.v() + i * self.buffer_size, 
-                        vm = self.obj_vm, 
-                        parent= self.obj_parent, 
+                    yield obj.Object(type,
+                        offset = slab.s_mem.v() + i * self.buffer_size,
+                        vm = self.obj_vm,
+                        parent = self.obj_parent,
                         name = type)
-                
+
         if unalloc:
-            for slab in self.get_free_list():            
+            for slab in self.get_free_list():
                 for i in range(0, self.num):
-                    yield obj.Object(type, 
-                            offset = slab.s_mem.v() + i * self.buffer_size, 
-                            vm = self.obj_vm, 
-                            parent= self.obj_parent, 
+                    yield obj.Object(type,
+                            offset = slab.s_mem.v() + i * self.buffer_size,
+                            vm = self.obj_vm,
+                            parent = self.obj_parent,
                             name = type)
 
 class LinuxObjectClasses(obj.ProfileModification):
