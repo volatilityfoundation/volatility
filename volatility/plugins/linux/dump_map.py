@@ -27,6 +27,7 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.proc_maps as linux_proc_maps
 
 class linux_dump_map(linux_common.AbstractLinuxCommand):
+    """ Writes selected memory mappings to disk """
 
     def __init__(self, config, *args): 
 

@@ -25,7 +25,7 @@ import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 
 class linux_route_cache(linux_common.AbstractLinuxCommand):
-    """Lists routing table"""
+    """ Recovers the routing cache from memory """
 
     def calculate(self):
 
