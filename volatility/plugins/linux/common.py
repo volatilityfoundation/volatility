@@ -389,13 +389,17 @@ def get_phys_addr_section(self, page):
 
 def phys_addr_of_page(self, page):
 
-    if "mem_map" in self.smap:
-        # FLATMEM kernels, usually 32 bit
-        mem_map_ptr = obj.Object("Pointer", offset=self.smap["mem_map"], vm=self.addr_space)
+    mem_map_addr     = self.get_profile_symbol("mem_map")
+    mem_section_addr = self.get_profile_symbol("mem_section")
 
-    elif "mem_section" in self.smap:
+    if mem_map_addr:
+        # FLATMEM kernels, usually 32 bit
+        mem_map_ptr = obj.Object("Pointer", offset=mem_map_addr, vm=self.addr_space)
+
+    elif mem_section_addr:
         # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
-        mem_map_ptr = 0xffffea0000000000
+        # NOTE: This is really 0xffff0xea0000000000 but we chop to its 48 bit equivalent
+        mem_map_ptr = 0xea0000000000 
 
     else:
         debug.error("phys_addr_of_page: Unable to determine physical address of page\n")
@@ -482,7 +486,7 @@ def get_page_contents(self, inode, idx):
     page = find_get_page(self, inode, idx)
 
     if page:
-        print "inode: %lx | %lx page: %lx" % (inode, inode.v(), page)
+        #print "inode: %lx | %lx page: %lx" % (inode, inode.v(), page)
 
         phys_offset = phys_addr_of_page(self, page)
         
