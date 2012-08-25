@@ -47,7 +47,6 @@ class DWARFParser(object):
         'signed char': 'signed char',
         'unsigned char': 'unsigned char',
         'unsigned int': 'unsigned int',
-        'long unsigned int': 'unsigned long',
         'sizetype' : 'unsigned long',
     }
 
@@ -64,35 +63,27 @@ class DWARFParser(object):
         self.all_local_vars = []
         self.local_vars = []
         self.anons = 0
+        self.base = 10
 
         if data:
             for line in data.splitlines():
                 self.feed_line(line)
 
     def resolve(self, memb):
-        """Lookup anonymouse member and replace it with a well known one."""
+        """Lookup anonymous member and replace it with a well known one."""
         # Reference to another type
         if isinstance(memb, str) and memb.startswith('<'):
-
             if memb[:2] == "0x":
-
-                memb = memb[2:]
-
-                while memb[0] == "0":
-                    memb = memb[1:]
-
-                memb = "0x" + memb
+                memb = "0x" + memb[2:].strip('0')
 
             try:
                 resolved = self.id_to_name[memb[1:]]
-            except:
+            except KeyError:
                 try:
                     resolved = self.id_to_name[int(memb[1:], self.base)]
-                except:
+                except KeyError:
                     resolved = self.id_to_name["%#x" % int(memb[1:], self.base)]
-                        #for k in self.id_to_name.keys():
-                        #    print k, type(k)
- 
+
             return self.resolve(resolved)
 
         elif isinstance(memb, list):
@@ -116,7 +107,8 @@ class DWARFParser(object):
 
         elif isinstance(t, list):
             return [self.deep_replace(x, search, repl) for x in t]
-        else: return t
+        else:
+            return t
 
     def get_deepest(self, t):
         if isinstance(t, list):
@@ -135,13 +127,7 @@ class DWARFParser(object):
     def base_type_name(self, data):
         """Replace references to base types."""
         if 'DW_AT_name' in data:
-
-            name = data['DW_AT_name']
-
-            if name[0] == '"':
-                name = name[1:-1]
-
-            return self.tp2vol[name]
+            return self.tp2vol[data['DW_AT_name'].strip('"')]
         else:
             sz = int(data['DW_AT_byte_size'], self.base)
             if data['DW_AT_encoding'] == 'DW_ATE_unsigned':
@@ -158,32 +144,27 @@ class DWARFParser(object):
         The header is level, statement_id, and kind followed by key value pairs.
         """
         # Does the header match?
-        a = self.dwarf_header_regex.match(line)
-        b = self.dwarf_header_regex2.match(line)
+        m = self.dwarf_header_regex.match(line)
 
-        if a:
-            m = a
-            self.base = 10
-        elif b:
-            m = b
+        if self.dwarf_header_regex2.match(line):
+            m = self.dwarf_header_regex2.match(line)
             self.base = 16
-        else:
-            return
 
-        parsed = m.groupdict()
-        parsed['data'] = {}
-        # Now parse the key value pairs
-        while m:
-            i = m.end()
-            m = self.dwarf_key_val_regex.search(line, i)
-            if m:
-                d = m.groupdict()
-                parsed['data'][d['keyname']] = d['val']
+        if m:
+            parsed = m.groupdict()
+            parsed['data'] = {}
+            # Now parse the key value pairs
+            while m:
+                i = m.end()
+                m = self.dwarf_key_val_regex.search(line, i)
+                if m:
+                    d = m.groupdict()
+                    parsed['data'][d['keyname']] = d['val']
 
-        if parsed['kind'] in ('DW_TAG_formal_parameter', 'DW_TAG_variable'):
-            self.process_variable(parsed['data'])
-        else:
-            self.process_statement(**parsed) #pylint: disable-msg=W0142
+            if parsed['kind'] in ('DW_TAG_formal_parameter', 'DW_TAG_variable'):
+                self.process_variable(parsed['data'])
+            else:
+                self.process_statement(**parsed) #pylint: disable-msg=W0142
 
     def process_statement(self, kind, level, data, statement_id):
         """Process a single parsed statement."""
@@ -211,10 +192,7 @@ class DWARFParser(object):
             self.id_to_name = {}
 
         elif kind == 'DW_TAG_structure_type':
-            name = data.get('DW_AT_name', "__unnamed_%s" % statement_id)
-
-            if name[0] == '"' and name[-1] == '"':
-                name = name[1:-1]
+            name = data.get('DW_AT_name', "__unnamed_%s" % statement_id).strip('"')
 
             self.name_stack[-1][1] = name
             self.id_to_name[statement_id] = [name]
@@ -275,10 +253,7 @@ class DWARFParser(object):
             pass
 
         elif kind == 'DW_TAG_member' and parent_kind == 'DW_TAG_structure_type':
-            name = data.get('DW_AT_name', "__unnamed_%s" % statement_id)
-            if name[0] == '"' and name[-1] == '"':
-                name = name[1:-1]
-
+            name = data.get('DW_AT_name', "__unnamed_%s" % statement_id).strip('"')
             off = int(data['DW_AT_data_member_location'].split()[1])
 
             if 'DW_AT_bit_size' in data and 'DW_AT_bit_offset' in data:
