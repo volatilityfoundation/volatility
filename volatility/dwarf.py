@@ -248,7 +248,16 @@ class DWARFParser(object):
 
         elif kind == 'DW_TAG_member' and parent_kind == 'DW_TAG_structure_type':
             name = data.get('DW_AT_name', "__unnamed_%s" % statement_id).strip('"')
-            off = int(data['DW_AT_data_member_location'].split()[1])
+            try:
+                off = int(data['DW_AT_data_member_location'].split()[1])
+            except:
+                d   = data['DW_AT_data_member_location']
+                idx = d.find("(")
+            
+                if idx != -1:
+                    d = d[:idx]
+                
+                off = int(d)
 
             if 'DW_AT_bit_size' in data and 'DW_AT_bit_offset' in data:
                 full_size = int(data['DW_AT_byte_size'], self.base) * 8
