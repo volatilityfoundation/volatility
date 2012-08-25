@@ -158,12 +158,9 @@ def walk_per_cpu_var(obj_ref, per_var, var_type):
 
         offset = per_offsets[i]
        
-        if "per_cpu__" + per_var in obj_ref.smap:
-            var = "per_cpu__" + per_var
-        else:
-            var = per_var
+        cpu_var = obj_ref.get_per_cpu_symbol(per_var)
 
-        addr = obj_ref.smap[var] + offset.v()
+        addr = cpu_var + offset.v()
         var = obj.Object(var_type, offset = addr, vm = obj_ref.addr_space)
 
         yield i, var
