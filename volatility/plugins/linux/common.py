@@ -231,4 +231,297 @@ def S_ISDIR(mode):
 def S_ISREG(mode):
     return (mode & linux_flags.S_IFMT) == linux_flags.S_IFREG
 
+###################
+# code to walk the page cache and mem_map / mem_section page structs
+###################
+
+'''
+def SECTIONS_PER_ROOT(self, is_extreme):
+
+    if is_extreme:
+        secs_per_root = 4096 / self.profile.get_obj_size("mem_section")
+    
+    else:
+        secs_per_root = 1
+
+    return secs_per_root
+
+def SECTION_NR_TO_ROOT(self, nr, is_extreme):
+
+    secs_per_root = SECTIONS_PER_ROOT(self, is_extreme)
+
+    return nr / secs_per_root
+
+def SECTION_ROOT_MASK(self, is_extreme):
+
+    return SECTIONS_PER_ROOT(self, is_extreme) - 1
+
+def nr_to_section(self, secnum):
+
+    # check if CONFIG_SPARSEMEM_EXTREME is set
+    if "sparse_index_alloc" in self.smap:
+       
+        # mem_section is a double array of type 'mem_section'
+ 
+        nr = SECTION_NR_TO_ROOT(self, secnum, 1)
+
+        addr = self.smap["mem_section"]
+        
+        addr = addr + ( nr * self.profile.get_obj_size("mem_section") )
+
+        # check the object here
+        tmp = obj.Object("long", offset=addr, vm=self.addr_space)
+
+        if not tmp.is_valid() or tmp in [None, 0]:
+            return None
+
+        #print "tmp: %x" % (tmp &  (2**64-1))
+
+        offset = (nr & SECTION_ROOT_MASK(self, 1)) * self.profile.get_obj_size("mem_section")
+
+        ret =  tmp + offset
+
+        #print "extreme %s" % tohex(ret)
+
+    else:
+        
+        off = SECTIONS_PER_ROOT(self, 0) * SECTION_NR_TO_ROOT(self, secnum, 0)
+        ret = self.smap["mem_section"] + (off + (nr & SECTION_ROOT_MASK(self, 0)) * self.profile.get_obj_size("mem_section"))
+
+    return ret
+    
+def read_mem_section(self, addr):
+    
+    if addr in [0, None]:
+        return None
+
+    testobj = obj.Object("mem_section", offset=addr, vm=self.addr_space)
+
+    if testobj:
+        SECTION_MAP_LAST_BIT = 1 << 2
+        SECTION_MAP_MASK     = ~(SECTION_MAP_LAST_BIT-1)
+
+        ret = testobj.section_mem_map & SECTION_MAP_MASK 
+    else:
+        ret = None
+    
+    return ret
+
+def valid_section(self, addr):
+
+    mem_section = read_mem_section(self, addr)
+
+    return mem_section
+
+def valid_section_nr(self, nr):
+
+    addr = nr_to_section(self, nr);
+
+    if valid_section(self, addr):
+        ret = addr
+    else:
+        ret = 0 
+
+    return ret
+
+# FIXME 32 bit
+# [SECTION_SIZE_BITS, MAX_PHYSADDR_BITS, MAX_PHYSMEM_BITS]
+def get_bit_size(self):
+
+    return [27, 44, 44]
+
+def PFN_SECTION_SHIFT(self):
+
+    # ?FIXME? arm
+    return get_bit_size(self)[0] - 12
+
+def section_nr_to_pfn(self, nr):
+
+    return nr << PFN_SECTION_SHIFT(self)
+
+def sparse_decode_mem_map(self, addr, nr):
+
+    return addr + (section_nr_to_pfn(self, nr) * self.profile.get_obj_size("page"))
+
+def section_mem_map_addr(self, addr):
+
+    return read_mem_section(self, addr)
+
+# most of the mem_section related work was based on crash
+def get_phys_addr_section(self, page):
+
+    (SECTION_SIZE_BITS, MAX_PHYSADDR_BITS, MAX_PHYSMEM_BITS) = get_bit_size(self)
+    SECTIONS_SHIFT   = MAX_PHYSMEM_BITS - SECTION_SIZE_BITS
+    
+    num_sections = 1 << SECTIONS_SHIFT
+    
+    want_addr = page
+
+    for secnum in range(0, num_sections):
+    
+        sec_addr = valid_section_nr(self, secnum) 
+        
+        if not sec_addr: 
+            continue
+    
+        coded_mem_map = section_mem_map_addr(self, sec_addr)
+    
+        mem_map      = sparse_decode_mem_map(self, coded_mem_map, secnum)
+
+        end_mem_map  = mem_map + ((1 << PFN_SECTION_SHIFT(self)) * self.profile.get_obj_size("page"))
+
+        if mem_map <= want_addr < end_mem_map:
+
+            section_paddr = section_nr_to_pfn(self, secnum) << 12
+
+            pgnum = (want_addr - mem_map) / self.profile.get_obj_size("page")
+
+            phys_offset = section_paddr + (pgnum * 4096)
+
+            print "OFFSET: %d | %x || %s" % (phys_offset, phys_offset, tohex(coded_mem_map))
+        
+            return phys_offset
+
+
+    debug.info("get_phys_addr_section: Unable to get address for page")
+    return -1
+'''
+
+def phys_addr_of_page(self, page):
+
+    if "mem_map" in self.smap:
+        # FLATMEM kernels, usually 32 bit
+        mem_map_ptr = obj.Object("Pointer", offset=self.smap["mem_map"], vm=self.addr_space)
+
+    elif "mem_section" in self.smap:
+        # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
+        mem_map_ptr = 0xffffea0000000000
+
+    else:
+        debug.error("phys_addr_of_page: Unable to determine physical address of page\n")
+
+    phys_offset = (page - mem_map_ptr) / self.profile.get_obj_size("page")
+
+    phys_offset = phys_offset << 12
+
+    return phys_offset 
+
+def radix_tree_is_indirect_ptr(self, ptr):
+
+    return ptr & 1
+
+def radix_tree_indirect_to_ptr(self, ptr):
+
+    return obj.Object("radix_tree_node", offset=ptr & ~1, vm=self.addr_space)        
+
+def radix_tree_lookup_slot(self, root, index):
+
+    self.RADIX_TREE_MAP_SHIFT   = 6
+    self.RADIX_TREE_MAP_SIZE    = 1 << self.RADIX_TREE_MAP_SHIFT
+    self.RADIX_TREE_MAP_MASK    = self.RADIX_TREE_MAP_SIZE - 1
+
+    node = root.rnode
+
+    if radix_tree_is_indirect_ptr(self, node) == 0:
+
+        if index > 0:
+            #print "returning None: index > 0"
+            return None
+
+        #print "returning obj_Offset"
+        off = root.obj_offset + self.profile.get_obj_offset("radix_tree_root", "rnode")
+
+        page = obj.Object("Pointer", offset = off, vm=self.addr_space)
+
+        return page
+
+    node = radix_tree_indirect_to_ptr(self, node)
+    
+    height = node.height
+
+    shift = (height - 1) * self.RADIX_TREE_MAP_SHIFT
+
+    slot = -1
+
+    while 1:
+
+        idx  = (index >> shift) & self.RADIX_TREE_MAP_MASK
+
+        slot = node.slots[idx]
+
+        shift = shift - self.RADIX_TREE_MAP_SHIFT
+
+        height = height - 1
+
+        if height <= 0:
+            break
+
+    if slot == -1:
+        return None
+
+    return slot
+
+def SHMEM_I(self, inode):
+
+    offset = self.profile.get_obj_offset("shmem_inode_info", "vfs_inode")
+
+    return obj.Object("shmem_inode_info", offset=inode.obj_offset - offset, vm=self.addr_space)
+
+def find_get_page(self, inode, offset):
+
+    page = radix_tree_lookup_slot(self, inode.i_mapping.page_tree, offset)
+
+    #if not page:
+        # TODO swapper_space support
+        #print "no page"
+
+    return page
+
+def get_page_contents(self, inode, idx):
+
+    page = find_get_page(self, inode, idx)
+
+    if page:
+        print "inode: %lx | %lx page: %lx" % (inode, inode.v(), page)
+
+        phys_offset = phys_addr_of_page(self, page)
+        
+        phys_as = utils.load_as(self._config, astype = 'physical')
+        
+        data = phys_as.read(phys_offset, 4096)
+    else:
+        data = "\x00" * 4096
+
+    return data
+
+# main function to be called, handles getting all the pages of an inode
+# and handles the last page not being page_size aligned 
+def get_file_contents(self, inode):
+
+    data = ""
+    file_size = inode.i_size
+
+    extra = file_size % 4096 
+
+    idxs  = file_size / 4096
+
+    if extra != 0:
+        extra = 4096 - extra
+        idxs = idxs + 1
+
+    for idx in range(0, idxs):
+
+        data = data + get_page_contents(self, inode, idx)
+
+    # this is chop off any extra data on the last page
+    
+    if extra != 0:
+        extra = extra * -1
+
+        data = data[:extra]
+
+    return data
+
+
+
 
