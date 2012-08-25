@@ -53,63 +53,15 @@ class AbstractLinuxCommand(commands.Command):
 
     '''
     Gets a symbol out of the profile
-    syn_name -> name of the symbol
+    sym_name -> name of the symbol
     nm_tyes  -> types as defined by 'nm' (man nm for examples)
     sym_type -> the type of the symbol (passing Pointer will provide auto deref)
     module   -> which module to get the symbol from, default is kernel, otherwise can be any name seen in 'lsmod'
 
-    This fixes a few issues from the old static hash table method:
-    1) Conflicting symbols can be handled, if a symbol is found to conflict on any profile, 
-       then the plugin will need to provide the nm_type to differentiate, otherwise the plugin will be errored out
-    2) Can handle symbols gathered from modules on disk as well from the static kernel
-
-    symtable is stored as a hash table of:
-    
-    symtable[module][sym_name] = [(symbol address, symbol type), (symbol addres, symbol type), ...]
-
-    The function has overly verbose error checking on purpose...
+    Just a wrapper for AbstractLinuxProfile.get_symbol
     '''
     def get_profile_symbol(self, sym_name, nm_type="", sym_type="", module="kernel"):
-
-        symtable = self.profile.sys_map
-
-        ret = None
-
-        # check if the module is there...
-        if module in symtable:
-
-            mod = symtable[module]
-
-            # check if the requested symbol is in the module
-            if sym_name in mod:
-                
-                sym_list = mod[sym_name]
-
-                # if a symbol has multiple definitions, then the plugin needs to specify the type
-                if len(sym_list) > 1:
-                    if nm_type == "":
-                        debug.error("Requested symbol {0:s} in module {1:s} has multiple definitions and no type given\n".format(sym_name, module))
-                    else:
-                        for (addr, stype) in sym_list:
-                        
-                            if stype == nm_type:
-                                ret = addr
-                                break
-
-                        if ret == None:
-                             debug.error("Requested symbol {0:s} in module {1:s} of type {3:s} could not be found\n".format(sym_name, module, sym_type))
-
-                else:
-                    # get the address of the symbol
-                    ret = sym_list[0][0]
-
-            else:
-                debug.debug("Requested symbol {0:s} not found in module {1:s}\n".format(sym_name, module))
-        else:
-            debug.info("Requested module {0:s} not found in symbol table\n".format(module))
-
-        return ret
-
+        return self.profile.get_symbol(sym_name, nm_type, sym_type, module)
     # In 2.6.3x, Linux changed how the symbols for per_cpu variables were named
     # This handles both formats so plugins needing per-cpu vars are cleaner
     def get_per_cpu_symbol(self, sym_name, module="kernel"):
