@@ -17,12 +17,12 @@
 #
 
 import volatility.utils as utils
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.cache as cache
 import volatility.debug as debug
 import volatility.obj as obj
 
-class CrashInfo(commands.Command):
+class CrashInfo(common.AbstractWindowsCommand):
     """Dump crash-dump information"""
 
     @cache.CacheDecorator("tests/crashinfo")

@@ -21,13 +21,13 @@
 import os
 import volatility.debug as debug
 import volatility.utils as utils
-import volatility.commands as commands
+import volatility.plugins.common as common
 
-class ImageCopy(commands.Command):
+class ImageCopy(common.AbstractWindowsCommand):
     """Copies a physical address space out as a raw DD image"""
 
     def __init__(self, *args, **kwargs):
-        commands.Command.__init__(self, *args, **kwargs)
+        common.AbstractWindowsCommand.__init__(self, *args, **kwargs)
         self._config.add_option("BLOCKSIZE", short_option = "b", default = 1024 * 1024 * 5,
                                 help = "Size (in bytes) of blocks to copy",
                                 action = 'store', type = 'int')

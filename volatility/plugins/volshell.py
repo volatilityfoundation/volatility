@@ -25,7 +25,7 @@
 
 import struct
 import sys
-import volatility.commands as commands
+import volatility.plugins.common as common 
 import volatility.win32 as win32
 import volatility.utils as utils
 import volatility.obj as obj
@@ -35,7 +35,7 @@ try:
 except ImportError:
     pass
 
-class volshell(commands.Command):
+class volshell(common.AbstractWindowsCommand):
     """Shell in the memory image"""
 
     # Declare meta information associated with this plugin
@@ -50,7 +50,7 @@ class volshell(commands.Command):
     meta_info['version'] = '1.3'
 
     def __init__(self, config, *args, **kwargs):
-        commands.Command.__init__(self, config, *args, **kwargs)
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
 
         config.add_option('OFFSET', short_option = 'o', default = None,
                           help = 'EPROCESS Offset (in hex) in kernel address space',

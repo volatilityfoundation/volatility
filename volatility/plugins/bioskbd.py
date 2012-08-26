@@ -21,11 +21,11 @@
 # *Heavily* based upon http://www.storm.net.nz/static/files/bioskbsnarf
 
 import struct
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.utils as utils
 import volatility.debug as debug
 
-class BiosKbd(commands.Command):
+class BiosKbd(common.AbstractWindowsCommand):
     """Reads the keyboard buffer from Real Mode memory"""
     BASE = 0x400
     OFFSET = 0x17
