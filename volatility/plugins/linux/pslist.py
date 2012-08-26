@@ -52,17 +52,6 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
             
                 yield task
 
-    ## FIXME: This currently returns using localtime, we should probably use UTC?
-    def start_time(self, task):
-
-        start_time  = task.start_time
-        
-        start_secs = start_time.tv_sec + (start_time.tv_nsec / linux_common.nsecs_per / 100)
-        
-        sec = linux_common.get_boot_time(self) + start_secs
-
-        return time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.localtime(sec))
-
     def render_text(self, outfd, data):
 
         outfd.write("{0:8s} {1:20s} {2:15s} {3:15s} {4:35s}\n".format(
@@ -70,7 +59,7 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
 
         for task in data:
             outfd.write("0x{0:08x} {1:20s} {2:15s} {3:15s} {4:35s}\n".format(
-                task.obj_offset, task.comm, str(task.pid), str(task.uid) if task.uid else "-", self.start_time(task)))
+                task.obj_offset, task.comm, str(task.pid), str(task.uid) if task.uid else "-", self.get_task_start_time(task)))
 
 class linux_memmap(linux_pslist):
     """Dumps the memory map for linux tasks"""

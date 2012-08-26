@@ -62,6 +62,7 @@ class AbstractLinuxCommand(commands.Command):
     '''
     def get_profile_symbol(self, sym_name, nm_type="", sym_type="", module="kernel"):
         return self.profile.get_symbol(sym_name, nm_type, sym_type, module)
+
     # In 2.6.3x, Linux changed how the symbols for per_cpu variables were named
     # This handles both formats so plugins needing per-cpu vars are cleaner
     def get_per_cpu_symbol(self, sym_name, module="kernel"):
@@ -72,7 +73,19 @@ class AbstractLinuxCommand(commands.Command):
             ret = self.get_profile_symbol("per_cpu__" + sym_name, module=module)
 
         return ret
+ 
+    ## FIXME: This currently returns using localtime, we should probably use UTC?
+    def get_task_start_time(self, task):
+
+        start_time  = task.start_time
         
+        start_secs = start_time.tv_sec + (start_time.tv_nsec / nsecs_per / 100)
+        
+        sec = get_boot_time(self) + start_secs
+
+        return time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.localtime(sec))
+
+       
 # returns a list of online cpus (the processor numbers)
 def online_cpus(self):
 
@@ -117,14 +130,38 @@ def walk_per_cpu_var(obj_ref, per_var, var_type):
 
         yield i, var
 
+def get_time_vars(obj_ref):
+    '''
+    Sometime in 3.[3-5], Linux switched to a global timekeeper structure
+    This just figures out which is in use and returns the correct variables
+    '''
+
+    
+    wall_addr  = obj_ref.get_profile_symbol("wall_to_monotonic")
+    
+    # old way
+    if wall_addr:
+        wall       = obj.Object("timespec", offset=wall_addr, vm=obj_ref.addr_space)
+
+        sleep_addr = obj_ref.get_profile_symbol("total_sleep_time")
+        timeo      = obj.Object("timespec", offset=sleep_addr, vm=obj_ref.addr_space)
+
+    # timekeeper way
+    else:
+        timekeeper_addr = obj_ref.get_profile_symbol("timekeeper")
+
+        timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm=obj_ref.addr_space)
+
+        wall  = timekeeper.wall_to_monotonic
+        timeo = timekeeper.total_sleep_time 
+
+    return (wall, timeo)
+
+
 # based on 2.6.35 getboottime
-def get_boot_time(self):
+def get_boot_time(obj_ref):
 
-    wall_addr  = self.get_profile_symbol("wall_to_monotonic")
-    wall       = obj.Object("timespec", offset=wall_addr, vm=self.addr_space)
-
-    sleep_addr = self.get_profile_symbol("total_sleep_time")
-    timeo      = obj.Object("timespec", offset=sleep_addr, vm=self.addr_space)
+    (wall, timeo) = get_time_vars(obj_ref)
 
     secs  = wall.tv_sec  + timeo.tv_sec
     nsecs = wall.tv_nsec + timeo.tv_nsec 

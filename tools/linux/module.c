@@ -251,4 +251,85 @@ struct slab {
 struct slab slab;
 #endif
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,31)
+
+typedef u64 cycle_t;
+
+struct timekeeper {
+	/* Current clocksource used for timekeeping. */
+	struct clocksource *clock;
+	/* NTP adjusted clock multiplier */
+	u32	mult;
+	/* The shift value of the current clocksource. */
+	int	shift;
+
+	/* Number of clock cycles in one NTP interval. */
+	cycle_t cycle_interval;
+	/* Number of clock shifted nano seconds in one NTP interval. */
+	u64	xtime_interval;
+	/* shifted nano seconds left over when rounding cycle_interval */
+	s64	xtime_remainder;
+	/* Raw nano seconds accumulated per NTP interval. */
+	u32	raw_interval;
+
+	/* Clock shifted nano seconds remainder not stored in xtime.tv_nsec. */
+	u64	xtime_nsec;
+	/* Difference between accumulated time and NTP time in ntp
+	 * shifted nano seconds. */
+	s64	ntp_error;
+	/* Shift conversion between clock shifted nano seconds and
+	 * ntp shifted nano seconds. */
+	int	ntp_error_shift;
+
+	/* The current time */
+	struct timespec xtime;
+	/*
+	 * wall_to_monotonic is what we need to add to xtime (or xtime corrected
+	 * for sub jiffie times) to get to monotonic time.  Monotonic is pegged
+	 * at zero at system boot time, so wall_to_monotonic will be negative,
+	 * however, we will ALWAYS keep the tv_nsec part positive so we can use
+	 * the usual normalization.
+	 *
+	 * wall_to_monotonic is moved after resume from suspend for the
+	 * monotonic time not to jump. We need to add total_sleep_time to
+	 * wall_to_monotonic to get the real boot based time offset.
+	 *
+	 * - wall_to_monotonic is no longer the boot time, getboottime must be
+	 * used instead.
+	 */
+	struct timespec wall_to_monotonic;
+	/* time spent in suspend */
+	struct timespec total_sleep_time;
+	/* The raw monotonic time for the CLOCK_MONOTONIC_RAW posix clock. */
+	struct timespec raw_time;
+
+	/* Offset clock monotonic -> clock realtime */
+	ktime_t offs_real;
+
+	/* Offset clock monotonic -> clock boottime */
+	ktime_t offs_boot;
+
+	/* Seqlock for all timekeeper values */
+	seqlock_t lock;
+};
+
+
+struct timekeeper my_timekeeper;
+
+struct log {
+         u64 ts_nsec;            /* timestamp in nanoseconds */
+         u16 len;                /* length of entire record */
+         u16 text_len;           /* length of text buffer */
+         u16 dict_len;           /* length of dictionary buffer */
+         u8 facility;            /* syslog facility */
+         u8 flags:5;             /* internal record flags */
+         u8 level:3;             /* syslog level */
+};
+
+struct log my_log;
+
+#endif
+
+
+
 
