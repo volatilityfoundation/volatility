@@ -73,7 +73,7 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
                 task.obj_offset, task.comm, str(task.pid), str(task.uid) if task.uid else "-", self.start_time(task)))
 
 class linux_memmap(linux_pslist):
-    """Dumps the memory map for linux tasks."""
+    """Dumps the memory map for linux tasks"""
 
     def render_text(self, outfd, data):
         first = True

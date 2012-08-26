@@ -26,8 +26,7 @@ import volatility.plugins.linux.pslist as linux_pslist
 import volatility.plugins.linux.common as linux_common
 
 class linux_pstree(linux_pslist.linux_pslist):
-
-    ''' shows the parent/child relationship between processes '''
+    '''Shows the parent/child relationship between processes'''
 
     def render_text(self, outfd, data):
 

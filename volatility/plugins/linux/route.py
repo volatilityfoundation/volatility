@@ -36,8 +36,7 @@ class r_ent:
 # TODO needs testing!!!
 # based on code from pykdump
 class linux_route(linux_common.AbstractLinuxCommand):
-  
-    ''' lists routing table '''
+    '''Lists routing table'''
 
     def calculate(self):
         fib_tables = self.get_fib_tables()

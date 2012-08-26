@@ -29,7 +29,7 @@ import volatility.plugins.linux.common as linux_common
  
 
 class linux_slabinfo(linux_common.AbstractLinuxCommand):
-    
+    """Mimics /proc/slabinfo on a running machine"""    
     
     @staticmethod
     def get_kmem_cache(self, name):
