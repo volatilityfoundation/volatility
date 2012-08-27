@@ -27,13 +27,62 @@ import volatility.plugins.linux.common as linux_common
 class linux_dmesg(linux_common.AbstractLinuxCommand):
     """Gather dmesg buffer"""
 
-    def calculate(self):
+    def _get_log_info(self):
 
         ptr_addr = self.get_profile_symbol("log_buf")
         log_buf_addr = obj.Object("unsigned long", offset = ptr_addr, vm = self.addr_space)
         log_buf_len = obj.Object("int", self.get_profile_symbol("log_buf_len"), vm = self.addr_space)
 
-        yield obj.Object("String", offset = log_buf_addr, vm = self.addr_space, length = log_buf_len)
+        return (log_buf_addr, log_buf_len)
+
+    # pre 3.x
+    def _pre_3(self, buf_addr, buf_len):
+        
+        return obj.Object("String", offset = buf_addr, vm = self.addr_space, length = buf_len)
+
+    def _ver_3(self, buf_addr, buf_len):
+        '''
+        During 3.x, the kernel switched the kernel debug buffer from just a big char array to the variable now
+        holding variable sized records tracked by inline 'log' structures
+        We deal with this by walking all the logs and building the buffer up and then returning it
+        This produces the same results as the old way
+        '''    
+        
+        ret = ""
+        
+        size_of_log = self.profile.get_obj_size("log")
+        
+        cur_addr = buf_addr
+        end_addr = buf_addr + buf_len
+        
+        log = obj.Object("log", offset=cur_addr, vm=self.addr_space)
+        cur_len = log.len
+
+        while cur_addr < end_addr and cur_len != 0:
+
+            msg_len = log.text_len
+            cur_ts  = log.ts_nsec
+
+            buf = obj.Object("String", offset=cur_addr + size_of_log, vm=self.addr_space, length=msg_len)
+        
+            ret = ret + "[%d.%d] %s\n" % (cur_ts, cur_ts / 1000000000, buf)
+            
+            cur_addr = cur_addr + cur_len
+
+            log = obj.Object("log", offset=cur_addr, vm=self.addr_space)
+            cur_len = log.len
+
+        return ret
+
+    def calculate(self):
+        
+        (log_buf_addr, log_buf_len) = self._get_log_info()
+
+        if self.profile.has_type("log") and self.profile.obj_has_member("log", "ts_nsec"):
+            yield self._ver_3(log_buf_addr, log_buf_len)
+
+        else:
+            yield self._pre_3(log_buf_addr, log_buf_len)
 
     def render_text(self, outfd, data):
 
