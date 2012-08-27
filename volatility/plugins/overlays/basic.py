@@ -154,7 +154,7 @@ class IpAddress(obj.NativeType):
     """Provides proper output for IpAddress objects"""
 
     def __init__(self, theType, offset, vm, **kwargs):
-        obj.NativeType.__init__(self, theType, offset, vm, format_string = vm.profile.native_types['unsigned long'][1], **kwargs)
+        obj.NativeType.__init__(self, theType, offset, vm, format_string = vm.profile.native_types['unsigned int'][1], **kwargs)
 
     def v(self):
         return utils.inet_ntop(socket.AF_INET, struct.pack("<I", obj.NativeType.v(self)))
