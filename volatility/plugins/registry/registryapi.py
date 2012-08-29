@@ -175,21 +175,30 @@ class RegistryApi(object):
         '''
         This function enumerates the subkeys of the requested key
         '''
-        if given_root == None:
-            k = self.reg_get_key(hive_name, key, user)
-        else:
-            k = given_root
+        k = given_root if given_root != None else self.reg_get_key(hive_name, key)
         if k:
             for s in rawreg.subkeys(k):
                 if s.Name:
                     yield s
 
-    def reg_get_value(self, hive_name, key, value, strcmp = None):
+    def reg_yield_values(self, hive_name, key, thetype = None, given_root = None):
+        '''
+        This function yields all values for a  requested registry key
+        '''
+        if key:
+            h = given_root if given_root != None else self.reg_get_key(hive_name, key)
+            if h != None:
+                for v in rawreg.values(h):
+                    tp, dat = rawreg.value_data(v)
+                    if thetype == None or tp == thetype:
+                        yield v.Name, dat 
+
+    def reg_get_value(self, hive_name, key, value, strcmp = None, given_root = None):
         '''
         This function returns the requested value of a registry key
         '''
         if key and value:
-            h = self.reg_get_key(hive_name, key)
+            h = given_root if given_root != None else self.reg_get_key(hive_name, key)
             if h != None:
                 for v in rawreg.values(h):
                     if value == v.Name:
