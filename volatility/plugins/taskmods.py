@@ -113,7 +113,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
         return tasks
 
 class PSList(DllList):
-    """ print all running processes by following the EPROCESS lists """
+    """ Print all running processes by following the EPROCESS lists """
     def __init__(self, config, *args, **kwargs):
         DllList.__init__(self, config, *args, **kwargs)
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
