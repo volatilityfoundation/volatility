@@ -66,7 +66,7 @@ class HibInfo(common.AbstractWindowsCommand):
         sr = data['sr']
         peb = data['peb']
 
-        outfd.write("IMAGE_HIBER_HEADER:\n")
+        outfd.write("PO_MEMORY_IMAGE:\n")
         outfd.write(" Signature: {0}\n".format(hdr.Signature))
         outfd.write(" SystemTime: {0}\n".format(hdr.SystemTime))
 
