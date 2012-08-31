@@ -93,7 +93,7 @@ def parse_system_map(data, module):
     arch = str(len(str_addr) * 4) + "bit"
 
     return arch, sys_map
-    
+
 def LinuxProfileFactory(profpkg):
     """ Takes in a zip file, spits out a LinuxProfile class
 
@@ -224,8 +224,10 @@ def LinuxProfileFactory(profpkg):
             else:
                 debug.info("Requested module {0:s} not found in symbol table\n".format(module))
 
-            return ret
+            if ret and sym_type == "Pointer":
+                ret = ret & 0xffffffffffff
 
+            return ret
 
     cls = AbstractLinuxProfile
     cls.__name__ = 'Linux' + profilename.replace('.', '_') + arch
@@ -375,6 +377,31 @@ class files_struct(obj.CType):
             ret = self.max_fds
 
         return ret
+
+class kernel_param(obj.CType):
+
+    @property
+    def get(self):
+
+        if self.members.get("get"):
+            ret = self.m("get")
+        else:
+            ret = self.ops.get
+
+        return ret
+
+class kparam_array(obj.CType):
+
+    @property
+    def get(self):
+
+        if self.members.get("get"):
+            ret = self.m("get")
+        else:
+            ret = self.ops.get
+
+        return ret
+
 
 class task_struct(obj.CType):
 
@@ -562,6 +589,8 @@ class LinuxObjectClasses(obj.ProfileModification):
             'Ipv6Address': basic.Ipv6Address,
             'VolatilityArmValidAS' : VolatilityArmValidAS,
             'kmem_cache' : kmem_cache,
+            'kernel_param' : kernel_param,
+            'kparam_array'  : kparam_array,
             })
 
 class LinuxOverlay(obj.ProfileModification):
