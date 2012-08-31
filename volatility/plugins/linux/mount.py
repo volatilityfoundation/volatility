@@ -64,18 +64,21 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
             dev_name = mnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
 
-            if not dev_name.is_valid():
+            if not dev_name.is_valid() or len(dev_name) == 0:
+                continue
+
+            fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
+
+            if not fstype.is_valid() or len(fstype) == 0:
                 continue
 
             path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
 
             if path == []:  
                 continue
-           
+
             mnt_string = self.calc_mnt_string(mnt)
-
-            fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
-
+            
             if (mnt.mnt_flags & 0x40) or (mnt.mnt_sb.s_flags & 0x1):
                 rr = "ro"
             else:

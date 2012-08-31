@@ -214,7 +214,7 @@ def do_get_path(rdentry, rmnt, dentry, vfsmnt):
     if not rdentry.is_valid() or not dentry.is_valid():
         return []
 
-    while dentry != rdentry or vfsmnt != rmnt:
+    while (dentry != rdentry or vfsmnt != rmnt) and dentry.d_name.name.is_valid():
         
         dname = dentry.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
         
@@ -231,6 +231,9 @@ def do_get_path(rdentry, rmnt, dentry, vfsmnt):
         dentry = parent
 
     ret_path.reverse()
+
+    if ret_path == []:
+        return []
 
     ret_val = '/'.join([str(p) for p in ret_path if p != ""])
 
