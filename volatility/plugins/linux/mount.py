@@ -24,6 +24,7 @@
 import volatility.obj as obj
 import volatility.plugins.linux.flags as linux_flags
 import volatility.plugins.linux.common as linux_common
+import volatility.plugins.linux.pslist as linux_pslist
 
 class linux_mount(linux_common.AbstractLinuxCommand):
 
@@ -35,43 +36,66 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
         mnt_list = obj.Object(theType = "Array", offset = mntptr.v(), vm = self.addr_space, targetType = "list_head", count = 512)
 
+        if self.profile.has_type("mount"):
+            mnttype = "mount"
+            
+            for task in linux_pslist.linux_pslist(self._config).calculate():
+                if task.pid == 1:
+                    ns = task.nsproxy.mnt_ns
+                    break
+    
+        else:
+            mnttype = "vfsmount"
+            ns = None
+
         # get each list_head out of the array
         for outerlist in mnt_list:
 
-            for vfsmnt in outerlist.list_of_type("vfsmount", "mnt_hash"):
-                yield vfsmnt
+            for mnt in outerlist.list_of_type(mnttype, "mnt_hash"):
+                yield (mnt, ns)
                 
-    def parse_vfsmnt(self, data):
-            for vfsmnt in data:                
-                dev_name = vfsmnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
+    def parse_mnt(self, data):
+        
+        '''
+        We use seen for 3.x kernels with mount namespaces 
+        The same mount can be in multiple namespaces and we do not want to repeat output
+        '''
+        for (mnt, ns) in data:             
 
-                path = linux_common.do_get_path(vfsmnt.mnt_sb.s_root, vfsmnt.mnt_parent, vfsmnt.mnt_root, vfsmnt)
+            dev_name = mnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
 
-                if path == []:  
-                    continue
+            if not dev_name.is_valid():
+                continue
 
-                fstype = vfsmnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
-                mnt_string = self.calc_mnt_string(vfsmnt)
+            path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
 
-                if (vfsmnt.mnt_flags & 0x40) or (vfsmnt.mnt_sb.s_flags & 0x1):
-                    rr = "ro"
-                else:
-                    rr = "rw"
-                
-                yield vfsmnt.mnt_sb, dev_name, path, fstype, rr, mnt_string
+            if path == []:  
+                continue
+           
+            mnt_string = self.calc_mnt_string(mnt)
+
+            fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
+
+            if (mnt.mnt_flags & 0x40) or (mnt.mnt_sb.s_flags & 0x1):
+                rr = "ro"
+            else:
+                rr = "rw"
+
+            if not ns or ns == mnt.mnt_ns:
+                yield mnt.mnt_sb, dev_name, path, fstype, rr, mnt_string
 
     def render_text(self, outfd, data):
-        data = self.parse_vfsmnt(data)
+        data = self.parse_mnt(data)
 
         for (sb, dev_name, path, fstype, rr, mnt_string) in data:
-            outfd.write("{0:15s} {1:35s} {2:12s} {3:2s}{4:64s}\n".format(dev_name, path, fstype, rr, mnt_string))
+            outfd.write("{0:25s} {1:35s} {2:12s} {3:2s}{4:64s}\n".format(dev_name, path, fstype, rr, mnt_string))
 
-    def calc_mnt_string(self, vfsmnt):
+    def calc_mnt_string(self, mnt):
 
         ret = ""
 
         for mflag in linux_flags.mnt_flags:
-            if mflag & vfsmnt.mnt_flags:
+            if mflag & mnt.mnt_flags:
                 ret = ret + linux_flags.mnt_flags[mflag]
 
         return ret

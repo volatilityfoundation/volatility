@@ -93,7 +93,7 @@ def parse_system_map(data, module):
     arch = str(len(str_addr) * 4) + "bit"
 
     return arch, sys_map
-
+    
 def LinuxProfileFactory(profpkg):
     """ Takes in a zip file, spits out a LinuxProfile class
 
@@ -157,8 +157,8 @@ def LinuxProfileFactory(profpkg):
             self.native_types = copy.deepcopy(self.native_mapping.get(ntvar))
 
             vtypesvar = dwarf.DWARFParser(dwarfdata).finalize()
-            debug.debug("{2}: Found dwarf file {0} with {1} symbols".format(f.filename, len(vtypesvar.keys()), profilename))
             self.vtypes.update(vtypesvar)
+            debug.debug("{2}: Found dwarf file {0} with {1} symbols".format(f.filename, len(vtypesvar.keys()), profilename))
 
         def load_sysmap(self):
             """Loads up the system map data"""
@@ -570,3 +570,74 @@ class LinuxOverlay(obj.ProfileModification):
 
     def modification(self, profile):
         profile.merge_overlay(linux_overlay)
+
+class mount(obj.CType):
+
+    @property
+    def mnt_sb(self):
+        
+        if hasattr(self, "mnt"):
+            ret = self.mnt.mnt_sb
+        else:
+            ret = self.mnt_sb
+
+        return ret
+
+    @property
+    def mnt_root(self):
+
+        if hasattr(self, "mnt"):
+            ret = self.mnt.mnt_root
+        else:
+            ret = self.mnt_root
+
+        return ret
+
+    @property
+    def mnt_flags(self):
+
+        if hasattr(self, "mnt"):
+            ret = self.mnt.mnt_flags
+        else:
+            ret = self.mnt_flags
+
+        return ret
+
+class vfsmount(obj.CType):
+
+    def _get_real_mnt(self):
+
+        offset = self.obj_vm.profile.get_obj_offset("mount", "mnt")
+        mnt = obj.Object("mount", offset=self.obj_offset - offset, vm=self.obj_vm)
+        return mnt        
+    
+    @property
+    def mnt_parent(self):
+    
+        ret = self.members.get("mnt_parent")
+        if ret is None:
+            ret = self._get_real_mnt().mnt_parent
+        else:
+            ret = self.m("mnt_parent") 
+        return ret
+
+    @property
+    def mnt_mountpoint(self):
+
+        ret = self.members.get("mnt_mountpoint")
+        if ret is None:
+            ret = self._get_real_mnt().mnt_mountpoint
+        else:
+            ret = self.m("mnt_mountpoint")
+        return ret
+
+class LinuxMountOverlay(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'linux'}
+    before = ['BasicObjectClasses'] # , 'LinuxVTypes']
+
+    def modification(self, profile):
+
+        if profile.vtypes.get("mount"):
+            profile.object_classes.update({'mount' : mount, 'vfsmount' : vfsmount})
+
+

@@ -120,9 +120,9 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
         ret = []
 
-        mnt_points = linux_mount.linux_mount(self._config).calculate()
+        mnts = linux_mount.linux_mount(self._config).calculate()
 
-        for (sb, _dev_name, path, fstype, _rr, _mnt_string) in mnt_points:
+        for (sb, _dev_name, path, fstype, _rr, _mnt_string) in linux_mount.linux_mount(self._config).parse_mnt(mnts):
 
             if str(fstype) == "tmpfs":
 
