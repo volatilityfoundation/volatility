@@ -197,7 +197,7 @@ class DWARFParser(object):
                 self.vtypes[name] = [ int(data['DW_AT_byte_size'], self.base), {} ]
 
         elif kind == 'DW_TAG_union_type':
-            name = data.get('DW_AT_name', "__unnamed_%s" % statement_id)
+            name = data.get('DW_AT_name', "__unnamed_%s" % statement_id).strip('"')
             self.name_stack[-1][1] = name
             self.id_to_name[statement_id] = [name]
             self.vtypes[name] = [ int(data['DW_AT_byte_size'], self.base), {} ]
@@ -207,7 +207,7 @@ class DWARFParser(object):
             self.id_to_name[statement_id] = data['DW_AT_type']
 
         elif kind == 'DW_TAG_enumeration_type':
-            name = data.get('DW_AT_name', "__unnamed_%s" % statement_id)
+            name = data.get('DW_AT_name', "__unnamed_%s" % statement_id).strip('"')
             self.name_stack[-1][1] = name
             self.id_to_name[statement_id] = [name]
 
@@ -274,11 +274,11 @@ class DWARFParser(object):
             self.vtypes[parent_name][1][name] = [off, memb_tp]
 
         elif kind == 'DW_TAG_member' and parent_kind == 'DW_TAG_union_type':
-            name = data.get('DW_AT_name', "__unnamed_%s" % statement_id)
+            name = data.get('DW_AT_name', "__unnamed_%s" % statement_id).strip('"')
             self.vtypes[parent_name][1][name] = [0, data['DW_AT_type']]
 
         elif kind == 'DW_TAG_enumerator' and parent_kind == 'DW_TAG_enumeration_type':
-            name = data['DW_AT_name']
+            name = data['DW_AT_name'].strip('"')
 
             try:
                 val = int(data['DW_AT_const_value'])
