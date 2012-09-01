@@ -60,7 +60,9 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
 
     In order for us to work we need to:
     1) have a valid baseAddressSpace
-    2) the first 4 bytes must be 'hibr'
+    2) the first 4 bytes must be 'hibr' or 'wake' 
+        otherwise we bruteforce to find self.header.FirstTablePage in 
+        _get_first_table_page() this occurs with a zeroed PO_MEMORY_IMAGE header
     """
     order = 10
     def __init__(self, base, config, **kwargs):
@@ -84,10 +86,9 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
         ## Is the signature right?
         if self.header.Signature.lower() not in ['hibr', 'wake']:
             self.header = obj.NoneObject("Invalid hibernation header")
-            volmag = obj.NoneObject("Invalid hibernation header")
-        else:
-            volmag = obj.VolMagic(base)
-            self.entry_count = volmag.HibrEntryCount.v()
+
+        volmag = obj.VolMagic(base)
+        self.entry_count = volmag.HibrEntryCount.v()
 
         PROC_PAGE = volmag.HibrProcPage.v()
 
@@ -105,19 +106,6 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
         # until it's absolutely necessary and/or convert it into a generator...
         self.build_page_cache()
 
-        # FIXME: Remove the cacheing code until we can do hashes and check that the 
-        # data we're reading back has a chance of being right
-        # 
-        #if config.DEBUG:
-        #    try:
-        #        fd = open("/tmp/cache.bin",'rb')
-        #        data = pickle.load(fd)
-        #        self.PageDict , self.LookupCache = data
-        #        fd.close()
-        #    except (IOError, EOFError):
-        #        fd = open("/tmp/cache.bin",'wb')
-        #        pickle.dump((self.PageDict , self.LookupCache), fd, -1)
-        #        fd.close()
 
     def _get_first_table_page(self):
         if self.header != None:
