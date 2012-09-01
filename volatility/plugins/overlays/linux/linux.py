@@ -65,7 +65,8 @@ linux_overlay = {
         }],
     'VOLATILITY_MAGIC': [None, {
         'DTB'           : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],
-        'ArmValidAS'   :  [ 0x0, ['VolatilityArmValidAS']],
+        'ArmValidAS'   :  [ 0x0, ['VolatilityLinuxValidAS']],
+        'IA32ValidAS'  :  [ 0x0, ['VolatilityLinuxValidAS']],
         }],
     }
 
@@ -402,7 +403,6 @@ class kparam_array(obj.CType):
 
         return ret
 
-
 class task_struct(obj.CType):
 
     @property
@@ -482,20 +482,22 @@ class VolatilityDTB(obj.VolatilityMagic):
         # this is the only code allowed to reference the internal sys_map!
         yield profile.get_symbol("swapper_pg_dir") - shift
 
-class VolatilityArmValidAS(obj.VolatilityMagic):
+
+# this check will work for all linux profiles/archs (intel, arm, etc)
+# it checks the static paging of init_task
+class VolatilityLinuxValidAS(obj.VolatilityMagic):
     """An object to check that an address space is a valid Arm Paged space"""
 
     def generate_suggestions(self):
 
-        # linux has a virtual to physical offset (minux 0xc0000000) for kernel addresses
-        # we simply .vtop an address that will be in the kernel and see if we get the correct address back
-        # will add 64 bit support if/when ARM ever releases 64 bit chips ;)
-        #val = self.obj_vm.vtop(0xc0315760)
-        val = self.obj_vm.vtop(0xc0548cf8)
+        init_task_addr = self.obj_vm.profile.get_symbol("init_task")
 
-        #if val == 0x315760:
-        #if val and val & 0x548cf8 == 0x548cf8: 
-        yield (val > 0)
+        if self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit":
+            shift = 0xc0000000
+        else:
+            shift = 0xffffffff80000000
+
+        yield self.obj_vm.vtop(init_task_addr) == init_task_addr - shift
 
 class kmem_cache(obj.CType):
     def __init__(self, theType, offset, vm, name = None, members = None, struct_size = 0, **kwargs):
@@ -587,7 +589,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'IpAddress': basic.IpAddress,
             'Ipv6Address': basic.Ipv6Address,
-            'VolatilityArmValidAS' : VolatilityArmValidAS,
+            'VolatilityLinuxValidAS' : VolatilityLinuxValidAS,
             'kmem_cache' : kmem_cache,
             'kernel_param' : kernel_param,
             'kparam_array'  : kparam_array,
