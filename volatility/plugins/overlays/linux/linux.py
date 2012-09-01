@@ -168,6 +168,38 @@ def LinuxProfileFactory(profpkg):
 
             self.sys_map.update(sysmapvar)
 
+        def get_all_symbols(self, module="kernel"):
+            """ Gets all the symbol tuples for the given module """        
+
+            ret = []
+
+            symtable = self.sys_map
+
+            if module in symtable:
+
+                mod = symtable[module]
+        
+                for (name, addrs) in mod.items():
+                    ret.append(addrs)
+            else:
+                debug.info("All symbols requested for non-existent module %s" % module)
+
+            return ret
+
+        def get_all_addresses(self, module="kernel"):
+            """ Gets all the symbol addresses for the given module """
+            
+            ret = []
+
+            symbols = self.get_all_symbols(module)
+
+            for sym in symbols:
+
+                for (addr, addrtype) in sym:
+                    ret.append(addr)    
+    
+            return ret
+
         def get_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
             """Gets a symbol out of the profile
             
@@ -187,7 +219,7 @@ def LinuxProfileFactory(profpkg):
     
             The function has overly verbose error checking on purpose...
             """
-
+            
             symtable = self.sys_map
 
             ret = None
@@ -225,10 +257,12 @@ def LinuxProfileFactory(profpkg):
             else:
                 debug.info("Requested module {0:s} not found in symbol table\n".format(module))
 
+
             if ret and sym_type == "Pointer":
                 ret = ret & 0xffffffffffff
 
             return ret
+
 
     cls = AbstractLinuxProfile
     cls.__name__ = 'Linux' + profilename.replace('.', '_') + arch
