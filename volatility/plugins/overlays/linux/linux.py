@@ -219,7 +219,7 @@ def LinuxProfileFactory(profpkg):
     
             The function has overly verbose error checking on purpose...
             """
-            
+
             symtable = self.sys_map
 
             ret = None
@@ -437,6 +437,26 @@ class kparam_array(obj.CType):
 
         return ret
 
+class gate_struct64(obj.CType):
+
+    @property
+    def Address(self):
+    
+        low    = self.offset_low
+        middle = self.offset_middle
+        high   = self.offset_high
+
+        ret = (high << 32) | (middle << 16) | low
+
+        return ret
+
+class desc_struct(obj.CType):
+
+    @property
+    def Address(self):
+    
+        return (self.b & 0xffff0000) | (self.a & 0x0000ffff)
+
 class task_struct(obj.CType):
 
     @property
@@ -627,6 +647,8 @@ class LinuxObjectClasses(obj.ProfileModification):
             'kmem_cache' : kmem_cache,
             'kernel_param' : kernel_param,
             'kparam_array'  : kparam_array,
+            'gate_struct64'  : gate_struct64,
+            'desc_struct'    : desc_struct,
             })
 
 class LinuxOverlay(obj.ProfileModification):
