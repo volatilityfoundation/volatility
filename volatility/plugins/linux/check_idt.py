@@ -38,7 +38,7 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
         sym_addrs  = self.profile.get_all_addresses()
 
         # hw handlers + system call
-        check_idxs = list(range(0,20)) + [128]
+        check_idxs = list(range(0, 20)) + [128]
 
         if self.profile.metadata.get('memory_model', '32bit') == "32bit":  
             idt_type = "desc_struct"
@@ -51,7 +51,7 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
 
         for tableaddr in addrs:
 
-            table = obj.Object(theType='Array', offset=tableaddr, vm=self.addr_space, targetType=idt_type, count=tblsz)
+            table = obj.Object(theType = 'Array', offset = tableaddr, vm = self.addr_space, targetType = idt_type, count = tblsz)
             
             for i in check_idxs:
 
