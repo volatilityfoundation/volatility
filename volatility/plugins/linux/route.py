@@ -25,7 +25,7 @@ import volatility.plugins.linux.common as linux_common
 import volatility.obj as obj
 import sys
 
-class r_ent:
+class r_ent(object):
 
     def __init__(self, dest, gw, mask, devname):
         self.dest = dest

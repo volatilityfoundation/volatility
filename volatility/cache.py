@@ -38,7 +38,7 @@ Abstraction of Cache
 Within the running volatiltiy framework the cache appears as an
 abstract tree with nodes inherited from the CacheNode class:
 
-class CacheNode:
+class CacheNode(object):
     def __init__(self, name, parent, payload = None):
         ''' Creates a new Cache node under the parent. The new node
         will carry the specified payload
