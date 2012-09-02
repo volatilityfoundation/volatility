@@ -83,6 +83,7 @@ def parse_system_map(data, module):
 
         try:
             sym_addr = long(str_addr, 16)
+
         except ValueError:
             continue
 
@@ -189,16 +190,51 @@ def LinuxProfileFactory(profpkg):
         def get_all_addresses(self, module="kernel"):
             """ Gets all the symbol addresses for the given module """
             
-            ret = []
+            # returns a hash table for quick looks
+            # the main use of this function is to see if an address is known
+            ret = {}
 
             symbols = self.get_all_symbols(module)
 
             for sym in symbols:
 
                 for (addr, addrtype) in sym:
-                    ret.append(addr)    
+                    ret[addr] = 1
     
             return ret
+
+        def get_all_symbol_names(self, module="kernel"):
+
+            symtable = self.sys_map
+            
+            if module in symtable:
+            
+                ret = symtable[module].keys()                
+
+            else:
+                debug.error("get_all_symbol_names called on non-existent module")
+
+            return ret
+
+        def get_next_symbol_address(self, sym_name, module="kernel"):
+            """
+            This is used to find the address of the next symbol in the profile
+            For some data structures, we cannot determine their size automaticlaly so this
+            can be used to figure it out on the fly
+            """
+            
+            high_addr  = 0xffffffffffffffff
+            table_addr = self.get_symbol(sym_name, module=module)
+
+            addrs = self.get_all_addresses(module=module)            
+
+            for addr in addrs.keys():
+
+                if table_addr < addr < high_addr:
+                    high_addr = addr
+
+            
+            return high_addr
 
         def get_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
             """Gets a symbol out of the profile
