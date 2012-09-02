@@ -42,7 +42,7 @@ class AbstractLinuxCommand(commands.Command):
     def __init__(self, *args, **kwargs):
         commands.Command.__init__(self, *args, **kwargs)
         self.addr_space = utils.load_as(self._config)
-        self.profile    = self.addr_space.profile
+        self.profile = self.addr_space.profile
        
         # this was the old method to get data from system.map, do not use anymore, use get_symbol below instead
         # self.smap       = self.profile.sysmap
@@ -60,24 +60,24 @@ class AbstractLinuxCommand(commands.Command):
 
     Just a wrapper for AbstractLinuxProfile.get_symbol
     '''
-    def get_profile_symbol(self, sym_name, nm_type="", sym_type="", module="kernel"):
+    def get_profile_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
         return self.profile.get_symbol(sym_name, nm_type, sym_type, module)
 
     # In 2.6.3x, Linux changed how the symbols for per_cpu variables were named
     # This handles both formats so plugins needing per-cpu vars are cleaner
-    def get_per_cpu_symbol(self, sym_name, module="kernel"):
+    def get_per_cpu_symbol(self, sym_name, module = "kernel"):
 
-        ret = self.get_profile_symbol(sym_name, module=module)
+        ret = self.get_profile_symbol(sym_name, module = module)
 
         if not ret:
-            ret = self.get_profile_symbol("per_cpu__" + sym_name, module=module)
+            ret = self.get_profile_symbol("per_cpu__" + sym_name, module = module)
 
         return ret
  
     ## FIXME: This currently returns using localtime, we should probably use UTC?
     def get_task_start_time(self, task):
 
-        start_time  = task.start_time
+        start_time = task.start_time
         
         start_secs = start_time.tv_sec + (start_time.tv_nsec / nsecs_per / 100)
         
@@ -136,27 +136,25 @@ def get_time_vars(obj_ref):
     This just figures out which is in use and returns the correct variables
     '''
 
-    
-    wall_addr  = obj_ref.get_profile_symbol("wall_to_monotonic")
+    wall_addr = obj_ref.get_profile_symbol("wall_to_monotonic")
     
     # old way
     if wall_addr:
-        wall       = obj.Object("timespec", offset=wall_addr, vm=obj_ref.addr_space)
+        wall = obj.Object("timespec", offset = wall_addr, vm = obj_ref.addr_space)
 
         sleep_addr = obj_ref.get_profile_symbol("total_sleep_time")
-        timeo      = obj.Object("timespec", offset=sleep_addr, vm=obj_ref.addr_space)
+        timeo = obj.Object("timespec", offset = sleep_addr, vm = obj_ref.addr_space)
 
     # timekeeper way
     else:
         timekeeper_addr = obj_ref.get_profile_symbol("timekeeper")
 
-        timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm=obj_ref.addr_space)
+        timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm = obj_ref.addr_space)
 
-        wall  = timekeeper.wall_to_monotonic
+        wall = timekeeper.wall_to_monotonic
         timeo = timekeeper.total_sleep_time 
 
     return (wall, timeo)
-
 
 # based on 2.6.35 getboottime
 def get_boot_time(obj_ref):
@@ -192,7 +190,6 @@ def walk_list_head(struct_name, list_member, list_head_ptr, _addr_space):
 
     for item in list_head_ptr.list_of_type(struct_name, list_member):
         yield item
-
 
 def walk_internal_list(struct_name, list_member, list_start, addr_space = None):
     if not addr_space:
@@ -247,7 +244,6 @@ def do_get_path(rdentry, rmnt, dentry, vfsmnt):
         ret_val = '/' + ret_val
 
     return ret_val
-
 
 def get_path(task, filp):
     rdentry = task.fs.get_root_dentry()
@@ -429,12 +425,12 @@ def get_phys_addr_section(self, page):
 
 def phys_addr_of_page(self, page):
 
-    mem_map_addr     = self.get_profile_symbol("mem_map")
+    mem_map_addr = self.get_profile_symbol("mem_map")
     mem_section_addr = self.get_profile_symbol("mem_section")
 
     if mem_map_addr:
         # FLATMEM kernels, usually 32 bit
-        mem_map_ptr = obj.Object("Pointer", offset=mem_map_addr, vm=self.addr_space)
+        mem_map_ptr = obj.Object("Pointer", offset = mem_map_addr, vm = self.addr_space)
 
     elif mem_section_addr:
         # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
@@ -456,7 +452,7 @@ def radix_tree_is_indirect_ptr(self, ptr):
 
 def radix_tree_indirect_to_ptr(self, ptr):
 
-    return obj.Object("radix_tree_node", offset=ptr & ~1, vm=self.addr_space)        
+    return obj.Object("radix_tree_node", offset = ptr & ~1, vm = self.addr_space)        
 
 def radix_tree_lookup_slot(self, root, index):
 
@@ -475,7 +471,7 @@ def radix_tree_lookup_slot(self, root, index):
         #print "returning obj_Offset"
         off = root.obj_offset + self.profile.get_obj_offset("radix_tree_root", "rnode")
 
-        page = obj.Object("Pointer", offset = off, vm=self.addr_space)
+        page = obj.Object("Pointer", offset = off, vm = self.addr_space)
 
         return page
 
@@ -509,7 +505,7 @@ def SHMEM_I(self, inode):
 
     offset = self.profile.get_obj_offset("shmem_inode_info", "vfs_inode")
 
-    return obj.Object("shmem_inode_info", offset=inode.obj_offset - offset, vm=self.addr_space)
+    return obj.Object("shmem_inode_info", offset = inode.obj_offset - offset, vm = self.addr_space)
 
 def find_get_page(self, inode, offset):
 
@@ -547,7 +543,7 @@ def get_file_contents(self, inode):
 
     extra = file_size % 4096 
 
-    idxs  = file_size / 4096
+    idxs = file_size / 4096
 
     if extra != 0:
         extra = 4096 - extra
