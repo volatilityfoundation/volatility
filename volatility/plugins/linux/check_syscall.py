@@ -22,11 +22,9 @@
 """
 
 import sys
-
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
-
 
 try:
     import distorm3
@@ -42,10 +40,8 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         Returns the size of the table based on the next symbol
         """
 
-        if self.profile.metadata.get('memory_model', '32bit') == "32bit":
-            divisor = 4
-        else:
-            divisor = 8
+        # take this from the size of an address in the profile 
+        divisor = self.profile.get_obj_size("address")
 
         next_sym_addr = self.profile.get_next_symbol_address(table_name)
 
@@ -57,17 +53,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         this is a fast way to determine the number of system calls
         """
         
-        ret = []
-        
-        all_names = self.profile.get_all_symbol_names()
-
-        for name in all_names:
-
-            if name.startswith("__syscall_meta__"):
-
-                ret.append(name)
-
-        return len(ret)
+        return len([n for n in self.profile.get_all_symbol_names() if n.startswith("__syscall_meta__")])
 
     def _get_table_info_other(self, table_addr, table_name):
         
@@ -145,9 +131,9 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         else:
             mask = 0xffffffffffffffff
  
-        sym_addrs  = self.profile.get_all_addresses()
+        sym_addrs = self.profile.get_all_addresses()
 
-        sys_call_info  = self._get_table_info("sys_call_table")
+        sys_call_info = self._get_table_info("sys_call_table")
 
         addrs = [sys_call_info]
         
@@ -159,7 +145,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
         for (tableaddr, tblsz) in addrs:
 
-            table = obj.Object(theType='Array', offset=tableaddr, vm=self.addr_space, targetType='long', count=tblsz)
+            table = obj.Object(theType = 'Array', offset = tableaddr, vm = self.addr_space, targetType = 'long', count = tblsz)
     
             for (i, call_addr) in enumerate(table):
  
