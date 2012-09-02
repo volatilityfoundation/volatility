@@ -57,7 +57,9 @@ class linux_cpuinfo(linux_common.AbstractLinuxCommand):
 
     def render_text(self, outfd, data):
 
-        outfd.write("{0:12s} {1:16s} {2:64s}\n".format("Processor", "Vendor", "Model"))
+        self.table_header(outfd, [("Processor", "12"), 
+                                  ("Vendor", "16"), 
+                                  ("Model", "")])
         for i, cpu in data:
-            outfd.write("{0:12s} {1:16s} {2:64s}\n".format(str(i), cpu.x86_vendor_id, cpu.x86_model_id))
+            self.table_row(outfd, str(i), cpu.x86_vendor_id, cpu.x86_model_id)
 
