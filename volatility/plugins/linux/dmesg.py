@@ -55,17 +55,17 @@ class linux_dmesg(linux_common.AbstractLinuxCommand):
         cur_addr = buf_addr
         end_addr = buf_addr + buf_len
         
-        log = obj.Object("log", offset=cur_addr, vm=self.addr_space)
+        log = obj.Object("log", offset = cur_addr, vm = self.addr_space)
         cur_len = log.len
 
         while cur_addr < end_addr and cur_len != 0:
 
             msg_len = log.text_len
-            cur_ts  = log.ts_nsec
+            cur_ts = log.ts_nsec
 
-            buf = obj.Object("String", offset=cur_addr + size_of_log, vm=self.addr_space, length=msg_len)
+            buf = obj.Object("String", offset = cur_addr + size_of_log, vm = self.addr_space, length = msg_len)
         
-            ret = ret + "[%d.%d] %s\n" % (cur_ts, cur_ts / 1000000000, buf)
+            ret = ret + "[{0}.{1}] {2}\n".format(cur_ts, cur_ts / 1000000000, buf)
             
             cur_addr = cur_addr + cur_len
 
