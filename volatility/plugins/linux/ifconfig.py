@@ -71,6 +71,10 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
 
     def render_text(self, outfd, data):
 
+        self.table_header(outfd, [("Interface", "16"), 
+                                  ("IP Address", "20"), 
+                                  ("MAC Address", "")])
+                                  
         for net_dev, in_dev in data:
 
             # for interfaces w/o an ip address (dummy/bond)
@@ -86,5 +90,5 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
 
             mac_addr = ":".join(["{0:02x}".format(x) for x in hwaddr][:6])
 
-            outfd.write("{0:8s} {1:16s} {2:32s}\n".format(net_dev.name, ip, mac_addr))
+            self.table_row(outfd, net_dev.name, ip, mac_addr)
 
