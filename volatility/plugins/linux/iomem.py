@@ -39,7 +39,7 @@ class linux_iomem(linux_common.AbstractLinuxCommand):
         start = io_res.start
         end = io_res.end
 
-        output = [ (depth, name, start, end)]
+        output = [(depth, name, start, end)]
 
         output += self.yield_resource(io_res.child, depth + 1)
         output += self.yield_resource(io_res.sibling, depth)
