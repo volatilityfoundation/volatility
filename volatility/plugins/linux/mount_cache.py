@@ -28,7 +28,6 @@ import volatility.plugins.linux.mount as linux_mount
 from volatility.plugins.linux.slab_info import linux_slabinfo
 
 class linux_mount_cache(linux_mount.linux_mount):
-
     """Gather mounted fs/devices from kmem_cache"""
     
     def __init__(self, config, *args): 
@@ -47,4 +46,5 @@ class linux_mount_cache(linux_mount.linux_mount):
         
         if self._config.UNALLOCATED:
             for mount in cache.get_objs_of_type("vfsmount", 1):
-                if mount.mnt_sb.v() != 0: yield mount
+                if mount.mnt_sb.v() != 0: 
+                    yield mount
