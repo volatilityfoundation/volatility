@@ -233,7 +233,6 @@ def LinuxProfileFactory(profpkg):
                 if table_addr < addr < high_addr:
                     high_addr = addr
 
-            
             return high_addr
 
         def get_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
@@ -298,7 +297,6 @@ def LinuxProfileFactory(profpkg):
                 ret = ret & 0xffffffffffff
 
             return ret
-
 
     cls = AbstractLinuxProfile
     cls.__name__ = 'Linux' + profilename.replace('.', '_') + arch
@@ -386,7 +384,6 @@ class hlist_node(obj.CType):
     def __iter__(self):
         return self.list_of_type(self.obj_parent.obj_name, self.obj_name)
 
-
 class list_head(obj.CType):
     """A list_head makes a doubly linked list."""
     def list_of_type(self, type, member, offset = -1, forward = True, head_sentinel = True):
@@ -421,7 +418,6 @@ class list_head(obj.CType):
                 nxt = item.m(member).next.dereference()
             else:
                 nxt = item.m(member).prev.dereference()
-
 
     def __nonzero__(self):
         ## List entries are valid when both Flinks and Blink are valid
@@ -571,7 +567,6 @@ class VolatilityDTB(obj.VolatilityMagic):
 
         # this is the only code allowed to reference the internal sys_map!
         yield profile.get_symbol("swapper_pg_dir") - shift
-
 
 # this check will work for all linux profiles/archs (intel, arm, etc)
 # it checks the static paging of init_task
