@@ -74,7 +74,6 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                     ino,
                     fname))
 
-
     def format_perms(self, vma_flags):
 
         ret = ""
@@ -87,7 +86,6 @@ class linux_proc_maps(linux_pslist.linux_pslist):
             else:
                 ret = ret + "-"
         return ret
-
 
     def MAJOR(self, num):
         return num >> self.MINORBITS
