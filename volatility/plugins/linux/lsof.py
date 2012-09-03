@@ -25,8 +25,6 @@ import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
 
-mn = linux_common.mask_number
-
 class linux_lsof(linux_pslist.linux_pslist):
     """Lists open files"""
 
@@ -45,5 +43,10 @@ class linux_lsof(linux_pslist.linux_pslist):
                     yield (task, filp, i)
 
     def render_text(self, outfd, data):
+    
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("FD", "8"), 
+                                  ("Path", "")])
+                                  
         for (task, filp, fd) in data:
-            outfd.write("{0:5d} {1:5d} -> {2:s}\n".format(task.pid , fd, linux_common.get_path(task, filp)))
+            self.table_row(outfd, task.pid, fd, linux_common.get_path(task, filp))
