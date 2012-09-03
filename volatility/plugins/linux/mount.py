@@ -27,7 +27,6 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
 
 class linux_mount(linux_common.AbstractLinuxCommand):
-
     """Gather mounted fs/devices"""
 
     def calculate(self):
@@ -55,7 +54,6 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                 yield (mnt, ns)
                 
     def parse_mnt(self, data):
-        
         '''
         We use seen for 3.x kernels with mount namespaces 
         The same mount can be in multiple namespaces and we do not want to repeat output
