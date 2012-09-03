@@ -101,6 +101,15 @@ class linux_route(linux_common.AbstractLinuxCommand):
                 try:
                     ent = obj.Object("fib_nh", offset = fi.fib_nh.obj_offset, vm = self.addr_space)
                 except:
+                    ## FIXME: what exception are we trying to catch here? If we're 
+                    ## just trying to detect when fi or fi.fib_nh are invalid pointers
+                    ## then do something like this instead:
+                    ##
+                    ##     if not fi.is_valid() or not fi.fib_nh.is_valid():
+                    ##         yield (dest, 0, "bad")
+                    ##     else:
+                    ##         ## <the rest> 
+                    ## 
                     yield (dest, 0, "bad")    
                     continue
 
