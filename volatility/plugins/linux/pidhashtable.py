@@ -30,7 +30,6 @@ PIDTYPE_PID = 0
 
 # the < 2.6.24 processing is based on crash from redhat
 class linux_pidhashtable(linux_pslist.linux_pslist):
-
     """Enumerates processes through the PID hash table"""
 
     def walk_tasks_for_pid(self, pid):
@@ -40,32 +39,31 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
 
         self.seen_pids[pid.obj_offset] = 1
 
-        task_pid_off  = self.profile.get_obj_offset("task_struct", "pids")
+        task_pid_off = self.profile.get_obj_offset("task_struct", "pids")
         pids_node_off = self.profile.get_obj_offset("pid_link", "node") 
-        total_off     = task_pid_off + pids_node_off
+        total_off = task_pid_off + pids_node_off
 
         for i in [PIDTYPE_PID]:
 
-            task_ent = obj.Object("hlist_node", offset=pid.tasks[i].first, vm=self.addr_space)
+            task_ent = obj.Object("hlist_node", offset = pid.tasks[i].first, vm = self.addr_space)
 
             while task_ent.v():
          
-                task = obj.Object("task_struct", offset= task_ent.obj_offset - total_off, vm=self.addr_space)
+                task = obj.Object("task_struct", offset = task_ent.obj_offset - total_off, vm = self.addr_space)
 
                 yield task
 
                 task_ent = task_ent.next
 
-
     def calculate_2_6_24(self):
 
         self.seen_pids = {}
 
-        pidhash_shift = obj.Object("unsigned int", offset=self.get_profile_symbol("pidhash_shift"), vm=self.addr_space)
-        pidhash_size  = 1 << pidhash_shift 
+        pidhash_shift = obj.Object("unsigned int", offset = self.get_profile_symbol("pidhash_shift"), vm = self.addr_space)
+        pidhash_size = 1 << pidhash_shift 
 
         pidhash_addr = self.get_profile_symbol("pid_hash")
-        pidhash_ptr  = obj.Object("Pointer", offset = pidhash_addr, vm=self.addr_space)
+        pidhash_ptr = obj.Object("Pointer", offset = pidhash_addr, vm = self.addr_space)
 
         # pidhash is an array of hlist_heads
         pidhash = obj.Object(theType = 'Array', offset = pidhash_ptr, vm = self.addr_space, targetType = 'hlist_head', count = pidhash_size)
