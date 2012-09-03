@@ -28,9 +28,9 @@ import volatility.plugins.linux.common as linux_common
 
 class linux_slabinfo(linux_common.AbstractLinuxCommand):
     """Mimics /proc/slabinfo on a running machine"""    
-    
+
     @staticmethod
-    def get_kmem_cache(self, name):
+    def get_all_kmem_caches(self):
         cache_chain = self.get_profile_symbol("cache_chain")
         slab_caches = self.get_profile_symbol("slab_caches")
         
@@ -44,23 +44,22 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
             debug.error("Slub support is not implemented yet.")
         else:
             debug.error("Unknown or unimplemented slab type.")
+
+        return caches.list_of_type("kmem_cache", listm)
             
-        if name == "all":
-            return caches.list_of_type("kmem_cache", listm)
+    @staticmethod
+    def get_kmem_cache(self, name):
         
-        for cache in caches.list_of_type("kmem_cache", listm):
+        for cache in linux_slabinfo.get_all_kmem_caches(self):
             if cache.get_name() == name:
                 return cache
         
-        ## FIXME: the original code did return None, but that'd be 
-        ## a definite TypeError because None is not iterable. Someone
-        ## should fix this with a better description of why we'd ever
-        ## reach this part of the function. 
-        debug.error("Unknown error")
+        debug.debug("Invalid kmem_cache: {0}".format(name))
+        return None
 
     def calculate(self):
         
-        for cache in self.get_kmem_cache(self, "all"):
+        for cache in self.get_all_kmem_caches(self):
             if cache.get_type() == "slab":
                 active_objs = 0
                 active_slabs = 0
@@ -96,8 +95,6 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                                   ("<pagesperslab>", "<15"), 
                                   ("<active_slabs>", "<14"), 
                                   ("<num_slabs>", "<7"), 
-                                  ## FIXME: This 9th col was in the original code but only 8 columns are printed (i.e. ends at info[7])
-                                  #("<sharedavail>", ""), 
                                   ])
                                   
         for info in data:
