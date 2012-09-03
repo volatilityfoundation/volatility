@@ -34,15 +34,15 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
     def __init__(self, config, *args):
         linux_common.AbstractLinuxCommand.__init__(self, config, *args)
-        self._config.add_option('EVIDENCE_DIR', short_option = 'o', default = None, help = 'output directory for recovered files',      action = 'store', type = 'str')
-        self._config.add_option('SB',           short_option = 'S', default = None, help = 'superblock to process, see -l',             action = 'store', type = 'int')
-        self._config.add_option('LIST_SBS',     short_option = 'L', default = None, help = 'list avaiable tmpfs superblocks',           action = 'store_true')
+        self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'output directory for recovered files', action = 'store', type = 'str')
+        self._config.add_option('SB', short_option = 'S', default = None, help = 'superblock to process, see -l', action = 'store', type = 'int')
+        self._config.add_option('LIST_SBS', short_option = 'L', default = None, help = 'list avaiable tmpfs superblocks', action = 'store_true')
 
         # used to keep correct time for directories
         self.dir_times = {}
 
     # fix metadata for new files
-    def fix_md(self, new_file, perms, atime, mtime, isdir=0):
+    def fix_md(self, new_file, perms, atime, mtime, isdir = 0):
 
         # FIXME
         atime = atime.tv_sec + 18000
@@ -55,11 +55,11 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
         os.chmod(new_file, perms)
 
-    def process_directory(self, dentry, recursive=0, parent=""):
+    def process_directory(self, dentry, recursive = 0, parent = ""):
 
         for dentry in dentry.d_subdirs.list_of_type("dentry", "d_u"):
 
-            name = dentry.d_name.name.dereference_as("String", length=255)
+            name = dentry.d_name.name.dereference_as("String", length = 255)
 
             inode = dentry.d_inode
             
@@ -73,7 +73,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
                     # since the directory may already exist
                     try:
                         os.mkdir(new_file)
-                    except:
+                    except OSError:
                         pass
 
                     self.fix_md(new_file, perms, atime, mtime, 1)
@@ -101,7 +101,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
         cur_dir = os.path.join(self.edir)
 
-        self.process_directory(root_dentry, parent=cur_dir)
+        self.process_directory(root_dentry, parent = cur_dir)
     
         # post processing
         for new_file in self.dir_times:
