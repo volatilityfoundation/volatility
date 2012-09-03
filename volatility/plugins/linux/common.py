@@ -435,6 +435,7 @@ def phys_addr_of_page(self, page):
     elif mem_section_addr:
         # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
         # NOTE: This is really 0xffff0xea0000000000 but we chop to its 48 bit equivalent
+        # FIXME: change in 2.3 when truncation no longer occurs
         mem_map_ptr = 0xea0000000000 
 
     else:

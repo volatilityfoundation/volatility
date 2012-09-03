@@ -294,6 +294,7 @@ def LinuxProfileFactory(profpkg):
 
 
             if ret and sym_type == "Pointer":
+                # FIXME: change in 2.3 when truncation no longer occurs
                 ret = ret & 0xffffffffffff
 
             return ret
@@ -401,7 +402,8 @@ class list_head(obj.CType):
         seen = set()
         if head_sentinel:
             # We're a header element and not to be included in the list
-            seen.add(self.obj_offset)
+            # FIXME: change in 2.3 when truncation no longer occurs
+            seen.add(self.obj_offset & 0xffffffffffff)
 
         while nxt.is_valid() and nxt.obj_offset not in seen:
             ## Instantiate the object
