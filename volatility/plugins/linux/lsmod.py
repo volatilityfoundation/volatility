@@ -33,18 +33,18 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
         self._config.add_option('SECTIONS', short_option = 'S', default = None, help = 'show section addresses', action = 'store_true')
         self._config.add_option('PARAMS', short_option = 'P', default = None, help = 'show module parameters', action = 'store_true')
 
-    def get_param_val(self, param, over=0):
+    def get_param_val(self, param, over = 0):
         
         ints = {
-                self.get_profile_symbol("param_get_invbool", sym_type="Pointer") : "int",
-                self.get_profile_symbol("param_get_bool",    sym_type="Pointer") : "int",
-                self.get_profile_symbol("param_get_int",     sym_type="Pointer") : "int",
-                self.get_profile_symbol("param_get_ulong",   sym_type="Pointer") : "unsigned long",
-                self.get_profile_symbol("param_get_long",    sym_type="Pointer") : "long",
-                self.get_profile_symbol("param_get_uint",    sym_type="Pointer") : "unsigned int",
-                self.get_profile_symbol("param_get_ushort",  sym_type="Pointer") : "unsigned short",
-                self.get_profile_symbol("param_get_short",   sym_type="Pointer") : "short",
-                self.get_profile_symbol("param_get_byte",    sym_type="Pointer") : "char",
+                self.get_profile_symbol("param_get_invbool", sym_type = "Pointer") : "int",
+                self.get_profile_symbol("param_get_bool",    sym_type = "Pointer") : "int",
+                self.get_profile_symbol("param_get_int",     sym_type = "Pointer") : "int",
+                self.get_profile_symbol("param_get_ulong",   sym_type = "Pointer") : "unsigned long",
+                self.get_profile_symbol("param_get_long",    sym_type = "Pointer") : "long",
+                self.get_profile_symbol("param_get_uint",    sym_type = "Pointer") : "unsigned int",
+                self.get_profile_symbol("param_get_ushort",  sym_type = "Pointer") : "unsigned short",
+                self.get_profile_symbol("param_get_short",   sym_type = "Pointer") : "short",
+                self.get_profile_symbol("param_get_byte",    sym_type = "Pointer") : "char",
                }
 
         getfn = param.get
@@ -56,7 +56,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
             val = ""
             
-            arr       = param.arr
+            arr = param.arr
             overwrite = param.arr
 
             if arr.num:
@@ -69,24 +69,24 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
                 if i > 0:
                     val = val + ","
 
-                arg = offset=arr.elem + arr.elemsize * i
+                arg = offset = arr.elem + arr.elemsize * i
                 overwrite.arg = arg
 
                 mret = self.get_param_val(overwrite)
                 val = val + str(mret)
 
         elif getfn == self.get_profile_symbol("param_get_string"):
-            val = param.str.dereference_as("String", length=param.str.maxlen)
+            val = param.str.dereference_as("String", length = param.str.maxlen)
         
         elif getfn == self.get_profile_symbol("param_get_charp"):
-            addr = obj.Object("Pointer", offset=param.arg, vm=self.addr_space)
+            addr = obj.Object("Pointer", offset = param.arg, vm = self.addr_space)
             if addr == 0:
                 val = "(null)"
             else:
                 val  = addr.dereference_as("String", length=256) 
 
         elif getfn.v() in ints:
-            val = obj.Object(ints[getfn.v()], offset=param.arg, vm=self.addr_space)
+            val = obj.Object(ints[getfn.v()], offset = param.arg, vm = self.addr_space)
 
             if getfn == self.get_profile_symbol("param_get_bool"):
                 if val:
@@ -101,7 +101,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
                     val = 'Y'
 
         else:
-            print "Unknown get_fn: %x" % getfn
+            print "Unknown get_fn: {0:#x}".format(getfn)
             return None
 
         return val
@@ -116,7 +116,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
             val = self.get_param_val(param)
 
-            params = params + "%s=%s " % (param.name.dereference_as("String", length=255), val)
+            params = params + "{0}={1} ".format(param.name.dereference_as("String", length = 255), val)
     
         return params
 
@@ -128,7 +128,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
         for attr in attrs:
             
-            name = attr.name.dereference_as("String", length=255)
+            name = attr.name.dereference_as("String", length = 255)
 
             sects.append((name, attr.address))
 
@@ -178,7 +178,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
         
     # returns a list of tuples of (name, .text start, .text end) for each module
     # include_list can contain a list of only the modules wanted by a plugin
-    def get_modules(self, include_list=[]):
+    def get_modules(self, include_list = []):
 
         ret = []
 
