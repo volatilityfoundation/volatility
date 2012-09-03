@@ -26,8 +26,6 @@ import volatility.protos as protos
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 
- 
-
 class linux_slabinfo(linux_common.AbstractLinuxCommand):
     """Mimics /proc/slabinfo on a running machine"""    
     
@@ -37,17 +35,15 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
         slab_caches = self.get_profile_symbol("slab_caches")
         
         if cache_chain: #slab
-            caches = obj.Object("list_head", offset=cache_chain, vm = self.addr_space)
+            caches = obj.Object("list_head", offset = cache_chain, vm = self.addr_space)
             listm = "next"
         elif slab_caches: #slub
             #TODO: slub
-            caches = obj.Object("list_head", offset=slab_caches, vm = self.addr_space)
+            caches = obj.Object("list_head", offset = slab_caches, vm = self.addr_space)
             listm = "list"
             debug.error("Slub support is not implemented yet.")
-            return None
         else:
             debug.error("Unknown or unimplemented slab type.")
-            return None
             
         if name == "all":
             return caches.list_of_type("kmem_cache", listm)
@@ -56,7 +52,11 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
             if cache.get_name() == name:
                 return cache
         
-        return None
+        ## FIXME: the original code did return None, but that'd be 
+        ## a definite TypeError because None is not iterable. Someone
+        ## should fix this with a better description of why we'd ever
+        ## reach this part of the function. 
+        debug.error("Unknown error")
 
     def calculate(self):
         
@@ -85,11 +85,20 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
         
             elif cache.get_type() == "slub":
                 # TODO: slub
-                pass
-                    
+                pass         
                     
     def render_text(self, outfd, data):
-        outfd.write("{0:<30} {1:<13} {2:<10} {3:<10} {4:<12} {5:<15} {6:<14} {7}\n".format("<name>","<active_objs>", "<num_objs>", "<objsize>", "<objperslab>", "<pagesperslab>", "<active_slabs>", "<num_slabs>", "<sharedavail>"))
+        self.table_header(outfd, [("<name>", "<30"), 
+                                  ("<active_objs>", "<13"),
+                                  ("<num_objs>", "<10"), 
+                                  ("<objsize>", "<10"), 
+                                  ("<objperslab>", "<12"), 
+                                  ("<pagesperslab>", "<15"), 
+                                  ("<active_slabs>", "<14"), 
+                                  ("<num_slabs>", "<7"), 
+                                  ## FIXME: This 9th col was in the original code but only 8 columns are printed (i.e. ends at info[7])
+                                  #("<sharedavail>", ""), 
+                                  ])
+                                  
         for info in data:
-            outfd.write("{0:<30} {1:<13} {2:<10} {3:<10} {4:<12} {5:<15} {6:<14} {7}\n".format(info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]))
-        
+            self.table_row(outfd, info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7])
