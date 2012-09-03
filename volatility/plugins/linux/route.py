@@ -29,7 +29,7 @@ class r_ent(object):
 
     def __init__(self, dest, gw, mask, devname):
         self.dest = dest
-        self.gw   = gw
+        self.gw = gw
         self.mask = mask
         self.devname = devname
             
@@ -48,13 +48,17 @@ class linux_route(linux_common.AbstractLinuxCommand):
         
     def render_text(self, outfd, data):
 
-        outfd.write("{0:15s} {1:15s} {2:15s} {3:s}\n".format("Destination", "Gateway", "Mask", "Interface"))
+        self.table_header(outfd, [("Destination", "15"), 
+                                  ("Gateway", "15"), 
+                                  ("Mask", "15"), 
+                                  ("Interface", "")])
+                                  
         for dest, gw, mask, devname in data:
-            outfd.write("{0:15s} {1:15s} {2:15s} {3:s}\n".format(dest.cast("IpAddress"), gw.cast("IpAddress"), mask.cast("IpAddress"), devname))
+            self.table_row(outfd, dest.cast("IpAddress"), gw.cast("IpAddress"), mask.cast("IpAddress"), devname)
 
     def get_fib_entries(self, table):
         
-        fn_hash   = obj.Object("fn_hash", offset=table.tb_data.obj_offset, vm=self.addr_space)
+        fn_hash = obj.Object("fn_hash", offset = table.tb_data.obj_offset, vm = self.addr_space)
         zone_list = fn_hash.fn_zone_list
 
         for r in self.walk_zone_list(zone_list):
@@ -64,13 +68,13 @@ class linux_route(linux_common.AbstractLinuxCommand):
 
         print "-------------------------------------------------------"
         
-        for fn_zone in linux_common.walk_internal_list("fn_zone", "fz_next", zone_list , self.addr_space):
+        for fn_zone in linux_common.walk_internal_list("fn_zone", "fz_next", zone_list, self.addr_space):
             
-            mask       = fn_zone.fz_mask
-            hash_head  = fn_zone.fz_hash
+            mask = fn_zone.fz_mask
+            hash_head = fn_zone.fz_hash
             array_size = fn_zone.fz_divisor
 
-            head_array = obj.Object(theType="Array", offset=hash_head, vm=self.addr_space, targetType='hlist_head', count=array_size)
+            head_array = obj.Object(theType = "Array", offset = hash_head, vm = self.addr_space, targetType = 'hlist_head', count = array_size)
  
             for head_list in head_array:
 
@@ -87,15 +91,15 @@ class linux_route(linux_common.AbstractLinuxCommand):
 
         while fnptr:
 
-            fnode = obj.Object("fib_node", offset=fnptr, vm=self.addr_space)
+            fnode = obj.Object("fib_node", offset = fnptr, vm = self.addr_space)
 
             for alias in fnode.fn_alias.list_of_type("fib_alias", "fa_list"):
 
-                dest  = fnode.fn_key
-                fi    = alias.fa_info
+                dest = fnode.fn_key
+                fi = alias.fa_info
             
                 try:
-                    ent = obj.Object("fib_nh", offset=fi.fib_nh.obj_offset, vm=self.addr_space)
+                    ent = obj.Object("fib_nh", offset = fi.fib_nh.obj_offset, vm = self.addr_space)
                 except:
                     yield (dest, 0, "bad")    
                     continue
@@ -114,7 +118,7 @@ class linux_route(linux_common.AbstractLinuxCommand):
     def get_fib_table(self):
 
         fib_table_addr = self.get_profile_symbol("fib_table_hash")
-        init_net_addr  = self.get_profile_symbol("init_net")
+        init_net_addr = self.get_profile_symbol("init_net")
 
         # get pointer to table
         if fib_table_addr:
@@ -122,8 +126,8 @@ class linux_route(linux_common.AbstractLinuxCommand):
 
         elif init_net_addr:
             
-            init_net     = obj.Object("net", offset=init_net_addr, vm=self.addr_space) 
-            fib_table_ptr = obj.Object("Pointer", offset=init_net.ipv4.fib_table_hash, vm=self.addr_space)
+            init_net = obj.Object("net", offset = init_net_addr, vm = self.addr_space) 
+            fib_table_ptr = obj.Object("Pointer", offset = init_net.ipv4.fib_table_hash, vm = self.addr_space)
                 
         else:
             # ikelos what is the proper expection to raise?
@@ -141,9 +145,8 @@ class linux_route(linux_common.AbstractLinuxCommand):
         else:
             fib_tbl_sz = 2
 
-
-        fib_table = obj.Object(theType='Array', offset=fib_table_ptr, \
-            vm=self.addr_space, targetType='hlist_head', count=fib_tbl_sz)
+        fib_table = obj.Object(theType = 'Array', offset = fib_table_ptr, 
+            vm = self.addr_space, targetType = 'hlist_head', count = fib_tbl_sz)
 
         return (fib_table, fib_tbl_sz)
 
@@ -154,14 +157,14 @@ class linux_route(linux_common.AbstractLinuxCommand):
         fib_tables_addr = self.get_profile_symbol("fib_tables")
 
         if fib_tables_addr:
-            fib_tables  = obj.Object(theType = "Array", offset=fib_tables_addr, vm=self.addr_space, targetType='fib_table', count=256)
+            fib_tables  = obj.Object(theType = "Array", offset = fib_tables_addr, vm = self.addr_space, targetType = 'fib_table', count = 256)
             ret = [f for f in fib_tables if f]
 
         else:
             
             (fib_table, tbl_sz) = self.get_fib_table()
 
-            print "tbl_sz: %d" % tbl_sz
+            print "tbl_sz: {0}".format(tbl_sz)
 
             for i in xrange(0, tbl_sz):
                 fb = fib_table[i]
@@ -169,7 +172,7 @@ class linux_route(linux_common.AbstractLinuxCommand):
                 if fb and fb.first:
                     
                     for tb in fb.first.list_of_type("fib_table", "tb_hlist"):
-                        print "Appending %x" % tb.v()
+                        print "Appending {0:#x}".format(tb.v())
                         ret.append(tb)
                     
         return ret 
