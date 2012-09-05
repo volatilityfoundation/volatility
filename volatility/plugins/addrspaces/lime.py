@@ -27,7 +27,7 @@ lime_types = {
     'version':   [0x4, ['unsigned int']],
     'start':     [0x8, ['unsigned long long']],
     'end':       [0x10, ['unsigned long long']],
-    'reversed':  [0x18, ['unsigned long long']],
+    'reserved':  [0x18, ['unsigned long long']],
 }],
 }
 
