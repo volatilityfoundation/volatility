@@ -163,7 +163,7 @@ class EvtLogs(common.AbstractWindowsCommand):
         ## services in the registry. Otherwise, we take the list from the 
         ## pre-populated dictionary in getservicesids.py
         if self._config.VERBOSE:
-            ssids = getservicesids.GetServiceSids.calculate(self)
+            ssids = getservicesids.GetServiceSids(self._config).calculate()
             for sid, service in ssids:
                 self.extrasids[sid] = " (Service: " + service + ")" 
         else:
