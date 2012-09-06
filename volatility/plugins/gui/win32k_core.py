@@ -45,8 +45,13 @@ class _MM_SESSION_SPACE(obj.CType):
 
         Since win32k.sys is always the first image to be 
         mapped, we can just grab the first list entry."""
-
-        return list(self.images())[0].Address
+        
+        ## An exception may be generated when a process from a terminated
+        ## session still exists in the active process list. 
+        try:
+            return list(self.images())[0].Address
+        except IndexError:
+            return obj.NoneObject("No images mapped in this session")
 
     def images(self):
         """Generator for images (modules) loaded into 
