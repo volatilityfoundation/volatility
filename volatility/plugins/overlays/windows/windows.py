@@ -510,7 +510,7 @@ class _OBJECT_HEADER(obj.CType):
                 if header_offset:
                     o = obj.Object(objtype, offset - header_offset, vm = self.obj_vm, native_vm = self.obj_native_vm)
                 else:
-                    o = obj.NoneObject("Header not set")
+                    o = obj.NoneObject("Header {0} not set for object at {1:#x}".format(name, offset))
 
                 self.newattr(name, o)
 
@@ -543,7 +543,7 @@ class _FILE_OBJECT(obj.CType):
                             self.DeviceObject - self.obj_vm.profile.get_obj_offset("_OBJECT_HEADER", "Body"),
                             self.obj_native_vm)
             if object_hdr:
-                name = "\\Device\\{0}".format(str(object_hdr.NameInfo.Name))
+                name = "\\Device\\{0}".format(str(object_hdr.NameInfo.Name or ''))
         if self.FileName:
             name += str(self.FileName)
         return name

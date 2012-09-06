@@ -142,7 +142,7 @@ class _OBJECT_HEADER(windows._OBJECT_HEADER):
                 offset -= self.obj_vm.profile.get_obj_size(struct)
                 o = obj.Object(struct, offset, self.obj_vm, native_vm = self.obj_native_vm)
             else:
-                o = obj.NoneObject("Header not set")
+                o = obj.NoneObject("Header {0} not set for object at {1:#x}".format(name, offset))
 
             self.newattr(name, o)
 
