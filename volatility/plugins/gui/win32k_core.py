@@ -55,7 +55,7 @@ class _MM_SESSION_SPACE(obj.CType):
             yield i
 
     def _section_chunks(self, sec_name):
-        """Get the win32k.sys .data section as an array of 
+        """Get the win32k.sys section as an array of 
         32-bit unsigned longs. 
 
         @param sec_name: name of the PE section in win32k.sys 
