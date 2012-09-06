@@ -629,13 +629,18 @@ class _RTL_ATOM_TABLE_ENTRY(obj.CType):
         """Returns True if the atom is pinned"""
         return self.Flags == 1
 
+    def is_string_atom(self):
+        """Returns True if the atom is a string atom 
+        based on its atom ID. 
+        
+        A string atom has ID 0xC000 - 0xFFFF
+        """
+        return self.Atom >= 0xC000 and self.Atom <= 0xFFFF
+
     def is_valid(self):
         """Perform some sanity checks on the Atom"""
         if not obj.CType.is_valid(self):
             return False
-        # Only allow atoms in the following range
-        #if self.Atom < 0xC000 or self.Atom >= 0xFFFF:
-        #    return False
         # There is only one flag (and zero)
         if self.Flags not in (0, 1):
             return False
