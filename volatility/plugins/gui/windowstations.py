@@ -48,7 +48,8 @@ class PoolScanWind(scan.PoolScanner):
     checks = [ ('PoolTagCheck', dict(tag = "Win\xe4")),
                # seen as 0x98 on xpsp2 and xpsp3, 0x90 on w2k3*, 0xa0 on w7sp0
                ('CheckPoolSize', dict(condition = lambda x: x >= 0x90)),
-               ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
+               # only look in non-paged or free pools
+               ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
