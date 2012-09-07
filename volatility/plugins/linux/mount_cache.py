@@ -22,6 +22,7 @@
 """
 
 import volatility.obj as obj
+import volatility.debug as debug
 import volatility.plugins.linux.flags as linux_flags
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.mount as linux_mount
@@ -41,6 +42,9 @@ class linux_mount_cache(linux_mount.linux_mount):
 
         cache = linux_slabinfo.get_kmem_cache(self, "mnt_cache")
         
+        if not cache:
+            debug.error("This image does not have a mnt_cache kmem_cache. Cannot process.")
+
         if self.profile.has_type("mount"):
             mnttype = "mount"
             
