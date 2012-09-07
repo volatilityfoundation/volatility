@@ -56,8 +56,8 @@ class GDITimers(commands.Command, sessions.SessionsMixin):
         for session, handle, timer in data:
 
             process = "{0}:{1}".format(
-                timer.pti.ppi.Process.ImageFileName,
-                timer.pti.pEThread.Cid.UniqueProcess
+                handle.Process.ImageFileName,
+                handle.Process.UniqueProcessId, 
                 )
 
             self.table_row(outfd,
