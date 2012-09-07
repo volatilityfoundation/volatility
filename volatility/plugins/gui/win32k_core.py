@@ -71,26 +71,36 @@ class _MM_SESSION_SPACE(obj.CType):
 
         dos_header = obj.Object("_IMAGE_DOS_HEADER",
                 offset = self.Win32KBase, vm = self.obj_vm)
+                
+        ## In the rare case when win32k.sys PE header is paged or corrupted
+        ## thus preventing us from parsing the sections, use the fallback
+        ## mechanism of just reading 5 MB (max size of win32k.sys) from the 
+        ## base of the kernel module. 
+        chunks_offset = self.Win32KBase
+        chunks_size = 0x500000 / 4 # 5 MB 
+                
+        if dos_header:
+            try:
+                nt_header = dos_header.get_nt_header()
+        
+                sections = [
+                    sec for sec in nt_header.get_sections(False)
+                    if str(sec.Name) == sec_name
+                    ]
+        
+                # There should be exactly one section 
+                if sections:
+                    desired_section = sections[0]
+                    chunks_offset = desired_section.VirtualAddress + dos_header.obj_offset
+                    chunks_size = desired_section.Misc.VirtualSize / 4
+            except ValueError:
+                ## This catches PE header parsing exceptions 
+                pass
 
-        nt_header = dos_header.get_nt_header()
-
-        sections = [
-            sec for sec in nt_header.get_sections(False)
-            if str(sec.Name) == sec_name
-            ]
-
-        # There should be exactly one section 
-        if not sections:
-            return obj.NoneObject("Cannot find the PE section")
-
-        desired_section = sections[0]
-
-        chunks = obj.Object("Array",
-                targetType = "unsigned long",
-                offset = desired_section.VirtualAddress + dos_header.obj_offset,
-                count = desired_section.Misc.VirtualSize / 4,
-                vm = self.obj_vm)
-
+        chunks = obj.Object("Array", targetType = "unsigned long",
+                            offset = chunks_offset, count = chunks_size, 
+                            vm = self.obj_vm)
+                            
         return chunks
 
     def find_gahti(self):
