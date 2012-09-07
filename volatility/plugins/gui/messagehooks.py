@@ -52,6 +52,7 @@ message_offsets_x64 = [
       (0x00289c20, 0x00289be0), # 6.0.6002.18005 (Vista SP2 / W2K8 SP2)
       (0x002da480, 0x002da440), # 6.1.7600.16385 (Win 7 SP0)
       (0x002db6a0, 0x002db660), # 6.1.7601.17514 (Win 7 SP1)
+      (0x002e08a0, 0x002e0860), # 6.1.7601.17842 (W2K8 R2 SP1)
       ]
 
 class MessageHooks(atoms.Atoms, sessions.SessionsMixin):
