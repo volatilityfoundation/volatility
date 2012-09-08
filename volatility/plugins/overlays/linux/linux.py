@@ -235,6 +235,21 @@ def LinuxProfileFactory(profpkg):
 
             return high_addr
 
+        def get_symbol_by_address(self, module, sym_address):
+            ret = ""
+            symtable = self.sys_map
+
+            mod = symtable[module]
+        
+            for (name, addrs) in mod.items():
+                
+                for (addr, addr_type) in addrs:
+                    if sym_address == addr:
+                        ret = name
+                        break   
+ 
+            return ret
+
         def get_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
             """Gets a symbol out of the profile
             
