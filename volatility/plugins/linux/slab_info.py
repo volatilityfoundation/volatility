@@ -38,10 +38,7 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
             caches = obj.Object("list_head", offset = cache_chain, vm = self.addr_space)
             listm = "next"
         elif slab_caches: #slub
-            caches = obj.Object("list_head", offset = slab_caches, vm = self.addr_space)
-            listm = "list"
-            
-    
+            debug.error("SLUB is currently unsupported.")           
         else:
             debug.error("Unknown or unimplemented slab type.")
 
@@ -89,33 +86,7 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                         active_slabs, 
                         num_slabs]
         
-            elif cache.get_type() == "slub":
-
-                #FIXME: NUMA
-                node = cache.node[0]
-                nr_partials = node.nr_partial
-                nr_slabs = node.nr_slabs.counter
-                nr_objs = node.total_objects.counter
-                
-                nr_free = 0
-                this = 0
-                for page in cache.get_partial_list():
-                    nr_free += page.objects - page.inuse
-
-                nr_inuse = nr_objs - nr_free
-               
-                yield [cache.get_name(), 
-                        nr_inuse, 
-                        nr_objs, 
-                        cache.m("size"), 
-                        cache.objs_per_slab(),
-                        cache.pages_per_slab(),
-                        nr_slabs,
-                        nr_slabs]    
-                
-                         
     def render_text(self, outfd, data):
-
         self.table_header(outfd, [("<name>", "<30"), 
                                   ("<active_objs>", "<13"),
                                   ("<num_objs>", "<10"), 
