@@ -144,6 +144,9 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
         # walk the modules list
         for module in modules.list_of_type("module", "list"):
 
+            #if str(module.name) == "rootkit":
+            #    continue
+
             if self._config.PARAMS:
             
                 if not hasattr(module, "kp"):
@@ -184,29 +187,14 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
         ret = []
 
-        for (module, _sections) in self.calculate():
+        for (module, _sections, _params) in self.calculate():
 
             if len(include_list) == 0 or str(module.name) in include_list:
 
-                ret.append(("%s" % module.name, module.module_core, module.module_core + module.core_size))
+                start = module.module_core
+                end   = start +  module.core_size
+                ret.append(("%s" % module.name, start, end))
 
         return ret
    
-    # This returns the name of the module that contains an address or None
-    # The module_list parameter comes from a call to get_modules
-    # This function will be updated after 2.2 to resolve symbols within the module as well
-    def address_in_module(self, module_list, address):
-
-        ret = None
-
-        for (name, start, end) in module_list:
-            
-            if start <= address < end:
-                
-                ret = name
-                break
-
-        return ret
-
-
 
