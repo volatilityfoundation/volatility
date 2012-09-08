@@ -45,7 +45,9 @@ class AbstractLinuxCommand(commands.Command):
 
     @property
     def profile(self):
-        return self.addr_space.profile
+        if self.addr_space:
+            return self.addr_space.profile
+        return None
 
     def execute(self, *args, **kwargs):
         self.addr_space = utils.load_as(self._config)
