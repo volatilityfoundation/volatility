@@ -34,6 +34,7 @@ import volatility.plugins.overlays.native_types as native_types
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.dwarf as dwarf
+import volatility.utils as utils
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
 
@@ -206,8 +207,22 @@ def LinuxProfileFactory(profpkg):
     
             return ret
 
-        def get_all_symbol_names(self, module="kernel"):
+        def get_symbol_by_address(self, module, sym_address):
+            ret = ""
+            symtable = self.sys_map
 
+            mod = symtable[module]
+        
+            for (name, addrs) in mod.items():
+                
+                for (addr, addr_type) in addrs:
+                    if sym_address == addr:
+                        ret = name
+                        break   
+ 
+            return ret
+
+        def get_all_symbol_names(self, module="kernel"):
             symtable = self.sys_map
             
             if module in symtable:
@@ -237,21 +252,6 @@ def LinuxProfileFactory(profpkg):
                     high_addr = addr
 
             return high_addr
-
-        def get_symbol_by_address(self, module, sym_address):
-            ret = ""
-            symtable = self.sys_map
-
-            mod = symtable[module]
-        
-            for (name, addrs) in mod.items():
-                
-                for (addr, addr_type) in addrs:
-                    if sym_address == addr:
-                        ret = name
-                        break   
- 
-            return ret
 
         def get_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
             """Gets a symbol out of the profile
@@ -309,7 +309,6 @@ def LinuxProfileFactory(profpkg):
                     debug.debug("Requested symbol {0:s} not found in module {1:s}\n".format(sym_name, module))
             else:
                 debug.info("Requested module {0:s} not found in symbol table\n".format(module))
-
 
             if ret and sym_type == "Pointer":
                 # FIXME: change in 2.3 when truncation no longer occurs
@@ -537,6 +536,7 @@ class task_struct(obj.CType):
             ret = self.cred.gid
         else:
             ret = self.m("gid")
+
         return ret
 
     @property
@@ -546,6 +546,7 @@ class task_struct(obj.CType):
             ret = self.cred.euid
         else:
             ret = self.m("euid")
+
         return ret
 
     def get_process_address_space(self):
@@ -618,47 +619,62 @@ class VolatilityLinuxValidAS(obj.VolatilityMagic):
         yield self.obj_vm.vtop(init_task_addr) == init_task_addr - shift
 
 class kmem_cache(obj.CType):
-    def __init__(self, theType, offset, vm, name = None, members = None, struct_size = 0, **kwargs):
-        obj.CType.__init__(self, theType, offset, vm, name, members, struct_size, **kwargs)
-
     def get_type(self):
-        if self.members.has_key("next"):
-            return "slab"
-        elif self.members.has_key("list"):
-            return "slub"
-
-        return None
+        raise NotImplemented
 
     def get_name(self):
         return str(self.name.dereference_as("String", length = 255))
 
+    def get_objs_of_type(self, type, unalloc = 0):
+        raise NotImplemented
+        
+class kmem_cache_slab(kmem_cache):
+    def get_type(self):
+        return "slab"
+
+    # volatility does not support indexing pointers
+    # and the definitely of nodelists changes from array to pointer
+    def _get_nodelist(self):
+        ent = self.nodelists
+
+        if type(ent) == volatility.obj.Pointer:
+            ret = obj.Object("kmem_list3", offset=ent.dereference(), vm=self.obj_vm)
+
+        elif type(ent) == volatility.obj.Array:
+            ret = ent[0]
+        else:
+            debug.error("Unknown nodelists types. %s" % type(ent))
+
+        return ret
+
     def get_free_list(self):
-        slablist = self.nodelists[0].slabs_free
+
+        slablist = self._get_nodelist().slabs_free
 
         for slab in slablist.list_of_type("slab", "list"):
             yield slab
 
     def get_partial_list(self):
-        slablist = self.nodelists[0].slabs_partial
+        slablist = self._get_nodelist().slabs_partial
 
         for slab in slablist.list_of_type("slab", "list"):
             yield slab
 
     def get_full_list(self):
-        slablist = self.nodelists[0].slabs_full
+        slablist = self._get_nodelist().slabs_full
 
         for slab in slablist.list_of_type("slab", "list"):
             yield slab
 
-    def get_objs_of_type(self, type, unalloc = 0):
+    def get_objs_of_type(self, obj_type, unalloc = 0):
         if not unalloc:
             for slab in self.get_full_list():
-                for i in range(0, self.num):
-                    yield obj.Object(type,
+                for i in range(self.num):
+                    yield obj.Object(obj_type,
                             offset = slab.s_mem.v() + i * self.buffer_size,
                             vm = self.obj_vm,
                             parent = self.obj_parent,
-                            name = type)
+                            name = obj_type)
 
         for slab in self.get_partial_list():
             bufctl = obj.Object("Array",
@@ -677,20 +693,20 @@ class kmem_cache(obj.CType):
 
             for i in range(0, self.num):
                 if unallocated[i] == unalloc:
-                    yield obj.Object(type,
+                    yield obj.Object(obj_type,
                         offset = slab.s_mem.v() + i * self.buffer_size,
                         vm = self.obj_vm,
                         parent = self.obj_parent,
-                        name = type)
+                        name = obj_type)
 
         if unalloc:
             for slab in self.get_free_list():
                 for i in range(0, self.num):
-                    yield obj.Object(type,
+                    yield obj.Object(obj_type,
                             offset = slab.s_mem.v() + i * self.buffer_size,
                             vm = self.obj_vm,
                             parent = self.obj_parent,
-                            name = type)
+                            name = obj_type)
 
 class LinuxObjectClasses(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'linux'}
@@ -708,11 +724,16 @@ class LinuxObjectClasses(obj.ProfileModification):
             'IpAddress': basic.IpAddress,
             'Ipv6Address': basic.Ipv6Address,
             'VolatilityLinuxValidAS' : VolatilityLinuxValidAS,
-            'kmem_cache' : kmem_cache,
             'kernel_param' : kernel_param,
             'kparam_array'  : kparam_array,
             'gate_struct64'  : gate_struct64,
             'desc_struct'    : desc_struct,
+            'page': page,
+            })
+            
+        if profile.get_symbol("cache_chain"):
+            profile.object_classes.update({
+                'kmem_cache': kmem_cache_slab,
             })
 
 class LinuxOverlay(obj.ProfileModification):
@@ -721,6 +742,36 @@ class LinuxOverlay(obj.ProfileModification):
 
     def modification(self, profile):
         profile.merge_overlay(linux_overlay)
+        
+class page(obj.CType):
+        
+    def to_vaddr(self):
+        #FIXME Do it!
+        pass
+        
+    def to_paddr(self):
+        mem_map_addr = self.obj_vm.profile.get_symbol("mem_map")
+        mem_section_addr = self.obj_vm.profile.get_symbol("mem_section")
+
+        if mem_map_addr:
+            # FLATMEM kernels, usually 32 bit
+            mem_map_ptr = obj.Object("Pointer", offset = mem_map_addr, vm = self.obj_vm, parent = self.obj_parent)
+
+        elif mem_section_addr:
+            # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
+            # NOTE: This is really 0xffff0xea0000000000 but we chop to its 48 bit equivalent
+            mem_map_ptr = 0xea0000000000 
+
+        else:
+            debug.error("phys_addr_of_page: Unable to determine physical address of page\n")
+
+        phys_offset = (self.obj_offset - mem_map_ptr) / self.obj_vm.profile.get_obj_size("page")
+
+        phys_offset = phys_offset << 12
+
+        return phys_offset 
+            
+            
 
 class mount(obj.CType):
 
