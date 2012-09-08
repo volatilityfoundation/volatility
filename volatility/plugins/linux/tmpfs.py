@@ -132,7 +132,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
 
-        self.edir     = self._config.EVIDENCE_DIR
+        self.edir     = self._config.DUMP_DIR
         self.sb_num   = self._config.SB
         self.list_sbs = self._config.LIST_SBS
 
