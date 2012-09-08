@@ -22,6 +22,7 @@
 """
 
 import volatility.obj as obj
+import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 
 class linux_lsmod(linux_common.AbstractLinuxCommand):
@@ -143,10 +144,11 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
         # walk the modules list
         for module in modules.list_of_type("module", "list"):
 
-            #if str(module.name) != "mptbase":
-            #    continue
-            
             if self._config.PARAMS:
+            
+                if not hasattr(module, "kp"):
+                    debug.error("Gathering module parameters is not supported in this profile.")
+
                 params = self.get_params(module)
             else:
                 params = ""
@@ -186,7 +188,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
             if len(include_list) == 0 or str(module.name) in include_list:
 
-                ret.append(("%s" % module.name, module.module_core, module.module_core + module.module_core + module.core_size))
+                ret.append(("%s" % module.name, module.module_core, module.module_core + module.core_size))
 
         return ret
    
