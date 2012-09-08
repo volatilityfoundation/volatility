@@ -26,13 +26,16 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 
+# inherit render_text
+import volatility.plugins.linux.check_idt as linux_check_idt
+
 try:
     import distorm3
     has_distorm = True
 except ImportError:
     has_distorm = False
 
-class linux_check_syscall(linux_common.AbstractLinuxCommand):
+class linux_check_syscall(linux_check_idt.linux_check_idt):
     """ Checks if the system call table has been altered """
 
     def _get_table_size(self, table_addr, table_name):
@@ -156,12 +159,10 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                 call_addr = call_addr & mask
 
                 if not call_addr in sym_addrs:
-                    yield(i, call_addr)
+                    yield(i, call_addr, 1)
+                else:
+                    yield(i, call_addr, 0)
                         
-    def render_text(self, outfd, data):
-
-        for (i, call_addr) in data:
-            outfd.write("%d %x\n" % (i, call_addr))
 
 
 
