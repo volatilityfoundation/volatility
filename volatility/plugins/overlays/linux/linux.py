@@ -513,6 +513,8 @@ class task_struct(obj.CType):
         ret = self.members.get("uid")
         if ret is None:
             ret = self.cred.uid
+        else:
+            ret = self.m("uid")
 
         return ret
 
@@ -521,7 +523,8 @@ class task_struct(obj.CType):
         ret = self.members.get("gid")
         if ret is None:
             ret = self.cred.gid
-
+        else:
+            ret = self.m("gid")
         return ret
 
     @property
@@ -529,7 +532,8 @@ class task_struct(obj.CType):
         ret = self.members.get("euid")
         if ret is None:
             ret = self.cred.euid
-
+        else:
+            ret = self.m("euid")
         return ret
 
     def get_process_address_space(self):
