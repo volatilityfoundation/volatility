@@ -40,9 +40,16 @@ def mask_number(num):
 class AbstractLinuxCommand(commands.Command):
 
     def __init__(self, *args, **kwargs):
+        self.addr_space = None
         commands.Command.__init__(self, *args, **kwargs)
+
+    @property
+    def profile(self):
+        return self.addr_space.profile
+
+    def execute(self, *args, **kwargs):
         self.addr_space = utils.load_as(self._config)
-        self.profile = self.addr_space.profile
+        commands.Command.execute(self, *args, **kwargs)
 
         # this was the old method to get data from system.map, do not use anymore, use get_symbol below instead
         # self.smap       = self.profile.sysmap
