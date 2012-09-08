@@ -21,6 +21,8 @@ import volatility.obj as obj
 import volatility.plugins.gui.constants as consts
 import volatility.plugins.overlays.windows.windows as windows
 import volatility.utils as utils
+import volatility.addrspace as addrspace
+import volatility.conf as conf
 
 #--------------------------------------------------------------------------------
 # object classes
@@ -68,16 +70,9 @@ class _MM_SESSION_SPACE(obj.CType):
 
         @returns all chunks on a 4-byte boundary. 
         """
-
+        
         dos_header = obj.Object("_IMAGE_DOS_HEADER",
                 offset = self.Win32KBase, vm = self.obj_vm)
-                
-        ## In the rare case when win32k.sys PE header is paged or corrupted
-        ## thus preventing us from parsing the sections, use the fallback
-        ## mechanism of just reading 5 MB (max size of win32k.sys) from the 
-        ## base of the kernel module. 
-        chunks_offset = self.Win32KBase
-        chunks_size = 0x500000 / 4 # 5 MB 
                 
         if dos_header:
             try:
@@ -91,17 +86,31 @@ class _MM_SESSION_SPACE(obj.CType):
                 # There should be exactly one section 
                 if sections:
                     desired_section = sections[0]
-                    chunks_offset = desired_section.VirtualAddress + dos_header.obj_offset
-                    chunks_size = desired_section.Misc.VirtualSize / 4
+                    return obj.Object("Array", targetType = "unsigned long",
+                                        offset = desired_section.VirtualAddress + dos_header.obj_offset, 
+                                        count = desired_section.Misc.VirtualSize / 4, 
+                                        vm = self.obj_vm)
             except ValueError:
                 ## This catches PE header parsing exceptions 
                 pass
-
-        chunks = obj.Object("Array", targetType = "unsigned long",
-                            offset = chunks_offset, count = chunks_size, 
-                            vm = self.obj_vm)
+                
+        ## In the rare case when win32k.sys PE header is paged or corrupted
+        ## thus preventing us from parsing the sections, use the fallback
+        ## mechanism of just reading 5 MB (max size of win32k.sys) from the 
+        ## base of the kernel module. 
+        data = self.obj_vm.zread(self.Win32KBase, 0x500000) 
+        
+        ## Fill a Buffer AS with the zread data and set its base to win32k.sys
+        ## so we can still instantiate an Array and have each chunk at the 
+        ## correct offset in virtual memory.
+        buffer_as = addrspace.BufferAddressSpace(conf.ConfObject(), 
+                                            data = data, 
+                                            base_offset = self.Win32KBase)
                             
-        return chunks
+        return obj.Object("Array", targetType = "unsigned long", 
+                          offset = self.Win32KBase, 
+                          count = len(data) / 4, 
+                          vm = buffer_as)
 
     def find_gahti(self):
         """Find this session's gahti. 
