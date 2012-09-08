@@ -56,6 +56,9 @@ linux_overlay = {
     'sockaddr_un' : [None, {
         'sun_path'      : [ None , ['String', dict(length = 108)]],
         }],
+    'hlist_head' : [None, {
+        'first'      : [ None , ['pointer', ['hlist_node']]],
+        }],
     'dentry' : [None, {
         'd_u'      : [ None , ['list_head', {}]],
     }],
@@ -395,7 +398,7 @@ class hlist_node(obj.CType):
 
     def __nonzero__(self):
         ## List entries are valid when both Flinks and Blink are valid
-        return bool(self.next) or bool(self.prev)
+        return bool(self.next) or bool(self.pprev)
 
     def __iter__(self):
         return self.list_of_type(self.obj_parent.obj_name, self.obj_name)
@@ -507,6 +510,15 @@ class desc_struct(obj.CType):
         return (self.b & 0xffff0000) | (self.a & 0x0000ffff)
 
 class task_struct(obj.CType):
+
+    def is_valid_task(self): 
+        
+        ret = self.fs.v() != 0 and self.files.v() != 0
+
+        if ret and self.members.get("cred"):
+            ret = self.cred.is_valid()
+
+        return ret
 
     @property
     def uid(self):
