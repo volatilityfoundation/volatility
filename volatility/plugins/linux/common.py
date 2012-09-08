@@ -432,6 +432,7 @@ def get_phys_addr_section(self, page):
     return -1
 '''
 
+# FIXME - use 'class page' overlay?
 def phys_addr_of_page(self, page):
 
     mem_map_addr = self.get_profile_symbol("mem_map")
@@ -572,6 +573,47 @@ def get_file_contents(self, inode):
 
     return data
 
+def is_known_address(obj_ref, addr, modules):
 
+    text  = obj_ref.profile.get_symbol("_text", sym_type="Pointer")
+    etext = obj_ref.profile.get_symbol("_etext", sym_type="Pointer")
+
+    if text <= addr < etext or address_in_module(modules, addr):
+        known = 1
+    else:
+        known = 0
+
+    return known
+
+# This returns the name of the module that contains an address or None
+# The module_list parameter comes from a call to get_modules
+# This function will be updated after 2.2 to resolve symbols within the module as well
+def address_in_module(module_list, address):
+    ret = None
+
+    for (name, start, end) in module_list:
+         
+        if start <= address < end:
+            
+            ret = name
+            break
+
+    return ret
+
+def verify_ops(obj_ref, fops, op_members, modules):
+
+    for check in op_members:
+        addr = fops.m(check)
+
+        if addr and addr != 0:
+                        
+            if addr in obj_ref.known_addrs:
+                known = obj_ref.known_addrs[addr]
+            else:
+                known = is_known_address(obj_ref, addr, modules)
+                obj_ref.known_addrs[addr] = known
+
+            if known == 0:
+                yield (check, addr)
 
 

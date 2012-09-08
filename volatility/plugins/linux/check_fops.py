@@ -1,0 +1,124 @@
+# Volatility
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details. 
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+
+"""
+@author:       Andrew Case
+@license:      GNU General Public License 2.0 or later
+@contact:      atcuno@gmail.com
+@organization: 
+"""
+
+import os
+
+import volatility.obj as obj
+import volatility.plugins.linux.common as linux_common
+import volatility.plugins.linux.lsof as linux_lsof
+import volatility.plugins.linux.lsmod as linux_lsmod
+from volatility.plugins.linux.slab_info import linux_slabinfo
+
+class linux_check_fop(linux_common.AbstractLinuxCommand):
+    """Lists open files"""
+
+    def check_open_files_fop(self, f_op_members, modules):
+        # get all the members in file_operations, they are all function pointers
+        openfiles = linux_lsof.linux_lsof(self._config).calculate()
+
+        for (task, filp, i) in openfiles:
+            for (hooked_member, hook_address) in linux_common.verify_ops(self, filp.f_op, f_op_members, modules):
+                name = "{0:s} {1:d} {2:s}".format(task.comm, i, linux_common.get_path(task, filp))
+                yield (name, hooked_member, hook_address)
+
+    def check_proc_fop(self, f_op_members, modules):
+
+        proc_mnt_addr = self.get_profile_symbol("proc_mnt")
+        proc_mnt_ptr = obj.Object("Pointer", offset=proc_mnt_addr, vm=self.addr_space)
+        proc_mnt = proc_mnt_ptr.dereference_as("vfsmount")
+
+        root = proc_mnt.mnt_root
+
+        for (hooked_member, hook_address) in linux_common.verify_ops(self, root.d_inode.i_fop, f_op_members, modules):
+            yield ("proc_mnt: root", hooked_member, hook_address)
+
+        # only check the root directory
+        for dentry in root.d_subdirs.list_of_type("dentry", "d_u"):
+
+            name = dentry.d_name.name.dereference_as("String", length=255)
+            
+            for (hooked_member, hook_address) in linux_common.verify_ops(self, dentry.d_inode.i_fop, f_op_members, modules): 
+                yield("proc_mnt: %s" % name, hooked_member, hook_address)
+    
+    def walk_proc(self, cur, f_op_members, modules, parent=""):
+ 
+        while cur:
+
+            if cur.obj_offset in self.seen_proc:
+                cur = cur.next
+                continue
+
+            self.seen_proc[cur.obj_offset] = 1
+
+            name = cur.name.dereference_as("String", length=255)
+
+            fops = cur.proc_fops
+
+            for (hooked_member, hook_address) in linux_common.verify_ops(self, fops, f_op_members, modules):
+                yield (name, hooked_member, hook_address)
+
+            subdir = cur.subdir
+
+            while subdir:
+                for (name, hooked_member, hook_address) in self.walk_proc(subdir, f_op_members, modules):
+                    yield (name, hooked_member, hook_address)
+                subdir = subdir.next
+
+            cur = cur.next
+
+    def check_proc_root_fops(self, f_op_members, modules):
+    
+        proc_root_addr = self.get_profile_symbol("proc_root") 
+        proc_root = obj.Object("proc_dir_entry", offset=proc_root_addr, vm=self.addr_space)
+
+        for (hooked_member, hook_address) in linux_common.verify_ops(self, proc_root.proc_fops, f_op_members, modules):
+            yield("proc_root", hooked_member, hook_address)
+
+        for (name, hooked_member, hook_address) in self.walk_proc(proc_root, f_op_members, modules):
+            yield (name, hooked_member, hook_address)
+
+    def calculate(self):
+        self.known_addrs = {}
+        
+        modules   = linux_lsmod.linux_lsmod(self._config).get_modules()
+        
+        f_op_members = self.profile.types['file_operations'].keywords["members"].keys()
+        f_op_members.remove('owner')
+
+        funcs = [self.check_open_files_fop, self.check_proc_fop, self.check_proc_root_fops]
+
+        for func in funcs:
+
+            for (name, member, address) in func(f_op_members, modules):
+                yield (name, member, address)
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd, [("What", "42"), 
+                                  ("Member", "30"), 
+                                  ("Address", "[addr]")])
+                                  
+        for (what, member, address) in data:
+            self.table_row(outfd, what, member, address)
+
+
