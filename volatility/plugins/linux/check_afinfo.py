@@ -66,7 +66,7 @@ class linux_check_afinfo(linux_common.AbstractLinuxCommand):
                 if not global_var_addr:
                     continue
 
-                global_var = obj.Object(struct_type, offset=global_var_addr, vm=self.addr_space)
+                global_var = obj.Object(struct_type, offset = global_var_addr, vm = self.addr_space)
 
                 for (name, member, address) in self.check_afinfo(global_var_name, global_var, op_members, seq_members, modules):
                     yield (name, member, address)
@@ -75,7 +75,7 @@ class linux_check_afinfo(linux_common.AbstractLinuxCommand):
 
         self.table_header(outfd, [("What", "42"), 
                                   ("Member", "30"), 
-                                  ("Address", "[addr]")])
+                                  ("Address", "[addrpad]")])
                                   
         for (what, member, address) in data:
             self.table_row(outfd, what, member, address)
