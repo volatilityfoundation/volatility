@@ -73,7 +73,8 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
 
         self.table_header(outfd, [("Interface", "16"), 
                                   ("IP Address", "20"), 
-                                  ("MAC Address", "")])
+                                  ("MAC Address", "18"),
+                                  ("Promiscous Modue", "5")])
                                   
         for net_dev, in_dev in data:
 
@@ -90,5 +91,7 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
 
             mac_addr = ":".join(["{0:02x}".format(x) for x in hwaddr][:6])
 
-            self.table_row(outfd, net_dev.name, ip, mac_addr)
+            promisc = ["False", "True"][(net_dev.flags & 0x100) == 0x100] # IFF_PROMISC
+
+            self.table_row(outfd, net_dev.name, ip, mac_addr, promisc)
 
