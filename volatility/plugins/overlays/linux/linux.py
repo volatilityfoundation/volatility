@@ -586,6 +586,12 @@ class linux_fs_struct(obj.CType):
             ret = self.root.mnt
 
         return ret
+        
+class net_device(obj.CType):
+
+    @property
+    def promisc(self):
+        return self.flags & 0x100 == 0x100 # IFF_PROMISC
 
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
@@ -635,10 +641,11 @@ class LinuxObjectClasses(obj.ProfileModification):
             'Ipv6Address': basic.Ipv6Address,
             'VolatilityLinuxValidAS' : VolatilityLinuxValidAS,
             'kernel_param' : kernel_param,
-            'kparam_array'  : kparam_array,
-            'gate_struct64'  : gate_struct64,
-            'desc_struct'    : desc_struct,
+            'kparam_array' : kparam_array,
+            'gate_struct64' : gate_struct64,
+            'desc_struct' : desc_struct,
             'page': page,
+            'net_device': net_device,
             })
             
 class LinuxOverlay(obj.ProfileModification):
@@ -675,8 +682,6 @@ class page(obj.CType):
         phys_offset = phys_offset << 12
 
         return phys_offset 
-            
-            
 
 class mount(obj.CType):
 
