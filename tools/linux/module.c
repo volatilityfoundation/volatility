@@ -22,7 +22,11 @@ symbols and then read the DWARF symbols from it.
 #include <linux/radix-tree.h>
 #include <linux/netfilter.h>
 #include <linux/netfilter/x_tables.h>
+#include <net/tcp.h>
+#include <net/udp.h>
 
+struct udp_seq_afinfo udp_seq_afinfo;
+struct tcp_seq_afinfo tcp_seq_afinfo;
 struct uts_namespace uts_namespace;
 struct sock sock;
 struct inet_sock inet_sock;
