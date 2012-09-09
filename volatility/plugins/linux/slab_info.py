@@ -46,7 +46,7 @@ class kmem_cache_slab(kmem_cache):
         ent = self.nodelists
 
         if type(ent) == obj.Pointer:
-            ret = obj.Object("kmem_list3", offset=ent.dereference(), vm=self.obj_vm)
+            ret = obj.Object("kmem_list3", offset = ent.dereference(), vm = self.obj_vm)
 
         elif type(ent) == obj.Array:
             ret = ent[0]
