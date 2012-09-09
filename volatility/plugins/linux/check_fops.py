@@ -22,7 +22,6 @@
 """
 
 import os
-
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsof as linux_lsof
@@ -30,7 +29,7 @@ import volatility.plugins.linux.lsmod as linux_lsmod
 from volatility.plugins.linux.slab_info import linux_slabinfo
 
 class linux_check_fop(linux_common.AbstractLinuxCommand):
-    """Lists open files"""
+    """Check file operation structures for rootkit modifications"""
 
     def check_open_files_fop(self, f_op_members, modules):
         # get all the members in file_operations, they are all function pointers
@@ -44,7 +43,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
     def check_proc_fop(self, f_op_members, modules):
 
         proc_mnt_addr = self.get_profile_symbol("proc_mnt")
-        proc_mnt_ptr = obj.Object("Pointer", offset=proc_mnt_addr, vm=self.addr_space)
+        proc_mnt_ptr = obj.Object("Pointer", offset = proc_mnt_addr, vm = self.addr_space)
         proc_mnt = proc_mnt_ptr.dereference_as("vfsmount")
 
         root = proc_mnt.mnt_root
@@ -55,12 +54,12 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
         # only check the root directory
         for dentry in root.d_subdirs.list_of_type("dentry", "d_u"):
 
-            name = dentry.d_name.name.dereference_as("String", length=255)
+            name = dentry.d_name.name.dereference_as("String", length = 255)
             
             for (hooked_member, hook_address) in linux_common.verify_ops(self, dentry.d_inode.i_fop, f_op_members, modules): 
-                yield("proc_mnt: %s" % name, hooked_member, hook_address)
+                yield("proc_mnt: {0}".format(name), hooked_member, hook_address)
     
-    def walk_proc(self, cur, f_op_members, modules, parent=""):
+    def walk_proc(self, cur, f_op_members, modules, parent = ""):
  
         while cur:
 
@@ -70,7 +69,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
 
             self.seen_proc[cur.obj_offset] = 1
 
-            name = cur.name.dereference_as("String", length=255)
+            name = cur.name.dereference_as("String", length = 255)
 
             fops = cur.proc_fops
 
@@ -89,7 +88,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
     def check_proc_root_fops(self, f_op_members, modules):
     
         proc_root_addr = self.get_profile_symbol("proc_root") 
-        proc_root = obj.Object("proc_dir_entry", offset=proc_root_addr, vm=self.addr_space)
+        proc_root = obj.Object("proc_dir_entry", offset = proc_root_addr, vm = self.addr_space)
 
         for (hooked_member, hook_address) in linux_common.verify_ops(self, proc_root.proc_fops, f_op_members, modules):
             yield("proc_root", hooked_member, hook_address)
@@ -100,7 +99,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
     def calculate(self):
         self.known_addrs = {}
         
-        modules   = linux_lsmod.linux_lsmod(self._config).get_modules()
+        modules = linux_lsmod.linux_lsmod(self._config).get_modules()
         
         f_op_members = self.profile.types['file_operations'].keywords["members"].keys()
         f_op_members.remove('owner')
