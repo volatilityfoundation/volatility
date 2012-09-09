@@ -21,8 +21,7 @@
 @organization: 
 """
 import os
-
-import volatility.obj   as obj
+import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.netstat as linux_netstat
 
@@ -40,13 +39,13 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
         wrote = 0
 
         fname = "{0:s}.{1:d}.{2:d}".format(name, pid, fd_num)
-        fd    = None 
+        fd = None 
  
         sk_buff = queue.next
 
         while sk_buff and sk_buff != queue.v():
 
-            pkt_len  = sk_buff.len
+            pkt_len = sk_buff.len
             
             if pkt_len > 0 and pkt_len != 0xffffffff:
 
@@ -71,7 +70,7 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
             fd.close()
 
     def calculate(self):
-        self.edir     = self._config.DUMP_DIR
+        self.edir = self._config.DUMP_DIR
 
         if not self.edir:
             debug.error("No output directory given.")
