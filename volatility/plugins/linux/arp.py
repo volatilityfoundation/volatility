@@ -51,11 +51,17 @@ class linux_arp(linux_common.AbstractLinuxCommand):
 
         # FIXME: Consider using kernel version metadata rather than checking hasattr
         if hasattr(ntable, 'hash_mask'):
-            hash_size = ntable.hash_mask
-            buckets = obj.Object(theType = 'Array', offset = ntable.hash_buckets, vm = self.addr_space, targetType = 'Pointer', count = hash_size)
+            hash_size  = ntable.hash_mask
+            hash_table = ntable.hash_buckets 
+        elif hasattr(ntable.nht, 'hash_mask'):
+            hash_size  = ntable.nht.hash_mask
+            hash_table = ntable.nht.hash_buckets
         else:
-            hash_size = (1 << ntable.nht.hash_shift)
-            buckets = obj.Object(theType = 'Array', offset = ntable.nht.hash_buckets, vm = self.addr_space, targetType = 'Pointer', count = hash_size)
+            hash_size  = (1 << ntable.nht.hash_shift)
+            hash_table = ntable.nht.hash_buckets
+ 
+        buckets = obj.Object(theType = 'Array', offset = hash_table, vm = self.addr_space, targetType = 'Pointer', count = hash_size)
+
         for i in range(hash_size):
             if buckets[i]:
                 neighbor = obj.Object("neighbour", offset = buckets[i], vm = self.addr_space)
