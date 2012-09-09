@@ -32,11 +32,6 @@ MAX_STRING_LENGTH = 256
 import time
 nsecs_per = 1000000000
 
-# FIXME
-# get rid of this! used by lsof
-def mask_number(num):
-    return num & 0xffffffff
-
 def set_plugin_members(obj_ref):
 
     obj_ref.addr_space = utils.load_as(obj_ref._config)
