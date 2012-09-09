@@ -36,6 +36,7 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
                           action = 'store', type = 'str')
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
         init_task_addr = self.get_profile_symbol("init_task")
 
         init_task = obj.Object("task_struct", vm = self.addr_space, offset = init_task_addr)

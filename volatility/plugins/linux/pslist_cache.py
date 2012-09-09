@@ -38,7 +38,7 @@ class linux_pslist_cache(linux_pslist.linux_pslist):
                         action = 'store_true')       
     
     def calculate(self):
-        
+        linux_common.set_plugin_members(self)        
         pidlist = self._config.PID
         if pidlist:
             pidlist = [int(p) for p in self._config.PID.split(',')]

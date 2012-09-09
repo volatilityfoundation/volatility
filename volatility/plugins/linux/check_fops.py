@@ -97,6 +97,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
             yield (name, hooked_member, hook_address)
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
         self.known_addrs = {}
         
         modules = linux_lsmod.linux_lsmod(self._config).get_modules()

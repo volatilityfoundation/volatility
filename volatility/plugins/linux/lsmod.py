@@ -136,7 +136,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
         return sects
 
     def calculate(self):
-
+        linux_common.set_plugin_members(self)
         modules_addr = self.get_profile_symbol("modules")
 
         modules = obj.Object("list_head", vm = self.addr_space, offset = modules_addr)

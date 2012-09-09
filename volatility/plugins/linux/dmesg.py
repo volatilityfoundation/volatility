@@ -75,7 +75,7 @@ class linux_dmesg(linux_common.AbstractLinuxCommand):
         return ret
 
     def calculate(self):
-        
+        linux_common.set_plugin_members(self)    
         (log_buf_addr, log_buf_len) = self._get_log_info()
 
         if self.profile.has_type("log") and self.profile.obj_has_member("log", "ts_nsec"):

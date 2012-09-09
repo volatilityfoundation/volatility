@@ -70,6 +70,7 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
             fd.close()
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
         self.edir = self._config.DUMP_DIR
 
         if not self.edir:

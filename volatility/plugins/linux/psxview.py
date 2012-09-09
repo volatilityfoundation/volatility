@@ -46,7 +46,8 @@ class linux_psxview(linux_common.AbstractLinuxCommand):
         return [x.obj_offset for x in linux_pslist_cache.linux_pslist_cache(self._config).calculate()]
 
     def calculate(self):
-        
+        linux_common.set_plugin_members(self)
+    
         ps_sources = {}
         
         # The keys are names of process sources

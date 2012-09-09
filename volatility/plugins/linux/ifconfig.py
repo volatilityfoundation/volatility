@@ -29,6 +29,7 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
     """Gathers active interfaces"""
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
 
         # newer kernels
         if self.get_profile_symbol("net_namespace_list"):

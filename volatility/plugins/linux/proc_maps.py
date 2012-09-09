@@ -33,6 +33,7 @@ class linux_proc_maps(linux_pslist.linux_pslist):
     MINORMASK = ((1 << MINORBITS) - 1)
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
         tasks = linux_pslist.linux_pslist.calculate(self)
 
         for task in tasks:

@@ -150,6 +150,7 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
         return []
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
         
         for cache in self.get_all_kmem_caches():
             if cache.get_type() == "slab":

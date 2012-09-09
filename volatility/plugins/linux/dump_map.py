@@ -52,6 +52,7 @@ class linux_dump_map(linux_common.AbstractLinuxCommand):
             start = start + pagesize
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
         vmas = linux_proc_maps.linux_proc_maps(self._config).calculate()
 
         for (task, vma) in vmas:

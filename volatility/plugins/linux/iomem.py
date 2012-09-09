@@ -46,6 +46,7 @@ class linux_iomem(linux_common.AbstractLinuxCommand):
         return output
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
 
         io_ptr = self.get_profile_symbol("iomem_resource")
 

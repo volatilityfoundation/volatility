@@ -123,6 +123,7 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
         This works by walking the system call table 
         and verifies that each is a symbol in the kernel
         """    
+        linux_common.set_plugin_members(self)
 
         if not has_distorm:
             debug.warning("distorm not installed. The best method to calculate the system call table size will not be used.")

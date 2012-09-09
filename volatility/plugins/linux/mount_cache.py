@@ -40,6 +40,7 @@ class linux_mount_cache(linux_mount.linux_mount):
                         action = 'store_true') 
                         
     def calculate(self):
+        linux_common.set_plugin_members(self)
         if self.profile.has_type("mount"):
             mnttype = "mount"
             

@@ -32,6 +32,7 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
         This works by walking the IDT table for the entries that Linux uses
         and verifies that each is a symbol in the kernel
         """    
+        linux_common.set_plugin_members(self)
 
         tblsz = 256
         

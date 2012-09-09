@@ -28,6 +28,7 @@ class linux_cpuinfo(linux_common.AbstractLinuxCommand):
     """Prints info about each active processor"""
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
 
         cpus = linux_common.online_cpus(self)
         

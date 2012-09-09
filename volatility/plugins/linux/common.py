@@ -37,6 +37,10 @@ nsecs_per = 1000000000
 def mask_number(num):
     return num & 0xffffffff
 
+def set_plugin_members(obj_ref):
+
+    obj_ref.addr_space = utils.load_as(obj_ref._config)
+
 class AbstractLinuxCommand(commands.Command):
 
     def __init__(self, *args, **kwargs):
@@ -50,12 +54,8 @@ class AbstractLinuxCommand(commands.Command):
         return None
 
     def execute(self, *args, **kwargs):
-        self.addr_space = utils.load_as(self._config)
         commands.Command.execute(self, *args, **kwargs)
-
-        # this was the old method to get data from system.map, do not use anymore, use get_symbol below instead
-        # self.smap       = self.profile.sysmap
-
+    
     @staticmethod
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'linux'

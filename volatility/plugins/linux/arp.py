@@ -22,7 +22,7 @@
 """
 
 import socket
-import volatility.plugins.linux.common as common
+import volatility.plugins.linux.common as linux_common
 import volatility.obj as obj
 
 class a_ent(object):
@@ -34,14 +34,15 @@ class a_ent(object):
 
 # based off pykdump
 # not 100% this works, will need some testing to verify
-class linux_arp(common.AbstractLinuxCommand):
+class linux_arp(linux_common.AbstractLinuxCommand):
     """Print the ARP table"""
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
 
         ntables_ptr = obj.Object("Pointer", offset = self.get_profile_symbol("neigh_tables"), vm = self.addr_space)
 
-        for ntable in common.walk_internal_list("neigh_table", "next", ntables_ptr):
+        for ntable in linux_common.walk_internal_list("neigh_table", "next", ntables_ptr):
             yield self.handle_table(ntable)
 
     def handle_table(self, ntable):
@@ -68,7 +69,7 @@ class linux_arp(common.AbstractLinuxCommand):
 
         ret = []
 
-        for n in common.walk_internal_list("neighbour", "next", neighbor):
+        for n in linux_common.walk_internal_list("neighbour", "next", neighbor):
 
             # get the family from each neighbour in order to work with ipv4 and 6
             family = n.tbl.family

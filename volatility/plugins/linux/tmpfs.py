@@ -131,6 +131,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
         return ret
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
 
         self.edir     = self._config.DUMP_DIR
         self.sb_num   = self._config.SB

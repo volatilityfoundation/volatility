@@ -28,6 +28,7 @@ class linux_route_cache(linux_common.AbstractLinuxCommand):
     """ Recovers the routing cache from memory """
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
 
         mask = obj.Object("unsigned int", offset = self.get_profile_symbol("rt_hash_mask"), vm = self.addr_space)
         rt_pointer = obj.Object("Pointer", offset = self.get_profile_symbol("rt_hash_table"), vm = self.addr_space)

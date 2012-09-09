@@ -96,6 +96,8 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         return ret
 
     def calculate(self):
+        linux_common.set_plugin_members(self)
+
         find_file  = self._config.FIND
         inode_addr = self._config.inode        
         outfile    = self._config.outfile

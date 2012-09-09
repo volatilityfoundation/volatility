@@ -167,7 +167,7 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         return func
 
     def calculate(self):
-
+        linux_common.set_plugin_members(self)
         func = self.determine_func()
 
         for task in func():
