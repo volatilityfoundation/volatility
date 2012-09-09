@@ -618,96 +618,6 @@ class VolatilityLinuxValidAS(obj.VolatilityMagic):
 
         yield self.obj_vm.vtop(init_task_addr) == init_task_addr - shift
 
-class kmem_cache(obj.CType):
-    def get_type(self):
-        raise NotImplemented
-
-    def get_name(self):
-        return str(self.name.dereference_as("String", length = 255))
-
-    def get_objs_of_type(self, type, unalloc = 0):
-        raise NotImplemented
-        
-class kmem_cache_slab(kmem_cache):
-    def get_type(self):
-        return "slab"
-
-    # volatility does not support indexing pointers
-    # and the definitely of nodelists changes from array to pointer
-    def _get_nodelist(self):
-        ent = self.nodelists
-
-        if type(ent) == volatility.obj.Pointer:
-            ret = obj.Object("kmem_list3", offset=ent.dereference(), vm=self.obj_vm)
-
-        elif type(ent) == volatility.obj.Array:
-            ret = ent[0]
-        else:
-            debug.error("Unknown nodelists types. %s" % type(ent))
-
-        return ret
-
-    def get_free_list(self):
-
-        slablist = self._get_nodelist().slabs_free
-
-        for slab in slablist.list_of_type("slab", "list"):
-            yield slab
-
-    def get_partial_list(self):
-        slablist = self._get_nodelist().slabs_partial
-
-        for slab in slablist.list_of_type("slab", "list"):
-            yield slab
-
-    def get_full_list(self):
-        slablist = self._get_nodelist().slabs_full
-
-        for slab in slablist.list_of_type("slab", "list"):
-            yield slab
-
-    def get_objs_of_type(self, obj_type, unalloc = 0):
-        if not unalloc:
-            for slab in self.get_full_list():
-                for i in range(self.num):
-                    yield obj.Object(obj_type,
-                            offset = slab.s_mem.v() + i * self.buffer_size,
-                            vm = self.obj_vm,
-                            parent = self.obj_parent,
-                            name = obj_type)
-
-        for slab in self.get_partial_list():
-            bufctl = obj.Object("Array",
-                        offset = slab.v() + slab.size(),
-                        vm = self.obj_vm,
-                        parent = self.obj_parent,
-                        targetType = "unsigned int",
-                        count = self.num)
-
-            unallocated = [0] * self.num
-
-            i = slab.free
-            while i != 0xFFFFFFFF:
-                unallocated[i] = 1
-                i = bufctl[i]
-
-            for i in range(0, self.num):
-                if unallocated[i] == unalloc:
-                    yield obj.Object(obj_type,
-                        offset = slab.s_mem.v() + i * self.buffer_size,
-                        vm = self.obj_vm,
-                        parent = self.obj_parent,
-                        name = obj_type)
-
-        if unalloc:
-            for slab in self.get_free_list():
-                for i in range(0, self.num):
-                    yield obj.Object(obj_type,
-                            offset = slab.s_mem.v() + i * self.buffer_size,
-                            vm = self.obj_vm,
-                            parent = self.obj_parent,
-                            name = obj_type)
-
 class LinuxObjectClasses(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'linux'}
     before = ['BasicObjectClasses']
@@ -731,11 +641,6 @@ class LinuxObjectClasses(obj.ProfileModification):
             'page': page,
             })
             
-        if profile.get_symbol("cache_chain"):
-            profile.object_classes.update({
-                'kmem_cache': kmem_cache_slab,
-            })
-
 class LinuxOverlay(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'linux'}
     before = ['BasicObjectClasses'] # , 'LinuxVTypes']

@@ -26,10 +26,103 @@ import volatility.protos as protos
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 
+class kmem_cache(obj.CType):
+    def get_type(self):
+        raise NotImplemented
+
+    def get_name(self):
+        return str(self.name.dereference_as("String", length = 255))
+
+    def get_objs_of_type(self, type, unalloc = 0):
+        raise NotImplemented
+
+class kmem_cache_slab(kmem_cache):
+    def get_type(self):
+        return "slab"
+
+    # volatility does not support indexing pointers
+    # and the definition of nodelists changes from array to pointer
+    def _get_nodelist(self):
+        ent = self.nodelists
+
+        if type(ent) == obj.Pointer:
+            ret = obj.Object("kmem_list3", offset=ent.dereference(), vm=self.obj_vm)
+
+        elif type(ent) == obj.Array:
+            ret = ent[0]
+        else:
+            debug.error("Unknown nodelists types. %s" % type(ent))
+
+        return ret
+
+    def _get_free_list(self):
+
+        slablist = self._get_nodelist().slabs_free
+
+        for slab in slablist.list_of_type("slab", "list"):
+            yield slab
+
+    def _get_partial_list(self):
+        slablist = self._get_nodelist().slabs_partial
+
+        for slab in slablist.list_of_type("slab", "list"):
+            yield slab
+
+    def _get_full_list(self):
+        slablist = self._get_nodelist().slabs_full
+
+        for slab in slablist.list_of_type("slab", "list"):
+            yield slab
+
+    def _get_object(self, offset):
+        return obj.Object(self.struct_type,
+                            offset = offset,
+                            vm = self.obj_vm,
+                            parent = self.obj_parent,
+                            name = self.struct_type)
+    def __iter__(self):
+
+        if not self.unalloc:
+            for slab in self._get_full_list():
+                for i in range(self.num):
+                    yield self._get_object(slab.s_mem.v() + i * self.buffer_size)               
+
+        for slab in self._get_partial_list():
+            bufctl = obj.Object("Array",
+                        offset = slab.v() + slab.size(),
+                        vm = self.obj_vm,
+                        parent = self.obj_parent,
+                        targetType = "unsigned int",
+                        count = self.num)
+
+            unallocated = [0] * self.num
+
+            i = slab.free
+            while i != 0xFFFFFFFF:
+                unallocated[i] = 1
+                i = bufctl[i]
+
+            for i in range(0, self.num):
+                if unallocated[i] == unalloc:
+                    yield self._get_object(slab.s_mem.v() + i * self.buffer_size)
+
+        if self.unalloc:
+            for slab in self._get_free_list():
+                for i in range(self.num):
+                    yield self._get_object(slab.s_mem.v() + i * self.buffer_size)
+
+class LinuxKmemCacheOverlay(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'linux'}
+    before = ['BasicObjectClasses'] # , 'LinuxVTypes']
+
+    def modification(self, profile):
+
+        if profile.get_symbol("cache_chain"):
+            profile.object_classes.update({'kmem_cache': kmem_cache_slab})
+
 class linux_slabinfo(linux_common.AbstractLinuxCommand):
     """Mimics /proc/slabinfo on a running machine"""    
 
-    @staticmethod
     def get_all_kmem_caches(self):
         cache_chain = self.get_profile_symbol("cache_chain")
         slab_caches = self.get_profile_symbol("slab_caches")
@@ -37,22 +130,24 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
         if cache_chain: #slab
             caches = obj.Object("list_head", offset = cache_chain, vm = self.addr_space)
             listm = "next"
+            ret = [cache for cache in caches.list_of_type("kmem_cache", listm)]
         elif slab_caches: #slub
-            debug.error("SLUB is currently unsupported.")           
+            debug.info("SLUB is currently unsupported.")
+            ret = []
         else:
             debug.error("Unknown or unimplemented slab type.")
-
-        return caches.list_of_type("kmem_cache", listm)
             
-    @staticmethod
-    def get_kmem_cache(self, name):
-        
-        for cache in linux_slabinfo.get_all_kmem_caches(self):
+        return ret
+
+    def get_kmem_cache(self, name, unalloc): 
+        for cache in self.get_all_kmem_caches():
             if cache.get_name() == name:
+                cache.newattr("unalloc", unalloc)
+                cache.newattr("struct_type", name)
                 return cache
         
         debug.debug("Invalid kmem_cache: {0}".format(name))
-        return None
+        return []
 
     def calculate(self):
         
