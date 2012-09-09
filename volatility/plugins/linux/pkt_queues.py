@@ -34,7 +34,6 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
         self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'output directory for recovered packets', action = 'store', type = 'str')
 
     def process_queue(self, name, pid, fd_num, queue):
-        
         if queue.qlen == 0:
             return
 
@@ -72,8 +71,6 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
             fd.close()
 
     def calculate(self):
-
-        self.ctr = 0    
         self.edir     = self._config.DUMP_DIR
 
         if not self.edir:
@@ -81,8 +78,6 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
 
         if not os.path.isdir(self.edir):
             debug.error(self.edir + " is not a directory")
-
-        self.total = 0
 
         for (task, fd_num, inet_sock) in linux_netstat.linux_netstat(self._config).calculate():
 
@@ -92,7 +87,6 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
 
             for msg in self.process_queue("write",   task.pid, fd_num, sk.sk_write_queue):
                 yield msg
-
 
     def render_text(self, outfd, data):
         for msg in data:
