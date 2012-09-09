@@ -32,6 +32,15 @@ class linux_proc_maps(linux_pslist.linux_pslist):
     MINORBITS = 20
     MINORMASK = ((1 << MINORBITS) - 1)
 
+    def mask_number(self, number):
+        
+        if self.profile.get_obj_size("address") == 4:
+            mask = 0xffffffff
+        else:
+            mask = 0xffffffffffffffff
+        
+        return number & mask
+
     def calculate(self):
         linux_common.set_plugin_members(self)
         tasks = linux_pslist.linux_pslist.calculate(self)
@@ -66,8 +75,8 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                     fname = ""
 
             outfd.write("{0:#8x}-{1:#8x} {2:3} {3:10d} {4:#2d}:{5:#2d} {6:#12d} {7}\n".format(
-                    linux_common.mask_number(vma.vm_start),
-                    linux_common.mask_number(vma.vm_end),
+                    self.mask_number(vma.vm_start),
+                    self.mask_number(vma.vm_end),
                     self.format_perms(vma.vm_flags),
                     pgoff,
                     self.MAJOR(dev),
