@@ -109,14 +109,14 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
             os.utime(new_file, (atime, mtime))
 
-    '''
-    we need this b/c we have a bunch of 'super_block' structs
-    but no method that I could find maps a super_block to its vfs_mnt
-    which is needed to figure out where the super_block is mounted
-
-    This function returns a hash table of hash[sb] = path
-    '''
     def get_tmpfs_sbs(self):
+        '''
+        we need this b/c we have a bunch of 'super_block' structs
+        but no method that I could find maps a super_block to its vfs_mnt
+        which is needed to figure out where the super_block is mounted
+    
+        This function returns a hash table of hash[sb] = path
+        '''
 
         ret = []
 
