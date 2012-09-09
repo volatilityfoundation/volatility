@@ -103,7 +103,7 @@ class kmem_cache_slab(kmem_cache):
                 i = bufctl[i]
 
             for i in range(0, self.num):
-                if unallocated[i] == unalloc:
+                if unallocated[i] == self.unalloc:
                     yield self._get_object(slab.s_mem.v() + i * self.buffer_size)
 
         if self.unalloc:
@@ -151,22 +151,22 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
         
-        for cache in self.get_all_kmem_caches(self):
+        for cache in self.get_all_kmem_caches():
             if cache.get_type() == "slab":
                 active_objs = 0
                 active_slabs = 0
                 num_slabs = 0
                 shared_avail = 0
                 
-                for slab in cache.get_full_list():
+                for slab in cache._get_full_list():
                     active_objs += cache.num
                     active_slabs += 1
                 
-                for slab in cache.get_partial_list():
+                for slab in cache._get_partial_list():
                     active_objs += slab.inuse
                     active_slabs += 1
             
-                for slab in cache.get_free_list():
+                for slab in cache._get_free_list():
                     num_slabs += 1
             
                 num_slabs += active_slabs
