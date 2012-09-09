@@ -24,6 +24,7 @@ import os
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.netstat as linux_netstat
+import volatility.plugins.linux.common as linux_common
 
 class linux_pkt_queues(linux_netstat.linux_netstat):
     """Writes per-process packet queues out to disk"""
