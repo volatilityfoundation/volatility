@@ -45,7 +45,7 @@ class linux_netstat(linux_common.AbstractLinuxCommand):
 
         openfiles = linux_lsof.linux_lsof(self._config).calculate()
 
-        for (task, filp, _i) in openfiles:
+        for (task, filp, i) in openfiles:
 
             # its a socket!
             if filp.f_op == self.get_profile_symbol("socket_file_ops") or filp.dentry.d_op == self.get_profile_symbol("sockfs_dentry_operations"):
@@ -54,11 +54,11 @@ class linux_netstat(linux_common.AbstractLinuxCommand):
                 skt = self.SOCKET_I(iaddr)
                 inet_sock = obj.Object("inet_sock", offset = skt.sk, vm = self.addr_space)
 
-                yield task, inet_sock
+                yield task, i, inet_sock
 
     def render_text(self, outfd, data):
 
-        for task, inet_sock in data:
+        for task, _fd, inet_sock in data:
 
             proto = self.get_proto_str(inet_sock)
 
