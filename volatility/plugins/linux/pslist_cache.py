@@ -39,20 +39,13 @@ class linux_pslist_cache(linux_pslist.linux_pslist):
     
     def calculate(self):
         
-        cache = linux_slabinfo.get_kmem_cache(self, "task_struct")
-        
         pidlist = self._config.PID
         if pidlist:
             pidlist = [int(p) for p in self._config.PID.split(',')]
             
-        if not self._config.UNALLOCATED:
-            for task in cache.get_objs_of_type("task_struct"):
-                if not pidlist or task.pid in pidlist:
-                    yield task
+        cache = linux_slabinfo(self._config).get_kmem_cache("task_struct", self._config.UNALLOCATED)
             
-        if self._config.UNALLOCATED:
-            for task in cache.get_objs_of_type("task_struct", 1):
-                if not pidlist or task.pid in pidlist:
-                    yield task
-            
+        for task in cache:
+            if not pidlist or task.pid in pidlist:
+                yield task
             

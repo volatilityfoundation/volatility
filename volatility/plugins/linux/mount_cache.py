@@ -26,6 +26,7 @@ import volatility.debug as debug
 import volatility.plugins.linux.flags as linux_flags
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.mount as linux_mount
+import volatility.plugins.linux.pslist as linux_pslist
 from volatility.plugins.linux.slab_info import linux_slabinfo
 
 class linux_mount_cache(linux_mount.linux_mount):
@@ -39,12 +40,6 @@ class linux_mount_cache(linux_mount.linux_mount):
                         action = 'store_true') 
                         
     def calculate(self):
-
-        cache = linux_slabinfo.get_kmem_cache(self, "mnt_cache")
-        
-        if not cache:
-            debug.error("This image does not have a mnt_cache kmem_cache. Cannot process.")
-
         if self.profile.has_type("mount"):
             mnttype = "mount"
             
@@ -56,11 +51,8 @@ class linux_mount_cache(linux_mount.linux_mount):
             mnttype = "vfsmount"
             ns = None
     
-        if not self._config.UNALLOCATED:
-            for mount in cache.get_objs_of_type(mnttype):
-                yield mount, ns
-        
-        if self._config.UNALLOCATED:
-            for mount in cache.get_objs_of_type(mnttype, 1):
-                if mount.mnt_parent.v() != 0: 
-                    yield mount, ns
+        cache = linux_slabinfo(self._config).get_kmem_cache(mnttype, self._config.UNALLOCATED)
+
+        for mnt in cache:
+            yield (mnt, ns)
+
