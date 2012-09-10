@@ -38,6 +38,7 @@ def set_plugin_members(obj_ref):
 class AbstractLinuxCommand(commands.Command):
     def __init__(self, *args, **kwargs):
         self.addr_space = None
+        self.known_addrs = []
         commands.Command.__init__(self, *args, **kwargs)
 
     @property
@@ -157,7 +158,7 @@ class AbstractLinuxCommand(commands.Command):
 
             timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm = self.addr_space)
 
-            wall  = timekeeper.wall_to_monotonic
+            wall = timekeeper.wall_to_monotonic
             timeo = timekeeper.total_sleep_time
 
         return (wall, timeo)
@@ -191,15 +192,10 @@ class AbstractLinuxCommand(commands.Command):
 
     def is_known_address(self, addr, modules):
 
-        text  = self.profile.get_symbol("_text", sym_type = "Pointer")
+        text = self.profile.get_symbol("_text", sym_type = "Pointer")
         etext = self.profile.get_symbol("_etext", sym_type = "Pointer")
 
-        if text <= addr < etext or address_in_module(modules, addr):
-            known = 1
-        else:
-            known = 0
-
-        return known
+        return  (text <= addr < etext or address_in_module(modules, addr))
 
     def verify_ops(self, ops, op_members, modules):
 
