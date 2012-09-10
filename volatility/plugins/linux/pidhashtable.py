@@ -37,6 +37,11 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         self.seen_tasks = {}
         linux_pslist.linux_pslist.__init__(self, *args, **kwargs)
 
+    def get_obj(self, ptr, sname, member):
+        offset = self.profile.get_obj_offset(sname, member)
+        addr   = ptr - offset
+        return obj.Object(sname, offset = addr, vm = self.addr_space)
+
     def _task_for_pid(self, upid, pid):
 
         chained = 0
@@ -58,7 +63,7 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
 
         while upid:
 
-            pid = linux_common.get_obj(self, upid.obj_offset, "pid", "numbers")
+            pid = self.get_obj(upid.obj_offset, "pid", "numbers")
 
             for task in self._task_for_pid(upid, pid):
                 yield task
@@ -71,7 +76,7 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
             if not pid_chain:
                 break
 
-            upid = linux_common.get_obj(self, pid_chain.next, "upid", "pid_chain")
+            upid = self.get_obj(pid_chain.next, "upid", "pid_chain")
 
     def calculate_v3(self):
         self.seen_tasks = {}
@@ -92,7 +97,7 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
 
             while ent.v():
 
-                upid = linux_common.get_obj(self, ent.obj_offset, "upid", "pid_chain")
+                upid = self.get_obj(ent.obj_offset, "upid", "pid_chain")
 
                 for task in self._walk_upid(upid):
                     if not task.obj_offset in self.seen_tasks:

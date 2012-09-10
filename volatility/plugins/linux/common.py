@@ -33,11 +33,9 @@ import time
 nsecs_per = 1000000000
 
 def set_plugin_members(obj_ref):
-
     obj_ref.addr_space = utils.load_as(obj_ref._config)
 
 class AbstractLinuxCommand(commands.Command):
-
     def __init__(self, *args, **kwargs):
         self.addr_space = None
         commands.Command.__init__(self, *args, **kwargs)
@@ -85,7 +83,7 @@ class AbstractLinuxCommand(commands.Command):
 
         start_secs = start_time.tv_sec + (start_time.tv_nsec / nsecs_per / 100)
 
-        sec = get_boot_time(self) + start_secs
+        sec = self.get_boot_time() + start_secs
 
         # protect against invalid data in unallocated tasks
         try:
@@ -95,103 +93,101 @@ class AbstractLinuxCommand(commands.Command):
 
         return ret
 
-# returns a list of online cpus (the processor numbers)
-def online_cpus(self):
+    # returns a list of online cpus (the processor numbers)
+    def online_cpus(self):
+        cpu_online_bits_addr = self.get_profile_symbol("cpu_online_bits")
+        cpu_present_map_addr = self.get_profile_symbol("cpu_present_map")
 
-    cpu_online_bits_addr = self.get_profile_symbol("cpu_online_bits")
-    cpu_present_map_addr = self.get_profile_symbol("cpu_present_map")
+        #later kernels..
+        if cpu_online_bits_addr:
+            bmap = obj.Object("unsigned long", offset = cpu_online_bits_addr, vm = self.addr_space)
 
-    #later kernels..
-    if cpu_online_bits_addr:
-        bmap = obj.Object("unsigned long", offset = cpu_online_bits_addr, vm = self.addr_space)
+        elif cpu_present_map_addr:
+            bmap = obj.Object("unsigned long", offset = cpu_present_map_addr, vm = self.addr_space)
 
-    elif cpu_present_map_addr:
-        bmap = obj.Object("unsigned long", offset = cpu_present_map_addr, vm = self.addr_space)
+        else:
+            raise AttributeError, "Unable to determine number of online CPUs for memory capture"
 
-    else:
-        raise AttributeError, "Unable to determine number of online CPUs for memory capture"
+        cpus = []
+        for i in range(8):
+            if bmap & (1 << i):
+                cpus.append(i)
 
-    cpus = []
-    for i in range(8):
-        if bmap & (1 << i):
-            cpus.append(i)
+        return cpus
 
-    return cpus
+    def walk_per_cpu_var(self, per_var, var_type):
 
-def walk_per_cpu_var(obj_ref, per_var, var_type):
+        cpus = self.online_cpus()
 
-    cpus = online_cpus(obj_ref)
+        # get the highest numbered cpu
+        max_cpu = cpus[-1] + 1
 
-    # get the highest numbered cpu
-    max_cpu = cpus[-1] + 1
+        offset_var = self.get_profile_symbol("__per_cpu_offset")
+        per_offsets = obj.Object(theType = 'Array', targetType = 'unsigned long', count = max_cpu, offset = offset_var, vm = self.addr_space)
 
-    offset_var = obj_ref.get_profile_symbol("__per_cpu_offset")
-    per_offsets = obj.Object(theType = 'Array', targetType = 'unsigned long', count = max_cpu, offset = offset_var, vm = obj_ref.addr_space)
+        for i in range(max_cpu):
 
-    for i in range(max_cpu):
+            offset = per_offsets[i]
 
-        offset = per_offsets[i]
+            cpu_var = self.get_per_cpu_symbol(per_var)
 
-        cpu_var = obj_ref.get_per_cpu_symbol(per_var)
+            addr = cpu_var + offset.v()
+            var = obj.Object(var_type, offset = addr, vm = self.addr_space)
 
-        addr = cpu_var + offset.v()
-        var = obj.Object(var_type, offset = addr, vm = obj_ref.addr_space)
+            yield i, var
 
-        yield i, var
+    def get_time_vars(self):
+        '''
+        Sometime in 3.[3-5], Linux switched to a global timekeeper structure
+        This just figures out which is in use and returns the correct variables
+        '''
 
-def get_time_vars(obj_ref):
-    '''
-    Sometime in 3.[3-5], Linux switched to a global timekeeper structure
-    This just figures out which is in use and returns the correct variables
-    '''
+        wall_addr = self.get_profile_symbol("wall_to_monotonic")
 
-    wall_addr = obj_ref.get_profile_symbol("wall_to_monotonic")
+        # old way
+        if wall_addr:
+            wall = obj.Object("timespec", offset = wall_addr, vm = self.addr_space)
 
-    # old way
-    if wall_addr:
-        wall = obj.Object("timespec", offset = wall_addr, vm = obj_ref.addr_space)
+            sleep_addr = self.get_profile_symbol("total_sleep_time")
+            timeo = obj.Object("timespec", offset = sleep_addr, vm = self.addr_space)
 
-        sleep_addr = obj_ref.get_profile_symbol("total_sleep_time")
-        timeo = obj.Object("timespec", offset = sleep_addr, vm = obj_ref.addr_space)
+        # timekeeper way
+        else:
+            timekeeper_addr = self.get_profile_symbol("timekeeper")
 
-    # timekeeper way
-    else:
-        timekeeper_addr = obj_ref.get_profile_symbol("timekeeper")
+            timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm = self.addr_space)
 
-        timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm = obj_ref.addr_space)
+            wall  = timekeeper.wall_to_monotonic
+            timeo = timekeeper.total_sleep_time
 
-        wall = timekeeper.wall_to_monotonic
-        timeo = timekeeper.total_sleep_time
+        return (wall, timeo)
 
-    return (wall, timeo)
+    # based on 2.6.35 getboottime
+    def get_boot_time(self):
 
-# based on 2.6.35 getboottime
-def get_boot_time(obj_ref):
+        (wall, timeo) = self.get_time_vars()
 
-    (wall, timeo) = get_time_vars(obj_ref)
+        secs = wall.tv_sec + timeo.tv_sec
+        nsecs = wall.tv_nsec + timeo.tv_nsec
 
-    secs = wall.tv_sec + timeo.tv_sec
-    nsecs = wall.tv_nsec + timeo.tv_nsec
+        secs = secs * -1
+        nsecs = nsecs * -1
 
-    secs = secs * -1
-    nsecs = nsecs * -1
+        while nsecs >= nsecs_per:
 
-    while nsecs >= nsecs_per:
+            nsecs = nsecs - nsecs_per
 
-        nsecs = nsecs - nsecs_per
+            secs = secs + 1
 
-        secs = secs + 1
+        while nsecs < 0:
 
-    while nsecs < 0:
+            nsecs = nsecs + nsecs_per
 
-        nsecs = nsecs + nsecs_per
+            secs = secs - 1
 
-        secs = secs - 1
+        boot_time = secs + (nsecs / nsecs_per / 100)
 
-    boot_time = secs + (nsecs / nsecs_per / 100)
-
-    return boot_time
-
+        return boot_time
 
 # similar to for_each_process for this usage
 def walk_list_head(struct_name, list_member, list_head_ptr, _addr_space):
@@ -261,14 +257,6 @@ def get_path(task, filp):
     vfsmnt = filp.vfsmnt
 
     return do_get_path(rdentry, rmnt, dentry, vfsmnt)
-
-def get_obj(self, ptr, sname, member):
-
-    offset = self.profile.get_obj_offset(sname, member)
-
-    addr = ptr - offset
-
-    return obj.Object(sname, offset = addr, vm = self.addr_space)
 
 def S_ISDIR(mode):
     return (mode & linux_flags.S_IFMT) == linux_flags.S_IFDIR
