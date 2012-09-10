@@ -27,23 +27,19 @@ import volatility.plugins.linux.common  as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
 
 bash_vtypes_32 = {
-
- '_hist_entry': [ 0xc, {
-    'line': [0x0, ['pointer', ['char']]],
-    'timestamp': [0x4, ['pointer', ['char']]],
+    '_hist_entry': [ 0xc, {
+    'line': [0x0, ['pointer', ['String', dict(length = 1024)]]],
+    'timestamp': [0x4, ['pointer', ['String', dict(length = 1024)]]],
     'data': [0x8, ['pointer', ['void']]],
-}],
-
+    }],
 }
 
 bash_vtypes_64 = {
-
- '_hist_entry': [ 24, {
-    'line': [0, ['pointer', ['char']]],
-    'timestamp': [8, ['pointer', ['char']]],
+    '_hist_entry': [ 24, {
+    'line': [0, ['pointer', ['String', dict(length = 1024)]]],
+    'timestamp': [8, ['pointer', ['String', dict(length = 1024)]]],
     'data': [16, ['pointer', ['void']]],
-}],
-
+    }],
 }
 
 class BashTypes(obj.ProfileModification):
@@ -60,21 +56,7 @@ class linux_bash(linux_pslist.linux_pslist):
     def __init__(self, config, *args): 
         linux_pslist.linux_pslist.__init__(self, config, *args)
         self._config.add_option('PRINTUNALLOC', short_option = 'P', default = None, help = 'print unallocated entries, please redirect to a file', action = 'store_true')
-        self._config.add_option('HISTORY_LIST', short_option = 'H', default = None, help = 'address from history_list - see the Volatility wiki', action = 'store', type='long')
-
-    def get_string(self, addr, vm):
-
-        buf = vm.read(addr, 1024)
-
-        if not buf:
-            return None
-
-        idx = buf.find("\x00")
-
-        if idx != -1:
-            buf = buf[:idx]
-
-        return buf               
+        self._config.add_option('HISTORY_LIST', short_option = 'H', default = None, help = 'address from history_list - see the Volatility wiki', action = 'store', type = 'long')        
     
     def calculate(self):
         linux_common.set_plugin_members(self)
@@ -89,7 +71,7 @@ class linux_bash(linux_pslist.linux_pslist):
         for task in tasks:
             proc_as = task.get_process_address_space()
 
-            the_history = obj.Object("Pointer", vm=proc_as, offset=the_history_addr)
+            the_history = obj.Object("Pointer", vm = proc_as, offset = the_history_addr)
 
             max_ents = 2001
 
@@ -102,14 +84,14 @@ class linux_bash(linux_pslist.linux_pslist):
                     else:
                         break
 
-                hist = obj.Object("_hist_entry", offset=ptr, vm=proc_as)
+                hist = obj.Object("_hist_entry", offset = ptr, vm = proc_as)
 
                 # FIXME .deference_as("String") doesn't take vm=
                 # d = hist.line.dereference_as("String", length=255, vm=proc_as)
                 # t = hist.timestamp.dereference_as("String", length=255, vm=proc_as)            
     
-                cmd     = self.get_string(hist.line,      proc_as)
-                cmdtime = self.get_string(hist.timestamp, proc_as)
+                cmd = hist.line.dereference()
+                cmdtime = hist.timestamp.dereference()
 
                 if cmd and len(cmd) and cmdtime and len(cmdtime):
                     yield (cmd, cmdtime)
