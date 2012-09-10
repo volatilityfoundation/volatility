@@ -26,15 +26,8 @@ import volatility.debug as debug
 import volatility.plugins.linux.lsmod as linux_lsmod
 import volatility.plugins.linux.common as linux_common
 
-'''
-This plugin finds rootkits that break themselves from the module list but not sysfs
-I have never found a rootkit that actually removes it self from sysfs
-So on a live system they are hidden from lsmod & /proc/modules
-But can still be found under /sys/modules/
-We perform the same differnecing with the in-memory data structures
-'''
 class linux_check_modules(linux_common.AbstractLinuxCommand):
-    """Compares module to list to sysfs info, if avaiable"""
+    """Compares module list to sysfs info, if available"""
 
     def get_kset_modules(self):
         module_kset_addr = self.profile.get_symbol("module_kset")
@@ -46,7 +39,7 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
         module_kset = obj.Object("kset", offset = module_kset_addr, vm = self.addr_space)
     
         for kobj in module_kset.list.list_of_type("kobject", "entry"):
-            name = kobj.name.dereference_as("String", length=32)
+            name = kobj.name.dereference_as("String", length = 32)
             if name.is_valid() and kobj.kref.refcount.counter > 2:
                 ret.add(str(name))
     
@@ -55,7 +48,7 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
     def calculate(self):
         linux_common.set_plugin_members(self)
 
-        kset_modules  = self.get_kset_modules()
+        kset_modules = self.get_kset_modules()
         
         lsmod_modules = set([str(module.name) for (module, params, sects) in linux_lsmod.linux_lsmod(self._config).calculate()])
             
@@ -64,7 +57,7 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("Module Name","")])
+        self.table_header(outfd, [("Module Name", "")])
         for name in data:
             self.table_row(outfd, name)
 
