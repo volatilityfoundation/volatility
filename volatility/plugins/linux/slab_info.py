@@ -124,6 +124,7 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
     """Mimics /proc/slabinfo on a running machine"""    
 
     def get_all_kmem_caches(self):
+        linux_common.set_plugin_members(self)
         cache_chain = self.get_profile_symbol("cache_chain")
         slab_caches = self.get_profile_symbol("slab_caches")
         
