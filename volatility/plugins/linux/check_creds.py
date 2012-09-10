@@ -26,16 +26,6 @@ import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
 
-'''
-The purpose of this plugin is to check if any processes are sharing 'cred' structures
-In the beginning of the 2.6 series, the user ID and group ID were just simple integers
-So rootkits could elevate the privleges of userland processes by setting these to 0 (root)
-In later kernels, credentials are kept in a fairly complicated 'cred' structure
-So now rootkits instead of allocating and setting their own 'cred' structure
-Simply set a processes cred structure to be that of another root process that does not exit (usually init / pid 1)
-So this plugins checks for any processes sharing 'cred' structures and reports them as the kernel would normally never do this
-It finds a wide range of rootkits and rootkit activity and you can focus your investigation on elevated process (i.e. bash)
-'''
 class linux_check_creds(linux_pslist.linux_pslist):
     """Checks if any processes are sharing credential structures"""
 
