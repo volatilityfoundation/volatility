@@ -35,25 +35,6 @@ class linux_dentry_cache(linux_common.AbstractLinuxCommand):
                         help = 'Show unallocated',
                         action = 'store_true')       
     
-    # we can't get the full path b/c we 
-    # do not have a ref to the vfsmnt
-    def get_partial_path(self, dentry):
-        path = []
-
-        name = ""
-
-        while dentry and dentry != dentry.d_parent:
-            name = dentry.d_name.name.dereference_as("String", length=255)
-            if name.is_valid():
-                path.append(str(name))
-            dentry = dentry.d_parent
-
-        path.reverse()
-            
-        str_path = "/".join([p for p in path])        
-        
-        return str_path
-
     def make_body(self, path, dentry):
         i = dentry.d_inode
 
@@ -72,7 +53,7 @@ class linux_dentry_cache(linux_common.AbstractLinuxCommand):
         cache = linux_slabinfo(self._config).get_kmem_cache("dentry", self._config.UNALLOCATED)
             
         for dentry in cache:
-            path     = self.get_partial_path(dentry)
+            path     = linux_common.get_partial_path(dentry)
             bodyline = self.make_body(path, dentry)
 
             yield bodyline
