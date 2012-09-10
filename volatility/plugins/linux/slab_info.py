@@ -32,9 +32,6 @@ class kmem_cache(obj.CType):
     def get_name(self):
         return str(self.name.dereference_as("String", length = 255))
 
-    def get_objs_of_type(self, type, unalloc = 0):
-        raise NotImplementedError
-
 class kmem_cache_slab(kmem_cache):
     def get_type(self):
         return "slab"
