@@ -151,7 +151,7 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                 cache.newattr("struct_type", struct_name)
                 return cache
         
-        debug.debug("Invalid kmem_cache: {0}".format(name))
+        debug.debug("Invalid kmem_cache: {0}".format(cache_name))
         return []
 
     def calculate(self):
