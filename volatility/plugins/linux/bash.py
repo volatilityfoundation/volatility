@@ -85,11 +85,7 @@ class linux_bash(linux_pslist.linux_pslist):
                     else:
                         break
 
-                hist = obj.Object("_hist_entry", offset = ptr, vm = proc_as)
-
-                # FIXME .deference_as("String") doesn't take vm=
-                # d = hist.line.dereference_as("String", length=255, vm=proc_as)
-                # t = hist.timestamp.dereference_as("String", length=255, vm=proc_as)            
+                hist = obj.Object("_hist_entry", offset = ptr, vm = proc_as)       
     
                 cmd = hist.line.dereference()
                 cmdtime = hist.timestamp.dereference()
