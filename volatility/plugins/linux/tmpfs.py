@@ -38,6 +38,10 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
         # used to keep correct time for directories
         self.dir_times = {}
 
+        self.edir     = None
+        self.sb_num   = 0
+        self.list_sbs = False 
+
     # fix metadata for new files
     def fix_md(self, new_file, perms, atime, mtime, isdir = 0):
 
@@ -134,8 +138,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
         self.sb_num = self._config.SB
         self.list_sbs = self._config.LIST_SBS
 
-         # a list of root directory entries
-
+        # a list of root directory entries
         if self.edir and self.sb_num:
 
             if not os.path.isdir(self.edir):
@@ -144,8 +147,12 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
             # this path never 'yield's, just writes the filesystem to disk
             tmpfs_sbs = self.get_tmpfs_sbs()
 
-            # FIXME - validate
-            root_dentry = tmpfs_sbs[self.sb_num - 1][0].s_root
+            sb_idx = self.sb_num - 1
+
+            if sb_idx >= len(tmpfs_sbs):
+                debug.error("Invalid superblock number given. Please use the -L option to determine valid numbers.")
+        
+            root_dentry = tmpfs_sbs[sb_idx][0].s_root
 
             self.walk_sb(root_dentry)
 
@@ -154,7 +161,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
             # vfsmnt.mnt_sb.s_root
             tmpfs_sbs = self.get_tmpfs_sbs()
 
-            for (i, (sb, path)) in enumerate(tmpfs_sbs):
+            for (i, (_sb, path)) in enumerate(tmpfs_sbs):
 
                 yield (i + 1, path)
 
