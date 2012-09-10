@@ -71,6 +71,10 @@ class linux_bash(linux_pslist.linux_pslist):
 
         for task in tasks:
             proc_as = task.get_process_address_space()
+            
+            # In cases when mm is an invalid pointer 
+            if not proc_as:
+                continue
 
             the_history = obj.Object("Pointer", vm = proc_as, offset = the_history_addr)
 
