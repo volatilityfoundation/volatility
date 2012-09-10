@@ -140,11 +140,15 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
             
         return ret
 
-    def get_kmem_cache(self, name, unalloc): 
+    def get_kmem_cache(self, cache_name, unalloc, struct_name=""):
+        
+        if struct_name == "":
+            struct_name = cache_name
+ 
         for cache in self.get_all_kmem_caches():
-            if cache.get_name() == name:
+            if cache.get_name() == cache_name:
                 cache.newattr("unalloc", unalloc)
-                cache.newattr("struct_type", name)
+                cache.newattr("struct_type", struct_name)
                 return cache
         
         debug.debug("Invalid kmem_cache: {0}".format(name))
