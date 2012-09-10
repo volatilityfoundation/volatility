@@ -280,30 +280,6 @@ def S_ISREG(mode):
 # code to walk the page cache and mem_map / mem_section page structs
 ###################
 # FIXME - use 'class page' overlay?
-def phys_addr_of_page(self, page):
-
-    mem_map_addr = self.get_profile_symbol("mem_map")
-    mem_section_addr = self.get_profile_symbol("mem_section")
-
-    if mem_map_addr:
-        # FLATMEM kernels, usually 32 bit
-        mem_map_ptr = obj.Object("Pointer", offset = mem_map_addr, vm = self.addr_space)
-
-    elif mem_section_addr:
-        # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
-        # NOTE: This is really 0xffff0xea0000000000 but we chop to its 48 bit equivalent
-        # FIXME: change in 2.3 when truncation no longer occurs
-        mem_map_ptr = 0xea0000000000
-
-    else:
-        debug.error("phys_addr_of_page: Unable to determine physical address of page\n")
-
-    phys_offset = (page - mem_map_ptr) / self.profile.get_obj_size("page")
-
-    phys_offset = phys_offset << 12
-
-    return phys_offset
-
 def radix_tree_is_indirect_ptr(self, ptr):
 
     return ptr & 1
@@ -370,19 +346,18 @@ def find_get_page(self, inode, offset):
     page = radix_tree_lookup_slot(self, inode.i_mapping.page_tree, offset)
 
     #if not page:
-        # TODO swapper_space support
+        # FUTURE swapper_space support
         #print "no page"
 
     return page
 
 def get_page_contents(self, inode, idx):
+    page_addr = find_get_page(self, inode, idx)
 
-    page = find_get_page(self, inode, idx)
+    if page_addr:
+        page = obj.Object("page", offset = page_addr, vm = self.addr_space)
 
-    if page:
-        #print "inode: %lx | %lx page: %lx" % (inode, inode.v(), page)
-
-        phys_offset = phys_addr_of_page(self, page)
+        phys_offset = page.to_paddr()
 
         phys_as = utils.load_as(self._config, astype = 'physical')
 
