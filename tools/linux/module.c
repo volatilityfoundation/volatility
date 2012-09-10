@@ -150,11 +150,6 @@ struct mnt_namespace {
     int event;
 };
 
-struct mnt_pcp {
-    int mnt_count;
-    int mnt_writers;
-};
-
 struct mount {
     struct list_head mnt_hash;
     struct mount *mnt_parent;
