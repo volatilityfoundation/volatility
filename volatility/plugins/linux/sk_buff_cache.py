@@ -22,7 +22,7 @@
 """
 
 import os
-
+import volatility.debug as debug
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 from volatility.plugins.linux.slab_info import linux_slabinfo
@@ -45,7 +45,7 @@ class linux_sk_buff_cache(linux_common.AbstractLinuxCommand):
             data  = self.addr_space.zread(start, pkt_len)
 
             fname = "{0:x}".format(s.obj_offset)
-            fd    = open(os.path.join(self.edir, fname), "wb")
+            fd = open(os.path.join(self.edir, fname), "wb")
             fd.write(data)
             fd.close()
 
@@ -53,7 +53,7 @@ class linux_sk_buff_cache(linux_common.AbstractLinuxCommand):
 
     def walk_cache(self, cache_name):
 
-        cache = linux_slabinfo(self._config).get_kmem_cache(cache_name, self._config.UNALLOCATED, struct_name="sk_buff")
+        cache = linux_slabinfo(self._config).get_kmem_cache(cache_name, self._config.UNALLOCATED, struct_name = "sk_buff")
 
         if not cache:
             return
