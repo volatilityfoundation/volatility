@@ -60,7 +60,7 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                 sb = obj.Object("super_block", offset = inode.i_sb, vm = self.addr_space)
                 dev = sb.s_dev
                 ino = inode.i_ino
-                pgoff = vma.vm_pgoff << 12 # FIXME: 64-bit support
+                pgoff = vma.vm_pgoff << 12
                 fname = linux_common.get_path(task, vma.vm_file)
             else:
                 (dev, ino, pgoff) = [0] * 3
