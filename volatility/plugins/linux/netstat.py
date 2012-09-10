@@ -32,7 +32,7 @@ import socket
 class linux_netstat(linux_common.AbstractLinuxCommand):
     """Lists open sockets"""
 
-    def __init__(self, config, *args): 
+    def __init__(self, config, *args):
 
         linux_common.AbstractLinuxCommand.__init__(self, config, *args)
         self._config.add_option('IGNORE_UNIX', short_option = 'U', default = None, help = 'ignore unix sockets', action = 'store_true')

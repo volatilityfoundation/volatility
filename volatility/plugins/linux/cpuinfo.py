@@ -31,7 +31,7 @@ class linux_cpuinfo(linux_common.AbstractLinuxCommand):
         linux_common.set_plugin_members(self)
 
         cpus = linux_common.online_cpus(self)
-        
+
         if len(cpus) > 1 and self.get_per_cpu_symbol("cpu_info"):
             func = self.get_info_smp
 
@@ -58,8 +58,8 @@ class linux_cpuinfo(linux_common.AbstractLinuxCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("Processor", "12"), 
-                                  ("Vendor", "16"), 
+        self.table_header(outfd, [("Processor", "12"),
+                                  ("Vendor", "16"),
                                   ("Model", "")])
         for i, cpu in data:
             self.table_row(outfd, str(i), cpu.x86_vendor_id, cpu.x86_model_id)

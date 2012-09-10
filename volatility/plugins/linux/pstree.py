@@ -13,7 +13,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-
 """
 @author:       Andrew Case
 @license:      GNU General Public License 2.0 or later
@@ -21,12 +20,14 @@
 @organization: 
 """
 
-import volatility.obj as obj
 import volatility.plugins.linux.pslist as linux_pslist
-import volatility.plugins.linux.common as linux_common
 
 class linux_pstree(linux_pslist.linux_pslist):
     '''Shows the parent/child relationship between processes'''
+
+    def __init__(self, *args, **kwargs):
+        self.procs = {}
+        linux_pslist.linux_pslist.__init__(self, *args, **kwargs)
 
     def render_text(self, outfd, data):
 

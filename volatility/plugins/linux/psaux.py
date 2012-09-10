@@ -21,9 +21,7 @@
 @organization: Digital Forensics Solutions
 """
 
-import volatility.obj as obj
 import volatility.plugins.linux.pslist as linux_pslist
-import time
 
 class linux_psaux(linux_pslist.linux_pslist):
     '''Gathers processes along with full command line and start time'''

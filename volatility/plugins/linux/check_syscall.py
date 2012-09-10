@@ -21,7 +21,6 @@
 @organization: 
 """
 
-import sys
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
@@ -49,17 +48,17 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
         next_sym_addr = self.profile.get_next_symbol_address(table_name)
 
         return (next_sym_addr - table_addr) / divisor
-        
+
     def _get_table_size_meta(self):
         """
         returns the number of symbols that start with __syscall_meta
         this is a fast way to determine the number of system calls
         """
-        
+
         return len([n for n in self.profile.get_all_symbol_names() if n.startswith("__syscall_meta__")])
 
     def _get_table_info_other(self, table_addr, table_name):
-        
+
         table_size_meta = self._get_table_size_meta()
         table_size_syms = self._get_table_size(table_addr, table_name)
 
@@ -76,7 +75,7 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
         This is in the form 'cmp reg,NR_syscalls'
         """
         table_size = 0
-        
+
         memory_model = self.addr_space.profile.metadata.get('memory_model', '32bit')
 
         if memory_model == '32bit':
@@ -85,7 +84,7 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
         else:
             mode = distorm3.Decode64Bits
             func = "system_call_fastpath"
-            
+
         func_addr = self.get_profile_symbol(func)
 
         if func_addr:
@@ -106,7 +105,7 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
     def _get_table_info(self, table_name):
 
         table_addr = self.get_profile_symbol(table_name)
-        
+
         table_size = self._get_table_info_distorm()
 
         if table_size == 0:
@@ -114,7 +113,7 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
             table_size = self._get_table_info_other(table_addr, table_name)
 
             if table_size == 0:
-                debug.error("Unable to get system call table size") 
+                debug.error("Unable to get system call table size")
 
         return [table_addr, table_size]
 
@@ -122,7 +121,7 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
         """ 
         This works by walking the system call table 
         and verifies that each is a symbol in the kernel
-        """    
+        """
         linux_common.set_plugin_members(self)
 
         if not has_distorm:
@@ -134,13 +133,13 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
             mask = 0xffffffff
         else:
             mask = 0xffffffffffffffff
- 
+
         sym_addrs = self.profile.get_all_addresses()
 
         sys_call_info = self._get_table_info("sys_call_table")
 
         addrs = [sys_call_info]
-        
+
         # 64 bit systems with 32 bit emulation
         ia32 = self.get_profile_symbol("ia32_sys_call_table")
         if ia32:
@@ -150,9 +149,9 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
         for (tableaddr, tblsz) in addrs:
 
             table = obj.Object(theType = 'Array', offset = tableaddr, vm = self.addr_space, targetType = 'long', count = tblsz)
-    
+
             for (i, call_addr) in enumerate(table):
- 
+
                 if not call_addr:
                     continue
 
@@ -163,7 +162,7 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
                     yield(i, call_addr, 1)
                 else:
                     yield(i, call_addr, 0)
-                        
+
 
 
 

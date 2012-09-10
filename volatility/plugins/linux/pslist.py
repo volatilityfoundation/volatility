@@ -23,7 +23,6 @@
 
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
-import time
 
 class linux_pslist(linux_common.AbstractLinuxCommand):
     """Gather active tasks by walking the task_struct->task list"""
@@ -49,20 +48,20 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
         for task in init_task.tasks:
 
             if not pidlist or task.pid in pidlist:
-            
+
                 yield task
 
     def render_text(self, outfd, data):
-            
-        self.table_header(outfd, [("Offset", "[addrpad]"), 
+
+        self.table_header(outfd, [("Offset", "[addrpad]"),
                                   ("Name", "20"),
-                                  ("Pid", "15"), 
-                                  ("Uid", "15"), 
+                                  ("Pid", "15"),
+                                  ("Uid", "15"),
                                   ("Start Time", "")])
         for task in data:
-            self.table_row(outfd, task.obj_offset, 
+            self.table_row(outfd, task.obj_offset,
                                   task.comm,
-                                  str(task.pid), 
+                                  str(task.pid),
                                   str(task.uid) if task.uid else "-",
                                   self.get_task_start_time(task))
 
@@ -70,11 +69,11 @@ class linux_memmap(linux_pslist):
     """Dumps the memory map for linux tasks"""
 
     def render_text(self, outfd, data):
-    
-        self.table_header(outfd, [("Task", "16"), 
-                                  ("Pid", "8"), 
-                                  ("Virtual", "[addrpad]"), 
-                                  ("Physical", "[addrpad]"), 
+
+        self.table_header(outfd, [("Task", "16"),
+                                  ("Pid", "8"),
+                                  ("Virtual", "[addrpad]"),
+                                  ("Physical", "[addrpad]"),
                                   ("Size", "[addr]")])
 
         for task in data:

@@ -28,24 +28,24 @@ import volatility.plugins.linux.common as linux_common
 class linux_lsmod(linux_common.AbstractLinuxCommand):
     """Gather loaded kernel modules"""
 
-    def __init__(self, config, *args): 
+    def __init__(self, config, *args):
 
         linux_common.AbstractLinuxCommand.__init__(self, config, *args)
         self._config.add_option('SECTIONS', short_option = 'S', default = None, help = 'show section addresses', action = 'store_true')
         self._config.add_option('PARAMS', short_option = 'P', default = None, help = 'show module parameters', action = 'store_true')
 
-    def get_param_val(self, param, over = 0):
-        
+    def get_param_val(self, param, _over = 0):
+
         ints = {
                 self.get_profile_symbol("param_get_invbool", sym_type = "Pointer") : "int",
-                self.get_profile_symbol("param_get_bool",    sym_type = "Pointer") : "int",
-                self.get_profile_symbol("param_get_int",     sym_type = "Pointer") : "int",
-                self.get_profile_symbol("param_get_ulong",   sym_type = "Pointer") : "unsigned long",
-                self.get_profile_symbol("param_get_long",    sym_type = "Pointer") : "long",
-                self.get_profile_symbol("param_get_uint",    sym_type = "Pointer") : "unsigned int",
-                self.get_profile_symbol("param_get_ushort",  sym_type = "Pointer") : "unsigned short",
-                self.get_profile_symbol("param_get_short",   sym_type = "Pointer") : "short",
-                self.get_profile_symbol("param_get_byte",    sym_type = "Pointer") : "char",
+                self.get_profile_symbol("param_get_bool", sym_type = "Pointer") : "int",
+                self.get_profile_symbol("param_get_int", sym_type = "Pointer") : "int",
+                self.get_profile_symbol("param_get_ulong", sym_type = "Pointer") : "unsigned long",
+                self.get_profile_symbol("param_get_long", sym_type = "Pointer") : "long",
+                self.get_profile_symbol("param_get_uint", sym_type = "Pointer") : "unsigned int",
+                self.get_profile_symbol("param_get_ushort", sym_type = "Pointer") : "unsigned short",
+                self.get_profile_symbol("param_get_short", sym_type = "Pointer") : "short",
+                self.get_profile_symbol("param_get_byte", sym_type = "Pointer") : "char",
                }
 
         getfn = param.get
@@ -53,24 +53,24 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
         if getfn == 0:
             val = ""
 
-        elif getfn == self.get_profile_symbol("param_array_get"):  
+        elif getfn == self.get_profile_symbol("param_array_get"):
 
             val = ""
-            
+
             arr = param.arr
             overwrite = param.arr
 
             if arr.num:
-                max = arr.num.dereference()
+                maxi = arr.num.dereference()
             else:
-                max = arr.max
+                maxi = arr.max
 
-            for i in range(max):
+            for i in range(maxi):
 
                 if i > 0:
                     val = val + ","
 
-                arg = offset = arr.elem + arr.elemsize * i
+                arg = arr.elem + arr.elemsize * i
                 overwrite.arg = arg
 
                 mret = self.get_param_val(overwrite)
@@ -78,13 +78,13 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
         elif getfn == self.get_profile_symbol("param_get_string"):
             val = param.str.dereference_as("String", length = param.str.maxlen)
-        
+
         elif getfn == self.get_profile_symbol("param_get_charp"):
             addr = obj.Object("Pointer", offset = param.arg, vm = self.addr_space)
             if addr == 0:
                 val = "(null)"
             else:
-                val  = addr.dereference_as("String", length=256) 
+                val = addr.dereference_as("String", length = 256)
 
         elif getfn.v() in ints:
             val = obj.Object(ints[getfn.v()], offset = param.arg, vm = self.addr_space)
@@ -108,7 +108,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
         return val
 
     def get_params(self, module):
-        
+
         param_array = obj.Object(theType = 'Array', offset = module.kp, vm = self.addr_space, targetType = 'kernel_param', count = module.num_kp)
 
         params = ""
@@ -118,17 +118,17 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
             val = self.get_param_val(param)
 
             params = params + "{0}={1} ".format(param.name.dereference_as("String", length = 255), val)
-    
+
         return params
 
     def get_sections(self, module):
 
         attrs = obj.Object(theType = 'Array', offset = module.sect_attrs.attrs.obj_offset, vm = self.addr_space, targetType = 'module_sect_attr', count = module.sect_attrs.nsections)
-    
+
         sects = []
 
         for attr in attrs:
-            
+
             name = attr.name.dereference_as("String", length = 255)
 
             sects.append((name, attr.address))
@@ -148,7 +148,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
             #    continue
 
             if self._config.PARAMS:
-            
+
                 if not hasattr(module, "kp"):
                     debug.error("Gathering module parameters is not supported in this profile.")
 
@@ -170,20 +170,23 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
             # will be empty list if not set on command line
             for sect in sections:
-    
+
                 (name, address) = sect
 
                 outfd.write("\t{0:30s} {1:#x}\n".format(name, address))
-       
+
             # will be "" if not set, otherwise will be space seperated
             if params != "":
-        
+
                 for param in params.split():
-                    outfd.write("\t{0:100s}\n".format(param))            
-        
+                    outfd.write("\t{0:100s}\n".format(param))
+
     # returns a list of tuples of (name, .text start, .text end) for each module
     # include_list can contain a list of only the modules wanted by a plugin
-    def get_modules(self, include_list = []):
+    def get_modules(self, include_list = None):
+
+        if not include_list:
+            include_list = []
 
         ret = []
 
@@ -192,9 +195,9 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
             if len(include_list) == 0 or str(module.name) in include_list:
 
                 start = module.module_core
-                end   = start +  module.core_size
+                end = start + module.core_size
                 ret.append(("%s" % module.name, start, end))
 
         return ret
-   
+
 

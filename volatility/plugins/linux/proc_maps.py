@@ -33,12 +33,12 @@ class linux_proc_maps(linux_pslist.linux_pslist):
     MINORMASK = ((1 << MINORBITS) - 1)
 
     def mask_number(self, number):
-        
+
         if self.profile.get_obj_size("address") == 4:
             mask = 0xffffffff
         else:
             mask = 0xffffffffffffffff
-        
+
         return number & mask
 
     def calculate(self):

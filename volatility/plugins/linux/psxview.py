@@ -16,22 +16,19 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
-import volatility.utils as utils
 import volatility.obj as obj
 import volatility.plugins.linux.pslist as linux_pslist
 import volatility.plugins.linux.pidhashtable as linux_pidhashtable
 import volatility.plugins.linux.pslist_cache as linux_pslist_cache
 import volatility.plugins.linux.common as linux_common
 
-'''
-based off the windows version from mhl
-
-INFO:
-    'pslist' does not get threads
-    'pid_hash' does
-    'kmem_cache' does
-    'runqueue' does
-'''
+#based off the windows version from mhl
+#
+#INFO:
+#    'pslist' does not get threads
+#    'pid_hash' does
+#    'kmem_cache' does
+#    'runqueue' does
 
 class linux_psxview(linux_common.AbstractLinuxCommand):
     "Find hidden processes with various process listings"
@@ -47,16 +44,16 @@ class linux_psxview(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
         linux_common.set_plugin_members(self)
-    
+
         ps_sources = {}
-        
+
         # The keys are names of process sources
         # The values are the virtual offset of the task_struct
- 
-        ps_sources['pslist']     = self.get_pslist()
-        ps_sources['pid_hash']   = self.get_pid_hash()
+
+        ps_sources['pslist'] = self.get_pslist()
+        ps_sources['pid_hash'] = self.get_pid_hash()
         ps_sources['kmem_cache'] = self.get_kmem_cache()
-        
+
         # TODO
         # ps_sources['run_queue']  = 
 
@@ -70,7 +67,7 @@ class linux_psxview(linux_common.AbstractLinuxCommand):
 
                 if offset not in seen_offsets:
                     seen_offsets.append(offset)
-                    yield offset, obj.Object("task_struct", offset=offset, vm=self.addr_space), ps_sources
+                    yield offset, obj.Object("task_struct", offset = offset, vm = self.addr_space), ps_sources
 
     def render_text(self, outfd, data):
 

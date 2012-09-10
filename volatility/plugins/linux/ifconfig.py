@@ -72,11 +72,11 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("Interface", "16"), 
-                                  ("IP Address", "20"), 
+        self.table_header(outfd, [("Interface", "16"),
+                                  ("IP Address", "20"),
                                   ("MAC Address", "18"),
                                   ("Promiscous Mode", "5")])
-                                  
+
         for net_dev, in_dev in data:
 
             # for interfaces w/o an ip address (dummy/bond)

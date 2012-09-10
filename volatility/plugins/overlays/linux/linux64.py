@@ -33,7 +33,7 @@ class VolatilityDTB(obj.VolatilityMagic):
         """Tries to locate the DTB."""
         profile = self.obj_vm.profile
 
-        yield profile.get_symbol("init_level4_pgt") - 0xffffffff80000000 
+        yield profile.get_symbol("init_level4_pgt") - 0xffffffff80000000
 
 
 class Linux64ObjectClasses(obj.ProfileModification):

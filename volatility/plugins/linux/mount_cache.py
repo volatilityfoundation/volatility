@@ -21,9 +21,6 @@
 @organization: Digital Forensics Solutions
 """
 
-import volatility.obj as obj
-import volatility.debug as debug
-import volatility.plugins.linux.flags as linux_flags
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.mount as linux_mount
 import volatility.plugins.linux.pslist as linux_pslist
@@ -31,19 +28,19 @@ from volatility.plugins.linux.slab_info import linux_slabinfo
 
 class linux_mount_cache(linux_mount.linux_mount):
     """Gather mounted fs/devices from kmem_cache"""
-    
-    def __init__(self, config, *args): 
+
+    def __init__(self, config, *args):
         linux_mount.linux_mount.__init__(self, config, *args)
-        self._config.add_option('UNALLOCATED', short_option = 'u', 
+        self._config.add_option('UNALLOCATED', short_option = 'u',
                         default = False,
                         help = 'Show unallocated',
-                        action = 'store_true') 
-                        
+                        action = 'store_true')
+
     def calculate(self):
         linux_common.set_plugin_members(self)
         if self.profile.has_type("mount"):
             mnttype = "mount"
-            
+
             for task in linux_pslist.linux_pslist(self._config).calculate():
                 if task.pid == 1:
                     ns = task.nsproxy.mnt_ns
@@ -51,7 +48,7 @@ class linux_mount_cache(linux_mount.linux_mount):
         else:
             mnttype = "vfsmount"
             ns = None
-    
+
         cache = linux_slabinfo(self._config).get_kmem_cache(mnttype, self._config.UNALLOCATED)
 
         for mnt in cache:

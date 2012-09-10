@@ -37,12 +37,12 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
         if self.profile.has_type("mount"):
             mnttype = "mount"
-            
+
             for task in linux_pslist.linux_pslist(self._config).calculate():
                 if task.pid == 1:
                     ns = task.nsproxy.mnt_ns
                     break
-    
+
         else:
             mnttype = "vfsmount"
             ns = None
@@ -52,13 +52,13 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
             for mnt in outerlist.list_of_type(mnttype, "mnt_hash"):
                 yield (mnt, ns)
-                
+
     def parse_mnt(self, data):
         '''
         We use seen for 3.x kernels with mount namespaces 
         The same mount can be in multiple namespaces and we do not want to repeat output
         '''
-        for (mnt, ns) in data:             
+        for (mnt, ns) in data:
 
             dev_name = mnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
 
@@ -72,11 +72,11 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
             path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
 
-            if path == []:  
+            if path == []:
                 continue
 
             mnt_string = self.calc_mnt_string(mnt)
-            
+
             if (mnt.mnt_flags & 0x40) or (mnt.mnt_sb.s_flags & 0x1):
                 rr = "ro"
             else:
@@ -88,7 +88,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
     def render_text(self, outfd, data):
         data = self.parse_mnt(data)
 
-        for (sb, dev_name, path, fstype, rr, mnt_string) in data:
+        for (_sb, dev_name, path, fstype, rr, mnt_string) in data:
             outfd.write("{0:25s} {1:35s} {2:12s} {3:2s}{4:64s}\n".format(dev_name, path, fstype, rr, mnt_string))
 
     def calc_mnt_string(self, mnt):

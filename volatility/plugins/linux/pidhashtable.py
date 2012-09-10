@@ -24,7 +24,6 @@
 import volatility.obj as obj
 import volatility.debug as debug
 
-import volatility.plugins.linux.flags as linux_flags
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
 
@@ -33,6 +32,10 @@ PIDTYPE_PID = 0
 # determining the processing algorithm to use is based on crash from redhat
 class linux_pidhashtable(linux_pslist.linux_pslist):
     """Enumerates processes through the PID hash table"""
+
+    def __init__(self, *args, **kwargs):
+        self.seen_tasks = {}
+        linux_pslist.linux_pslist.__init__(self, *args, **kwargs)
 
     def _task_for_pid(self, upid, pid):
 
@@ -43,15 +46,14 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         if pid_tasks_0 == 0:
             chained = 1
             pnext_addr = upid.obj_offset + self.profile.get_obj_offset("upid", "pid_chain") + self.profile.get_obj_offset("hlist_node", "next")
-            pnext = obj.Object("unsigned long", offset=pnext_addr, vm=self.addr_space)
-            upid = obj.Object("upid", offset=pnext - self.profile.get_obj_offset("upid", "pid_chain"), vm=self.addr_space)
+            pnext = obj.Object("unsigned long", offset = pnext_addr, vm = self.addr_space)
+            upid = obj.Object("upid", offset = pnext - self.profile.get_obj_offset("upid", "pid_chain"), vm = self.addr_space)
             for task in self._walk_upid(upid):
                 yield task
-    
+
         if chained == 0:
-            next = obj.Object("task_struct", offset=pid_tasks_0 - self.profile.get_obj_offset("task_struct", "pids"), vm=self.addr_space)
-            yield next
- 
+            yield obj.Object("task_struct", offset = pid_tasks_0 - self.profile.get_obj_offset("task_struct", "pids"), vm = self.addr_space)
+
     def _walk_upid(self, upid):
 
         while upid:
@@ -60,22 +62,22 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
 
             for task in self._task_for_pid(upid, pid):
                 yield task
-            
+
             if type(upid.pid_chain) == obj.Pointer:
-                pid_chain = obj.Object("hlist_node", offset=upid.pid_chain.obj_offset, vm=self.addr_space)
+                pid_chain = obj.Object("hlist_node", offset = upid.pid_chain.obj_offset, vm = self.addr_space)
             else:
                 pid_chain = upid.pid_chain
 
             if not pid_chain:
                 break
-    
+
             upid = linux_common.get_obj(self, pid_chain.next, "upid", "pid_chain")
-     
+
     def calculate_v3(self):
         self.seen_tasks = {}
 
         pidhash_shift = obj.Object("unsigned int", offset = self.get_profile_symbol("pidhash_shift"), vm = self.addr_space)
-        pidhash_size = 1 << pidhash_shift 
+        pidhash_size = 1 << pidhash_shift
 
         pidhash_addr = self.get_profile_symbol("pid_hash")
         pidhash_ptr = obj.Object("Pointer", offset = pidhash_addr, vm = self.addr_space)
@@ -84,20 +86,20 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         pidhash = obj.Object(theType = 'Array', offset = pidhash_ptr, vm = self.addr_space, targetType = 'hlist_head', count = pidhash_size)
 
         for hlist in pidhash:
-            
+
             # each entry in the hlist is a upid which is wrapped in a pid
             ent = hlist.first
 
             while ent.v():
 
                 upid = linux_common.get_obj(self, ent.obj_offset, "upid", "pid_chain")
-                
+
                 for task in self._walk_upid(upid):
                     if not task.obj_offset in self.seen_tasks:
                         self.seen_tasks[task.obj_offset] = 1
                         if task.is_valid_task():
                             yield task
-                
+
                 ent = ent.m("next")
 
     # the following functions exist because crash has handlers for them
@@ -115,16 +117,16 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
     def refresh_pid_hash_task_table(self):
         self.profile_unsupported("refresh_pid_hash_task_table")
 
-    def get_both(self, pid_hash, pidhash_shift_addr):
-    
-        pidhash_shift = obj.Object("unsigned int", offset = pidhash_shift_addr, vm = self.addr_space)
-        pidhash_len = 1 << pidhash_shift
+    def get_both(self, _pid_hash, _pidhash_shift_addr):
 
-        has_pid_link   = self.profile.has_type("pid_link")
-        has_link_pid   = self.profile.obj_has_member("pid_link", "pid")
+        # pidhash_shift = obj.Object("unsigned int", offset = pidhash_shift_addr, vm = self.addr_space)
+        # pidhash_len = 1 << pidhash_shift
 
-        has_pid_hash    = self.profile.has_type("pid_hash")
-        has_upid        = self.profile.has_type("upid")
+        has_pid_link = self.profile.has_type("pid_link")
+        has_link_pid = self.profile.obj_has_member("pid_link", "pid")
+
+        has_pid_hash = self.profile.has_type("pid_hash")
+        has_upid = self.profile.has_type("upid")
         has_pid_numbers = self.profile.obj_has_member("pid", "numbers")
 
         if has_pid_hash:
@@ -133,7 +135,7 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
             has_hash_chain = None
 
         if has_link_pid and has_hash_chain:
-            func = self.refresh_pid_hash_task_table 
+            func = self.refresh_pid_hash_task_table
 
         elif has_pid_link:
             if has_upid and has_pid_numbers:
@@ -141,28 +143,28 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
             else:
                 func = self.calculate_v2 # refresh_hlist_task_table_v2
         else:
-            func = self.calculate_v1        
-        
+            func = self.calculate_v1
+
         return func
-    
+
     def determine_func(self):
-        
-        pidhash       = self.get_profile_symbol("pidhash")
-        pid_hash      = self.get_profile_symbol("pid_hash")
+
+        pidhash = self.get_profile_symbol("pidhash")
+        pid_hash = self.get_profile_symbol("pid_hash")
         pidhash_shift = self.get_profile_symbol("pidhash_shift")
 
         if pid_hash and pidhash_shift:
-            func = self.get_both(pid_hash, pidhash_shift)    
-            real_pidhash = pid_hash            
+            func = self.get_both(pid_hash, pidhash_shift)
+            real_pidhash = pid_hash
 
         elif pid_hash:
             func = self.refresh_pid_hash_task_table
-            real_pidhash = pid_hash            
+            real_pidhash = pid_hash
 
         elif pidhash:
-            func = self.refresh_pidhash_task_table
-            real_pidhash = pidhash                   
-            
+            func = self.refresh_pid_hash_task_table
+            real_pidhash = pidhash
+
         #print "Got func: %s" % func
         return func
 

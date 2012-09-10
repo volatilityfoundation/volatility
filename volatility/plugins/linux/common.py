@@ -50,7 +50,7 @@ class AbstractLinuxCommand(commands.Command):
 
     def execute(self, *args, **kwargs):
         commands.Command.execute(self, *args, **kwargs)
-    
+
     @staticmethod
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'linux'
@@ -570,8 +570,8 @@ def get_file_contents(self, inode):
 
 def is_known_address(obj_ref, addr, modules):
 
-    text  = obj_ref.profile.get_symbol("_text", sym_type="Pointer")
-    etext = obj_ref.profile.get_symbol("_etext", sym_type="Pointer")
+    text = obj_ref.profile.get_symbol("_text", sym_type = "Pointer")
+    etext = obj_ref.profile.get_symbol("_etext", sym_type = "Pointer")
 
     if text <= addr < etext or address_in_module(modules, addr):
         known = 1
@@ -587,9 +587,9 @@ def address_in_module(module_list, address):
     ret = None
 
     for (name, start, end) in module_list:
-         
+
         if start <= address < end:
-            
+
             ret = name
             break
 
@@ -601,7 +601,7 @@ def verify_ops(obj_ref, fops, op_members, modules):
         addr = fops.m(check)
 
         if addr and addr != 0:
-                        
+
             if addr in obj_ref.known_addrs:
                 known = obj_ref.known_addrs[addr]
             else:
@@ -619,15 +619,15 @@ def get_partial_path(dentry):
     name = ""
 
     while dentry and dentry != dentry.d_parent:
-        name = dentry.d_name.name.dereference_as("String", length=255)
+        name = dentry.d_name.name.dereference_as("String", length = 255)
         if name.is_valid():
             path.append(str(name))
         dentry = dentry.d_parent
 
     path.reverse()
-        
-    str_path = "/".join([p for p in path])        
-    
+
+    str_path = "/".join([p for p in path])
+
     return str_path
 
 

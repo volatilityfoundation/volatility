@@ -22,19 +22,18 @@
 """
 
 import volatility.obj as obj
-import volatility.protos as protos
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 
 class kmem_cache(obj.CType):
     def get_type(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def get_name(self):
         return str(self.name.dereference_as("String", length = 255))
 
     def get_objs_of_type(self, type, unalloc = 0):
-        raise NotImplemented
+        raise NotImplementedError
 
 class kmem_cache_slab(kmem_cache):
     def get_type(self):
@@ -85,7 +84,7 @@ class kmem_cache_slab(kmem_cache):
         if not self.unalloc:
             for slab in self._get_full_list():
                 for i in range(self.num):
-                    yield self._get_object(slab.s_mem.v() + i * self.buffer_size)               
+                    yield self._get_object(slab.s_mem.v() + i * self.buffer_size)
 
         for slab in self._get_partial_list():
             bufctl = obj.Object("Array",
@@ -121,13 +120,13 @@ class LinuxKmemCacheOverlay(obj.ProfileModification):
             profile.object_classes.update({'kmem_cache': kmem_cache_slab})
 
 class linux_slabinfo(linux_common.AbstractLinuxCommand):
-    """Mimics /proc/slabinfo on a running machine"""    
+    """Mimics /proc/slabinfo on a running machine"""
 
     def get_all_kmem_caches(self):
         linux_common.set_plugin_members(self)
         cache_chain = self.get_profile_symbol("cache_chain")
         slab_caches = self.get_profile_symbol("slab_caches")
-        
+
         if cache_chain: #slab
             caches = obj.Object("list_head", offset = cache_chain, vm = self.addr_space)
             listm = "next"
@@ -137,66 +136,66 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
             ret = []
         else:
             debug.error("Unknown or unimplemented slab type.")
-            
+
         return ret
 
-    def get_kmem_cache(self, cache_name, unalloc, struct_name=""):
-        
+    def get_kmem_cache(self, cache_name, unalloc, struct_name = ""):
+
         if struct_name == "":
             struct_name = cache_name
- 
+
         for cache in self.get_all_kmem_caches():
             if cache.get_name() == cache_name:
                 cache.newattr("unalloc", unalloc)
                 cache.newattr("struct_type", struct_name)
                 return cache
-        
+
         debug.debug("Invalid kmem_cache: {0}".format(cache_name))
         return []
 
     def calculate(self):
         linux_common.set_plugin_members(self)
-        
+
         for cache in self.get_all_kmem_caches():
             if cache.get_type() == "slab":
                 active_objs = 0
                 active_slabs = 0
                 num_slabs = 0
-                shared_avail = 0
-                
+                # shared_avail = 0
+
                 for slab in cache._get_full_list():
                     active_objs += cache.num
                     active_slabs += 1
-                
+
                 for slab in cache._get_partial_list():
                     active_objs += slab.inuse
                     active_slabs += 1
-            
+
                 for slab in cache._get_free_list():
                     num_slabs += 1
-            
+
                 num_slabs += active_slabs
                 num_objs = num_slabs * cache.num
-                
-                yield [cache.get_name(), 
-                        active_objs, 
-                        num_objs, 
-                        cache.buffer_size, 
-                        cache.num, 
-                        1 << cache.gfporder, 
-                        active_slabs, 
+
+                yield [cache.get_name(),
+                        active_objs,
+                        num_objs,
+                        cache.buffer_size,
+                        cache.num,
+                        1 << cache.gfporder,
+                        active_slabs,
                         num_slabs]
-        
+
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("<name>", "<30"), 
+        self.table_header(outfd, [("<name>", "<30"),
                                   ("<active_objs>", "<13"),
-                                  ("<num_objs>", "<10"), 
-                                  ("<objsize>", "<10"), 
-                                  ("<objperslab>", "<12"), 
-                                  ("<pagesperslab>", "<15"), 
-                                  ("<active_slabs>", "<14"), 
-                                  ("<num_slabs>", "<7"), 
+                                  ("<num_objs>", "<10"),
+                                  ("<objsize>", "<10"),
+                                  ("<objperslab>", "<12"),
+                                  ("<pagesperslab>", "<15"),
+                                  ("<active_slabs>", "<14"),
+                                  ("<num_slabs>", "<7"),
                                   ])
-                                  
+
         for info in data:
             self.table_row(outfd, info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7])

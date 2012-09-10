@@ -60,10 +60,10 @@ class linux_route_cache(linux_common.AbstractLinuxCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("Interface", "16"), 
-                                  ("Destination", "20"), 
+        self.table_header(outfd, [("Interface", "16"),
+                                  ("Destination", "20"),
                                   ("Gateway", "")])
-                                  
+
         for (name, dest, gw) in data:
             self.table_row(outfd, name, dest.cast("IpAddress"), gw.cast("IpAddress"))
 

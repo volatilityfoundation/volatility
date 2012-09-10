@@ -44,10 +44,10 @@ class linux_lsof(linux_pslist.linux_pslist):
                     yield (task, filp, i)
 
     def render_text(self, outfd, data):
-    
-        self.table_header(outfd, [("Pid", "8"), 
-                                  ("FD", "8"), 
+
+        self.table_header(outfd, [("Pid", "8"),
+                                  ("FD", "8"),
                                   ("Path", "")])
-                                  
+
         for (task, filp, fd) in data:
             self.table_row(outfd, task.pid, fd, linux_common.get_path(task, filp))

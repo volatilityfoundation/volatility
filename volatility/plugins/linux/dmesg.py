@@ -37,7 +37,7 @@ class linux_dmesg(linux_common.AbstractLinuxCommand):
 
     # pre 3.x
     def _pre_3(self, buf_addr, buf_len):
-        
+
         return obj.Object("String", offset = buf_addr, vm = self.addr_space, length = buf_len)
 
     def _ver_3(self, buf_addr, buf_len):
@@ -46,15 +46,15 @@ class linux_dmesg(linux_common.AbstractLinuxCommand):
         holding variable sized records tracked by inline 'log' structures
         We deal with this by walking all the logs and building the buffer up and then returning it
         This produces the same results as the old way
-        '''    
-        
+        '''
+
         ret = ""
-        
+
         size_of_log = self.profile.get_obj_size("log")
-        
+
         cur_addr = buf_addr
         end_addr = buf_addr + buf_len
-        
+
         log = obj.Object("log", offset = cur_addr, vm = self.addr_space)
         cur_len = log.len
 
@@ -64,18 +64,18 @@ class linux_dmesg(linux_common.AbstractLinuxCommand):
             cur_ts = log.ts_nsec
 
             buf = obj.Object("String", offset = cur_addr + size_of_log, vm = self.addr_space, length = msg_len)
-        
+
             ret = ret + "[{0}.{1}] {2}\n".format(cur_ts, cur_ts / 1000000000, buf)
-            
+
             cur_addr = cur_addr + cur_len
 
-            log = obj.Object("log", offset=cur_addr, vm=self.addr_space)
+            log = obj.Object("log", offset = cur_addr, vm = self.addr_space)
             cur_len = log.len
 
         return ret
 
     def calculate(self):
-        linux_common.set_plugin_members(self)    
+        linux_common.set_plugin_members(self)
         (log_buf_addr, log_buf_len) = self._get_log_info()
 
         if self.profile.has_type("log") and self.profile.obj_has_member("log", "ts_nsec"):
