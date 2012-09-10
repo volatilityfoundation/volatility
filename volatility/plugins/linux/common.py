@@ -361,7 +361,7 @@ def get_page_contents(self, inode, idx):
 
         phys_as = utils.load_as(self._config, astype = 'physical')
 
-        data = phys_as.read(phys_offset, 4096)
+        data = phys_as.zread(phys_offset, 4096)
     else:
         data = "\x00" * 4096
 
