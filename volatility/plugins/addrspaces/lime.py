@@ -104,11 +104,17 @@ class LimeAddressSpace(addrspace.BaseAddressSpace):
         if key in self.addr_cache:
             return self.addr_cache[key]
 
-        (_, where) = self.__get_offset(addr)
-        
-        ret = self.base.read(where, length)
+        offset = self.__get_offset(addr)
 
-        self.addr_cache[key] = ret
+        if offset: 
+            (_, where) = offset
+            ret = self.base.read(where, length)
+            self.addr_cache[key] = ret
+        
+        elif pad:
+            ret = "\x00" * length
+        else:
+            ret = None
         
         return ret        
 
