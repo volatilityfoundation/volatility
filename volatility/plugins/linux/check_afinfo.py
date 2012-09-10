@@ -33,7 +33,7 @@ class linux_check_afinfo(linux_common.AbstractLinuxCommand):
 
     def check_members(self, var_ops, var_name, members, modules):
 
-        for (hooked_member, hook_address) in linux_common.verify_ops(self, var_ops, members, modules):
+        for (hooked_member, hook_address) in self.verify_ops(var_ops, members, modules):
             yield (hooked_member, hook_address)
 
     def check_afinfo(self, var_name, var, op_members, seq_members, modules):

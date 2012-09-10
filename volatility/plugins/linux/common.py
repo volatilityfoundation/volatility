@@ -189,6 +189,34 @@ class AbstractLinuxCommand(commands.Command):
 
         return boot_time
 
+    def is_known_address(self, addr, modules):
+
+        text  = self.profile.get_symbol("_text", sym_type = "Pointer")
+        etext = self.profile.get_symbol("_etext", sym_type = "Pointer")
+
+        if text <= addr < etext or address_in_module(modules, addr):
+            known = 1
+        else:
+            known = 0
+
+        return known
+
+    def verify_ops(self, ops, op_members, modules):
+
+        for check in op_members:
+            addr = ops.m(check)
+
+            if addr and addr != 0:
+
+                if addr in self.known_addrs:
+                    known = self.known_addrs[addr]
+                else:
+                    known = self.is_known_address(addr, modules)
+                    self.known_addrs[addr] = known
+
+                if known == 0:
+                    yield (check, addr)
+
 # similar to for_each_process for this usage
 def walk_list_head(struct_name, list_member, list_head_ptr, _addr_space):
     debug.warning("Deprecated use of walk_list_head")
@@ -267,7 +295,6 @@ def S_ISREG(mode):
 ###################
 # code to walk the page cache and mem_map / mem_section page structs
 ###################
-# FIXME - use 'class page' overlay?
 def radix_tree_is_indirect_ptr(self, ptr):
 
     return ptr & 1
@@ -383,18 +410,6 @@ def get_file_contents(self, inode):
 
     return data
 
-def is_known_address(obj_ref, addr, modules):
-
-    text = obj_ref.profile.get_symbol("_text", sym_type = "Pointer")
-    etext = obj_ref.profile.get_symbol("_etext", sym_type = "Pointer")
-
-    if text <= addr < etext or address_in_module(modules, addr):
-        known = 1
-    else:
-        known = 0
-
-    return known
-
 # This returns the name of the module that contains an address or None
 # The module_list parameter comes from a call to get_modules
 # This function will be updated after 2.2 to resolve symbols within the module as well
@@ -409,22 +424,6 @@ def address_in_module(module_list, address):
             break
 
     return ret
-
-def verify_ops(obj_ref, fops, op_members, modules):
-
-    for check in op_members:
-        addr = fops.m(check)
-
-        if addr and addr != 0:
-
-            if addr in obj_ref.known_addrs:
-                known = obj_ref.known_addrs[addr]
-            else:
-                known = is_known_address(obj_ref, addr, modules)
-                obj_ref.known_addrs[addr] = known
-
-            if known == 0:
-                yield (check, addr)
 
 # we can't get the full path b/c we 
 # do not have a ref to the vfsmnt

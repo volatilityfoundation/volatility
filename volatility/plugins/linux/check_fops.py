@@ -36,7 +36,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
         openfiles = linux_lsof.linux_lsof(self._config).calculate()
 
         for (task, filp, i) in openfiles:
-            for (hooked_member, hook_address) in linux_common.verify_ops(self, filp.f_op, f_op_members, modules):
+            for (hooked_member, hook_address) in self.verify_ops(filp.f_op, f_op_members, modules):
                 name = "{0:s} {1:d} {2:s}".format(task.comm, i, linux_common.get_path(task, filp))
                 yield (name, hooked_member, hook_address)
 
@@ -51,7 +51,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
 
         root = proc_mnt.mnt_root
 
-        for (hooked_member, hook_address) in linux_common.verify_ops(self, root.d_inode.i_fop, f_op_members, modules):
+        for (hooked_member, hook_address) in self.verify_ops(root.d_inode.i_fop, f_op_members, modules):
             yield ("proc_mnt: root", hooked_member, hook_address)
 
         # only check the root directory
@@ -59,7 +59,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
 
             name = dentry.d_name.name.dereference_as("String", length = 255)
             
-            for (hooked_member, hook_address) in linux_common.verify_ops(self, dentry.d_inode.i_fop, f_op_members, modules): 
+            for (hooked_member, hook_address) in self.verify_ops(dentry.d_inode.i_fop, f_op_members, modules): 
                 yield("proc_mnt: {0}".format(name), hooked_member, hook_address)
     
     def walk_proc(self, cur, f_op_members, modules, parent = ""):
@@ -76,7 +76,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
 
             fops = cur.proc_fops
 
-            for (hooked_member, hook_address) in linux_common.verify_ops(self, fops, f_op_members, modules):
+            for (hooked_member, hook_address) in self.verify_ops(fops, f_op_members, modules):
                 yield (name, hooked_member, hook_address)
 
             subdir = cur.subdir
@@ -94,7 +94,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
         proc_root_addr = self.get_profile_symbol("proc_root") 
         proc_root = obj.Object("proc_dir_entry", offset = proc_root_addr, vm = self.addr_space)
 
-        for (hooked_member, hook_address) in linux_common.verify_ops(self, proc_root.proc_fops, f_op_members, modules):
+        for (hooked_member, hook_address) in self.verify_ops(proc_root.proc_fops, f_op_members, modules):
             yield("proc_root", hooked_member, hook_address)
 
         for (name, hooked_member, hook_address) in self.walk_proc(proc_root, f_op_members, modules):
