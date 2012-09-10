@@ -54,7 +54,7 @@ class linux_psxview(linux_common.AbstractLinuxCommand):
         ps_sources['pid_hash'] = self.get_pid_hash()
         ps_sources['kmem_cache'] = self.get_kmem_cache()
 
-        # TODO
+        # FUTURE
         # ps_sources['run_queue']  = 
 
         # Build a list of offsets from all sources

@@ -90,7 +90,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
                     f.close()
                     self.fix_md(new_file, perms, atime, mtime)
 
-                # TODO add support for symlinks
+                # FUTURE add support for symlinks
                 else:
                     #print "skipped: %s" % name
                     pass

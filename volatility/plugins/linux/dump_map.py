@@ -37,7 +37,7 @@ class linux_dump_map(linux_common.AbstractLinuxCommand):
 
     def read_addr_range(self, task, start, end):
 
-        pagesize = 4096 # TODO 64bit
+        pagesize = 4096 
 
         # set the as with our new dtb so we can read from userland
         proc_as = task.get_process_address_space()

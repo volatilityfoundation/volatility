@@ -235,7 +235,6 @@ def walk_internal_list(struct_name, list_member, list_start, addr_space = None):
 
 
 # based on __d_path
-# TODO: (deleted) support
 def do_get_path(rdentry, rmnt, dentry, vfsmnt):
     ret_path = []
 
