@@ -87,8 +87,13 @@ class AbstractLinuxCommand(commands.Command):
 
         sec = get_boot_time(self) + start_secs
 
-        return time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.localtime(sec))
+        # protect against invalid data in unallocated tasks
+        try:
+            ret = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.localtime(sec))
+        except ValueError:
+            ret = ""
 
+        return ret
 
 # returns a list of online cpus (the processor numbers)
 def online_cpus(self):
