@@ -52,6 +52,7 @@ class BashTypes(obj.ProfileModification):
             profile.vtypes.update(bash_vtypes_64)
 
 class linux_bash(linux_pslist.linux_pslist):
+    """Recover bash history from bash process memory"""
 
     def __init__(self, config, *args): 
         linux_pslist.linux_pslist.__init__(self, config, *args)
