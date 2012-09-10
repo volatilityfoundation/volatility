@@ -117,10 +117,7 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
     def refresh_pid_hash_task_table(self):
         self.profile_unsupported("refresh_pid_hash_task_table")
 
-    def get_both(self, _pid_hash, _pidhash_shift_addr):
-
-        # pidhash_shift = obj.Object("unsigned int", offset = pidhash_shift_addr, vm = self.addr_space)
-        # pidhash_len = 1 << pidhash_shift
+    def get_both(self):
 
         has_pid_link = self.profile.has_type("pid_link")
         has_link_pid = self.profile.obj_has_member("pid_link", "pid")
@@ -154,18 +151,14 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         pidhash_shift = self.get_profile_symbol("pidhash_shift")
 
         if pid_hash and pidhash_shift:
-            func = self.get_both(pid_hash, pidhash_shift)
-            real_pidhash = pid_hash
+            func = self.get_both()
 
         elif pid_hash:
             func = self.refresh_pid_hash_task_table
-            real_pidhash = pid_hash
 
         elif pidhash:
             func = self.refresh_pid_hash_task_table
-            real_pidhash = pidhash
 
-        #print "Got func: %s" % func
         return func
 
     def calculate(self):
