@@ -31,10 +31,10 @@ import zipfile
 import volatility.plugins
 import volatility.plugins.overlays.basic as basic
 import volatility.plugins.overlays.native_types as native_types
+import volatility.exceptions as exceptions
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.dwarf as dwarf
-import volatility.utils as utils
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
 
@@ -157,12 +157,40 @@ def LinuxProfileFactory(profpkg):
             self.load_modifications()
             self.compile()
 
+        def _merge_anonymous_members(self, vtypesvar):
+            members_index = 1
+            types_index = 1
+            offset_index = 0
+
+            try:
+                for candidate in vtypesvar:
+                    done = False
+                    while not done:
+                        if any(member.startswith('__unnamed_') for member in vtypesvar[candidate][members_index]):
+                            for member in vtypesvar[candidate][members_index].keys():
+                                if member.startswith('__unnamed_'):
+                                    member_type = vtypesvar[candidate][members_index][member][types_index][0]
+                                    location = vtypesvar[candidate][members_index][member][offset_index]
+                                    vtypesvar[candidate][members_index].update(vtypesvar[member_type][members_index])
+                                    for name in vtypesvar[member_type][members_index].keys():
+                                        vtypesvar[candidate][members_index][name][offset_index] += location
+                                    del vtypesvar[candidate][members_index][member]
+                            # Don't update done because we'll need to check if any
+                            # of the newly imported types need merging
+                        else:
+                            done = True
+            except KeyError, e:
+                import pdb
+                pdb.set_trace()
+                raise exceptions.VolatilityException("Inconsistent linux profile - unable to look up " + str(e))
+
         def load_vtypes(self):
             """Loads up the vtypes data"""
             ntvar = self.metadata.get('memory_model', '32bit')
             self.native_types = copy.deepcopy(self.native_mapping.get(ntvar))
 
             vtypesvar = dwarf.DWARFParser(dwarfdata).finalize()
+            self._merge_anonymous_members(vtypesvar)
             self.vtypes.update(vtypesvar)
             debug.debug("{2}: Found dwarf file {0} with {1} symbols".format(f.filename, len(vtypesvar.keys()), profilename))
 
