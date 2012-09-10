@@ -43,6 +43,9 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
     def check_proc_fop(self, f_op_members, modules):
 
         proc_mnt_addr = self.get_profile_symbol("proc_mnt")
+        if not proc_mnt_addr:
+            return
+
         proc_mnt_ptr = obj.Object("Pointer", offset = proc_mnt_addr, vm = self.addr_space)
         proc_mnt = proc_mnt_ptr.dereference_as("vfsmount")
 
@@ -85,8 +88,9 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
 
             cur = cur.next
 
-    def check_proc_root_fops(self, f_op_members, modules):
-    
+    def check_proc_root_fops(self, f_op_members, modules):   
+        self.seen_proc = {}
+ 
         proc_root_addr = self.get_profile_symbol("proc_root") 
         proc_root = obj.Object("proc_dir_entry", offset = proc_root_addr, vm = self.addr_space)
 
