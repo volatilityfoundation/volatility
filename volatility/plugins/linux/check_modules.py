@@ -18,7 +18,7 @@
 @author:       Andrew Case
 @license:      GNU General Public License 2.0 or later
 @contact:      atcuno@gmail.com
-@organization: Digital Forensics Solutions
+@organization: 
 """
 
 import volatility.obj as obj
