@@ -38,7 +38,11 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         self._config.add_option('INODE', short_option = 'i', default = None, help = 'inode to write to disk', action = 'store', type = 'int')
         self._config.add_option('OUTFILE', short_option = 'O', default = None, help = 'output file path', action = 'store', type = 'str')
 
-    def walk_sb(self, dentry, find_file, recursive = 0, parent = ""):
+    def walk_sb(self, dentry, find_file, last_dentry, recursive = 0, parent = ""):
+        if last_dentry == None or last_dentry != dentry.v():
+            last_dentry = dentry
+        else:
+            return None
 
         ret = None
 
@@ -53,7 +57,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             # do not use os.path.join
             # this allows us to have consistent paths from the user
             new_file = parent + "/" + name
-            
+        
             if new_file == find_file:
                 ret = dentry                
                 break
@@ -61,8 +65,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             if inode:
                                
                 if linux_common.S_ISDIR(inode.i_mode):
-                    # since the directory may already exist
-                    ret = self.walk_sb(dentry, find_file, 1, new_file)
+                    ret = self.walk_sb(dentry, find_file, last_dentry, 1, new_file)
                     if ret:
                         break
     
@@ -88,7 +91,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             if len(path) > 1 and not path.startswith(first_dir):
                 continue
 
-            ret = self.walk_sb(sb.s_root, find_file)
+            ret = self.walk_sb(sb.s_root, find_file, None)
             
             if ret:
                 break
