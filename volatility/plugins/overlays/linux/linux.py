@@ -388,7 +388,7 @@ class linux_file(obj.CType):
 # FIXME - walking backwards has not been thorougly tested
 class hlist_node(obj.CType):
     """A hlist_node makes a doubly linked list."""
-    def list_of_type(self, type, member, offset = -1, forward = True, head_sentinel = True):
+    def list_of_type(self, obj_type, member, offset = -1, forward = True, head_sentinel = True):
 
         if not self.is_valid():
             return
@@ -399,7 +399,7 @@ class hlist_node(obj.CType):
         else:
             nxt = self.pprev.dereference().dereference()
 
-        offset = self.obj_vm.profile.get_obj_offset(type, member)
+        offset = self.obj_vm.profile.get_obj_offset(obj_type, member)
 
         seen = set()
         if head_sentinel:
@@ -408,10 +408,10 @@ class hlist_node(obj.CType):
 
         while nxt.is_valid() and nxt.obj_offset not in seen:
             ## Instantiate the object
-            item = obj.Object(type, offset = nxt.obj_offset - offset,
+            item = obj.Object(obj_type, offset = nxt.obj_offset - offset,
                                     vm = self.obj_vm,
                                     parent = self.obj_parent,
-                                    name = type)
+                                    name = obj_type)
 
             seen.add(nxt.obj_offset)
 
@@ -432,7 +432,7 @@ class hlist_node(obj.CType):
 
 class list_head(obj.CType):
     """A list_head makes a doubly linked list."""
-    def list_of_type(self, type, member, offset = -1, forward = True, head_sentinel = True):
+    def list_of_type(self, obj_type, member, offset = -1, forward = True, head_sentinel = True):
         if not self.is_valid():
             return
 
@@ -442,7 +442,7 @@ class list_head(obj.CType):
         else:
             nxt = self.prev.dereference()
 
-        offset = self.obj_vm.profile.get_obj_offset(type, member)
+        offset = self.obj_vm.profile.get_obj_offset(obj_type, member)
 
         seen = set()
         if head_sentinel:
@@ -452,10 +452,10 @@ class list_head(obj.CType):
 
         while nxt.is_valid() and nxt.obj_offset not in seen:
             ## Instantiate the object
-            item = obj.Object(type, offset = nxt.obj_offset - offset,
+            item = obj.Object(obj_type, offset = nxt.obj_offset - offset,
                                     vm = self.obj_vm,
                                     parent = self.obj_parent,
-                                    name = type)
+                                    name = obj_type)
 
             seen.add(nxt.obj_offset)
 
