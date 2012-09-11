@@ -51,7 +51,7 @@ class linux_pstree(linux_pslist.linux_pslist):
 
         proc_name = "." * level + proc_name
 
-        outfd.write("{0:20s} {1:15s} {2:15s}\n".format(proc_name, str(task.pid), str(task.uid)))
+        outfd.write("{0:20s} {1:15s} {2:15s}\n".format(proc_name, str(task.pid), str(task.uid or '')))
 
         self.procs[task.pid] = 1
 
