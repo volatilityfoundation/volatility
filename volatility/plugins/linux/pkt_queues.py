@@ -42,7 +42,7 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
         fname = "{0:s}.{1:d}.{2:d}".format(name, pid, fd_num)
         fd = None 
  
-        sk_buff = queue.next
+        sk_buff = queue.m("next")
 
         while sk_buff and sk_buff != queue.v():
 
