@@ -28,7 +28,7 @@ import volatility.plugins.linux.common as linux_common
 from volatility.plugins.linux.slab_info import linux_slabinfo
 
 class linux_sk_buff_cache(linux_common.AbstractLinuxCommand):
-    """Gather files from the dentry cache"""
+    """Recovers packets from the sk_buff kmem_cache"""
     
     def __init__(self, config, *args): 
         linux_common.AbstractLinuxCommand.__init__(self, config, *args)
