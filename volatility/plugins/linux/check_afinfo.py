@@ -75,7 +75,7 @@ class linux_check_afinfo(linux_common.AbstractLinuxCommand):
         
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("What", "42"), 
+        self.table_header(outfd, [("Symbol Name", "42"), 
                                   ("Member", "30"), 
                                   ("Address", "[addrpad]")])
                                   
