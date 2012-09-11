@@ -74,7 +74,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
                 overwrite.arg = arg
 
                 mret = self.get_param_val(overwrite)
-                val = val + str(mret)
+                val = val + str(mret or '')
 
         elif getfn == self.get_profile_symbol("param_get_string"):
             val = param.str.dereference_as("String", length = param.str.maxlen)
