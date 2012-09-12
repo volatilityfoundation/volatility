@@ -22,9 +22,12 @@
 """
 
 import os
-import volatility.plugins.linux.common as linux_common
-import volatility.plugins.linux.mount as linux_mount
+
 import volatility.debug as debug
+
+import volatility.plugins.linux.common as linux_common
+import volatility.plugins.linux.mount  as linux_mount
+import volatility.plugins.linux.find_file as linux_find_file
 
 class linux_tmpfs(linux_common.AbstractLinuxCommand):
     '''Recovers tmpfs filesystems from memory'''
@@ -40,7 +43,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
         self.edir     = None
         self.sb_num   = 0
-        self.list_sbs = False 
+        self.list_sbs = False
 
     # fix metadata for new files
     def fix_md(self, new_file, perms, atime, mtime, isdir = 0):
@@ -83,7 +86,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
                 elif linux_common.S_ISREG(inode.i_mode):
 
-                    contents = linux_common.get_file_contents(self, inode)
+                    contents = linux_find_file.linux_find_file(self._config).get_file_contents(inode)
 
                     f = open(new_file, "wb")
                     f.write(contents)

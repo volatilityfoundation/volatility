@@ -57,7 +57,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             # do not use os.path.join
             # this allows us to have consistent paths from the user
             new_file = parent + "/" + name
-        
+
             if new_file == find_file:
                 ret = dentry                
                 break
@@ -116,7 +116,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         
             inode = obj.Object("inode", offset=inode_addr, vm=self.addr_space)
             
-            contents = linux_common.get_file_contents(self, inode)
+            contents = self.get_file_contents(inode)
 
             f = open(outfile, "wb")
             f.write(contents)
@@ -140,5 +140,114 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
             self.table_row(outfd, inode_num, inode)
             
+    # from here down is code to walk the page cache and mem_map / mem_section page structs#
+    def radix_tree_is_indirect_ptr(self, ptr):
+        return ptr & 1
+
+    def radix_tree_indirect_to_ptr(self, ptr):
+        return obj.Object("radix_tree_node", offset = ptr & ~1, vm = self.addr_space)
+
+    def radix_tree_lookup_slot(self, root, index):
+        self.RADIX_TREE_MAP_SHIFT = 6
+        self.RADIX_TREE_MAP_SIZE = 1 << self.RADIX_TREE_MAP_SHIFT
+        self.RADIX_TREE_MAP_MASK = self.RADIX_TREE_MAP_SIZE - 1
+
+        node = root.rnode
+
+        if self.radix_tree_is_indirect_ptr(node) == 0:
+
+            if index > 0:
+                return None
+
+            off = root.obj_offset + self.profile.get_obj_offset("radix_tree_root", "rnode")
+
+            page = obj.Object("Pointer", offset = off, vm = self.addr_space)
+
+            return page
+
+        node = self.radix_tree_indirect_to_ptr(node)
+
+        height = node.height
+
+        shift = (height - 1) * self.RADIX_TREE_MAP_SHIFT
+
+        slot = -1
+
+        while 1:
+
+            idx = (index >> shift) & self.RADIX_TREE_MAP_MASK
+
+            slot = node.slots[idx]
+
+            shift = shift - self.RADIX_TREE_MAP_SHIFT
+
+            height = height - 1
+
+            if height <= 0:
+                break
+
+        if slot == -1:
+            return None
+
+        return slot
+
+    def SHMEM_I(self, inode):
+        offset = self.profile.get_obj_offset("shmem_inode_info", "vfs_inode")
+
+        return obj.Object("shmem_inode_info", offset = inode.obj_offset - offset, vm = self.addr_space)
+
+    def find_get_page(self, inode, offset):
+        page = self.radix_tree_lookup_slot(inode.i_mapping.page_tree, offset)
+
+        #if not page:
+            # FUTURE swapper_space support
+            # print "no page"
+
+        return page
+
+    def get_page_contents(self, inode, idx):
+        page_addr = self.find_get_page(inode, idx)
+
+        if page_addr:
+            page = obj.Object("page", offset = page_addr, vm = self.addr_space)
+
+            phys_offset = page.to_paddr()
+
+            phys_as = utils.load_as(self._config, astype = 'physical')
+
+            data = phys_as.zread(phys_offset, 4096)
+        else:
+            data = "\x00" * 4096
+
+        return data
+
+    # main function to be called, handles getting all the pages of an inode
+    # and handles the last page not being page_size aligned 
+    def get_file_contents(self, inode):
+        linux_common.set_plugin_members(self)
+        data = ""
+        file_size = inode.i_size
+
+        extra = file_size % 4096
+
+        idxs = file_size / 4096
+
+        if extra != 0:
+            extra = 4096 - extra
+            idxs = idxs + 1
+
+        for idx in range(0, idxs):
+
+            data = data + self.get_page_contents(inode, idx)
+
+        # this is chop off any extra data on the last page
+
+        if extra != 0:
+            extra = extra * -1
+
+            data = data[:extra]
+
+        return data
+
 
 
