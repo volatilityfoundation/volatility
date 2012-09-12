@@ -23,6 +23,8 @@
 
 import os
 import volatility.obj as obj
+import volatility.debug as debug
+
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsof as linux_lsof
 import volatility.plugins.linux.lsmod as linux_lsmod
@@ -30,6 +32,10 @@ from volatility.plugins.linux.slab_info import linux_slabinfo
 
 class linux_check_fop(linux_common.AbstractLinuxCommand):
     """Check file operation structures for rootkit modifications"""
+
+    def __init__(self, config, *args):
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args)
+        self._config.add_option('INODE', short_option = 'i', default = None, help = 'inode to check', action = 'store', type='int')
 
     def check_open_files_fop(self, f_op_members, modules):
         # get all the members in file_operations, they are all function pointers
@@ -103,18 +109,27 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
     def calculate(self):
         linux_common.set_plugin_members(self)
         self.known_addrs = {}
-        
+
         modules = linux_lsmod.linux_lsmod(self._config).get_modules()
-        
+            
         f_op_members = self.profile.types['file_operations'].keywords["members"].keys()
         f_op_members.remove('owner')
 
-        funcs = [self.check_open_files_fop, self.check_proc_fop, self.check_proc_root_fops]
+        if self._config.INODE:
+            inode = obj.Object("inode", offset=self._config.INODE, vm=self.addr_space)
+            if not inode.is_valid():
+                debug.error("Invalid inode address given. Please use linux_find_file to determine valid inode addresses.")
 
-        for func in funcs:
+            for (hooked_member, hook_address) in self.verify_ops(inode.i_fop, f_op_members, modules):
+                yield("inode at {0:x}".format(inode.obj_offset), hooked_member, hook_address)
+            
+        else:
+            funcs = [self.check_open_files_fop, self.check_proc_fop, self.check_proc_root_fops]
 
-            for (name, member, address) in func(f_op_members, modules):
-                yield (name, member, address)
+            for func in funcs:
+
+                for (name, member, address) in func(f_op_members, modules):
+                    yield (name, member, address)
 
     def render_text(self, outfd, data):
 
