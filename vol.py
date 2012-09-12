@@ -34,7 +34,7 @@
 import sys
 
 if sys.version_info < (2, 6, 0):
-    sys.stderr.write("Volatiltiy requires python version 2.6, please upgrade your python installation.")
+    sys.stderr.write("Volatility requires python version 2.6, please upgrade your python installation.")
     sys.exit(1)
 
 try:
@@ -131,6 +131,7 @@ def main():
     # Get the version information on every output from the beginning
     # Exceptionally useful for debugging/telling people what's going on
     sys.stderr.write("Volatile Systems Volatility Framework {0}\n".format(constants.VERSION))
+    sys.stderr.flush()
 
     # Setup the debugging format
     debug.setup()
