@@ -209,7 +209,7 @@ class AbstractLinuxCommand(commands.Command):
                 else:
                     known = self.is_known_address(addr, modules)
                     self.known_addrs[addr] = known
-
+                
                 if known == 0:
                     yield (check, addr)
 
@@ -291,13 +291,13 @@ def S_ISREG(mode):
 # The module_list parameter comes from a call to get_modules
 # This function will be updated after 2.2 to resolve symbols within the module as well
 def address_in_module(module_list, address):
-    ret = None
+    ret = False
 
     for (name, start, end) in module_list:
 
         if start <= address < end:
 
-            ret = name
+            ret = True
             break
 
     return ret
