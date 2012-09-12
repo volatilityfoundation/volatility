@@ -25,16 +25,13 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 
-# inherit render_text
-import volatility.plugins.linux.check_idt as linux_check_idt
-
 try:
     import distorm3
     has_distorm = True
 except ImportError:
     has_distorm = False
 
-class linux_check_syscall(linux_check_idt.linux_check_idt):
+class linux_check_syscall(linux_common.AbstractLinuxCommand):
     """ Checks if the system call table has been altered """
 
     def _get_table_size(self, table_addr, table_name):
@@ -58,7 +55,6 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
         return len([n for n in self.profile.get_all_symbol_names() if n.startswith("__syscall_meta__")])
 
     def _get_table_info_other(self, table_addr, table_name):
-
         table_size_meta = self._get_table_size_meta()
         table_size_syms = self._get_table_size(table_addr, table_name)
 
@@ -103,7 +99,6 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
         return table_size
 
     def _get_table_info(self, table_name):
-
         table_addr = self.get_profile_symbol(table_name)
 
         table_size = self._get_table_info_distorm()
@@ -131,22 +126,24 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
 
         if memory_model == '32bit':
             mask = 0xffffffff
+            table_name = "32bit"
         else:
             mask = 0xffffffffffffffff
+            table_name = "64bit"
 
         sym_addrs = self.profile.get_all_addresses()
 
         sys_call_info = self._get_table_info("sys_call_table")
 
-        addrs = [sys_call_info]
+        addrs = [(table_name, sys_call_info)]
 
         # 64 bit systems with 32 bit emulation
         ia32 = self.get_profile_symbol("ia32_sys_call_table")
         if ia32:
             ia32_info = self._get_table_info("ia32_sys_call_table")
-            addrs.append(ia32_info)
+            addrs.append(("32bit", ia32_info))
 
-        for (tableaddr, tblsz) in addrs:
+        for (table_name, (tableaddr, tblsz)) in addrs:
 
             table = obj.Object(theType = 'Array', offset = tableaddr, vm = self.addr_space, targetType = 'long', count = tblsz)
 
@@ -159,11 +156,20 @@ class linux_check_syscall(linux_check_idt.linux_check_idt):
                 call_addr = call_addr & mask
 
                 if not call_addr in sym_addrs:
-                    yield(i, call_addr, 1)
+                    yield(table_name, i, call_addr, 1)
                 else:
-                    yield(i, call_addr, 0)
+                    yield(table_name, i, call_addr, 0)
+    
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Table Name", "6"), ("Index", "[addr]"), ("Address", "[addrpad]"), ("Symbol", "<30")])
+        for (table_name, i, call_addr, hooked) in data:
 
+            if hooked == 0:
+                sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
+            else:
+                sym_name = "HOOKED"
 
+            self.table_row(outfd, table_name, i, call_addr, sym_name)
 
 
 
