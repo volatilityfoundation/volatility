@@ -7,6 +7,7 @@ include pyinstaller/*.py
 include volatility/*.py
 include contrib/plugins/*.py
 include tools/*.py
+include tools/linux/*
 include vol.py
 include Makefile
 include volatility.spec

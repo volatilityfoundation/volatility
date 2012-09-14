@@ -35,7 +35,7 @@ try:
 except ImportError:
     py2exe_available = False
 
-def find_py_files(topdirs):
+def find_files(topdirs, py = False):
     """Lists all python files under any topdir from the topdirs lists.
     
        Returns an appropriate list for data_files,
@@ -43,7 +43,7 @@ def find_py_files(topdirs):
     ret = []
     for topdir in topdirs:
         for r, _ds, fs in os.walk(topdir):
-            ret.append((r, [ os.path.join(r, f) for f in fs if f.endswith('.py')]))
+            ret.append((r, [ os.path.join(r, f) for f in fs if (f.endswith('.py') or not py)]))
     return ret
 
 opts = {}
@@ -68,7 +68,7 @@ opts['packages'] = ["volatility",
                     "volatility.plugins.linux",
                     "volatility.plugins.registry",
                     "volatility.plugins.malware"]
-opts['data_files'] = find_py_files(['contrib'])
+opts['data_files'] = find_files(['contrib'], py = True) + find_files(['tools'])
 
 if py2exe_available:
     py2exe_distdir = 'dist/py2exe'
