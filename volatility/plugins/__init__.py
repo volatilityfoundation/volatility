@@ -15,4 +15,9 @@ __path__ = [constants.PLUGINPATH] + [ e for e in __path__ if not constants.PLUGI
 # Meaning that each directory is search for module when import volatility.plugins.module is requested
 
 if config.PLUGINS:
-    __path__.extend([ os.path.abspath(x) for x in config.PLUGINS.split(";")])
+    plugin_paths = [ os.path.abspath(x) for x in config.PLUGINS.split(":")]
+    if len(plugin_paths) == 1:
+        # No colons, try semi-colon to support previous syntax
+        #TODO: Remove after volatility 2.3
+        plugin_paths = [ os.path.abspath(x) for x in config.PLUGINS.split(";")]
+    __path__.extend(plugin_paths)
