@@ -32,6 +32,12 @@ MAX_STRING_LENGTH = 256
 import time
 nsecs_per = 1000000000
 
+class vol_timespec:
+
+    def __init__(self, secs, nsecs):
+        self.tv_sec  = secs
+        self.tv_nsec = nsecs
+
 def set_plugin_members(obj_ref):
     obj_ref.addr_space = utils.load_as(obj_ref._config)
 
@@ -137,6 +143,19 @@ class AbstractLinuxCommand(commands.Command):
 
             yield i, var
 
+    def ACTHZ(self, CLOCK_TICK_RATE, HZ):
+        LATCH = ((CLOCK_TICK_RATE + HZ/2) / HZ)
+        return self.SH_DIV(CLOCK_TICK_RATE, LATCH, 8)
+
+    def SH_DIV(self, NOM, DEN, LSH):
+        return ((NOM / DEN) << LSH) + (((NOM % DEN) << LSH) + DEN / 2) / DEN
+
+    def TICK_NSEC(self):
+        HZ = 1000
+        CLOCK_TICK_RATE = 1193182 
+
+        return self.SH_DIV(1000000 * 1000, self.ACTHZ(CLOCK_TICK_RATE, HZ), 8)
+
     def get_time_vars(self):
         '''
         Sometime in 3.[3-5], Linux switched to a global timekeeper structure
@@ -144,13 +163,27 @@ class AbstractLinuxCommand(commands.Command):
         '''
 
         wall_addr = self.get_profile_symbol("wall_to_monotonic")
+        sleep_addr = self.get_profile_symbol("total_sleep_time")
 
         # old way
-        if wall_addr:
-            wall = obj.Object("timespec", offset = wall_addr, vm = self.addr_space)
-
-            sleep_addr = self.get_profile_symbol("total_sleep_time")
+        if wall_addr and sleep_addr:
+            wall  = obj.Object("timespec", offset = wall_addr, vm = self.addr_space)
             timeo = obj.Object("timespec", offset = sleep_addr, vm = self.addr_space)
+
+        elif wall_addr:
+            wall  = obj.Object("timespec", offset = wall_addr, vm = self.addr_space)
+
+            init_task_addr = self.get_profile_symbol("init_task")            
+            init_task  = obj.Object("task_struct", offset = init_task_addr, vm = self.addr_space)
+
+            time_val = init_task.utime + init_task.stime
+
+            nsec = time_val * self.TICK_NSEC()
+
+            tv_sec  = nsec / nsecs_per
+            tv_nsec = nsec % nsecs_per      
+            
+            timeo = vol_timespec(tv_sec, tv_nsec)    
 
         # timekeeper way
         else:
