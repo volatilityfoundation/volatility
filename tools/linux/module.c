@@ -14,11 +14,21 @@ symbols and then read the DWARF symbols from it.
 #include <net/udp.h>
 #include <linux/mount.h>
 #include <linux/inetdevice.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
 #include <linux/fdtable.h>
+#endif
+
 #include <net/ip_fib.h>
 #include <net/af_unix.h>
 #include <linux/pid.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
 #include <linux/pid_namespace.h>
+struct pid_namespace pid_namespace;
+#endif
+
+
 #include <linux/radix-tree.h>
 #include <linux/netfilter.h>
 #include <linux/netfilter/x_tables.h>
@@ -27,7 +37,12 @@ symbols and then read the DWARF symbols from it.
 
 struct udp_seq_afinfo udp_seq_afinfo;
 struct tcp_seq_afinfo tcp_seq_afinfo;
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
 struct uts_namespace uts_namespace;
+#endif
+
 struct sock sock;
 struct inet_sock inet_sock;
 struct vfsmount vfsmount;
@@ -35,7 +50,6 @@ struct in_device in_device;
 struct fib_table fib_table;
 struct unix_sock unix_sock;
 struct pid pid;
-struct pid_namespace pid_namespace;
 struct radix_tree_root radix_tree_root;
 #ifdef CONFIG_NETFILTER
 struct nf_hook_ops nf_hook_ops;
@@ -49,7 +63,10 @@ The following structs are not defined in headers, so we cant import
 them. Hopefully they dont change too much.
 *********************************************************************/
 
-#include <net/net_namespace.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
+#include <linux/net_namespace.h>
+#endif
+
 #include <net/ip.h>
 #include <net/protocol.h>
 #include <net/sock.h>
@@ -124,6 +141,7 @@ struct radix_tree_node {
 };
 
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)
 struct module_sect_attr
 {
         struct module_attribute mattr;
@@ -137,6 +155,7 @@ struct module_sect_attrs
         unsigned int nsections;
         struct module_sect_attr attrs[0];
 };
+#endif
 
 struct module_sect_attrs module_sect_attrs;
 
