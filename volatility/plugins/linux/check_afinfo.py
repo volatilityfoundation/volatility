@@ -41,9 +41,14 @@ class linux_check_afinfo(linux_common.AbstractLinuxCommand):
         for (hooked_member, hook_address) in self.check_members(var.seq_fops, var_name, op_members,  modules):
             yield (var_name, hooked_member, hook_address)
 
-        for (hooked_member, hook_address) in self.check_members(var.seq_ops, var_name, seq_members, modules):
-            yield (var_name, hooked_member, hook_address) 
-            
+        # newer kernels
+        if hasattr(var, "seq_ops"):
+            for (hooked_member, hook_address) in self.check_members(var.seq_ops, var_name, seq_members, modules):
+                yield (var_name, hooked_member, hook_address) 
+                
+        elif not self.is_known_address(var.seq_show, modules):
+            yield(var_name, "show", var.seq_show)
+
     def calculate(self):
         linux_common.set_plugin_members(self)
 
