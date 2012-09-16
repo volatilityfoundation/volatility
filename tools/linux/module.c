@@ -165,6 +165,8 @@ struct module_sect_attrs module_sect_attrs;
 #ifdef CONFIG_SLAB
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
 /*
  * struct kmem_cache
  *
@@ -245,6 +247,76 @@ struct kmem_cache {
 	 * Do not add fields after nodelists[]
 	 */
 };
+#else
+
+struct kmem_cache {
+/* 1) per-cpu data, touched during every alloc/free */
+        struct array_cache *array[NR_CPUS];
+/* 2) Cache tunables. Protected by cache_chain_mutex */
+        unsigned int batchcount;
+        unsigned int limit;
+        unsigned int shared;
+
+        unsigned int buffer_size;
+/* 3) touched by every alloc & free from the backend */
+        struct kmem_list3 *nodelists[MAX_NUMNODES];
+
+        unsigned int flags;             /* constant flags */
+        unsigned int num;               /* # of objs per slab */
+
+/* 4) cache_grow/shrink */
+        /* order of pgs per slab (2^n) */
+        unsigned int gfporder;
+
+        /* force GFP flags, e.g. GFP_DMA */
+        gfp_t gfpflags;
+
+        size_t colour;                  /* cache colouring range */
+        unsigned int colour_off;        /* colour offset */
+        struct kmem_cache *slabp_cache;
+        unsigned int slab_size;
+        unsigned int dflags;            /* dynamic flags */
+
+        /* constructor func */
+        void (*ctor) (void *, struct kmem_cache *, unsigned long);
+
+        /* de-constructor func */
+        void (*dtor) (void *, struct kmem_cache *, unsigned long);
+
+/* 5) cache creation/removal */
+        const char *name;
+        struct list_head next;
+
+/* 6) statistics */
+#if STATS
+        unsigned long num_active;
+        unsigned long num_allocations;
+        unsigned long high_mark;
+        unsigned long grown;
+        unsigned long reaped;
+        unsigned long errors;
+        unsigned long max_freeable;
+        unsigned long node_allocs;
+        unsigned long node_frees;
+        unsigned long node_overflow;
+        atomic_t allochit;
+        atomic_t allocmiss;
+        atomic_t freehit;
+        atomic_t freemiss;
+#endif
+#if DEBUG
+        /*
+         * If debugging is enabled, then the allocator can add additional
+         * fields and/or padding to every object. buffer_size contains the total
+         * object size including these internal fields, the following two
+         * variables contain the offset to the user object and its size.
+         */
+        int obj_offset;
+        int obj_size;
+#endif
+};
+
+#endif /*kmem_cache decl*/
 
 struct kmem_cache kmem_cache;
 #endif
