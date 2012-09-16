@@ -17,6 +17,8 @@ symbols and then read the DWARF symbols from it.
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
 #include <linux/fdtable.h>
+#else
+#include <linux/file.h>
 #endif
 
 #include <net/ip_fib.h>
@@ -38,6 +40,7 @@ struct pid_namespace pid_namespace;
 struct udp_seq_afinfo udp_seq_afinfo;
 struct tcp_seq_afinfo tcp_seq_afinfo;
 
+struct files_struct files_struct;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
 struct uts_namespace uts_namespace;
