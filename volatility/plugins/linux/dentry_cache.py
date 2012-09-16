@@ -49,9 +49,13 @@ class linux_dentry_cache(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
         linux_common.set_plugin_members(self)        
-            
+       
         cache = linux_slabinfo(self._config).get_kmem_cache("dentry", self._config.UNALLOCATED)
-            
+       
+        # support for old kernels 
+        if cache == []:
+            cache = linux_slabinfo(self._config).get_kmem_cache("dentry_cache", self._config.UNALLOCATED, struct_name="dentry") 
+     
         for dentry in cache:
             path     = linux_common.get_partial_path(dentry)
             bodyline = self.make_body(path, dentry)
