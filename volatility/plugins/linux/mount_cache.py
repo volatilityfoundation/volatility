@@ -38,18 +38,20 @@ class linux_mount_cache(linux_mount.linux_mount):
 
     def calculate(self):
         linux_common.set_plugin_members(self)
+    
+        # newer kernels
         if self.profile.has_type("mount"):
             mnttype = "mount"
+        
+            cache = linux_slabinfo(self._config).get_kmem_cache(mnttype, self._config.UNALLOCATED)
 
             for task in linux_pslist.linux_pslist(self._config).calculate():
                 if task.pid == 1:
                     ns = task.nsproxy.mnt_ns
                     break
         else:
-            mnttype = "vfsmount"
+            cache = linux_slabinfo(self._config).get_kmem_cache("mnt_cache", self._config.UNALLOCATED, struct_name = "vfsmount")
             ns = None
-
-        cache = linux_slabinfo(self._config).get_kmem_cache(mnttype, self._config.UNALLOCATED)
 
         for mnt in cache:
             yield (mnt, ns)
