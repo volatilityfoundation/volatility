@@ -36,13 +36,14 @@ class linux_sk_buff_cache(linux_common.AbstractLinuxCommand):
         self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'output directory for recovered packets', action = 'store', type = 'str')
     
     def write_sk_buff(self, s):
-
         pkt_len = s.len
 
-        if pkt_len > 0 and pkt_len != 0xffffffff:
+        # keep sane sized packets
+        if 0 < pkt_len < 0x6400000:
         
             start = s.data
-            data  = self.addr_space.zread(start, pkt_len)
+
+            data = self.addr_space.zread(start, pkt_len)
 
             fname = "{0:x}".format(s.obj_offset)
             fd = open(os.path.join(self.edir, fname), "wb")
@@ -52,7 +53,6 @@ class linux_sk_buff_cache(linux_common.AbstractLinuxCommand):
             yield "Wrote {0:d} bytes to {1:s}".format(pkt_len, fname)
 
     def walk_cache(self, cache_name):
-
         cache = linux_slabinfo(self._config).get_kmem_cache(cache_name, self._config.UNALLOCATED, struct_name = "sk_buff")
 
         if not cache:
