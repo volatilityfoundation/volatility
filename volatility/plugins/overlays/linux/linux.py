@@ -536,6 +536,17 @@ class desc_struct(obj.CType):
 
         return (self.b & 0xffff0000) | (self.a & 0x0000ffff)
 
+class module_sect_attr(obj.CType):
+        
+    def get_name(self):
+        
+        if type(self.m("name")) == obj.Array:
+            name = obj.Object("String", offset = self.m("name").obj_offset, vm = self.obj_vm, length = 32)
+        else:
+            name = self.name.dereference_as("String", length = 255)
+
+        return name         
+
 class task_struct(obj.CType):
 
     def is_valid_task(self):
@@ -664,6 +675,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'hlist_node': hlist_node,
             'files_struct': files_struct,
             'task_struct': task_struct,
+            'module_sect_attr' : module_sect_attr,
             'VolatilityDTB': VolatilityDTB,
             'IpAddress': basic.IpAddress,
             'Ipv6Address': basic.Ipv6Address,

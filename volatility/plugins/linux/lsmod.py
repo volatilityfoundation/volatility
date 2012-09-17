@@ -121,15 +121,28 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
         return params
 
-    def get_sections(self, module):
+    def get_sect_count(self, grp):
+        idx = 0
 
-        attrs = obj.Object(theType = 'Array', offset = module.sect_attrs.attrs.obj_offset, vm = self.addr_space, targetType = 'module_sect_attr', count = module.sect_attrs.nsections)
+        arr = obj.Object(theType = 'Array', offset = grp.attrs, vm = self.addr_space, targetType = 'Pointer', count = 25)
+
+        while arr[idx]:
+            idx = idx + 1
+
+        return idx
+
+    def get_sections(self, module):
+        if hasattr(module.sect_attrs, "nsections"):
+            num_sects = module.sect_attrs.nsections
+        else:
+            num_sects = self.get_sect_count(module.sect_attrs.grp)
+
+        attrs = obj.Object(theType = 'Array', offset = module.sect_attrs.attrs.obj_offset, vm = self.addr_space, targetType = 'module_sect_attr', count = num_sects)
 
         sects = []
 
         for attr in attrs:
-
-            name = attr.name.dereference_as("String", length = 255)
+            name = attr.get_name()
 
             sects.append((name, attr.address))
 
