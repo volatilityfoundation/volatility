@@ -42,21 +42,27 @@ class linux_route_cache(linux_common.AbstractLinuxCommand):
             if not rth:
                 continue
 
-            # FIXME: Consider using kernel version metadata rather than checking hasattr
-            if hasattr(rth, 'u'):
-                dst = rth.u.dst
-            else:
-                dst = rth.dst
+            while rth:
+ 
+                # FIXME: Consider using kernel version metadata rather than checking hasattr
+                if hasattr(rth, 'u'):
+                    dst = rth.u.dst
+                    nxt = rth.u.dst.rt_next
+                else:
+                    dst = rth.dst
+                    nxt = rth.dst.rt_next
 
-            if dst.dev:
-                name = dst.dev.name
-            else:
-                name = "*"
+                if dst.dev:
+                    name = dst.dev.name
+                else:
+                    name = "*"
 
-            dest = rth.rt_dst
-            gw = rth.rt_gateway
+                dest = rth.rt_dst
+                gw = rth.rt_gateway
 
-            yield (name, dest, gw)
+                yield (name, dest, gw)
+
+                rth = nxt
 
     def render_text(self, outfd, data):
 
