@@ -108,7 +108,7 @@ class PrintKey(hivelist.HiveList):
                 outfd.write("Values:\n")
                 for v in rawreg.values(key):
                     tp, dat = rawreg.value_data(v)
-                    if tp == 'REG_BINARY':
+                    if tp == 'REG_BINARY' or tp == 'REG_NONE':
                         dat = "\n" + "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(dat)])
                     if tp in ['REG_SZ', 'REG_EXPAND_SZ', 'REG_LINK']:
                         dat = dat.encode("ascii", 'backslashreplace')
