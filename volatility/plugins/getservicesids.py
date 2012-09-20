@@ -24,10 +24,8 @@
 @organization: Volatile Systems
 """
 
-import volatility.win32.hive as hivemod
 import volatility.win32.rawreg as rawreg
 import volatility.debug as debug
-import volatility.utils as utils
 import volatility.plugins.registry.registryapi as registryapi
 import volatility.plugins.common as common
 import hashlib
@@ -35,7 +33,7 @@ import struct
 
 # This is a dictionary of default services from Vista+ machines
 
-servicesids = { 
+servicesids = {
     'S-1-5-80-3476726845-1218940557-3240126423-1396283824-3706223860': '.NET CLR Data',
     'S-1-5-80-3749761688-76038143-2425834820-4129736068-309120712': '.NET CLR Networking',
     'S-1-5-80-603392709-3706100282-1779817366-3290147925-2109454977': '.NET Data Provider for Oracle',
@@ -115,7 +113,6 @@ servicesids = {
     'S-1-5-80-3837255464-839197112-3211601036-3795322556-2690640524': 'DfsC',
     'S-1-5-80-1267473060-1890374259-1137250836-544356534-2546457154': 'DFSR',
     'S-1-5-80-2940520708-3855866260-481812779-327648279-1710889582': 'Dhcp',
-    'S-1-5-80-1827140278-1118305254-4004251663-1512899043-4081885502': 'disk',
     'S-1-5-80-2142581517-3954605861-2373846864-2138305209-1019737370': 'discache',
     'S-1-5-80-1827140278-1118305254-4004251663-1512899043-4081885502': 'Disk',
     'S-1-5-80-859482183-879914841-863379149-1145462774-2388618682': 'Dnscache',
@@ -368,7 +365,6 @@ servicesids = {
     'S-1-5-80-1034188721-156321652-2901307485-3049929104-2850741453': 'srv2',
     'S-1-5-80-385674269-2427993094-4248660116-187565782-2803330530': 'srvnet',
     'S-1-5-80-486568272-975562994-1883531608-2732234258-332540751': 'SSDPSRV',
-    'S-1-5-80-3182985763-1431228038-2757062859-428472846-3914011746': 'stisvc',
     'S-1-5-80-3435701886-799518250-3791383489-3228296122-2938884314': 'SstpSvc',
     'S-1-5-80-2502136977-515215333-1091199184-4078967732-698071891': 'stexstor',
     'S-1-5-80-3182985763-1431228038-2757062859-428472846-3914011746': 'StiSvc',
@@ -504,9 +500,9 @@ servicesids = {
 def createservicesid(svc):
     """ Calculate the Service SID """
     uni = ''.join([c + '\x00' for c in svc])
-    sha = hashlib.sha1(uni.upper()).digest()
+    sha = hashlib.sha1(uni.upper()).digest() # pylint: disable-msg=E1101
     dec = list()
-    for i in range(5): 
+    for i in range(5):
         ## The use of struct here is OK. It doesn't make much sense
         ## to leverage obj.Object inside this loop. 
         dec.append(struct.unpack('<I', sha[i * 4 : i * 4 + 4])[0])
@@ -516,8 +512,6 @@ class GetServiceSids(common.AbstractWindowsCommand):
     """Get the names of services in the Registry and return Calculated SID"""
 
     def calculate(self):
-        addr_space = utils.load_as(self._config)
-        
         #scan for registries and populate them:
         debug.debug("Scanning for registries....")
 
