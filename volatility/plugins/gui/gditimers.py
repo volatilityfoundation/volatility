@@ -17,11 +17,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.utils as utils
 import volatility.plugins.gui.sessions as sessions
 
-class GDITimers(commands.Command, sessions.SessionsMixin):
+class GDITimers(common.AbstractWindowsCommand, sessions.SessionsMixin):
     """Print installed GDI timers and callbacks"""
 
     def calculate(self):

@@ -19,7 +19,7 @@
 
 import volatility.obj as obj
 import volatility.utils as utils
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.win32.modules as modules
 import volatility.win32.tasks as tasks
 
@@ -62,7 +62,7 @@ class SessionsMixin(object):
                         offset = proc.Session.v(), vm = ps_ad)
         return obj.NoneObject("Cannot locate a session")
 
-class Sessions(commands.Command, SessionsMixin):
+class Sessions(common.AbstractWindowsCommand, SessionsMixin):
     """List details on _MM_SESSION_SPACE (user logon sessions)"""
 
     def calculate(self):

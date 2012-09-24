@@ -20,7 +20,7 @@
 import volatility.obj as obj
 import volatility.utils as utils
 import volatility.scan as scan
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.plugins.gui.windowstations as windowstations
 
 class PoolScanAtom(scan.PoolScanner):
@@ -54,7 +54,7 @@ class PoolScanAtom(scan.PoolScanner):
                ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
                ]
 
-class AtomScan(commands.command):
+class AtomScan(common.AbstractWindowsCommand):
     """Pool scanner for _RTL_ATOM_TABLE"""
 
     def __init__(self, config, *args, **kwargs):
@@ -115,7 +115,7 @@ class AtomScan(commands.command):
                     str(atom.Name or "")
                     )
 
-class Atoms(commands.command):
+class Atoms(common.AbstractWindowsCommand):
     """Print session and window station atom tables"""
 
     def calculate(self):

@@ -20,12 +20,12 @@
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.utils as utils
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.plugins.gui.sessions as sessions
 import volatility.plugins.gui.windowstations as windowstations
 import volatility.plugins.gui.constants as consts
 
-class Clipboard(commands.Command, sessions.SessionsMixin):
+class Clipboard(common.AbstractWindowsCommand, sessions.SessionsMixin):
     """Extract the contents of the windows clipboard"""
 
     def calculate(self):
