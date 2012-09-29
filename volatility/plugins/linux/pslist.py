@@ -27,9 +27,8 @@ import volatility.plugins.linux.common as linux_common
 class linux_pslist(linux_common.AbstractLinuxCommand):
     """Gather active tasks by walking the task_struct->task list"""
 
-    @staticmethod
-    def register_options(config):
-        linux_common.AbstractLinuxCommand.register_options(config)
+    def __init__(self, config, *args, **kwargs):
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
         config.add_option('PID', short_option = 'p', default = None,
                           help = 'Operate on these Process IDs (comma-separated)',
                           action = 'store', type = 'str')
