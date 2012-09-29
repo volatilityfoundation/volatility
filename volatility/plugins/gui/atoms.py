@@ -58,7 +58,7 @@ class AtomScan(common.AbstractWindowsCommand):
     """Pool scanner for _RTL_ATOM_TABLE"""
 
     def __init__(self, config, *args, **kwargs):
-        commands.Command.__init__(self, config, *args, **kwargs)
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
 
         config.add_option("SORT-BY", short_option = 'S', type = "choice",
                           choices = ["atom", "refcount", "offset"], default = "offset",
