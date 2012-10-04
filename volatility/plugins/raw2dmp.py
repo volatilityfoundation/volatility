@@ -101,8 +101,7 @@ class Raw2dmp(imagecopy.ImageCopy):
         header.BugCheckCodeParameter[3] = 0x00000000
 
         # Set the sample run information
-        path = self._config.LOCATION[7:]
-        num_pages = os.path.getsize(path) / 0x1000
+        num_pages = sum([ size for (_, size) in pspace.get_available_addresses()]) / 0x1000
         header.PhysicalMemoryBlockBuffer.NumberOfRuns = 0x00000001
         header.PhysicalMemoryBlockBuffer.NumberOfPages = num_pages
         header.PhysicalMemoryBlockBuffer.Run[0].BasePage = 0x0000000000000000
