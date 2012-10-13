@@ -1,5 +1,4 @@
 # Volatility
-# Copyright (C) 2008 Volatile Systems
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,23 +13,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
-#
 
-# Blocksize was chosen to make it aligned
-# on 8 bytes
-# Optimized by Michael Cohen
+"""
+@author:       Andrew Case
+@license:      GNU General Public License 2.0 or later
+@contact:      atcuno@gmail.com
+@organization: 
+"""
 
-import os, sys
+import volatility.obj as obj
+import mac_common
 
-VERSION = "2.3_alpha"
+class mac_arp(mac_common.AbstractMacCommand):
+    """ prints the arp table """
+    
+    def calculate(self):
 
-SCAN_BLOCKSIZE = 1024 * 1024 * 10
+        arp_addr = self.smap["_llinfo_arp"]
+    
+        ptr = obj.Object("Pointer", offset=arp_addr, vm=self.addr_space)
 
-PLUGINPATH = os.path.dirname(__file__)
-# If we're in a pyinstaller executable 
-if hasattr(sys, "frozen"):
-    try:
-        PLUGINPATH = sys._MEIPASS #pylint: disable-msg=W0212,E1101
-    except ImportError:
-        pass
-PLUGINPATH = os.path.join(PLUGINPATH, 'plugins')
+        ent = obj.Object("llinfo_arp", offset=ptr, vm=self.addr_space)
+
+        while ent:
+
+            yield ent.la_rt
+
+            ent = ent.la_le.le_next
+
+    def render_text(self, outfd, data):
+        for rt in data:
+            mac_common.print_rt(self, rt) 

@@ -12,6 +12,12 @@ If you believe you've been left off, it is not
 intentional. Please bring it to our attention!
 ===============================================
 
+Volatility 2.3:
+
+Joe Sylve
+Philippe Teuwen
+Nir Izraeli
+
 Volatility 2.2:
 ------------
 

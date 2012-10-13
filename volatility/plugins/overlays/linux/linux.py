@@ -69,8 +69,8 @@ linux_overlay = {
         }],
     'VOLATILITY_MAGIC': [None, {
         'DTB'           : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],
-        'ArmValidAS'   :  [ 0x0, ['VolatilityLinuxValidAS']],
-        'IA32ValidAS'  :  [ 0x0, ['VolatilityLinuxValidAS']],
+        'ArmValidAS'   :  [ 0x0, ['VolatilityLinuxARMValidAS']],
+        'IA32ValidAS'  :  [ 0x0, ['VolatilityLinuxIntelValidAS']],
         }],
     }
 
@@ -647,9 +647,8 @@ class VolatilityDTB(obj.VolatilityMagic):
         # this is the only code allowed to reference the internal sys_map!
         yield profile.get_symbol("swapper_pg_dir") - shift
 
-# this check will work for all linux profiles/archs (intel, arm, etc)
-# it checks the static paging of init_task
-class VolatilityLinuxValidAS(obj.VolatilityMagic):
+# the intel check, simply checks for the static paging of init_task
+class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
     """An object to check that an address space is a valid Arm Paged space"""
 
     def generate_suggestions(self):
@@ -662,6 +661,32 @@ class VolatilityLinuxValidAS(obj.VolatilityMagic):
             shift = 0xffffffff80000000
 
         yield self.obj_vm.vtop(init_task_addr) == init_task_addr - shift
+
+# the ARM check, has to check multiple values b/c phones do not map RAM at 0
+class VolatilityLinuxARMValidAS(obj.VolatilityMagic):
+    """An object to check that an address space is a valid Arm Paged space"""
+    def generate_suggestions(self):
+
+        init_task_addr = self.obj_vm.profile.get_symbol("init_task")
+        do_fork_addr   = self.obj_vm.profile.get_symbol("do_fork") 
+
+        sym_addr_diff = (do_fork_addr - init_task_addr)
+
+        if self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit":
+            shift = 0xc0000000
+        else:
+            shift = 0xffffffff80000000
+
+        task_paddr = self.obj_vm.vtop(init_task_addr)
+        fork_paddr = self.obj_vm.vtop(do_fork_addr)
+
+        # these won't be zero due to RAM not at physical address 0
+        # but if the offset from 0 is the same across two paging operations
+        # then we have the right DTB
+        task_off = task_paddr - shift
+        fork_off = fork_paddr - shift
+
+        yield fork_off - task_off == sym_addr_diff
 
 class LinuxObjectClasses(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'linux'}
@@ -679,7 +704,8 @@ class LinuxObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'IpAddress': basic.IpAddress,
             'Ipv6Address': basic.Ipv6Address,
-            'VolatilityLinuxValidAS' : VolatilityLinuxValidAS,
+            'VolatilityLinuxIntelValidAS' : VolatilityLinuxIntelValidAS,
+            'VolatilityLinuxARMValidAS' : VolatilityLinuxARMValidAS,
             'kernel_param' : kernel_param,
             'kparam_array' : kparam_array,
             'gate_struct64' : gate_struct64,

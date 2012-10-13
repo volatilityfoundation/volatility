@@ -91,7 +91,12 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             if len(path) > 1 and not path.startswith(first_dir):
                 continue
 
-            ret = self.walk_sb(sb.s_root, find_file, None)
+            if path != "/":
+                parent = path
+            else:
+                parent = ""
+
+            ret = self.walk_sb(sb.s_root, find_file, None, parent=parent)
             
             if ret:
                 break

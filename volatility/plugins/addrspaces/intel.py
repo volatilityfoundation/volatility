@@ -352,7 +352,7 @@ class JKIA32PagedMemoryPae(JKIA32PagedMemory):
     Similar information is also available from Advanced Micro Devices (AMD) 
     at http://support.amd.com/us/Processor_TechDocs/24593.pdf.
     """
-    order = 80
+    order = 60
     pae = True
 
     def _cache_values(self):

@@ -178,22 +178,6 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
             else:
                 MemoryArrayOffset = 0
 
-    def convert_to_raw(self, ofile):
-        page_count = 0
-        for _i, xb in enumerate(self.PageDict.keys()):
-            size = self.PageDict[xb][0][1]
-            data_z = self.base.read(xb + 0x20, size)
-            if size == 0x10000:
-                data_uz = data_z
-            else:
-                data_uz = xpress.xpress_decode(data_z)
-            for page, size, offset in self.PageDict[xb]:
-                ofile.seek(page * 0x1000)
-                ofile.write(data_uz[offset * 0x1000:offset * 0x1000 + 0x1000])
-                page_count += 1
-            del data_z, data_uz
-            yield page_count
-
     def next_xpress(self, XpressHeader, XpressBlockSize):
         XpressHeaderOffset = XpressBlockSize + XpressHeader.obj_offset + \
                              XpressHeader.size()

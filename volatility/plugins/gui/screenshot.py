@@ -37,6 +37,14 @@ class Screenshot(windowstations.WndScan):
         config.add_option("DUMP-DIR", short_option = 'D', type = "string",
                           help = "Output directory", action = "store")
 
+    def draw_text(self, draw, text, left, top, fill = "Black"):
+        """Label windows in the screen shot"""
+        lines = text.split('\x0d\x0a') 
+        for line in lines:
+            draw.text( (left, top), line, fill = fill)
+            _, height = draw.textsize(line)
+            top += height
+
     def render_text(self, outfd, data):
 
         if not has_pil:
@@ -73,6 +81,9 @@ class Screenshot(windowstations.WndScan):
                                         filter = lambda x : 'WS_VISIBLE' in str(x.style)):
                     draw.rectangle(win.rcWindow.get_tup(), outline = "Black", fill = "White")
                     draw.rectangle(win.rcClient.get_tup(), outline = "Black", fill = "White")
+                    
+                    ## Create labels for the windows 
+                    self.draw_text(draw, str(win.strName or ''), win.rcWindow.left + 2, win.rcWindow.top)
 
                 file_name = "session_{0}.{1}.{2}.png".format(
                     desktop.dwSessionId,

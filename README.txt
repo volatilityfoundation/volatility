@@ -21,6 +21,7 @@ Python (http://www.python.org)
 
 Volatility supports investigations of the following memory images:
 
+Windows:
 * 32-bit Windows XP Service Pack 2 and 3
 * 32-bit Windows 2003 Server Service Pack 0, 1, 2
 * 32-bit Windows Vista Service Pack 0, 1, 2
@@ -33,6 +34,10 @@ Volatility supports investigations of the following memory images:
 * 64-bit Windows 2008 R2 Server Service Pack 0 and 1
 * 64-bit Windows 7 Service Pack 0 and 1
 
+Linux: 
+* 32-bit Linux kernels 2.6.11 to 3.5
+* 64-bit Linux kernels 2.6.11 to 3.5
+
 Volatility does not provide memory sample acquisition
 capabilities. For acquisition, there are both free and commercial
 solutions available. If you would like suggestions about suitable 
@@ -43,33 +48,78 @@ volatility (at) volatilesystems (dot) com
 Volatility currently provides the following extraction capabilities for 
 memory samples:
 
-  - Image information (date, time, CPU count)
-  - Running processes
-  - Process SIDs and environment variables 
-  - Open network sockets
-  - Open network connections
-  - DLLs loaded for each process
-  - Open handles to all kernel/executive objects (files, keys, mutexes)
-  - OS kernel modules
-  - Dump any process, DLL, or module to disk 
-  - Mapping physical offsets to virtual addresses
-  - Virtual Address Descriptor information
-  - Addressable memory for each process
-  - Memory maps for each process
-  - Extract executable samples
-  - Scanning examples: processes, threads, 
-       sockets, connections, modules
-  - Command histories (cmd.exe) and console input/output buffers
-  - Imported and exported API functions 
-  - PE version information 
-  - System call tables (IDT, GDT, SSDT)
-  - API hooks in user- and kernel-mode (inline, IAT, EAT, NT syscall, winsock)
-  - Explore cached registry hives 
-  - Dump LM/NTLM hashes and LSA secrets
-  - User assist and shimcache exploration 
-  - Scan for byte patterns, regular expressions, or strings in memory
-  - Analyze kernel timers and callback functions 
-  - Report on windows services 
+Windows Basic
+    Current date, time, CPU count, CPU speed, service pack
+    Current thread and idle thread
+    Addresses of the KDBG, KPCR, DTB, PsActiveProcessHead, PsLoadedModuleList, etc
+Processes
+    List active processes (column or tree view)
+    Scan for hidden or terminated _EPROCESS objects (using pool tags or _DISPATCHER_HEADER)
+    Enumerate DLLs in the PEB LDR lists
+    Rebuild/extract DLLs or EXEs to disk based on name, base address, or physical offset
+    Print open handles to files, registry keys, mutexes, threads, processes, etc
+    List security identifiers (SIDs) for processes
+    Scan for cmd.exe command history and full console input/output buffers
+    List process environment variables
+    Print PE version information from processes or DLLs (file version, company name, etc)
+    Enumerate imported and exported API functions anywhere in process or kernel memory
+    Show a list of virtual and physical mappings of all pages available to a process
+    Dump process address space to disk as a single file
+    Analyze Virtual Address Descriptor (VAD) nodes, show page protection, flags, and mapped files
+    Represent the VAD in tree form or Graphviz .dot graphs
+    Dump each VAD range to disk for inspecting with external tools
+    Parse XP/2003 event log records
+Kernel Memory
+    List loaded kernel modules and scan for hidden/unloaded module structures
+    Extract PE files including drivers from anywhere in kernel memory
+    Dump the SSDT for all 32- and 64-bit windows systems
+    Scan for driver objects, print IRP major function tables
+    Show devices and device tree layout
+    Scan for file objects (can show deleted files, closed handles, etc)
+    Scan for threads, mutex objects and symbolic links
+GUI Memory
+    Analyze logon sessions and the processes and mapped images belonging to the session
+    Scan for window stations and clipboard artifacts (clipboard snooping malware)
+    Scan for desktops, analyze desktop heaps and attached GUI threads
+    Locate and parse atom tables (class names, DLL injection paths, etc)
+    Extract the contents of the windows clipboard
+    Analyze message hooks and event hooks, show the injected DLL and function address
+    Dump all USER object types, pool tags, and flags from the gahti
+    Print all open USER handles, associated threads or processes, and object offsets
+    Display details on all windows, such as coordiates, window title, class, procedure address, etc
+    Take screen shots from memory dumps (requires PIL)
+Malware Analysis
+    Find injected code and DLLs, unpacker stubs, and decrypted configurations, etc
+    Scan process or kernel memory for any string, regular expression, byte pattern, URL, etc
+    Analyze services, their status (running, stopped, etc) and associated process or driver
+    Cross-reference memory mapped executable files with PEB lists to find injected code
+    Scan for imported functions in process or kernel memory (without using import tables)
+    Detect API hooks (Inline, IAT, EAT), hooked winsock tables, syscall hooks, etc
+    Analyze the IDT and GDT for each CPU, alert on hooks and disassemble code
+    Dump details of threads, such as hardware breakpoints, context registers, etc
+    Enumerate kernel callbacks for process creation, thread creation, and image loading
+    Display FS registration, registry, shutdown, bugcheck, and debug print callbacks
+    Detect hidden processes with alternate process listings (6+ sources)
+    Analyze kernel timers and their DPC routine functions
+Networking
+    Walk the list of connection and socket objects for XP/2003 systems
+    Scan physical memory for network information (recover closed/terminated artifacts)
+    Determine if listening sockets are IPv4, IPv6, etc and link to their owning processes
+Registry
+    Scan for registry hives in memory
+    Parse and print any value or key cached in kernel memory, with timestamps
+    Dump an entire registry hive recursively
+    Extract cached domain credentials from the registry
+    Locate and decrypt NT/NTLM hashes and LSA secrets
+    Analyze user assist keys, the shimcache, and shellbags
+    Crash Dumps, Hibernation, Conversion
+    Print crash dump and hibernation file header information
+    Run any plugin on a crash dump or hibernation file (hiberfil.sys)
+    Convert a raw memory dump to a crash dump for opening in !WinDBG
+    Convert a crash dump or hibernation file to a raw memory dump
+Miscellaneous
+    Link strings found at physical offsets to their owning kernel address or process
+    Interactive shell with disassembly, type display, hexdumps, etc
 
 Volatility also supports a variety of sample file formats and the
 ability to convert between these formats:
@@ -80,8 +130,8 @@ ability to convert between these formats:
 
 For a more detailed list of capabilities, see the following:
 
-    http://code.google.com/p/volatility/wiki/FeaturesByPlugin21
-    http://code.google.com/p/volatility/wiki/CommandReference21
+    http://code.google.com/p/volatility/wiki/FeaturesByPlugin23
+    http://code.google.com/p/volatility/wiki/CommandReference23
 
 Example Data
 ============
@@ -121,7 +171,7 @@ Requirements
 - Python 2.6 or later, but not 3.0. http://www.python.org
 
 Some plugins may have other requirements which can be found at: 
-    http://code.google.com/p/volatility/wiki/FAQ21
+    http://code.google.com/p/volatility/wiki/Release23
 
 Quick Start
 ===========
@@ -262,11 +312,11 @@ Options:
    more information on a particular command.  A Command Reference wiki
    is also available on the Google Code site:
 
-        http://code.google.com/p/volatility/wiki/CommandReference21
+        http://code.google.com/p/volatility/wiki/CommandReference23
 
    as well as Basic Usage:
 
-        http://code.google.com/p/volatility/wiki/BasicUsage21
+        http://code.google.com/p/volatility/wiki/VolatilityUsage23
 
 
 Licensing and Copyright
@@ -321,7 +371,7 @@ For Linux:
 * The suspected kernel version of the memory image
 
 Other options for communicaton can be found at:
-    http://code.google.com/p/volatility/wiki/FAQ21
+    http://code.google.com/p/volatility/wiki/VolatilityIntroduction
 
 Missing or Truncated Information
 ================================
@@ -338,6 +388,6 @@ Command Reference
 The following url contains a reference of all commands supported by 
 Volatility.
 
-    http://code.google.com/p/volatility/wiki/CommandReference21
+    http://code.google.com/p/volatility/wiki/CommandReference23
 
 

@@ -1,0 +1,43 @@
+# Volatility
+# Copyright (C) 2009-2012 Volatile Systems
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details. 
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+#
+
+import volatility.plugins.crashinfo as crashinfo
+
+class VBoxInfo(crashinfo.CrashInfo):
+    """Dump virtualbox information"""
+    
+    target_as = ['VirtualBoxCoreDumpElf64']
+        
+    def render_text(self, outfd, data):
+    
+        header = data.get_header()
+        
+        outfd.write("Magic: {0:#x}\n".format(header.u32Magic))
+        outfd.write("Format: {0:#x}\n".format(header.u32FmtVersion))
+        outfd.write("VirtualBox {0}.{1}.{2} (revision {3})\n".format(
+                header.Major, 
+                header.Minor, header.Build, 
+                header.u32VBoxRevision))
+        outfd.write("CPUs: {0}\n\n".format(header.cCpus))
+        
+        self.table_header(outfd, [("File Offset", "[addrpad]"), 
+                                  ("Memory Offset", "[addrpad]"), 
+                                  ("Size", "[addrpad]")])
+        
+        for memory_offset, file_offset, length in data.get_runs():
+            self.table_row(outfd, file_offset, memory_offset, length)
