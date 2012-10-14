@@ -301,20 +301,18 @@ class VMWareSnapshotFile(addrspace.BaseAddressSpace):
 
     def get_available_pages(self):
         """Get a list of physical memory pages"""
-        page_list = []
-        for phys_addr, _, length in self.runs:
-            for i in xrange(length / 0x1000):
-                page_list.append([phys_addr + (i * 0x1000), 0x1000])
-        return page_list
-
-    def get_available_addresses(self):
-        """Get a list of physical memory runs"""
         for phys_addr, _, length in self.runs:
             yield phys_addr, length
 
+    def get_available_addresses(self):
+        """Get a list of physical memory runs"""
+        # Since runs are in order and not contiguous 
+        # we can reuse the output from available_pages
+        return self.get_available_pages()
+
     def get_address_range(self):
         """ This relates to the logical address range that is indexable """
-        (physical_address, file_offset, length) = self.runs[-1]
+        (physical_address, _, length) = self.runs[-1]
         size = physical_address + length
         return [0, size]
 

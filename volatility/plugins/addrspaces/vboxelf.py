@@ -150,12 +150,14 @@ class VirtualBoxCoreDumpElf64(addrspace.BaseAddressSpace):
 
     def get_available_pages(self):
         """Get a list of physical memory pages"""
-        return self.get_available_pages()
+        for phys_addr, _, length in self.runs:
+            yield phys_addr, length
 
     def get_available_addresses(self):
         """Get a list of physical memory runs"""
-        for phys_addr, _, length in self.runs:
-            yield phys_addr, length
+        # Since runs are in order and not contiguous 
+        # we can reuse the output from available_pages
+        return self.get_available_pages()
 
     def get_address_range(self):
         """ This relates to the logical address range that is indexable """
