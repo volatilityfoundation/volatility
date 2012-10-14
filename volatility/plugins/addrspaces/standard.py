@@ -82,7 +82,6 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
         self.fhandle = open(self.fname, self.mode)
         self.fhandle.seek(0, 2)
         self.fsize = self.fhandle.tell()
-        self.offset = 0
 
     # Abstract Classes cannot register options, and since this checks config.WRITE in __init__, we define the option here
     @staticmethod

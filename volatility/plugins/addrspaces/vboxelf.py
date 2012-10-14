@@ -27,7 +27,7 @@
 #     http://www.virtualbox.org/svn/vbox/trunk/src/VBox/VMM/VMMR3/DBGFCoreWrite.cpp
 
 import volatility.obj as obj
-import volatility.plugins.addrspaces.standard as standard
+import volatility.addrspace as addrspace
 
 #pylint: disable-msg=C0111
 
@@ -64,7 +64,7 @@ class VirtualBoxModification(obj.ProfileModification):
             }]})
         profile.object_classes.update({'DBGFCOREDESCRIPTOR': DBGFCOREDESCRIPTOR})
 
-class VirtualBoxCoreDumpElf64(standard.FileAddressSpace):
+class VirtualBoxCoreDumpElf64(addrspace.BaseAddressSpace):
     """ This AS supports VirtualBox ELF64 coredump format """
 
     order = 30
@@ -72,7 +72,7 @@ class VirtualBoxCoreDumpElf64(standard.FileAddressSpace):
     def __init__(self, base, config, **kwargs):
         ## We must have an AS below us
         self.as_assert(base, "No base Address Space")
-        standard.FileAddressSpace.__init__(self, base, config, layered = True, **kwargs)
+        addrspace.BaseAddressSpace.__init__(self, base, config, **kwargs)
 
         ## Quick test (before instantiating an object) 
         ## for ELF64, little-endian - ELFCLASS64 and ELFDATA2LSB
@@ -150,11 +150,7 @@ class VirtualBoxCoreDumpElf64(standard.FileAddressSpace):
 
     def get_available_pages(self):
         """Get a list of physical memory pages"""
-        page_list = []
-        for phys_addr, _, length in self.runs:
-            for i in xrange(length / 0x1000):
-                page_list.append([phys_addr + (i * 0x1000), 0x1000])
-        return page_list
+        return self.get_available_pages()
 
     def get_available_addresses(self):
         """Get a list of physical memory runs"""
@@ -163,7 +159,7 @@ class VirtualBoxCoreDumpElf64(standard.FileAddressSpace):
 
     def get_address_range(self):
         """ This relates to the logical address range that is indexable """
-        (physical_address, file_offset, length) = self.runs[-1]
+        (physical_address, _, length) = self.runs[-1]
         size = physical_address + length
         return [0, size]
 

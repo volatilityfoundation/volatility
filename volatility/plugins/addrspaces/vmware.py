@@ -24,9 +24,7 @@ This Address Space for Volatility is based on Nir's vmsnparser:
 http://code.google.com/p/vmsnparser. It was converted by MHL. 
 """
 
-import volatility.plugins.addrspaces.standard as standard
 import volatility.addrspace as addrspace
-import volatility.debug as debug
 import volatility.obj as obj
 
 class _VMWARE_HEADER(obj.CType):
@@ -158,7 +156,7 @@ class VMwareVTypesModification(obj.ProfileModification):
             '_VMWARE_TAG': _VMWARE_TAG
             })
 
-class VMWareSnapshotFile(standard.FileAddressSpace):
+class VMWareSnapshotFile(addrspace.BaseAddressSpace):
     """ This AS supports VMware snapshot files """
 
     order = 30
@@ -167,7 +165,7 @@ class VMWareSnapshotFile(standard.FileAddressSpace):
     def __init__(self, base, config, **kwargs):
         ## We must have an AS below us
         self.as_assert(base, "No base Address Space")
-        standard.FileAddressSpace.__init__(self, base, config, layered = True, **kwargs)
+        addrspace.BaseAddressSpace.__init__(self, base, config, **kwargs)
 
         ## This is a tuple of (physical memory offset, file offset, length)
         self.runs = []
@@ -219,7 +217,7 @@ class VMWareSnapshotFile(standard.FileAddressSpace):
                        "Cannot find any memory run information")
 
         ## Find the DTB from CR3. For x86 we grab an int from CR and 
-        ## for x64 we grab a long long from CR64. 
+        ## for x64 we grab a long long from CR64.
         if self.profile.metadata.get("memory_model", "32bit") == "32bit":
             self.dtb = self._get_tag(grp_name = "cpu", tag_name = "CR",
                                  indices = [0, 3],

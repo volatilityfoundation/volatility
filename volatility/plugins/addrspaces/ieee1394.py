@@ -100,8 +100,8 @@ class FirewireAddressSpace(addrspace.BaseAddressSpace):
 
     ## We should be *almost* the AS of last resort
     order = 99
-    def __init__(self, base, config, layered = False, **kargs):
-        self.as_assert(base == None or layered, 'Must be first Address Space')
+    def __init__(self, base, config, **kargs):
+        self.as_assert(base == None, 'Must be first Address Space')
         try:
             (scheme, netloc, path, _, _, _) = urlparse.urlparse(config.LOCATION)
             self.as_assert(scheme == 'firewire', 'Not a firewire URN')
@@ -124,7 +124,6 @@ class FirewireAddressSpace(addrspace.BaseAddressSpace):
         self._exclusions = sorted([(0xa0000, 0xfffff - 0xa0000, "Upper Memory Area")])
 
         self.name = "Firewire using " + str(netloc) + " at " + str(path)
-        self.offset = 0
         # We have no way of knowing how big a firewire space is...
         # Set it to the maximum for the moment
         # TODO: Find a way of determining the size safely and reliably from the space itself 

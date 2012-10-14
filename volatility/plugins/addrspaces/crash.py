@@ -23,31 +23,31 @@
 """ An AS for processing crash dumps """
 import struct
 import volatility.obj as obj
-import volatility.plugins.addrspaces.standard as standard
+import volatility.addrspace as addrspace
 
 #pylint: disable-msg=C0111
 
 page_shift = 12
 
-class WindowsCrashDumpSpace32(standard.FileAddressSpace):
+class WindowsCrashDumpSpace32(addrspace.BaseAddressSpace):
     """ This AS supports windows Crash Dump format """
     order = 30
+    dumpsig = 'PAGEDUMP'
+    headertype = "_DMP_HEADER"
+
     def __init__(self, base, config, **kwargs):
         ## We must have an AS below us
         self.as_assert(base, "No base Address Space")
 
-        standard.FileAddressSpace.__init__(self, base, config, layered = True, **kwargs)
+        addrspace.BaseAddressSpace.__init__(self, base, config, **kwargs)
 
         ## Must start with the magic PAGEDUMP
-        self.as_assert((base.read(0, 8) == 'PAGEDUMP'), "Header signature invalid")
+        self.as_assert((base.read(0, 8) == self.dumpsig), "Header signature invalid")
 
         self.runs = []
-        # I have the feeling config.OFFSET will interfere with plugin options...
-        self.offset = 0 # config.OFFSET
-        self.fname = ''
 
-        self.as_assert(self.profile.has_type("_DMP_HEADER"), "_DMP_HEADER not available in profile")
-        self.header = obj.Object("_DMP_HEADER", self.offset, base)
+        self.as_assert(self.profile.has_type(self.headertype), self.headertype + " not available in profile")
+        self.header = obj.Object(self.headertype, 0, base)
 
         self.runs = [ (x.BasePage.v(), x.PageCount.v())
                       for x in self.header.PhysicalMemoryBlockBuffer.Run ]
@@ -107,10 +107,6 @@ class WindowsCrashDumpSpace32(standard.FileAddressSpace):
             stuff_read = stuff_read + self.base.read(baddr, left_over)
 
         return stuff_read
-
-    def write(self, addr, buf):
-        baddr = self.get_addr(addr)
-        return standard.AbstractWritablePagedMemory.write(self, baddr, buf)
 
     def zread(self, addr, length):
         first_block = 0x1000 - addr % 0x1000
@@ -193,26 +189,8 @@ class WindowsCrashDumpSpace32(standard.FileAddressSpace):
 class WindowsCrashDumpSpace64(WindowsCrashDumpSpace32):
     """ This AS supports windows Crash Dump format """
     order = 30
-    def __init__(self, base, config, **kwargs):
-        ## We must have an AS below us
-        self.as_assert(base, "No base Address Space")
-
-        standard.FileAddressSpace.__init__(self, base, config, layered = True, **kwargs)
-
-        ## Must start with the magic PAGEDU64
-        self.as_assert((base.read(0, 8) == 'PAGEDU64'), "Header signature invalid")
-        self.runs = []
-        # I have the feeling config.OFFSET will interfere with plugin options...
-        self.offset = 0 # config.OFFSET
-        self.fname = ''
-
-        self.as_assert(self.profile.has_type("_DMP_HEADER64"), "_DMP_HEADER64 not available in profile")
-        self.header = obj.Object("_DMP_HEADER64", self.offset, base)
-
-        self.runs = [ (x.BasePage.v(), x.PageCount.v())
-                      for x in self.header.PhysicalMemoryBlockBuffer.Run ]
-
-        self.dtb = self.header.DirectoryTableBase.v()
+    dumpsig = 'PAGEDU64'
+    headertype = "_DMP_HEADER64"
 
     def get_addr(self, addr):
         page_offset = (addr & 0x00000FFF)

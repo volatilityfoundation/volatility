@@ -24,7 +24,7 @@
 # this code in Volatility.
 
 """ A Hiber file Address Space """
-import volatility.plugins.addrspaces.standard as standard
+import volatility.addrspace as addrspace
 import volatility.obj as obj
 import volatility.win32.xpress as xpress
 import struct
@@ -55,7 +55,7 @@ class Store(object):
     def get(self, key):
         return self.cache[key]
 
-class WindowsHiberFileSpace32(standard.FileAddressSpace):
+class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
     """ This is a hibernate address space for windows hibernation files.
 
     In order for us to work we need to:
@@ -67,7 +67,7 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
     order = 10
     def __init__(self, base, config, **kwargs):
         self.as_assert(base, "No base Address Space")
-        standard.FileAddressSpace.__init__(self, base, config, layered = True, **kwargs)
+        addrspace.BaseAddressSpace.__init__(self, base, config, **kwargs)
         self.runs = []
         self.PageDict = {}
         self.HighestPage = 0
@@ -76,7 +76,6 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
         self.LookupCache = {}
         self.PageCache = Store(50)
         self.MemRangeCnt = 0
-        self.offset = 0
         self.entry_count = 0xFF
 
         # Extract header information
@@ -274,11 +273,6 @@ class WindowsHiberFileSpace32(standard.FileAddressSpace):
                 self.PageCache.put(baddr, data_uz)
 
             return data_uz
-
-    def fread(self, length):
-        data = self.read(self.offset, length)
-        self.offset += len(data)
-        return data
 
     def _partial_read(self, addr, len):
         """ A function which reads as much as possible from the current page.
