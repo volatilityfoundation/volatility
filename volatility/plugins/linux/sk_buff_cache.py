@@ -23,24 +23,24 @@
 
 import os
 import volatility.debug as debug
-import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 from volatility.plugins.linux.slab_info import linux_slabinfo
 
 class linux_sk_buff_cache(linux_common.AbstractLinuxCommand):
     """Recovers packets from the sk_buff kmem_cache"""
-    
-    def __init__(self, config, *args): 
+
+    def __init__(self, config, *args):
+        self.edir = None
         linux_common.AbstractLinuxCommand.__init__(self, config, *args)
-        self._config.add_option('UNALLOCATED', short_option = 'u', default = False, help = 'Show unallocated', action = 'store_true')       
+        self._config.add_option('UNALLOCATED', short_option = 'u', default = False, help = 'Show unallocated', action = 'store_true')
         self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'output directory for recovered packets', action = 'store', type = 'str')
-    
+
     def write_sk_buff(self, s):
         pkt_len = s.len
 
         # keep sane sized packets
         if 0 < pkt_len < 0x6400000:
-        
+
             start = s.data
 
             data = self.addr_space.zread(start, pkt_len)
@@ -57,13 +57,13 @@ class linux_sk_buff_cache(linux_common.AbstractLinuxCommand):
 
         if not cache:
             return
-            
+
         for s in cache:
             for msg in self.write_sk_buff(s):
                 yield msg
 
     def calculate(self):
-        linux_common.set_plugin_members(self)        
+        linux_common.set_plugin_members(self)
 
         self.edir = self._config.DUMP_DIR
 
@@ -72,13 +72,13 @@ class linux_sk_buff_cache(linux_common.AbstractLinuxCommand):
 
         for msg in self.walk_cache("skbuff_head_cache"):
             yield msg
-         
+
         for msg in self.walk_cache("skbuff_fclone_cache"):
             yield msg
-            
+
     def render_text(self, outfd, data):
 
         for msg in data:
             outfd.write("{0:s}\n".format(msg))
 
- 
+

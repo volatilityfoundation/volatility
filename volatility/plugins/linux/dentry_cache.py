@@ -21,43 +21,42 @@
 @organization:
 """
 
-import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 from volatility.plugins.linux.slab_info import linux_slabinfo
 
 class linux_dentry_cache(linux_common.AbstractLinuxCommand):
     """Gather files from the dentry cache"""
-    
-    def __init__(self, config, *args): 
+
+    def __init__(self, config, *args):
         linux_common.AbstractLinuxCommand.__init__(self, config, *args)
-        self._config.add_option('UNALLOCATED', short_option = 'u', 
+        self._config.add_option('UNALLOCATED', short_option = 'u',
                         default = False,
                         help = 'Show unallocated',
-                        action = 'store_true')       
-    
+                        action = 'store_true')
+
     def make_body(self, path, dentry):
         i = dentry.d_inode
 
         # MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime
         if i:
-            ret = [0, path, i.i_ino, 0, i.i_uid, i.i_gid, i.i_size, i.i_atime, i.i_mtime, 0, i.i_ctime]             
+            ret = [0, path, i.i_ino, 0, i.i_uid, i.i_gid, i.i_size, i.i_atime, i.i_mtime, 0, i.i_ctime]
         else:
             ret = [0, path] + [0] * 8
 
-        ret = "|".join([str(val) for val in ret]) 
+        ret = "|".join([str(val) for val in ret])
         return ret
 
     def calculate(self):
-        linux_common.set_plugin_members(self)        
-       
+        linux_common.set_plugin_members(self)
+
         cache = linux_slabinfo(self._config).get_kmem_cache("dentry", self._config.UNALLOCATED)
-       
+
         # support for old kernels 
         if cache == []:
-            cache = linux_slabinfo(self._config).get_kmem_cache("dentry_cache", self._config.UNALLOCATED, struct_name="dentry") 
-     
+            cache = linux_slabinfo(self._config).get_kmem_cache("dentry_cache", self._config.UNALLOCATED, struct_name = "dentry")
+
         for dentry in cache:
-            path     = linux_common.get_partial_path(dentry)
+            path = linux_common.get_partial_path(dentry)
             bodyline = self.make_body(path, dentry)
 
             yield bodyline
@@ -68,4 +67,4 @@ class linux_dentry_cache(linux_common.AbstractLinuxCommand):
             outfd.write(bodyline + "\n")
 
 
- 
+
