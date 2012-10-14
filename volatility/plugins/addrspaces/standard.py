@@ -97,7 +97,10 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
         return self.fhandle.read(length)
 
     def zread(self, addr, length):
-        return self.read(addr, length)
+        data = self.read(addr, length)
+        if len(data) != length:
+            data += "\x00" * (length - len(data))
+        return data
 
     def read_long(self, addr):
         string = self.read(addr, 4)
