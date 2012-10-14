@@ -29,12 +29,12 @@ class _DMP_HEADER(obj.CType):
     @property
     def SystemUpTime(self):
         """Returns a string uptime"""
-                        
+
         # Some utilities write PAGEPAGE to this field when 
         # creating the dump header. 
         if self.m('SystemUpTime') == 0x4547415045474150:
             return obj.NoneObject("No uptime recorded")
-        
+
         # 1 uptime is 100ns so convert that to microsec
         msec = self.m('SystemUpTime') / 10
 
@@ -67,13 +67,13 @@ class CrashInfoModification(obj.ProfileModification):
 
 class CrashInfo(common.AbstractWindowsCommand):
     """Dump crash-dump information"""
-    
+
     target_as = ['WindowsCrashDumpSpace32', 'WindowsCrashDumpSpace64']
 
     @cache.CacheDecorator("tests/crashinfo")
     def calculate(self):
         """Determines the address space"""
-        addr_space = utils.load_as(self._config)
+        addr_space = utils.load_as(self._config, astype = 'physical')
 
         result = None
         adrs = addr_space
