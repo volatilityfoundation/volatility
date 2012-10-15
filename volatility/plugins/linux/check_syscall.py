@@ -72,6 +72,9 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         """
         table_size = 0
 
+        if not has_distorm:
+            return table_size
+
         memory_model = self.addr_space.profile.metadata.get('memory_model', '32bit')
 
         if memory_model == '32bit':
