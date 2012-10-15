@@ -37,6 +37,18 @@ struct pid_namespace pid_namespace;
 #include <net/tcp.h>
 #include <net/udp.h>
 
+#include <linux/termios.h>
+#include <asm/termbits.h>
+
+#include <linux/notifier.h>
+struct atomic_notifier_head atomic_notifier_head;
+
+#include <linux/tty_driver.h>
+struct tty_driver tty_driver;
+
+#include <linux/tty.h>
+struct tty_struct tty_struct;
+
 struct udp_seq_afinfo udp_seq_afinfo;
 struct tcp_seq_afinfo tcp_seq_afinfo;
 

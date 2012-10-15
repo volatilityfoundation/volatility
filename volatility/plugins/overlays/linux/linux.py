@@ -60,6 +60,9 @@ linux_overlay = {
     'hlist_head' : [None, {
         'first'      : [ None , ['pointer', ['hlist_node']]],
         }],
+    'tty_struct' : [None, {
+        'name'      : [ None , ['String', dict(length = 64)]],
+        }],
     'dentry' : [None, {
         'd_u'      : [ None , ['list_head', {}]],
     }],
