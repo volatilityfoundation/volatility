@@ -56,12 +56,14 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
                                   ("Name", "20"),
                                   ("Pid", "15"),
                                   ("Uid", "15"),
+                                  ("Gid", "6"),
                                   ("Start Time", "")])
         for task in data:
             self.table_row(outfd, task.obj_offset,
                                   task.comm,
                                   str(task.pid),
                                   str(task.uid) if task.uid else "-",
+                                  str(task.gid) if task.gid else "-",
                                   self.get_task_start_time(task))
 
 class linux_memmap(linux_pslist):
