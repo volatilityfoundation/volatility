@@ -67,7 +67,7 @@ them. Hopefully they dont change too much.
 *********************************************************************/
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-#include <linux/net_namespace.h>
+#include <net/net_namespace.h>
 #endif
 
 #include <net/ip.h>
