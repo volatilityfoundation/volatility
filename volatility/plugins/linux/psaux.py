@@ -38,10 +38,10 @@ class linux_psaux(linux_pslist.linux_pslist):
 
     def render_text(self, outfd, data):
 
-        outfd.write("{1:6s} {2:6s} {0:64s}\n".format("Arguments", "Pid", "Uid"))
+        outfd.write("{1:6s} {2:6s} {3:6s} {0:64s}\n".format("Arguments", "Pid", "Uid", "Gid"))
 
         for task, name in data:
-            outfd.write("{1:6s} {2:6s} {3:6s} {0:64s} {3:35s}\n".format(name, str(task.pid), str(task.uid), str(task.gid), self.get_task_start_time(task)))
+            outfd.write("{1:6s} {2:6s} {3:6s} {0:64s}\n".format(name, str(task.pid), str(task.uid), str(task.gid)))
 
     def get_task_name(self, task):
 
