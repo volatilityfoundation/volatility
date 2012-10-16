@@ -12,11 +12,11 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details. 
+# General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
 """
@@ -26,20 +26,20 @@
 @organization: Volatile Systems
 """
 
-#pylint: disable-msg=C0111,W0613
+# pylint: disable-msg=C0111,W0613
 import sys
 if __name__ == '__main__':
     sys.path.append(".")
     sys.path.append("..")
 
-import cPickle as pickle # pickle implementation must match that in volatility.cache
+import cPickle as pickle  # pickle implementation must match that in volatility.cache
 import struct, copy, operator
 import volatility.debug as debug
 import volatility.fmtspec as fmtspec
 import volatility.exceptions as exceptions
 import volatility.plugins.overlays.native_types as native_types
 
-## Curry is now a standard python feature
+# # Curry is now a standard python feature
 import functools
 
 Curry = functools.partial
@@ -49,7 +49,7 @@ import traceback
 class classproperty(property):
     def __get__(self, cls, owner):
         # We don't think pylint knows what it's talking about here
-        return self.fget.__get__(None, owner)() #pylint: disable-msg=E1101
+        return self.fget.__get__(None, owner)()  # pylint: disable-msg=E1101
 
 def get_bt_string(_e = None):
     return ''.join(traceback.format_stack()[:-3])
@@ -68,7 +68,7 @@ class NoneObject(object):
             self.bt = get_bt_string()
 
     def __str__(self):
-        ## If we are strict we blow up here
+        # # If we are strict we blow up here
         if self.strict:
             debug.error("Strict NoneObject string failure: {0} n{1}".format(self.reason, self.bt))
             sys.exit(0)
@@ -84,7 +84,7 @@ class NoneObject(object):
     def __repr__(self):
         return "<NoneObject: " + self.reason + ">"
 
-    ## Behave like an empty set
+    # # Behave like an empty set
     def __iter__(self):
         return self
 
@@ -116,7 +116,7 @@ class NoneObject(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    ## Make us subscriptable obj[j]
+    # # Make us subscriptable obj[j]
     def __getitem__(self, item):
         return self
 
@@ -126,7 +126,7 @@ class NoneObject(object):
     def __int__(self):
         return -1
 
-    # These must be defined explicitly, 
+    # These must be defined explicitly,
     # due to the way new style objects bypass __getattribute__ for speed
     # See http://docs.python.org/reference/datamodel.html#new-style-special-lookup
     __add__ = __call__
@@ -173,12 +173,12 @@ def Object(theType, offset, vm, name = None, **kwargs):
             result = vm.profile.types[theType](offset = offset, vm = vm, name = name, **kwargs)
             return result
     except InvalidOffsetError:
-        ## If we cant instantiate the object here, we just error out:
+        # # If we cant instantiate the object here, we just error out:
         return NoneObject("Invalid Address 0x{0:08X}, instantiating {1}".format(offset, name),
                           strict = vm.profile.strict)
 
-    ## If we get here we have no idea what the type is supposed to be?
-    ## This is a serious error.
+    # # If we get here we have no idea what the type is supposed to be?
+    # # This is a serious error.
     debug.warning("Cant find object {0} in profile {1}?".format(theType, vm.profile))
 
 class BaseObject(object):
@@ -244,7 +244,7 @@ class BaseObject(object):
         """ This is only useful for proper methods (not ones that
         start with __ )
         """
-        ## Search for the attribute of the proxied object
+        # # Search for the attribute of the proxied object
         proxied = self.proxied(attr)
         # Don't do a __nonzero__ check on proxied or things like '' will fail
         if proxied is None:
@@ -344,7 +344,7 @@ class BaseObject(object):
                       native_vm = self.obj_native_vm,
                       theType = thetype)
 
-        ## Introspect the kwargs for the constructor and store in the dict
+        # # Introspect the kwargs for the constructor and store in the dict
         try:
             for arg in self.__init__.func_code.co_varnames:
                 if (arg not in result and
@@ -357,17 +357,17 @@ class BaseObject(object):
         return result
 
     def __setstate__(self, state):
-        ## What we want to do here is to instantiate a new object and then copy it into ourselves
-        #new_object = Object(state['theType'], state['offset'], state['vm'], name = state['name'])
+        # # What we want to do here is to instantiate a new object and then copy it into ourselves
+        # new_object = Object(state['theType'], state['offset'], state['vm'], name = state['name'])
         new_object = Object(**state)
         if not new_object:
             raise pickle.UnpicklingError("Object {0} at 0x{1:08x} invalid".format(state['name'], state['offset']))
 
-        ## (Scudette) Im not sure how much of a hack this is - we
-        ## basically take over all the new object's members. This is
-        ## needed because __setstate__ can not return a new object,
-        ## but must update the current object instead. I'm sure ikelos
-        ## will object!!! I am open to suggestions ...
+        # # (Scudette) Im not sure how much of a hack this is - we
+        # # basically take over all the new object's members. This is
+        # # needed because __setstate__ can not return a new object,
+        # # but must update the current object instead. I'm sure ikelos
+        # # will object!!! I am open to suggestions ...
         self.__dict__ = new_object.__dict__
 
 def CreateMixIn(mixin):
@@ -375,8 +375,8 @@ def CreateMixIn(mixin):
         def method(self, *args, **kw):
             proxied = self.proxied(name)
             try:
-                ## Try to coerce the other in case its also a proxied
-                ## class
+                # # Try to coerce the other in case its also a proxied
+                # # class
                 args = list(args)
                 args[0] = args[0].proxied(name)
             except (AttributeError, IndexError):
@@ -398,7 +398,7 @@ def CreateMixIn(mixin):
 class NumericProxyMixIn(object):
     """ This MixIn implements the numeric protocol """
     _specials = [
-        ## Number protocols
+        # # Number protocols
         '__add__', '__sub__', '__mul__', '__floordiv__', '__mod__', '__divmod__',
         '__pow__', '__lshift__', '__rshift__', '__and__', '__xor__', '__or__', '__div__',
         '__truediv__', '__radd__', '__rsub__', '__rmul__', '__rdiv__', '__rtruediv__',
@@ -407,10 +407,10 @@ class NumericProxyMixIn(object):
         '__abs__', '__invert__', '__int__', '__long__', '__float__', '__oct__',
         '__hex__',
 
-        ## Comparisons
+        # # Comparisons
         '__lt__', '__le__', '__eq__', '__ne__', '__ge__', '__gt__', '__index__',
 
-        ## Formatting
+        # # Formatting
         '__format__',
         ]
 
@@ -467,7 +467,7 @@ class BitField(NativeType):
         NativeType.__init__(self, theType, offset, vm, format_string = format_string, **kwargs)
         self.start_bit = start_bit
         self.end_bit = end_bit
-        self.native_type = native_type # Store this for proper caching
+        self.native_type = native_type  # Store this for proper caching
 
     def v(self):
         i = NativeType.v(self)
@@ -493,7 +493,7 @@ class Pointer(NativeType):
             self.target = target
 
     def __getstate__(self):
-        ## This one is too complicated to pickle right now
+        # # This one is too complicated to pickle right now
         raise pickle.PicklingError("Pointer objects do not support caching")
 
     def is_valid(self):
@@ -528,10 +528,10 @@ class Pointer(NativeType):
         return "<{0} {1} pointer to [0x{2:08X}]>".format(target.__class__.__name__, self.obj_name or '', self.v())
 
     def __getattr__(self, attr):
-        ## We just dereference ourself
+        # # We just dereference ourself
         result = self.dereference()
 
-        #if isinstance(result, CType):
+        # if isinstance(result, CType):
         #    return result.m(attr)
         return getattr(result, attr)
 
@@ -574,7 +574,7 @@ class Array(BaseObject):
     """ An array of objects of the same size """
     def __init__(self, theType, offset, vm, parent = None,
                  count = 1, targetType = None, target = None, name = None, **kwargs):
-        ## Instantiate the first object on the offset:
+        # # Instantiate the first object on the offset:
         BaseObject.__init__(self, theType, offset, vm,
                             parent = parent, name = name, **kwargs)
 
@@ -591,28 +591,28 @@ class Array(BaseObject):
 
         self.current = self.target(offset = offset, vm = vm, parent = self, name = name)
         if self.current.size() == 0:
-            ## It is an error to have a zero sized element
+            # # It is an error to have a zero sized element
             debug.debug("Array with 0 sized members???", level = 10)
             debug.b()
 
     def __getstate__(self):
-        ## This one is too complicated to pickle right now
+        # # This one is too complicated to pickle right now
         raise pickle.PicklingError("Array objects do not support caching")
 
     def size(self):
         return self.count * self.current.size()
 
     def __iter__(self):
-        ## This method is better than the __iter__/next method as it
-        ## is reentrant
+        # # This method is better than the __iter__/next method as it
+        # # is reentrant
         for position in range(0, self.count):
 
-            ## We don't want to stop on a NoneObject.  Its
-            ## entirely possible that this array contains a bunch of
-            ## pointers and some of them may not be valid (or paged
-            ## in). This should not stop us though we just return the
-            ## invalid pointers to our callers.  It's up to the callers
-            ## to do what they want with the array.
+            # # We don't want to stop on a NoneObject.  Its
+            # # entirely possible that this array contains a bunch of
+            # # pointers and some of them may not be valid (or paged
+            # # in). This should not stop us though we just return the
+            # # invalid pointers to our callers.  It's up to the callers
+            # # to do what they want with the array.
             if (self.current == None):
                 return
 
@@ -641,7 +641,7 @@ class Array(BaseObject):
         return True
 
     def __getitem__(self, pos):
-        ## Check for slice object
+        # # Check for slice object
         if isinstance(pos, slice):
             start, stop, step = pos.indices(self.count)
             return [self[i] for i in xrange(start, stop, step)]
@@ -653,7 +653,7 @@ class Array(BaseObject):
         if pos < 0:
             pos = self.count - pos
 
-        ## Check if the offset is valid
+        # # Check if the offset is valid
         offset = self.original_offset + pos * self.current.size()
 
         if self.obj_vm.is_valid_address(offset):
@@ -668,7 +668,7 @@ class Array(BaseObject):
                               self.obj_vm.profile.strict)
 
     def __setitem__(self, pos, value):
-        ## Get the item, then try writing to it
+        # # Get the item, then try writing to it
         item = self.__getitem__(pos)
         if item != None:
             item.write(value)
@@ -723,16 +723,16 @@ class CType(BaseObject):
         elif attr.find('__') > 0 and attr[attr.find('__'):] in self.members:
             offset, cls = self.members[attr[attr.find('__'):]]
         else:
-            ## hmm - tough choice - should we raise or should we not
-            #return NoneObject("Struct {0} has no member {1}".format(self.obj_name, attr))
+            # # hmm - tough choice - should we raise or should we not
+            # return NoneObject("Struct {0} has no member {1}".format(self.obj_name, attr))
             raise AttributeError("Struct {0} has no member {1}".format(self.obj_name, attr))
 
         if callable(offset):
-            ## If offset is specified as a callable its an absolute
-            ## offset
+            # # If offset is specified as a callable its an absolute
+            # # offset
             offset = int(offset(self))
         else:
-            ## Otherwise its relative to the start of our struct
+            # # Otherwise its relative to the start of our struct
             offset = int(offset) + int(self.obj_offset)
 
         try:
@@ -750,7 +750,7 @@ class CType(BaseObject):
         # Special magic to allow initialization
         if not self.__dict__.has_key('_CType__initialized'):  # this test allows attributes to be set in the __init__ method
             return BaseObject.__setattr__(self, attr, value)
-        elif self.__dict__.has_key(attr):       # any normal attributes are handled normally
+        elif self.__dict__.has_key(attr):  # any normal attributes are handled normally
             return BaseObject.__setattr__(self, attr, value)
         else:
             obj = self.m(attr)
@@ -784,7 +784,7 @@ class VolatilityMagic(BaseObject):
 
     def v(self):
         # We explicitly want to check for None,
-        # in case the user wants a value 
+        # in case the user wants a value
         # that gives not self.value = True
         if self.value is None:
             return self.get_best_suggestion()
@@ -824,14 +824,14 @@ def VolMagic(vm):
 
 
 #### This must live here, otherwise there are circular dependency issues
-##
-## The Profile relies on several classes in obj.py, because  
-## it needs to parse legacy list formats into appropriate types
-## Leaving a deprecated obj.Profile object would create a circular dependency
-##
+# #
+# # The Profile relies on several classes in obj.py, because
+# # it needs to parse legacy list formats into appropriate types
+# # Leaving a deprecated obj.Profile object would create a circular dependency
+# #
 
-## Profiles are the interface for creating/interpreting
-## objects
+# # Profiles are the interface for creating/interpreting
+# # objects
 
 class Profile(object):
 
@@ -924,7 +924,7 @@ class Profile(object):
                     raise RuntimeError("Duplicate profile modification name {0} found".format(modname))
                 mods[instance.__class__.__name__] = instance
 
-        # Run through the modifications in dependency order 
+        # Run through the modifications in dependency order
         self._mods = []
         for modname in self._resolve_mod_dependencies(mods.values()):
             mod = mods.get(modname, None)
@@ -1053,7 +1053,7 @@ class Profile(object):
             things will get changed later and have a difficult-to-track down knock-on
             effect.
         """
-        # If we've been called without an overlay, 
+        # If we've been called without an overlay,
         # the end result should be a complete copy of the type_member
         if not overlay:
             return copy.deepcopy(type_member)
@@ -1135,21 +1135,21 @@ class Profile(object):
             This function is a bit complex because we support lots of
             different list types for backwards compatibility.
         """
-        ## This supports plugin memory objects:
+        # # This supports plugin memory objects:
         try:
             kwargs = typeList[1]
 
             if type(kwargs) == dict:
-                ## We have a list of the form [ ClassName, dict(.. args ..) ]
+                # # We have a list of the form [ ClassName, dict(.. args ..) ]
                 return Curry(Object, theType = typeList[0], name = name, **kwargs)
         except (TypeError, IndexError), _e:
             pass
 
-        ## This is of the form [ 'void' ]
+        # # This is of the form [ 'void' ]
         if typeList[0] == 'void':
             return Curry(Void, None, name = name)
 
-        ## This is of the form [ 'pointer' , [ 'foobar' ]]
+        # # This is of the form [ 'pointer' , [ 'foobar' ]]
         if typeList[0] == 'pointer':
             try:
                 target = typeList[1]
@@ -1160,21 +1160,21 @@ class Profile(object):
                          name = name,
                          target = self._list_to_type(name, target, typeDict))
 
-        ## This is an array: [ 'array', count, ['foobar'] ]
+        # # This is an array: [ 'array', count, ['foobar'] ]
         if typeList[0] == 'array':
             return Curry(Array, None,
                          name = name, count = typeList[1],
                          target = self._list_to_type(name, typeList[2], typeDict))
 
-        ## This is a list which refers to a type which is already defined
+        # # This is a list which refers to a type which is already defined
         if typeList[0] in self.types:
             return Curry(self.types[typeList[0]], name = name)
 
-        ## Does it refer to a type which will be defined in future? in
-        ## this case we just curry the Object function to provide
-        ## it on demand. This allows us to define structures
-        ## recursively.
-        ##if typeList[0] in typeDict:
+        # # Does it refer to a type which will be defined in future? in
+        # # this case we just curry the Object function to provide
+        # # it on demand. This allows us to define structures
+        # # recursively.
+        # #if typeList[0] in typeDict:
         try:
             tlargs = typeList[1]
         except IndexError:
@@ -1184,8 +1184,8 @@ class Profile(object):
         if type(tlargs) == dict:
             return Curry(Object, obj_name, name = name, **tlargs)
 
-        ## If we get here we have no idea what this list is
-        #raise RuntimeError("Error in parsing list {0}".format(typeList))
+        # # If we get here we have no idea what this list is
+        # raise RuntimeError("Error in parsing list {0}".format(typeList))
         debug.warning("Unable to find a type for {0}, assuming int".format(typeList[0]))
         return Curry(self.types['int'], name = name)
 
@@ -1220,7 +1220,7 @@ class Profile(object):
             else:
                 members[k] = (v[0], self._list_to_type(k, v[1], self.vtypes))
 
-        ## Allow the plugins to over ride the class constructor here
+        # # Allow the plugins to over ride the class constructor here
         if self.object_classes and cname in self.object_classes:
             cls = self.object_classes[cname]
         else:
