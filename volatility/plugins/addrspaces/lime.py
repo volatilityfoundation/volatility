@@ -20,22 +20,19 @@
 import volatility.obj as obj
 import volatility.addrspace as addrspace
 
-lime_types = {
-
- 'lime_header': [ 0x20, {
-    'magic':     [0x0, ['unsigned int']],
-    'version':   [0x4, ['unsigned int']],
-    'start':     [0x8, ['unsigned long long']],
-    'end':       [0x10, ['unsigned long long']],
-    'reserved':  [0x18, ['unsigned long long']],
-}],
-}
-
 class LimeTypes(obj.ProfileModification):
 
     def modification(self, profile):
 
-        profile.vtypes.update(lime_types)
+        profile.vtypes.update({ 
+            'lime_header': [ 0x20, {
+                'magic':     [0x0, ['unsigned int']],
+                'version':   [0x4, ['unsigned int']],
+                'start':     [0x8, ['unsigned long long']],
+                'end':       [0x10, ['unsigned long long']],
+                'reserved':  [0x18, ['unsigned long long']],
+                }],
+            })
 
 class segment(object):
 
@@ -50,9 +47,6 @@ class LimeAddressSpace(addrspace.BaseAddressSpace):
     Address space for Lime 
     """
     order = 2
-    cache = False
-    pae = False
-    checkname = 'LimeValidAS'
 
     def __init__(self, base, config, *args, **kwargs):
         self.as_assert(base, "lime: need base")
