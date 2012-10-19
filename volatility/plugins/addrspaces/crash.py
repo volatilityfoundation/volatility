@@ -160,9 +160,6 @@ class WindowsCrashDumpSpace32(addrspace.BaseAddressSpace):
                 page_list.append([page * 0x1000, 0x1000])
         return page_list
 
-    def get_number_of_pages(self):
-        return len(self.get_available_pages())
-
     def get_address_range(self):
         """ This relates to the logical address range that is indexable """
         run = self.runs[-1]

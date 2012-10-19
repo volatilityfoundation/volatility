@@ -105,7 +105,6 @@ class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
         # until it's absolutely necessary and/or convert it into a generator...
         self.build_page_cache()
 
-
     def _get_first_table_page(self):
         if self.header != None:
             return self.header.FirstTablePage
@@ -221,12 +220,6 @@ class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
     def get_base(self):
         return self.base
 
-    def get_signature(self):
-        return self.header.Signature
-
-    def get_system_time(self):
-        return self.header.SystemTime
-
     def is_paging(self):
         return (self.ProcState.SpecialRegisters.Cr0.v() >> 31) & 1
 
@@ -235,12 +228,6 @@ class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
 
     def is_pae(self):
         return (self.ProcState.SpecialRegisters.Cr4.v() >> 5) & 1
-
-    def get_number_of_memranges(self):
-        return self.MemRangeCnt
-
-    def get_number_of_pages(self):
-        return self.PageIndex
 
     def get_addr(self, addr):
         page = addr >> page_shift
