@@ -19,6 +19,7 @@
 #
 import volatility.obj as obj
 import volatility.addrspace as addrspace
+import volatility.debug as debug
 
 class LimeTypes(obj.ProfileModification):
 
@@ -55,7 +56,12 @@ class LimeAddressSpace(addrspace.BaseAddressSpace):
 
         sig = base.read(0, 4)
 
-        self.as_assert(sig == '\x45\x4D\x69\x4c' or sig == '\x4c\x69\x4d\x45', "Invalid Lime header signature")
+        ## ARM processors are bi-endian, but little is the default and currently
+        ## the only mode we support; unless it comes a common request. 
+        if sig == '\x4c\x69\x4d\x45':
+            debug.debug("Big-endian ARM not supported, please submit a feature request")
+        
+        self.as_assert(sig == '\x45\x4D\x69\x4c', "Invalid Lime header signature")
         
         self.addr_cache = {}
         self.segs = []
