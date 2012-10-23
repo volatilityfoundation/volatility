@@ -47,9 +47,9 @@ class RegistryApi(object):
         this is just in case we want to check our offsets and which hive(s) was/were chosen
         '''
         for item in self.all_offsets:
-            print item, self.all_offsets[item]
+            print "0x{0:x}".format(item), self.all_offsets[item]
         for item in self.current_offsets:
-            print 'current', item, self.current_offsets[item]
+            print 'current', "0x{0:x}".format(item), self.current_offsets[item]
 
     def populate_offsets(self):
         '''
@@ -246,27 +246,29 @@ class RegistryApi(object):
                         keys.append([s, root.Name + "\\" + s.Name])
 
         # Get subkeys
-        for k, reg_name, name in keys:
-            time = "{0}".format(k.LastWriteTime)
-            if start and end and time >= start and time <= end:
-                if reg:
+        if reg:
+            for k, reg_name, name in keys:
+                time = "{0}".format(k.LastWriteTime)
+                if start and end and time >= start and time <= end:
                     yield (time, reg_name, name)
-                else:
-                    yield (time, name)
-            elif start == None and end == None:
-                if reg:
+                elif start == None and end == None:
                     yield (time, reg_name, name)
-                else:
-                    yield (time, name)
-
-            for s in rawreg.subkeys(k):
-                if name and s.Name:
-                    item = name + '\\' + s.Name
-                    if reg:
+                for s in rawreg.subkeys(k):
+                    if name and s.Name:
+                        item = name + '\\' + s.Name
                         keys.append([s, reg_name, item])
-                    else:
-                        keys.append([s, item])
+        else:
+            for k, name in keys:
+                time = "{0}".format(k.LastWriteTime)
+                if start and end and time >= start and time <= end:
+                    yield (time, name)
+                elif start == None and end == None:
+                    yield (time, name)
 
+                for s in rawreg.subkeys(k):
+                    if name and s.Name:
+                        item = name + '\\' + s.Name
+                        keys.append([s, item])
 
     def reg_get_last_modified(self, hive_name, count = 1, user = None, start = None, end = None, reg = False):
         '''
@@ -274,7 +276,11 @@ class RegistryApi(object):
         subkeys have to be collected before you can compare lastwrite times.
         '''
         data = nlargest(count, self.reg_get_all_keys(hive_name, user, start, end, reg))
-        for t, _, name in data:
-            yield (t, name)
+        if reg:
+            for t, regname, name in data:
+                yield (t, regname, name)
+        else:
+            for t, name in data: 
+                yield (t, name)
 
 
