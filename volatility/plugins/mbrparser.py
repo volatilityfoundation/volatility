@@ -186,6 +186,7 @@ class MBRScanner(scan.BaseScanner):
 
 
 class MBRParser(commands.command):
+    """ Scans for and parses potential Master Boot Records (MBRs) """
     def __init__(self, config, *args, **kwargs):
         commands.command.__init__(self, config, *args)
         # We have all these options, however another will be added for diffing 

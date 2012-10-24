@@ -483,7 +483,7 @@ class MFTScanner(scan.BaseScanner):
 
 
 class MFTParser(common.AbstractWindowsCommand):
-    """Parses out potential MFT entries"""
+    """ Scans for and parses potential MFT entries """
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
         config.add_option('CHECK', short_option = 'C', default = False,

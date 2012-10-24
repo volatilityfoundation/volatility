@@ -321,7 +321,6 @@ class FILE_ENTRY(ITEMPOS):
                 str(self.Attributes.CreatedDate),
                 str(self.Attributes.AccessDate),
                 self.get_file_attrs())
-                #str(self.Attributes.UnicodeFilename))
 
     def get_header(self):
         return [("File Name", "14s"),
