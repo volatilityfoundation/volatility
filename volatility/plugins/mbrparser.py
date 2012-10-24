@@ -167,8 +167,7 @@ class PARTITION_ENTRY(obj.CType):
 
 
 class MbrObjectTypes(obj.ProfileModification):
-    before = ['WindowsObjectClasses']
-    conditions = {'os': lambda x: x == 'windows'}
+    #before = ['WindowsObjectClasses']
     def modification(self, profile):
         profile.object_classes.update({
             'PARTITION_ENTRY': PARTITION_ENTRY,
