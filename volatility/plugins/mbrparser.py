@@ -28,10 +28,15 @@ import volatility.commands as commands
 import volatility.scan as scan
 import volatility.obj as obj
 import volatility.utils as utils
+import volatility.debug as debug
 import struct
 import hashlib
-import distorm3
 
+try:
+    import distorm3
+    has_distorm3 = True 
+except ImportError:
+    has_distorm3 = False
 
 # Partition types taken from Gary Kessler's MBRParser.pl:
 #    http://www.garykessler.net/software/index.html
@@ -214,6 +219,8 @@ class MBRParser(commands.command):
 
     def calculate(self):
         address_space = utils.load_as(self._config, astype = 'physical')
+        if not has_distorm3 and not self._config.HEX:
+            debug.error("Install distorm3 code.google.com/p/distorm/")
         diff = 0
         if self._config.DISOFFSET:
             diff = self._config.DISOFFSET
