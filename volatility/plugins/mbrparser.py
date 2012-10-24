@@ -126,17 +126,16 @@ class PARTITION_ENTRY(obj.CType):
         return val
 
     def get_type(self):
-        type = PartitionTypes.get(self.get_value(self.PartitionType), "Invalid")
-        return type
+        return PartitionTypes.get(self.get_value(self.PartitionType), "Invalid") 
 
     def is_bootable(self):
-        type = self.get_value(self.BootableFlag)
-        return type == 0x80
+        return self.get_value(self.BootableFlag) == 0x80
 
     def is_valid(self):
-        if self.is_bootable() and self.get_type() != "Invalid":
-            return True
         return self.get_type() != "Invalid"
+
+    def is_used(self):
+        return self.get_type() != "Empty" and self.is_valid()
 
     def StartingSector(self):
         return self.StartingCHS[1] % 64
@@ -277,7 +276,8 @@ class MBRParser(commands.command):
             entry2 = PARTITION_TABLE.Entry2.dereference_as('PARTITION_ENTRY')
             entry3 = PARTITION_TABLE.Entry3.dereference_as('PARTITION_ENTRY')
             entry4 = PARTITION_TABLE.Entry4.dereference_as('PARTITION_ENTRY')
-            if self._config.CHECK and not entry1.is_valid() and not entry2.is_valid() and not entry3.is_valid() and not entry4.is_valid():
+            have_bootable = entry1.is_bootable() or entry2.is_bootable() or entry3.is_bootable() or entry4.is_bootable()
+            if self._config.CHECK and (not entry1.is_used() and not entry2.is_used() and not entry3.is_used() and not entry4.is_used() or not have_bootable):
                 continue
             disasm = self.get_disasm_text(boot_code, offset + dis)
             h = hashlib.md5()
