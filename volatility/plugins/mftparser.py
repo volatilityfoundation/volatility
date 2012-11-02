@@ -472,10 +472,10 @@ class MFTTYPES(obj.ProfileModification):
 class MFTScanner(scan.BaseScanner):
     checks = [ ] 
 
-    def __init__(self, window_size = 0x4, needles = None):
+    def __init__(self, needles = None):
         self.needles = needles
         self.checks = [ ("MultiStringFinderCheck", {'needles':needles})]
-        scan.BaseScanner.__init__(self, window_size)
+        scan.BaseScanner.__init__(self) 
 
     def scan(self, address_space, offset = 0, maxlen = None):
         for offset in scan.BaseScanner.scan(self, address_space, offset, maxlen):
