@@ -31,6 +31,7 @@ import volatility.plugins.gui.sessions as sessions
 message_offsets_x86 = [
       (0x001ab0a0, 0x001ab060), # ? (shylock.dmp)
       (0x001aaea0, 0x001aae60), # 5.1.2600.6033 (XP SP3)
+      (0x001ac640, 0x001ac600), # 5.1.2600.6149 (XP)
       (0x001a9400, 0x001a93c0), # 5.1.2600.5512 (XP SP3)
       (0x001a9220, 0x001a91e0), # 5.1.2600.3335 (XP SP2) 
       (0x001a6f00, 0x001a6ec0), # 5.1.2600.2180 (XP SP2)    
