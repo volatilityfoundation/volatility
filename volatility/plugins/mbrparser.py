@@ -131,6 +131,9 @@ class PARTITION_ENTRY(obj.CType):
     def is_bootable(self):
         return self.get_value(self.BootableFlag) == 0x80
 
+    def is_bootable_and_used(self):
+        return self.is_bootable() and self.is_used()
+
     def is_valid(self):
         return self.get_type() != "Invalid"
 
@@ -274,8 +277,10 @@ class MBRParser(commands.command):
             entry2 = PARTITION_TABLE.Entry2.dereference_as('PARTITION_ENTRY')
             entry3 = PARTITION_TABLE.Entry3.dereference_as('PARTITION_ENTRY')
             entry4 = PARTITION_TABLE.Entry4.dereference_as('PARTITION_ENTRY')
-            have_bootable = entry1.is_bootable() or entry2.is_bootable() or entry3.is_bootable() or entry4.is_bootable()
-            if self._config.CHECK and (not entry1.is_used() and not entry2.is_used() and not entry3.is_used() and not entry4.is_used() or not have_bootable):
+            have_bootable = entry1.is_bootable_and_used() or entry2.is_bootable_and_used() or entry3.is_bootable_and_used() or entry4.is_bootable_and_used()
+            if self._config.CHECK and not have_bootable: 
+                # it doesn't really make sense to have a partition that is bootable, but empty or invalid
+                # but we only skip MBRs with these types of partitions if we are checking
                 continue
             disasm = self.get_disasm_text(boot_code, offset + dis)
             h = hashlib.md5()
