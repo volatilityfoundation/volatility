@@ -162,9 +162,9 @@ class RESIDENT_ATTRIBUTE(obj.CType):
                     return
                 elif thetype in ["STANDARD_INFORMATION", "FILE_NAME"]:
                     theitem = obj.Object(thetype, vm = bufferas, offset = item.AttributeID.obj_offset)
-                    if thetype == "STANDARD_INFORMATION" and (theitem.is_valid() or check):
+                    if thetype == "STANDARD_INFORMATION" and (not check or theitem.is_valid()):
                         attributes.append(("STANDARD_INFORMATION (AL)", theitem))
-                    elif thetype == "FILE_NAME" and (theitem.is_valid() or check):
+                    elif thetype == "FILE_NAME" and (not check or theitem.is_valid()):
                         mft_entry.add_path(theitem)
                         attributes.append(("FILE_NAME (AL)", theitem))
             except struct.error:
@@ -175,10 +175,11 @@ class RESIDENT_ATTRIBUTE(obj.CType):
 
 class STANDARD_INFORMATION(obj.CType):
     # XXX need a better check than this
+    # we return valid if we any timestamp other than Null
     def is_valid(self):
-        return "1970-01-01 00:00:00" != str(self.ModifiedTime).strip() and     \
-               "1970-01-01 00:00:00" != str(self.MFTAlteredTime).strip() and   \
-               "1970-01-01 00:00:00" != str(self.FileAccessedTime).strip() and \
+        return "1970-01-01 00:00:00" != str(self.ModifiedTime).strip() or \
+               "1970-01-01 00:00:00" != str(self.MFTAlteredTime).strip() or \
+               "1970-01-01 00:00:00" != str(self.FileAccessedTime).strip() or \
                "1970-01-01 00:00:00" != str(self.CreationTime).strip()
 
     def get_type_short(self):
@@ -223,6 +224,16 @@ class STANDARD_INFORMATION(obj.CType):
             self.get_type())
 
     def body(self, path, record_num, size):
+        if path == "":
+            # if the path is null we just try to get the filename 
+            # from our dictionary and print the body file output
+            record = MFT_PATHS_FULL.get(int(record_num), {}) 
+            if record != {}:
+                # we include with the found filename a note that this may be a 
+                # non-base entry.  the analyst can investigate these types of records
+                # on his/her own by comparing record numbers in output or examining the 
+                # given physical offset in memory for example
+                path = record["filename"] + " (Possible non-base entry, extra $SI or invalid $FN)"
         return "{0}|{1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}".format(path,
             record_num,
             self.get_type_short(),
@@ -237,11 +248,13 @@ class FILE_NAME(STANDARD_INFORMATION):
         return ''.join([c for c in str if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
 
     # XXX need a better check than this
+    # we return valid if we any timestamp other than Null
+    # filename must also be a non-empty string
     def is_valid(self):
-        return "1970-01-01 00:00:00" != str(self.ModifiedTime).strip() and     \
-               "1970-01-01 00:00:00" != str(self.MFTAlteredTime).strip() and   \
-               "1970-01-01 00:00:00" != str(self.FileAccessedTime).strip() and \
-               "1970-01-01 00:00:00" != str(self.CreationTime).strip() and     \
+        return ("1970-01-01 00:00:00" != str(self.ModifiedTime).strip() or \
+               "1970-01-01 00:00:00" != str(self.MFTAlteredTime).strip() or \
+               "1970-01-01 00:00:00" != str(self.FileAccessedTime).strip() or \
+               "1970-01-01 00:00:00" != str(self.CreationTime).strip()) and \
                self.remove_unprintable(self.get_name()) != ""
 
     def get_name(self):
@@ -520,7 +533,7 @@ class MFTParser(common.AbstractWindowsCommand):
                     if next_off == next_attr.STDInfo.obj_offset:
                         next_attr = None
                         continue
-                    next_attr = self.advance_one(next_off, mft_buff)
+                    next_attr = self.advance_one(next_off, mft_buff, end)
                 elif attr == 'FILE_NAME':
                     mft_entry.add_path(next_attr.FileName)
                     if next_attr.FileName.is_valid() or not self._config.CHECK:
@@ -529,7 +542,7 @@ class MFTParser(common.AbstractWindowsCommand):
                     if next_off == next_attr.FileName.obj_offset:
                         next_attr = None
                         continue
-                    next_attr = self.advance_one(next_off, mft_buff)
+                    next_attr = self.advance_one(next_off, mft_buff, end)
                 elif attr == "OBJECT_ID":
                     if next_attr.Header.NonResidentFlag == 1:
                         attributes.append((attr, "Non-Resident"))
@@ -541,7 +554,7 @@ class MFTParser(common.AbstractWindowsCommand):
                     if next_off == next_attr.ObjectID.obj_offset:
                         next_attr = None
                         continue
-                    next_attr = self.advance_one(next_off, mft_buff)
+                    next_attr = self.advance_one(next_off, mft_buff, end)
                 elif attr == "DATA":
                     if next_attr.Header.NonResidentFlag == 1:
                         thedata = "Non-Resident"
@@ -561,7 +574,6 @@ class MFTParser(common.AbstractWindowsCommand):
                         continue
                     next_attr.process_attr_list(bufferas, mft_entry, attributes, self._config.CHECK)
                     next_attr = None
-                    continue
                 else:
                     next_attr = None
             mft_entries.append((offset, mft_entry, attributes))
@@ -569,11 +581,8 @@ class MFTParser(common.AbstractWindowsCommand):
         return mft_entries
 
 
-    def advance_one(self, next_off, mft_buff):
-        end = mft_buff.find("\xff\xff\xff\xff")
+    def advance_one(self, next_off, mft_buff, end):
         item = None
-        if end == -1: 
-            end = 1024
         attr = None
         cursor = 0 
         while attr == None and cursor <= end:
@@ -588,14 +597,37 @@ class MFTParser(common.AbstractWindowsCommand):
         return item
 
     def render_body(self, outfd, data):
+        # Some notes: every base MFT entry should have one $SI and one $FN
+        # Usually $SI occurs before $FN
+        # We'll make an effort to get the filename from $FN for $SI
+        # If there is only
         for offset, mft_entry, attributes in data:
+            si = None
+            full = ""
             for a, i in attributes:
                 if a.startswith("STANDARD_INFORMATION"):
-                    outfd.write("(SI) 0x{0:x}|{1}\n".format(offset, i.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                    if full != "":
+                        # if we are here, we've hit one $FN attribute for this entry already and have the full name
+                        # so we can dump this $SI
+                        outfd.write("(SI) 0x{0:x}|{1}\n".format(offset, i.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                    elif si != None:
+                        # if we are here then we have more than one $SI attribute for this entry
+                        # since we don't want to lose its info, we'll just dump it for now
+                        # we won't have full path, but we'll have a filename most likely
+                        outfd.write("(SI) 0x{0:x}|{1}\n".format(offset, i.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                    elif si == None:
+                        # this is the usual case and we'll save the $SI to process after we get the full path from the $FN
+                        si = i
                 elif a.startswith("FILE_NAME"):
                     if hasattr(i, "ParentDirectory"):
                         full = mft_entry.get_full_path(i)
                         outfd.write("(FN) 0x{0:x}|{1}\n".format(offset, i.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                        if si != None:
+                            outfd.write("(SI) 0x{0:x}|{1}\n".format(offset, si.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                            si = None
+            if si != None:
+                # here we have a lone $SI in an MFT entry with no valid $FN.  This is most likely a non-base entry
+                outfd.write("(SI) 0x{0:x}|{1}\n".format(offset, si.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
 
     def render_text(self, outfd, data):
         border = "*" * 75
