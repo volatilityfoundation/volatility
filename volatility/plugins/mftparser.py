@@ -600,7 +600,7 @@ class MFTParser(common.AbstractWindowsCommand):
         # Some notes: every base MFT entry should have one $SI and one $FN
         # Usually $SI occurs before $FN
         # We'll make an effort to get the filename from $FN for $SI
-        # If there is only
+        # If there is only one $SI with no $FN we dump whatever information it has
         for offset, mft_entry, attributes in data:
             si = None
             full = ""
