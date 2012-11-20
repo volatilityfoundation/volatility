@@ -69,6 +69,20 @@ class _POOL_HEADER(windows._POOL_HEADER):
     def PagedPool(self):
         return self.PoolType.v() % 2 == 1
 
+class _TOKEN(windows._TOKEN):
+
+    def privileges(self):
+        """Generator for privileges.
+
+        @yields a tuple (value, present, enabled, default). 
+        """
+        for i in range(0, 64):
+            bit_position = 1 << i
+            present = self.Privileges.Present & bit_position != 0
+            enabled = self.Privileges.Enabled & bit_position != 0
+            default = self.Privileges.EnabledByDefault & bit_position != 0
+            yield i, present, enabled, default
+
 class VistaWin7KPCR(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os' : lambda x: x == 'windows',
@@ -119,7 +133,8 @@ class VistaMMVAD(obj.ProfileModification):
         profile.object_classes.update({'_MMVAD_SHORT': _MMVAD_SHORT,
                                        '_MMVAD_LONG' : _MMVAD_LONG,
                                        '_ETHREAD'    : _ETHREAD, 
-                                       '_POOL_HEADER': _POOL_HEADER})
+                                       '_POOL_HEADER': _POOL_HEADER, 
+                                        '_TOKEN': _TOKEN})
 
 class VistaKDBG(windows.AbstractKDBGMod):
     before = ['WindowsOverlay']

@@ -378,6 +378,27 @@ class _TOKEN(obj.CType):
                 yield "S-" + "-".join(str(i) for i in (sid.Revision, id_auth) +
                                       tuple(sid.SubAuthority))
 
+    def privileges(self):
+        """Generator for privileges.
+
+        @yields a tuple (value, present, enabled, default). 
+
+        We only yield 'present' here for consistency with 
+        the Vista+ privileges() generator. In the XP/2003 
+        case, values will never be reported unless they're
+        present (thus we hard-code it to True) but Vista+
+        can be optional due to DKOM.
+        """
+        # The max size check originates from code seen in the 
+        # DisplayPrivileges function of windbg's exts.dll 
+        if self.PrivilegeCount < 1024:
+            # This is a pointer to an array of _LUID_AND_ATTRIBUTES
+            for luid in self.Privileges.dereference():
+                # The Attributes member is a flag 
+                enabled = luid.Attributes & 2 != 0
+                default = luid.Attributes & 1 != 0
+                yield luid.Luid.LowPart, True, enabled, default
+
 class _ETHREAD(obj.CType):
     """ A class for threads """
 
