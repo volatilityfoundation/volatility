@@ -62,3 +62,26 @@ class Modules(common.AbstractWindowsCommand):
         result = win32.modules.lsmod(addr_space)
 
         return result
+
+class UnloadedModules(common.AbstractWindowsCommand):
+    """Print list of unloaded modules"""
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd, [
+                           ("Name", "20"),
+                           ('StartAddress', "[addrpad]"),
+                           ('EndAddress', "[addrpad]"),
+                           ('Time', "")])
+
+        for drv in data:
+            self.table_row(outfd, drv.Name, drv.StartAddress, 
+                          drv.EndAddress, drv.CurrentTime) 
+
+    def calculate(self):
+        addr_space = utils.load_as(self._config)
+    
+        kdbg = win32.tasks.get_kdbg(addr_space)
+
+        for drv in kdbg.MmUnloadedDrivers.dereference().dereference():
+            yield drv 

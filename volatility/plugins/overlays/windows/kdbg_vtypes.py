@@ -138,7 +138,33 @@ class KDBGObjectClass(obj.ProfileModification):
             'KiProcessorBlock': [ None, ['pointer', ['array', max_processors, ['pointer', ['_KPRCB']]]]],
             'PsActiveProcessHead': [ None, ['pointer', ['_LIST_ENTRY']]], 
             'PsLoadedModuleList': [ None, ['pointer', ['_LIST_ENTRY']]], 
+            'MmUnloadedDrivers' : [ None, ['pointer', ['pointer', ['array', lambda x : x.MmLastUnloadedDriver.dereference(), ['_UNLOADED_DRIVER']]]]], 
+            'MmLastUnloadedDriver' : [ None, ['pointer', ['unsigned int']]], 
             }]})
+
+class UnloadedDriverVTypes(obj.ProfileModification):
+    """Add the unloaded driver structure definitions"""
+
+    conditions = {'os': lambda x: x == "windows"} 
+
+    def modification(self, profile):
+
+        if profile.metadata.get("memory_model", "32bit") == "32bit":
+            vtypes = {'_UNLOADED_DRIVER' : [ 24, { 
+                    'Name' : [ 0, ['_UNICODE_STRING']], 
+                    'StartAddress' : [ 8, ['address']], 
+                    'EndAddress' : [ 12, ['address']], 
+                    'CurrentTime' : [ 16, ['WinTimeStamp', {}]], 
+                    }]}
+        else:
+            vtypes = {'_UNLOADED_DRIVER' : [ 40, { 
+                    'Name' : [ 0, ['_UNICODE_STRING']], 
+                    'StartAddress' : [ 16, ['address']], 
+                    'EndAddress' : [ 24, ['address']], 
+                    'CurrentTime' : [ 32, ['WinTimeStamp', {}]], 
+                    }]}
+
+        profile.vtypes.update(vtypes)
 
 kdbg_vtypes = {
 '_DBGKD_DEBUG_DATA_HEADER64' : [  0x18, {
