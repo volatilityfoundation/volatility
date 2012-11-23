@@ -74,6 +74,7 @@ linux_overlay = {
         'DTB'           : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],
         'ArmValidAS'   :  [ 0x0, ['VolatilityLinuxARMValidAS']],
         'IA32ValidAS'  :  [ 0x0, ['VolatilityLinuxIntelValidAS']],
+        'AMD64ValidAS'  :  [ 0x0, ['VolatilityLinuxIntelValidAS']],
         }],
     }
 
@@ -683,13 +684,14 @@ class VolatilityLinuxARMValidAS(obj.VolatilityMagic):
         task_paddr = self.obj_vm.vtop(init_task_addr)
         fork_paddr = self.obj_vm.vtop(do_fork_addr)
 
-        # these won't be zero due to RAM not at physical address 0
-        # but if the offset from 0 is the same across two paging operations
-        # then we have the right DTB
-        task_off = task_paddr - shift
-        fork_off = fork_paddr - shift
+        if task_paddr and fork_paddr:
+            # these won't be zero due to RAM not at physical address 0
+            # but if the offset from 0 is the same across two paging operations
+            # then we have the right DTB
+            task_off = task_paddr - shift
+            fork_off = fork_paddr - shift
 
-        yield fork_off - task_off == sym_addr_diff
+            yield fork_off - task_off == sym_addr_diff
 
 class LinuxObjectClasses(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'linux'}
