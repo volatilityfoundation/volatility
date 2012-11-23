@@ -51,6 +51,16 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                     yield task, vma
 
     def render_text(self, outfd, data):
+       
+        self.table_header(outfd, [("Start", "[addrpad]"),
+                                  ("End",   "[addrpad]"),
+                                  ("Flags", "6"),
+                                  ("Pgoff", "6"),
+                                  ("Major", "6"),
+                                  ("Minor", "6"),
+                                  ("Inode", "10"),
+                                  ("File Path", "80"),                    
+                                 ]) 
         for task, vma in data:
 
             mm = task.mm
@@ -74,15 +84,15 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                 else:
                     fname = ""
 
-            outfd.write("{0:#8x}-{1:#8x} {2:3} {3:10d} {4:#2d}:{5:#2d} {6:#12d} {7}\n".format(
-                    self.mask_number(vma.vm_start),
-                    self.mask_number(vma.vm_end),
-                    self.format_perms(vma.vm_flags),
-                    pgoff,
-                    self.MAJOR(dev),
-                    self.MINOR(dev),
-                    ino,
-                    fname))
+            self.table_row(outfd,
+                self.mask_number(vma.vm_start),
+                self.mask_number(vma.vm_end),
+                self.format_perms(vma.vm_flags),
+                pgoff,
+                self.MAJOR(dev),
+                self.MINOR(dev),
+                ino,
+                fname)
 
     def format_perms(self, vma_flags):
 
