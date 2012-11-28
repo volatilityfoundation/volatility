@@ -63,7 +63,7 @@ shimrecs_type_win7 = {
 
 appcompat_type_xp_x86 = {
     'AppCompatCacheEntry' : [ 0x228, {
-        'Path' : [ 0x0, ['array', 0x208, ['char']]],
+        'Path' : [ 0x0, ['NullString', dict(length = 0x208, encoding = 'utf8')]],
         'LastModified' : [ 0x210, ['WinTimeStamp', {}]],
         'FileSize': [0x218, ['long long']],
         'LastUpdate' : [ 0x220, ['WinTimeStamp', {}]],
@@ -249,14 +249,25 @@ class ShimCache(commands.Command):
 
         for e in shimdata.Entries:
             if xp:
-                path = str(''.join([str(c) for c in e.Path]))
-                yield self.remove_unprintable(path), e.LastModified, e.LastUpdate
+                yield e.Path, e.LastModified, e.LastUpdate
             else:
                 yield self.remove_unprintable(bufferas.read(int(e.PathOffset), int(e.Length))), e.LastModified, None
 
     def render_text(self, outfd, data):
+        first = True
         for path, lm, lu in data:
             if lu:
-                outfd.write("Last Modified: {0}, Lastupdate: {1}, Path: {2}\n".format(lm, lu, path))
+                if first:
+                    self.table_header(outfd, [("Last Modified", "20"),
+                                              ("Last Update", "20"),
+                                              ("Path", ""),
+                                             ])
+                    first = False
+                outfd.write("{0:20} {1:20} {2}\n".format(lm, lu, path))
             else:
-                outfd.write("Last Modified: {0}, Path: {1}\n".format(lm, path))
+                if first:
+                    self.table_header(outfd, [("Last Modified", "20"),
+                                              ("Path", ""),
+                                             ])
+                    first = False
+                outfd.write("{0:20} {1}\n".format(lm, path))
