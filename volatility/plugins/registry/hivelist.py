@@ -58,7 +58,7 @@ class HiveList(hs.HiveScan):
         hive_offsets = []
 
         for hive in result:
-            if hive.obj_offset not in hive_offsets:
+            if hive.Hive.Signature == 0xbee0bee0 and hive.obj_offset not in hive_offsets:
                 try:
                     name = str(hive.FileFullPath or '') or str(hive.FileUserName or '') or str(hive.HiveRootPath or '') or "[no name]"
                 except AttributeError:
