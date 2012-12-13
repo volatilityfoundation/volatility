@@ -289,6 +289,15 @@ class ITEMPOS(obj.CType):
             fileattrs = fileattrs.rstrip(", ")
         return fileattrs
 
+    def body(self, details):
+        return "0|[SHELLBAGS ITEMPOS] Name: {3}/Attrs: {4}/{5}|0|---------------|0|0|0|{0}|{1}|{2}|{2}\n".format(
+            self.Attributes.AccessDate.v(), 
+            self.Attributes.ModifiedDate.v(),
+            self.Attributes.CreatedDate.v(),
+            str(self.Attributes.UnicodeFilename), 
+            self.get_file_attrs(), 
+            details)
+
     def __str__(self):
         return "{0:<14} {1:20} {2:20} {3:20} {4:25} {5}".format(self.Attributes.FileName,
                 str(self.Attributes.ModifiedDate),
@@ -314,6 +323,15 @@ class FILE_ENTRY(ITEMPOS):
                 fileattrs += FILE_ATTRS[f] + ", "
         fileattrs = fileattrs.rstrip(", ")
         return fileattrs
+
+    def body(self, details):
+        return "0|[SHELLBAGS FILE_ENTRY] Name: {3}/Attrs: {4}/{5}|0|---------------|0|0|0|{0}|{1}|{2}|{2}\n".format(
+            self.Attributes.AccessDate.v(), 
+            self.Attributes.ModifiedDate.v(),
+            self.Attributes.CreatedDate.v(),
+            str(self.Attributes.UnicodeFilename),
+            self.get_file_attrs(),
+            details)
 
     def __str__(self):
         return "{0:<14} {1:20} {2:20} {3:20} {4:25}".format(self.Attributes.FileName,
@@ -834,6 +852,17 @@ class ShellBags(common.AbstractWindowsCommand):
             key = parent
         return path
         
+
+    def render_body(self, outfd, data):
+        for name, reg, key, items in data:
+            for item in items:
+                if item == "MruListEx":
+                    continue
+                for shell in items[item]:
+                    if type(shell) != ITEMPOS and type(shell) != FILE_ENTRY:
+                        continue 
+                    full_path = self.build_path(reg, name, shell).replace("\\\\", "\\")
+                    outfd.write("{0}".format(shell.body("FullPath: {0}/Registry: {1}/Key: {2}/LW: {3}".format(full_path, reg, name, str(key.LastWriteTime)))))
 
     def render_text(self, outfd, data):
         border = "*" * 75
