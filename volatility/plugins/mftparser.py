@@ -160,7 +160,7 @@ class RESIDENT_ATTRIBUTE(obj.CType):
                 thetype = ATTRIBUTE_TYPE_ID.get(int(item.Type), None)
                 if thetype == None:
                     return
-                elif thetype in ["STANDARD_INFORMATION", "FILE_NAME"]:
+                elif item.Length > 0x20 and thetype in ["STANDARD_INFORMATION", "FILE_NAME"]:
                     theitem = obj.Object(thetype, vm = bufferas, offset = item.AttributeID.obj_offset)
                     if thetype == "STANDARD_INFORMATION" and (not check or theitem.is_valid()):
                         attributes.append(("STANDARD_INFORMATION (AL)", theitem))
@@ -234,7 +234,7 @@ class STANDARD_INFORMATION(obj.CType):
                 # on his/her own by comparing record numbers in output or examining the 
                 # given physical offset in memory for example
                 path = record["filename"] + " (Possible non-base entry, extra $SI or invalid $FN)"
-        return "{0}|{1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}".format(path,
+        return "[MFT STD_INFO] {0}|{1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}".format(path,
             record_num,
             self.get_type_short(),
             size,
@@ -285,7 +285,7 @@ class FILE_NAME(STANDARD_INFORMATION):
             self.remove_unprintable(full))
 
     def body(self, path, record_num, size):
-        return "{0}|{1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}".format(path,
+        return "[MFT FILE_NAME] {0}|{1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}".format(path,
             record_num,
             self.get_type_short(),
             size,
@@ -364,6 +364,23 @@ MFT_types = {
         'InitializedAttributeSize': [0x38, ['unsigned long long']],
     }],
 
+    'EA_INFORMATION': [None, {
+        'EaPackedLength': [0x0, ['int']],
+        'EaCount': [0x4, ['int']],
+        'EaUnpackedLength': [0x8, ['long']],
+    }],
+ 
+    'EA': [None, {
+        'NextEntryOffset': [0x0, ['unsigned long long']],
+        'Flags': [0x8, ['unsigned char']],
+        'EaNameLength': [0x9, ['unsigned char']],
+        'EaValueLength': [0xa, ['unsigned short']],
+        'EaName': [0xc, ['String', dict(length = lambda x: x.EaNameLength)]], 
+        'EaValue': lambda x: obj.Object("Array", offset = x.obj_offset + len(x.EaName), count = x.EaValueLength, vm = x.obj_vm,
+                                        target = obj.Curry(obj.Object, "unsigned char")),
+    }],
+
+
     'STANDARD_INFORMATION': [0x48, {
         'CreationTime': [0x0, ['WinTimeStamp', {}]],
         'ModifiedTime': [0x8, ['WinTimeStamp', {}]],
@@ -437,7 +454,7 @@ MFT_types = {
         'NumFixupEntries': [ 0x6, ['unsigned short']],
         'LSN': [ 0x8, ['unsigned long long']],
         'VCN': [0x10, ['unsigned long long']],
-        'NodeHeader': [0x10, ['NODE_HEADER']],
+        'NodeHeader': [0x18, ['NODE_HEADER']],
     }],
 
     'NODE_HEADER': [0x10, {
@@ -609,25 +626,25 @@ class MFTParser(common.AbstractWindowsCommand):
                     if full != "":
                         # if we are here, we've hit one $FN attribute for this entry already and have the full name
                         # so we can dump this $SI
-                        outfd.write("(SI) 0x{0:x}|{1}\n".format(offset, i.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                        outfd.write("0|0x{0:x} {1}\n".format(offset, i.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
                     elif si != None:
                         # if we are here then we have more than one $SI attribute for this entry
                         # since we don't want to lose its info, we'll just dump it for now
                         # we won't have full path, but we'll have a filename most likely
-                        outfd.write("(SI) 0x{0:x}|{1}\n".format(offset, i.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                        outfd.write("0|0x{0:x} {1}\n".format(offset, i.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
                     elif si == None:
                         # this is the usual case and we'll save the $SI to process after we get the full path from the $FN
                         si = i
                 elif a.startswith("FILE_NAME"):
                     if hasattr(i, "ParentDirectory"):
                         full = mft_entry.get_full_path(i)
-                        outfd.write("(FN) 0x{0:x}|{1}\n".format(offset, i.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                        outfd.write("0|0x{0:x} {1}\n".format(offset, i.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
                         if si != None:
-                            outfd.write("(SI) 0x{0:x}|{1}\n".format(offset, si.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                            outfd.write("0|0x{0:x} {1}\n".format(offset, si.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
                             si = None
             if si != None:
                 # here we have a lone $SI in an MFT entry with no valid $FN.  This is most likely a non-base entry
-                outfd.write("(SI) 0x{0:x}|{1}\n".format(offset, si.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                outfd.write("0|0x{0:x} {1}\n".format(offset, si.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
 
     def render_text(self, outfd, data):
         border = "*" * 75
