@@ -215,7 +215,7 @@ class RegistryApi(object):
                                 return dat
         return None
 
-    def reg_get_all_keys(self, hive_name, user = None, start = None, end = None, reg = False):
+    def reg_get_all_keys(self, hive_name, user = None, start = None, end = None, reg = False, rawtime = False):
         '''
         This function enumerates all keys in specified hives and 
         collects lastwrite times.
@@ -234,11 +234,17 @@ class RegistryApi(object):
             if not root:
                 pass
             else:
-                time = "{0}".format(root.LastWriteTime)
+                time = "{0}".format(root.LastWriteTime) if not rawtime else root.LastWriteTime
                 if reg:
-                    yield (time, reg_name, root.Name)
+                    if start and end and str(time) >= start and str(time) <= end:
+                        yield (time, reg_name, root.Name)
+                    elif start == None and end == None:
+                        yield (time, reg_name, root.Name)
                 else:
-                    yield (time, root.Name)
+                    if start and end and str(time) >= start and str(time) <= end:
+                        yield (time, root.Name)
+                    elif start == None and end == None:
+                        yield (time, root.Name)
                 for s in rawreg.subkeys(root):
                     if reg:
                         keys.append([s, reg_name, root.Name + "\\" + s.Name])
@@ -248,8 +254,8 @@ class RegistryApi(object):
         # Get subkeys
         if reg:
             for k, reg_name, name in keys:
-                time = "{0}".format(k.LastWriteTime)
-                if start and end and time >= start and time <= end:
+                time = "{0}".format(k.LastWriteTime) if not rawtime else root.LastWriteTime
+                if start and end and str(time) >= start and str(time) <= end:
                     yield (time, reg_name, name)
                 elif start == None and end == None:
                     yield (time, reg_name, name)
@@ -259,8 +265,8 @@ class RegistryApi(object):
                         keys.append([s, reg_name, item])
         else:
             for k, name in keys:
-                time = "{0}".format(k.LastWriteTime)
-                if start and end and time >= start and time <= end:
+                time = "{0}".format(k.LastWriteTime) if not rawtime else root.LastWriteTime
+                if start and end and str(time) >= start and str(time) <= end:
                     yield (time, name)
                 elif start == None and end == None:
                     yield (time, name)
