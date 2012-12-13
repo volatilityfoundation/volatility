@@ -187,7 +187,7 @@ class EvtLogs(common.AbstractWindowsCommand):
     def remove_unprintable(self, str):
         return ''.join([c for c in str if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
 
-    def parse_evt_info(self, name, buf):
+    def parse_evt_info(self, name, buf, rawtime = False):
         
         loc = buf.find("LfLe")
         
@@ -244,14 +244,14 @@ class EvtLogs(common.AbstractWindowsCommand):
             if evtlog.TimeWritten != None: 
             
                 fields = [
-                    str(evtlog.TimeWritten),
+                    str(evtlog.TimeWritten) if not rawtime else evtlog.TimeWritten,
                     ntpath.basename(name),
                     computer_name,
                     sid_string,
                     source,
                     str(evtlog.EventID),
                     str(evtlog.EventType), msg]
-                    
+
                 yield fields
             
             ## Scan to the next record signature 
