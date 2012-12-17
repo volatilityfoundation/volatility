@@ -223,7 +223,7 @@ class STANDARD_INFORMATION(obj.CType):
             str(self.FileAccessedTime),
             self.get_type())
 
-    def body(self, path, record_num, size):
+    def body(self, path, record_num, size, offset):
         if path == "":
             # if the path is null we just try to get the filename 
             # from our dictionary and print the body file output
@@ -234,7 +234,10 @@ class STANDARD_INFORMATION(obj.CType):
                 # on his/her own by comparing record numbers in output or examining the 
                 # given physical offset in memory for example
                 path = record["filename"] + " (Possible non-base entry, extra $SI or invalid $FN)"
-        return "[MFT STD_INFO] {0}|{1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}".format(path,
+
+        return "[MFT STD_INFO] EntryOffset: 0x{0:x} {1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}|{8}".format(
+            offset,
+            path,
             record_num,
             self.get_type_short(),
             size,
@@ -284,8 +287,10 @@ class FILE_NAME(STANDARD_INFORMATION):
             str(self.FileAccessedTime),
             self.remove_unprintable(full))
 
-    def body(self, path, record_num, size):
-        return "[MFT FILE_NAME] {0}|{1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}".format(path,
+    def body(self, path, record_num, size, offset):
+        return "[MFT FILE_NAME] EntryOffset: 0x{0:x} {1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}|{8}".format(
+            offset,
+            path,
             record_num,
             self.get_type_short(),
             size,
@@ -626,25 +631,25 @@ class MFTParser(common.AbstractWindowsCommand):
                     if full != "":
                         # if we are here, we've hit one $FN attribute for this entry already and have the full name
                         # so we can dump this $SI
-                        outfd.write("0|0x{0:x} {1}\n".format(offset, i.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                        outfd.write("0|{0}\n".format(i.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize), offset)))
                     elif si != None:
                         # if we are here then we have more than one $SI attribute for this entry
                         # since we don't want to lose its info, we'll just dump it for now
                         # we won't have full path, but we'll have a filename most likely
-                        outfd.write("0|0x{0:x} {1}\n".format(offset, i.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                        outfd.write("0|{0}\n".format(i.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize), offset)))
                     elif si == None:
                         # this is the usual case and we'll save the $SI to process after we get the full path from the $FN
                         si = i
                 elif a.startswith("FILE_NAME"):
                     if hasattr(i, "ParentDirectory"):
                         full = mft_entry.get_full_path(i)
-                        outfd.write("0|0x{0:x} {1}\n".format(offset, i.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                        outfd.write("0|{0}\n".format(i.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize), offset)))
                         if si != None:
-                            outfd.write("0|0x{0:x} {1}\n".format(offset, si.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                            outfd.write("0|{0}\n".format(si.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize), offset)))
                             si = None
             if si != None:
                 # here we have a lone $SI in an MFT entry with no valid $FN.  This is most likely a non-base entry
-                outfd.write("0|0x{0:x} {1}\n".format(offset, si.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize))))
+                outfd.write("0|{0}\n".format(si.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize), offset)))
 
     def render_text(self, outfd, data):
         border = "*" * 75
