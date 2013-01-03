@@ -18,6 +18,7 @@ Joe Sylve
 Philippe Teuwen
 Nir Izraeli
 Cem Gurkok
+Andreas Schuster
 
 Volatility 2.2:
 ------------
