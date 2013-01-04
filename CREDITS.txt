@@ -19,6 +19,7 @@ Philippe Teuwen
 Nir Izraeli
 Cem Gurkok
 Andreas Schuster
+Santiago Vicente
 
 Volatility 2.2:
 ------------
