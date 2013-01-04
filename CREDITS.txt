@@ -14,11 +14,11 @@ intentional. Please bring it to our attention!
 
 Volatility 2.3:
 
+Cem Gurkok
+Nir Izraeli
+Andreas Schuster
 Joe Sylve
 Philippe Teuwen
-Nir Izraeli
-Cem Gurkok
-Andreas Schuster
 Santiago Vicente
 
 Volatility 2.2:
