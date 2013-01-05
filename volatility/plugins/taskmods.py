@@ -73,17 +73,16 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
 
         Returns a reduced list or the full list if config.PIDS not specified.
         """
+        
+        if self._config.PID is None:
+            return tasks
+        
         try:
-            if self._config.PID:
-                pidlist = [int(p) for p in self._config.PID.split(',')]
-                newtasks = [t for t in tasks if t.UniqueProcessId in pidlist]
-                # Make this a separate statement, so that if an exception occurs, no harm done
-                tasks = newtasks
-        except (ValueError, TypeError):
-            # TODO: We should probably print a non-fatal warning here
-            pass
-
-        return tasks
+            pidlist = [int(p) for p in self._config.PID.split(',')]
+        except ValueError:
+            debug.error("Invalid PID {0}".format(self._config.PID))
+            
+        return [t for t in tasks if t.UniqueProcessId in pidlist]
 
     def virtual_process_from_physical_offset(self, addr_space, offset):
         """ Returns a virtual process from a physical offset in memory """
