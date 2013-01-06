@@ -26,7 +26,6 @@
 @organization: http://computer.forensikblog.de/en/
 """
 
-import common
 import volatility.scan as scan
 import volatility.plugins.common as common
 import volatility.debug as debug #pylint: disable-msg=W0611
