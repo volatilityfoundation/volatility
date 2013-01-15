@@ -235,7 +235,7 @@ class STANDARD_INFORMATION(obj.CType):
                 # given physical offset in memory for example
                 path = record["filename"] + " (Possible non-base entry, extra $SI or invalid $FN)"
 
-        return "[MFT STD_INFO] EntryOffset: 0x{0:x} {1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}|{8}".format(
+        return "[MFT STD_INFO] EntryOffset: 0x{0:x} {1}|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
             offset,
             path,
             record_num,
@@ -288,7 +288,7 @@ class FILE_NAME(STANDARD_INFORMATION):
             self.remove_unprintable(full))
 
     def body(self, path, record_num, size, offset):
-        return "[MFT FILE_NAME] EntryOffset: 0x{0:x} {1}|{2}|0|0|{3}|{4}|{5}|{6}|{7}|{8}".format(
+        return "[MFT FILE_NAME] EntryOffset: 0x{0:x} {1}|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
             offset,
             path,
             record_num,
