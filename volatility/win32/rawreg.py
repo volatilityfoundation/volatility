@@ -159,7 +159,6 @@ def value_data(val):
         if not big_data.Count or big_data.Count > 0x80000000: 
             thelist = []
         else:
-            list_address = big_data.List
             for i in range(big_data.Count):
                 ptr_off = big_data.List + (i * 4)
                 chunk_addr = obj.Object("unsigned int", ptr_off, val.obj_vm)
