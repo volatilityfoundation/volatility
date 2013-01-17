@@ -55,7 +55,7 @@ class Connections(common.AbstractWindowsCommand):
                           [("Offset{0}".format(offsettype), "[addrpad]"),
                            ("Local Address", "25"),
                            ("Remote Address", "25"),
-                           ("Pid", ">6")
+                           ("Pid", "")
                            ])
 
         for conn in data:
