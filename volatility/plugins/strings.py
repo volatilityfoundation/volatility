@@ -122,6 +122,10 @@ class Strings(taskmods.DllList):
         #      recording vpage instead of vpage+i in the reverse map. -- TDM
         reverse_map = {}
 
+        verbfd.write("Enumerating kernel modules...\n")
+        mods = dict((mod.DllBase, mod) for mod in win32.modules.lsmod(addr_space))
+        mod_addrs = sorted(mods.keys())
+            
         verbfd.write("Calculating kernel mapping...\n")
         available_pages = addr_space.get_available_pages()
         for (vpage, vpage_size) in available_pages:
@@ -132,7 +136,13 @@ class Strings(taskmods.DllList):
                 if pagelist is None:
                     pagelist = [True]
                     reverse_map[kpage + i] = pagelist
-                pagelist.append(('kernel', vpage + i))
+                # Try to lookup the owning kernel module
+                module = win32.tasks.find_module(mods, mod_addrs, vpage + i)
+                if module:
+                    hint = str(module.BaseDllName)
+                else:
+                    hint = 'kernel'
+                pagelist.append((hint, vpage + i))
                 verbfd.write("\r  Kernel [{0:08x}]".format(vpage))
         verbfd.write("\n")
 
