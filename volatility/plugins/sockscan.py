@@ -105,7 +105,7 @@ class SockScan(common.AbstractWindowsCommand):
     def render_text(self, outfd, data):
 
         self.table_header(outfd, [('Offset(P)', '[addrpad]'),
-                                  ('PID', '>6'),
+                                  ('PID', '>8'),
                                   ('Port', '>6'),
                                   ('Proto', '>6'),
                                   ('Protocol', '15'),

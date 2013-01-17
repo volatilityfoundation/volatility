@@ -43,7 +43,7 @@ class Sockets(common.AbstractWindowsCommand):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
         self.table_header(outfd,
                           [("Offset{0}".format(offsettype), "[addrpad]"),
-                           ("PID", ">6"),
+                           ("PID", ">8"),
                            ("Port", ">6"),
                            ("Proto", ">6"),
                            ("Protocol", "15"),
