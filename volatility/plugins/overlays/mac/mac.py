@@ -81,11 +81,14 @@ def parse_dsymutil(data, module):
     # get the system map
     for line in data.splitlines():
         ents = line.split()
-        try:
-            name = ents[10][1:-1]
-            lenaddr = ents[9]
-            addr = long(lenaddr, 16)
-   
+
+        match = re.search("\[.*?\)\s+[0-9A-Fa-z]+\s+\d+\s+([0-9A-Fa-f]+)\s'(\w+)'", line)
+
+        if match:
+            (addr, name) = match.groups()
+
+            addr = int(addr, 16)
+
             if addr == 0:
                 continue
 
@@ -104,19 +107,12 @@ def parse_dsymutil(data, module):
             else:
                 sys_map[module][name] = [(addr, "sym type?")]
 
-        except IndexError, e:
-            if not line:
-                pass
+        elif line.find("Symbol table for") != -1:
+            if line.find("i386") != -1:
+                arch = "32bit"
+            else:
+                arch = "64bit"
 
-            if line.find("Symbol table for") != -1:
-                if line.find("i386") != -1:
-                    arch = "32bit"
-                else:
-                    arch = "64bit"
-
-        except ValueError, e:
-            pass
-        
     if arch == "":
         return None
 
@@ -480,7 +476,7 @@ def MacProfileFactory(profpkg):
 
     memmodel, arch = "32bit", "x86"
     profilename = os.path.splitext(os.path.basename(profpkg.filename))[0]
-
+ 
     for f in profpkg.filelist:
         '''
         if f.filename.lower().endswith('.dwarf'):
@@ -493,6 +489,7 @@ def MacProfileFactory(profpkg):
             memmodel, sysmap = parse_dsymutil(profpkg.read(f.filename), "kernel")
             if memmodel == "64bit":
                 arch = "x64"
+            
             sysmapvar.update(sysmap)
             debug.debug("{2}: Found system file {0} with {1} symbols".format(f.filename, len(sysmapvar.keys()), profilename))
 
