@@ -21,42 +21,42 @@
 @organization: 
 """
 
-import volatility.obj as obj
-import mac_common
 import sys
-from mac_lsmod import mac_lsmod as mac_lsmod
+
+import volatility.obj as obj
+import common
+
+from lsmod import mac_lsmod as mac_lsmod
 
 class mac_trustedbsd(mac_lsmod):
-
     def get_members(self):
-
         h = self.profile.types['mac_policy_ops']
         h = h.keywords["members"]
 
         return h
 
     def calculate(self):
+        common.set_plugin_members(self)
 
         # get all the members of 'mac_policy_ops' so that we can check them (they are all function ptrs)
         ops_members = self.get_members()
 
         # get the symbols need to check for if rootkit or not
-        (kernel_symbol_addresses, kmods) = mac_common.get_kernel_addrs(self)
+        (kernel_symbol_addresses, kmods) = common.get_kernel_addrs(self)
 
-        list_addr = self.smap["_mac_policy_list"]
+        list_addr = self.get_profile_symbol("_mac_policy_list")
     
         plist = obj.Object("mac_policy_list", offset=list_addr, vm=self.addr_space)
 
         parray = obj.Object(theType = 'Array', offset = plist.entries, vm = self.addr_space, targetType = 'mac_policy_list_element', count = plist.maxindex+1)
 
         for (i, ent) in enumerate(parray):
-
             # I don't know how this can happen, but the kernel makes this check all over the place
             # the policy is useful without any ops so a rootkit can't abuse this
             if ent.mpc == None:
                 continue
 
-            name = mac_common.get_string(ent.mpc.mpc_name, self.addr_space)
+            name = common.get_string(ent.mpc.mpc_name, self.addr_space)
 
             ops = obj.Object("mac_policy_ops", offset=ent.mpc.mpc_ops, vm=self.addr_space)
 
@@ -65,15 +65,13 @@ class mac_trustedbsd(mac_lsmod):
                 ptr = ops.__getattr__(check)
                
                 if ptr != 0:
-                    
                     # make the last parameter 1 to see the names of known modules that load policies
-                    good = mac_common.is_known_address(ptr, kernel_symbol_addresses, kmods, 0) 
+                    good = common.is_known_address(ptr, kernel_symbol_addresses, kmods, 0) 
 
                     yield (good, check, name, ptr)
+
     def render_text(self, outfd, data):
-
         for (good, check, name, ptr) in data:
-
             if good == 0:
                 print "unknown hook for %s in policy %s at %x" % (check, name, ptr)
             #else:
