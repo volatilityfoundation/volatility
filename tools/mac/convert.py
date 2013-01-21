@@ -405,6 +405,9 @@ def convert_file(mac_file, outfile):
     level7_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{29}(\w+)\s')
     level8_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{33}(\w+)\s')
     level9_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{37}(\w+)\s')
+    level10_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{41}(\w+)\s')
+    level11_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{45}(\w+)\s')
+    level12_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{49}(\w+)\s')
 
     at_re     = re.compile(r'^\s+(\w+)\((.+)')
 
@@ -450,6 +453,9 @@ def convert_file(mac_file, outfile):
             y = level7_re.match(line)
             b = level8_re.match(line)
             j = level9_re.match(line)
+            a = level10_re.match(line)
+            c = level11_re.match(line)
+            d = level12_re.match(line)
 
             if m:
                 (id, name) = m.groups()
@@ -513,7 +519,28 @@ def convert_file(mac_file, outfile):
                 id = "%d" % int(id, 16)
                 level = 1
 
+                write_line(outfile, 9, id, name)
+
+            elif a:
+                (id, name) = a.groups()
+                id = "%d" % int(id, 16)
+                level = 1
+                
                 write_line(outfile, 10, id, name)
+
+            elif c:
+                (id, name) = c.groups()
+                id = "%d" % int(id, 16)
+                level = 1
+                
+                write_line(outfile, 11, id, name)
+
+            elif d:
+                (id, name) = d.groups()
+                id = "%d" % int(id, 16)
+                level = 1
+                
+                write_line(outfile, 12, id, name)
 
             else:
                 print "State machine broken! level 0! %s" % line
