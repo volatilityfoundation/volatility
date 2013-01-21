@@ -22,8 +22,8 @@
 """
 
 import volatility.obj as obj
-import mac_list_open_files
-import mac_common
+import lsof
+import common
 
 tcp_states = ("",
               "ESTABLISHED",
@@ -38,15 +38,13 @@ tcp_states = ("",
               "LISTEN",
               "CLOSING")
 
-class mac_netstat(mac_list_open_files.mac_list_open_files):
+class mac_netstat(lsof.mac_lsof):
+    """ Lists active per-process network connections """
 
     def render_text(self, outfd, data):
-        
         for (data_ptr, data_type, i) in data:
-
             # socket
             if data_type == 2:
-                
                 socket = obj.Object("socket", offset=data_ptr.v(), vm=self.addr_space)
 
                 family = socket.so_proto.pr_domain.dom_family
@@ -70,11 +68,9 @@ class mac_netstat(mac_list_open_files.mac_list_open_files):
                     print "%s %s:%s %s:%s %s" % (proto, lip, lport, rip, rport, state)
 
     def get_tcp_state(self, state):
-    
         return tcp_states[state]
 
     def get_proto(self, proto):
-
         if proto == 6:
             ret = ("TCP", self.get_tcp_state(proto))
 
@@ -87,7 +83,6 @@ class mac_netstat(mac_list_open_files.mac_list_open_files):
         return ret
 
     def ip2str(self, ip):
-
         ip = ip & 0xffffffff
 
         a = ip & 0xff
@@ -98,7 +93,6 @@ class mac_netstat(mac_list_open_files.mac_list_open_files):
         return "%d.%d.%d.%d" % (a, b, c, d)
 
     def port(self, p):
-
         a = ((p & 0xff00) >> 8) & 0xff
         b = ((p & 0x00ff) << 8) & 0xff
 
@@ -107,7 +101,6 @@ class mac_netstat(mac_list_open_files.mac_list_open_files):
         return c
 
     def parse_ipv4(self, socket, pcb, proto):
-
         lip   = self.ip2str(pcb.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v())        
         lport = self.port(pcb.inp_lport.v())
 
@@ -118,7 +111,6 @@ class mac_netstat(mac_list_open_files.mac_list_open_files):
 
 
     def ip62str(self, ipbytes):
-
         ret     = ""
         ctr     = 0
 
@@ -134,7 +126,6 @@ class mac_netstat(mac_list_open_files.mac_list_open_files):
         return ret 
 
     def parse_ipv6(self, socket, pcb, proto):
-
         lip   = self.ip62str(pcb.inp_dependladdr.inp6_local.__u6_addr.__u6_addr8)
         lport = self.port(pcb.inp_lport.v())
 
@@ -145,13 +136,12 @@ class mac_netstat(mac_list_open_files.mac_list_open_files):
         return (lip, lport, rip, rport)
 
     def parse_unix(self, pcb):
-
         path = pcb.unp_addr.sun_path
 
         if path[0] == 0:
             ret = ""
         else:
-            ret = mac_common.get_string(path.obj_offset, self.addr_space, 105)
+            ret = common.get_string(path.obj_offset, self.addr_space, 105)
 
         return ret
 
