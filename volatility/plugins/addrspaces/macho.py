@@ -142,6 +142,10 @@ macho_types = {
 
 }
 
+class MachoTypes(obj.ProfileModification):
+    def modification(self, profile):
+        profile.vtypes.update(macho_types)
+
 class MachOAddressSpace(addrspace.BaseAddressSpace):
     """ 
     Address space for mach-o files to support atc-ny memory reader
@@ -168,8 +172,6 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
             self.bits = 64
         else:
             self.as_assert(0, "MachO Header signature invalid")
-
-        self.profile.add_types(macho_types)
 
         self.addr_cache = {}
 
