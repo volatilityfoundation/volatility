@@ -22,6 +22,8 @@
 """
 
 import volatility.obj as obj
+import volatility.debug as debug
+import volatility.addrspace as addrspace
 import pslist
 import common
 
@@ -42,7 +44,10 @@ class mac_psaux(pslist.mac_pslist):
         
         cr3  = task.map.pmap.pm_cr3
 
-        proc_as = self.addr_space.__class__(self.addr_space.base, self.addr_space.get_config(), dtb = cr3, dtb_is_valid = True) 
+        try:
+            proc_as = self.addr_space.__class__(self.addr_space.base, self.addr_space.get_config(), dtb = cr3, dtb_is_valid = True) 
+        except addrspace.ASAssertionError:
+            debug.error("This plugin does not work when analyzing a sample from a 64bit computer running a 32bit kernel.")
 
         argslen   = proc.p_argslen
         argsstart = proc.user_stack - proc.p_argslen
