@@ -22,13 +22,15 @@
 """
 
 import volatility.obj as obj
-import mac_common
+import common
 
-class mac_ifconfig(mac_common.AbstractMacCommand):
+class mac_ifconfig(common.AbstractMacCommand):
+    """ Lists network interface information for all devices """
 
     def calculate(self):
+        common.set_plugin_members(self)    
 
-        list_head_addr = self.smap["_dlil_ifnet_head"]
+        list_head_addr = self.get_profile_symbol("_dlil_ifnet_head")
 
         list_head_ptr  = obj.Object("Pointer", offset=list_head_addr, vm=self.addr_space)
 
@@ -38,7 +40,7 @@ class mac_ifconfig(mac_common.AbstractMacCommand):
 
         while ifnet:
 
-            name = mac_common.get_string(ifnet.if_name, self.addr_space)
+            name = common.get_string(ifnet.if_name, self.addr_space)
 
             unit = ifnet.if_unit
             
@@ -61,12 +63,10 @@ class mac_ifconfig(mac_common.AbstractMacCommand):
 
  
     def render_text(self, outfd, data):
-        
         for (name, unit, ips) in data:
             print "%s%d -> %s" % (name, unit, str(ips))
 
     def ip2str(self, ip):
-
         ip = ip & 0xffffffff
 
         a = ip & 0xff
@@ -77,7 +77,6 @@ class mac_ifconfig(mac_common.AbstractMacCommand):
         return "%d.%d.%d.%d" % (a, b, c, d)
 
     def get_link_addr(self, addr):
-
         if addr == None:
             return None
 
@@ -94,11 +93,9 @@ class mac_ifconfig(mac_common.AbstractMacCommand):
         return ret
 
     def get_ipv6(self, addr):
-
         ret = ""
 
         for idx,a in enumerate(addr):
-
             ret = ret + "%.02x" % a.v()
  
             if idx and idx % 2 != 0:
@@ -110,7 +107,6 @@ class mac_ifconfig(mac_common.AbstractMacCommand):
         return ret
 
     def get_ip_address(self, ifnet):
-
         addr = ifnet.ifa_addr
 
         family = addr.sa_family
@@ -118,23 +114,16 @@ class mac_ifconfig(mac_common.AbstractMacCommand):
         ip = ""
 
         if family == 2: # ip 4
-            
             addr_in = obj.Object("sockaddr_in", offset=addr, vm=self.addr_space)
-
             ip = self.ip2str(addr_in.sin_addr.s_addr.v())
 
         elif family == 30:
-        
             addr_in6 = obj.Object("sockaddr_in6", offset=addr, vm=self.addr_space)
-
             addr = addr_in6.sin6_addr.__u6_addr.__u6_addr8
-
             ip = self.get_ipv6(addr)
 
         elif family == 18:
-            
             addr_dl = obj.Object("sockaddr_dl", offset=addr, vm=self.addr_space)
-
             ip = self.get_link_addr(addr_dl)
         
         else:
