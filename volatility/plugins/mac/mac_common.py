@@ -27,18 +27,38 @@ import volatility.obj      as obj
 
 import datetime
 
-class AbstractMacCommand(commands.command):
+def set_plugin_members(obj_ref):
+    obj_ref.addr_space = utils.load_as(obj_ref._config)
 
+class AbstractMacCommand(commands.command):
     def __init__(self, *args, **kwargs):
+        self.addr_space = None
         commands.Command.__init__(self, *args, **kwargs)
-        self.addr_space = utils.load_as(self._config)
-        self.profile = self.addr_space.profile
-        self.smap = self.profile.sysmap
+
+    @property
+    def profile(self):
+        if self.addr_space:
+            return self.addr_space.profile
+        return None
+
+    def execute(self, *args, **kwargs):
+        commands.Command.execute(self, *args, **kwargs)
 
     @staticmethod
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'mac'
-    
+
+    def get_profile_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
+        '''
+        Gets a symbol out of the profile
+        syn_name -> name of the symbol
+        nm_tyes  -> types as defined by 'nm' (man nm for examples)
+        sym_type -> the type of the symbol (passing Pointer will provide auto deref)
+        module   -> which module to get the symbol from, default is kernel, otherwise can be any name seen in 'lsmod'
+
+        Just a wrapper for AbstractLinuxProfile.get_symbol
+        '''
+        return self.profile.get_symbol(sym_name, nm_type, sym_type, module)
 
 def is_known_address(handler, kernel_symbol_addresses, kmods, printme=0):
 
