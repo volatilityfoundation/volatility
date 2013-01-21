@@ -64,15 +64,15 @@ def is_known_address(handler, kernel_symbol_addresses, kmods, printme=0):
     # see if this handler is in a known location
     good = 0 
 
+    handler = handler.v()
+
     if handler in kernel_symbol_addresses:
         if printme:
             print " in kernel ",
         good = 1     
     else:
-    
         # see if the address fits in any of the known modules
         for (start, end, name) in kmods:
-            
             if start <= handler <= end:
                 if printme:
                     print " in module %s " % name,
@@ -86,7 +86,7 @@ from lsmod import mac_lsmod as mac_lsmod
 def get_kernel_addrs(self):
     # all the known addresses in the kernel
     # TODO -- make more stringent and get only symbols from .text
-    kernel_symbol_addresses = [addrs[0][0] for addrs in self.profile.get_all_symbols()]
+    kernel_symbol_addresses = self.profile.get_all_addresses()
     
     # module addresses, tuple of (start, end)
     # TODO -- make sure more stringent and parse each kext in-memory so we only allow whitelist from .text
@@ -157,11 +157,10 @@ def get_string(addr, addr_space, maxlen = 256):
     return ret 
 
 # account for c++ symbol name mangling
-def get_cpp_sym(name, smap):
-
-    for s in smap:
-        if s.find(name) != -1:
-            return smap[s]
+def get_cpp_sym(name, profile):
+    for (cppname, addr) in profile.get_all_symbols():
+        if cppname.find(name) != -1:
+            return addr
 
     return None
 
