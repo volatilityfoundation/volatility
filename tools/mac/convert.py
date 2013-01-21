@@ -227,7 +227,10 @@ class DWARFParser(object):
             self.id_to_name[statement_id] = data.get('AT_type', ['void'])
 
         elif kind == 'TAG_typedef':
-            self.id_to_name[statement_id] = data['AT_type']
+            try:
+                self.id_to_name[statement_id] = data['AT_type']
+            except:
+                self.id_to_name[statement_id] = 'void'
 
         elif kind == 'TAG_subroutine_type':
             self.id_to_name[statement_id] = ['void']         # Don't need these
@@ -408,7 +411,9 @@ def convert_file(mac_file, outfile):
     level10_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{41}(\w+)\s')
     level11_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{45}(\w+)\s')
     level12_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{49}(\w+)\s')
-
+    level13_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{53}(\w+)\s')
+    level14_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{57}(\w+)\s')
+    
     at_re     = re.compile(r'^\s+(\w+)\((.+)')
 
     level = 0
@@ -456,6 +461,8 @@ def convert_file(mac_file, outfile):
             a = level10_re.match(line)
             c = level11_re.match(line)
             d = level12_re.match(line)
+            e = level13_re.match(line)
+            g = level14_re.match(line)            
 
             if m:
                 (id, name) = m.groups()
@@ -475,7 +482,6 @@ def convert_file(mac_file, outfile):
                 (id, name) = r.groups()
                 id = "%d" % int(id, 16)           
                 level = 1
-            
                 
                 write_line(outfile, 3, id, name)
 
@@ -542,6 +548,20 @@ def convert_file(mac_file, outfile):
                 
                 write_line(outfile, 12, id, name)
 
+            elif e:
+                (id, name) = e.groups()
+                id = "%d" % int(id, 16)
+                level = 1
+                
+                write_line(outfile, 13, id, name)
+
+            elif g:
+                (id, name) = g.groups()
+                id = "%d" % int(id, 16)
+                level = 1
+        
+                write_line(outfile, 14, id, name)
+
             else:
                 print "State machine broken! level 0! %s" % line
                 sys.exit(1)
@@ -576,14 +596,18 @@ def convert_file(mac_file, outfile):
                     val = val[1:-1]
 
                 if name == "AT_const_value":
-                    
                     ents = val.split()
-
                     if len(ents) > 1:
                         ents = ents[1:]
-                        val = "%d" % int("0x" + "".join([x for x in ents]),16)
+                        try:
+                            val = "%d" % int("0x" + "".join([x for x in ents]),16)
+                        except:
+                            val = "Bad const list val"
                     else:
-                        val = "%d" % int(val, 16)
+                        try:
+                            val = "%d" % int(val, 16)
+                        except:
+                            val = "Bad const value"
 
                 if name in ["AT_byte_size", "AT_bit_offset", "AT_bit_size", "AT_upper_bound"]:
                     val = "%d" % int(val, 16)
