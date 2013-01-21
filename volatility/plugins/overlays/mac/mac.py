@@ -109,10 +109,9 @@ def parse_dsymutil(data, module):
                 else:
                     arch = "64bit"
 
-        except Exception, e:
-            print e
-            exit()
-
+        except ValueError, e:
+            pass
+        
     if arch == "":
         return None
 
