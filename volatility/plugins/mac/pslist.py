@@ -22,16 +22,16 @@
 """
 
 import volatility.obj as obj
-import mac_common
+import common
 
-class mac_pslist(mac_common.AbstractMacCommand):
-
+class mac_pslist(common.AbstractMacCommand):
     def __init__(self, config, *args):
-        mac_common.AbstractMacCommand.__init__(self, config, *args)
+        common.AbstractMacCommand.__init__(self, config, *args)
         self._config.add_option('PID', short_option = 'p', default = None, help = 'Operate on these Process IDs (comma-separated)', action = 'store', type = 'str')
 
     def calculate(self):
-        
+        common.set_plugin_members(self)
+
         pidlist = None
 
         try:
@@ -40,7 +40,7 @@ class mac_pslist(mac_common.AbstractMacCommand):
         except:
             pass
         
-        p = self.smap["_allproc"]
+        p = self.get_profile_symbol("_allproc")
 
         procsaddr = obj.Object("proclist", offset=p, vm=self.addr_space)
 
@@ -56,7 +56,7 @@ class mac_pslist(mac_common.AbstractMacCommand):
     def render_text(self, outfd, data):
         
         for proc in data:
-            name = mac_common.get_string(proc.p_comm.obj_offset, self.addr_space)
+            name = common.get_string(proc.p_comm.obj_offset, self.addr_space)
             outfd.write("%d | %s\n" % (proc.p_pid, name))
 
 
