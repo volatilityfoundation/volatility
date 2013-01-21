@@ -22,25 +22,25 @@
 """
 
 import volatility.obj as obj
-import mac_common
+import common
 
-class mac_arp(mac_common.AbstractMacCommand):
+class mac_arp(common.AbstractMacCommand):
     """ prints the arp table """
     
     def calculate(self):
+        common.set_plugin_members(self)
 
-        arp_addr = self.smap["_llinfo_arp"]
+        arp_addr = self.get_profile_symbol("_llinfo_arp")
     
         ptr = obj.Object("Pointer", offset=arp_addr, vm=self.addr_space)
 
         ent = obj.Object("llinfo_arp", offset=ptr, vm=self.addr_space)
 
         while ent:
-
             yield ent.la_rt
 
             ent = ent.la_le.le_next
 
     def render_text(self, outfd, data):
         for rt in data:
-            mac_common.print_rt(self, rt) 
+            common.print_rt(self, rt) 
