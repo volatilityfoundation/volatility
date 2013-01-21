@@ -155,7 +155,6 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
     checkname = 'MachOValidAS'
 
     def __init__(self, base, config, *args, **kwargs):
-
         self.as_assert(base, "mac: need base")
 
         addrspace.BaseAddressSpace.__init__(self, base, config, *args, **kwargs)
@@ -167,7 +166,6 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
                     
         elif sig == '\xcf\xfa\xed\xfe':
             self.bits = 64
-
         else:
             self.as_assert(0, "MachO Header signature invalid")
 
@@ -178,22 +176,18 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
         self.parse_macho()
 
     def get_object_name(self, object):
-
         if self.bits == 64 and object in ["mach_header", "segment_command", "section"]:
             object = object + "_64"
 
         return object
 
     def get_base_object(self, object, offset):
-
         return obj.Object(object, offset, vm=self.base)
 
     def sizeOf(self, name):
-        
         return self.profile.get_obj_size(name)
 
     def parse_macho(self):
-        
         header_name   = self.get_object_name("mach_header")
         header_size   = self.sizeOf(header_name)
 
@@ -205,7 +199,6 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
         self.segs = []
 
         for i in xrange(0, header.ncmds):
-
             structname = self.get_object_name("segment_command")
 
             seg = self.get_base_object(structname, offset)
@@ -215,16 +208,13 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
             offset = offset + seg.cmdsize
 
     def read(self, addr, length):
-
         key = "%d:%d" % (addr, length)
 
         if key in self.addr_cache:
             return self.addr_cache[key]
 
         for seg in self.segs:
-
             if seg.vmaddr <= addr < seg.vmaddr + seg.vmsize:
-                
                 # find offset into seg and return place inside file
                 vaddr = addr - seg.vmaddr.v()
 
