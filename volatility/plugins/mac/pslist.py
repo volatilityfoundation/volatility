@@ -25,6 +25,8 @@ import volatility.obj as obj
 import common
 
 class mac_pslist(common.AbstractMacCommand):
+    """ List Running Processes """
+
     def __init__(self, config, *args):
         common.AbstractMacCommand.__init__(self, config, *args)
         self._config.add_option('PID', short_option = 'p', default = None, help = 'Operate on these Process IDs (comma-separated)', action = 'store', type = 'str')

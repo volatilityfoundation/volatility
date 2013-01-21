@@ -25,6 +25,8 @@ import volatility.obj as obj
 import common
 
 class mac_lsmod(common.AbstractMacCommand):
+    """ Lists loaded kernel modules """
+
     def calculate(self):
         common.set_plugin_members(self)
 

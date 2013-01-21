@@ -28,6 +28,8 @@ import common
 from lsmod import mac_lsmod as mac_lsmod
 
 class mac_ip_filters(mac_lsmod):
+    """ Reports any hooked IP filters """
+
     def check_filter(self, context, fname, ptr, kernel_symbol_addresses, kmods):
         if ptr == None:
             return

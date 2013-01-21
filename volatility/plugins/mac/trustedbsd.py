@@ -29,6 +29,8 @@ import common
 from lsmod import mac_lsmod as mac_lsmod
 
 class mac_trustedbsd(mac_lsmod):
+    """ Lists malicious trustedbsd policies """
+
     def get_members(self):
         h = self.profile.types['mac_policy_ops']
         h = h.keywords["members"]

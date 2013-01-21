@@ -25,6 +25,8 @@ import volatility.obj as obj
 import common
 
 class mac_vfs_events(common.AbstractMacCommand):
+    """ Lists Mac VFS Events """
+
     def calculate(self):
         common.set_plugin_members(self)
 
