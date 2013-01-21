@@ -543,6 +543,7 @@ def MacProfileFactory(profpkg):
             """Loads up the system map data"""
             self.sys_map.update(sysmapvar)
 
+        # Returns a list of (name, addr)
         def get_all_symbols(self, module = "kernel"):
             """ Gets all the symbol tuples for the given module """
             ret = []
@@ -550,13 +551,12 @@ def MacProfileFactory(profpkg):
             symtable = self.sys_map
 
             if module in symtable:
-
                 mod = symtable[module]
 
                 for (name, addrs) in mod.items():
-                    ret.append(addrs)
+                    ret.append([name, addrs[0][0]])
             else:
-                debug.info("All symbols requested for non-existent module %s" % module)
+                debug.info("All symbols  requested for non-existent module %s" % module)
 
             return ret
 
@@ -568,10 +568,8 @@ def MacProfileFactory(profpkg):
 
             symbols = self.get_all_symbols(module)
 
-            for sym in symbols:
-
-                for (addr, addrtype) in sym:
-                    ret[addr] = 1
+            for (_name, addr) in symbols:
+                ret[addr] = 1
 
             return ret
 
@@ -594,9 +592,7 @@ def MacProfileFactory(profpkg):
             symtable = self.sys_map
 
             if module in symtable:
-
                 ret = symtable[module].keys()
-
             else:
                 debug.error("get_all_symbol_names called on non-existent module")
 
