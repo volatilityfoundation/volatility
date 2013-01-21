@@ -20,6 +20,7 @@
 import re,copy
 import sys, os
 import zipfile
+import struct
 
 import volatility.plugins
 from volatility import cache
@@ -36,13 +37,17 @@ class VolatilityDTB(obj.VolatilityMagic):
 
         if self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit":
             ret = profile.get_symbol("_IdlePDPT")
+            # on 10.5.x the PDTD symbol is a pointer instead of an array like 10.6 and 10.7
+            if ret % 0x1000:
+                ret = self.obj_vm.read(ret, 4)
+                ret = struct.unpack("<I", ret)[0]
         else:
             ret = profile.get_symbol("_IdlePML4")
             # so it seems some kernels don't define this as the physical address, but actually the virtual
             # while others define it as the physical, easy enough to figure out on the fly
             if ret > 0xffffff8000000000:
                 ret = ret - 0xffffff8000000000
-        
+
         yield ret
 
 # the intel check, simply checks for the static paging of init_task
