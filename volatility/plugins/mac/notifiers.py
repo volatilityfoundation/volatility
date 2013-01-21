@@ -22,18 +22,19 @@
 """
 
 import volatility.obj as obj
-import mac_common
-import mac_lsmod
-from mac_lsmod import mac_lsmod as mac_lsmod
+
+import common
+from lsmod import mac_lsmod as mac_lsmod
 
 class mac_notifiers(mac_lsmod):
     """ detects rootkits that add hooks into I/O Kit (e.g. LogKext) """
 
     def calculate(self):
+        common.set_plugin_members(self)
 
-        (kernel_symbol_addresses, kmods) = mac_common.get_kernel_addrs(self)
+        (kernel_symbol_addresses, kmods) = common.get_kernel_addrs(self)
 
-        gnotify_addr = mac_common.get_cpp_sym("gNotifications", self.smap)
+        gnotify_addr = common.get_cpp_sym("gNotifications", self.addr_space.profile)
 
         gnotify_ptr  = obj.Object("Pointer", offset=gnotify_addr, vm=self.addr_space)
 
@@ -43,7 +44,6 @@ class mac_notifiers(mac_lsmod):
 
         # walk the current set of notifications
         for i in xrange(0, gnotifications.count):
-            
             ent = ents[i]
 
             if ent == None:
@@ -51,7 +51,7 @@ class mac_notifiers(mac_lsmod):
 
             s = obj.Object("OSString", offset=ent.key, vm=self.addr_space)
 
-            key   = mac_common.get_string(s.string.v(), self.addr_space)
+            key   = common.get_string(s.string.v(), self.addr_space)
 
             # get the value
             valset   = obj.Object("OSOrderedSet", offset=ent.value, vm=self.addr_space)
@@ -59,7 +59,6 @@ class mac_notifiers(mac_lsmod):
             notifiers_ptrs = obj.Object(theType = 'Array', offset = valset.array, vm = self.addr_space, targetType = 'Pointer', count = valset.count)
             
             for i in xrange(0, valset.count):
-
                 notifier = obj.Object("_IOServiceNotifier", offset=notifiers_ptrs[i], vm=self.addr_space)
 
                 if notifier == None:
@@ -71,15 +70,12 @@ class mac_notifiers(mac_lsmod):
                 # this should be only in the kernel or in one of the known IOKit drivers for the specific kernel
                 handler = notifier.handler
 
-                good = mac_common.is_known_address(handler, kernel_symbol_addresses, kmods)
+                good = common.is_known_address(handler, kernel_symbol_addresses, kmods)
 
-                if good == 0:
-                    yield (key, notifier, matches)
+                yield (good, key, notifier, matches)
 
-   
     # returns the list of matching notifiers (serviceMatch) for a notifier as a string
     def get_matching(self, notifier):
-        
         matches = []
     
         matching = notifier.matching
@@ -87,7 +83,6 @@ class mac_notifiers(mac_lsmod):
         ents = obj.Object(theType = 'Array', offset = matching.dictionary, vm = self.addr_space, targetType = 'dictEntry', count = matching.count)
 
         for i in xrange(0, matching.count):
-            
             ent = ents[i]
 
             if ent == None:
@@ -95,19 +90,21 @@ class mac_notifiers(mac_lsmod):
 
             s = obj.Object("OSString", offset=ent.key, vm=self.addr_space)
 
-            key   = mac_common.get_string(s.string.v(), self.addr_space)
+            key   = common.get_string(s.string.v(), self.addr_space)
 
             val = obj.Object("OSString", offset=ent.value, vm=self.addr_space)
 
-            match   = mac_common.get_string(val.string.v(), self.addr_space)
+            match   = common.get_string(val.string.v(), self.addr_space)
         
             matches.append(match)
 
         return ",".join(matches)
 
     def render_text(self, outfd, data):
-       
-        for (key, notifier, matches) in data:
-            print "Uknown %s notifier handler: %x matches: %s" % (key, notifier.handler, matches)
-
+        for (good, key, notifier, matches) in data:
+            if good == 0:
+                print "Unknown %s notifier handler: %x matches: %s" % (key, notifier.handler, matches)
+            #else:
+            #    print "Known %s notifier handler: %x matches: %s" % (key, notifier.handler, matches)
+                
 
