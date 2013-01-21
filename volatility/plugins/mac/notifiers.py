@@ -93,9 +93,8 @@ class mac_notifiers(mac_lsmod):
             key   = common.get_string(s.string.v(), self.addr_space)
 
             val = obj.Object("OSString", offset=ent.value, vm=self.addr_space)
-
-            match   = common.get_string(val.string.v(), self.addr_space)
-        
+            match   = common.get_string(val.string.v(), self.addr_space, val.length)
+            
             matches.append(match)
 
         return ",".join(matches)
@@ -104,7 +103,7 @@ class mac_notifiers(mac_lsmod):
         for (good, key, notifier, matches) in data:
             if good == 0:
                 print "Unknown %s notifier handler: %x matches: %s" % (key, notifier.handler, matches)
-            #else:
-            #    print "Known %s notifier handler: %x matches: %s" % (key, notifier.handler, matches)
+            else:
+                print "Known %s notifier handler: %x matches: %s" % (key, notifier.handler, matches)
                 
 
