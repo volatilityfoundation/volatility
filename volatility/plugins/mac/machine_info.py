@@ -22,18 +22,19 @@
 """
 
 import volatility.obj as obj
-import mac_common
+import common
 
-class mac_machine_info(mac_common.AbstractMacCommand):
+class mac_machine_info(common.AbstractMacCommand):
+    """ Prints machine information about the sample """
 
     def calculate(self):
+        common.set_plugin_members(self)
 
-        machine_info = obj.Object("machine_info", offset=self.smap["_machine_info"], vm=self.addr_space)
+        machine_info = obj.Object("machine_info", offset=self.get_profile_symbol("_machine_info"), vm=self.addr_space)
 
         yield machine_info
  
     def render_text(self, outfd, data):
-        
         for machine_info in data:
             
             info = (("Major Version:", machine_info.major_version),
@@ -45,7 +46,6 @@ class mac_machine_info(mac_common.AbstractMacCommand):
                     )
 
             for i in info:
-
                 outfd.write("{0:15} {1}\n".format(i[0], i[1]))
             
  
