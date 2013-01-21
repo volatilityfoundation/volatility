@@ -27,13 +27,6 @@ from volatility import debug
 from volatility import obj
 from volatility.plugins.overlays import basic
 
-mac_overlay = {
- 
-    'VOLATILITY_MAGIC': [None, {
-        'DTB'           : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],
-        }],
-}
-
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
 
@@ -42,9 +35,9 @@ class VolatilityDTB(obj.VolatilityMagic):
         profile = self.obj_vm.profile
 
         if self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit":
-            ret = profile.sysmap["_IdlePDPT"]
+            ret = profile.get_symbol("_IdlePDPT")
         else:
-            ret = profile.sysmap["_IdlePML4"]
+            ret = profile.get_symbol("_IdlePML4")
             # so it seems some kernels don't define this as the physical address, but actually the virtual
             # while others define it as the physical, easy enough to figure out on the fly
             if ret > 0xffffff8000000000:
@@ -52,15 +45,29 @@ class VolatilityDTB(obj.VolatilityMagic):
         
         yield ret
 
-def exec_vtypes(filename):
+# the intel check, simply checks for the static paging of init_task
+class VolatilityMacIntelValidAS(obj.VolatilityMagic):
+    """An object to check that an address space is a valid Mac Intel Paged space"""
 
+    def generate_suggestions(self):
+        version_addr = self.obj_vm.profile.get_symbol("_version")
+
+        string = self.obj_vm.read(version_addr, 6)
+
+        if string == "Darwin":
+            yield True
+        else:
+            yield False
+
+def exec_vtypes(filename):
     env = {}
     exec(filename, dict(__builtins__=None), env)
     return env["mac_types"]
 
-def parse_dsymutil(data):
+def parse_dsymutil(data, module):
     """Parse the symbol file."""
     sys_map = {}
+    sys_map[module] = {}
 
     want_lower = ["_IdlePML4"]        
 
@@ -77,19 +84,22 @@ def parse_dsymutil(data):
             if addr == 0:
                 continue
 
+            if not name in sys_map[module]:
+                sys_map[module][name] = [(0, "default value")]
+
             # every symbol is in the symbol table twice
             # except for the entries in 'want_lower', we need the higher address for all 
-            if name in sys_map:
-                oldaddr = sys_map[name]
+            if name in sys_map[module]:
+                oldaddr = sys_map[module][name][0][0]
     
                 if oldaddr > addr and name not in want_lower:
                     pass
                 else:
-                    sys_map[name] = addr
+                    sys_map[module][name] = [(addr, "sym type?")]
             else:
-                sys_map[name] = addr
+                sys_map[module][name] = [(addr, "sym type?")]
 
-        except Exception, e:
+        except IndexError, e:
             if not line:
                 pass
 
@@ -98,6 +108,11 @@ def parse_dsymutil(data):
                     arch = "32bit"
                 else:
                     arch = "64bit"
+
+        except Exception, e:
+            print e
+            exit()
+
     if arch == "":
         return None
 
@@ -471,7 +486,7 @@ def MacProfileFactory(profpkg):
             debug.debug("{2}: Found dwarf file {0} with {1} symbols".format(f.filename, len(vtypesvar.keys()), profilename))
         '''
         if 'symbol.dsymutil' in f.filename.lower():
-            memmodel, sysmap = parse_dsymutil(profpkg.read(f.filename))
+            memmodel, sysmap = parse_dsymutil(profpkg.read(f.filename), "kernel")
             if memmodel == "64bit":
                 arch = "x64"
             sysmapvar.update(sysmap)
@@ -501,12 +516,12 @@ def MacProfileFactory(profpkg):
         _md_memory_model = memmodel
 
         def __init__(self, *args, **kwargs):
-            self.sysmap = {}
+            self.sys_map = {}
             obj.Profile.__init__(self, *args, **kwargs)
 
         def clear(self):
             """Clear out the system map, and everything else"""
-            self.sysmap = {}
+            self.sys_map = {}
             obj.Profile.clear(self)
 
         def reset(self):
@@ -526,8 +541,148 @@ def MacProfileFactory(profpkg):
 
         def load_sysmap(self):
             """Loads up the system map data"""
-            self.sysmap.update(sysmapvar)
+            self.sys_map.update(sysmapvar)
 
+        def get_all_symbols(self, module = "kernel"):
+            """ Gets all the symbol tuples for the given module """
+            ret = []
+
+            symtable = self.sys_map
+
+            if module in symtable:
+
+                mod = symtable[module]
+
+                for (name, addrs) in mod.items():
+                    ret.append(addrs)
+            else:
+                debug.info("All symbols requested for non-existent module %s" % module)
+
+            return ret
+
+        def get_all_addresses(self, module = "kernel"):
+            """ Gets all the symbol addresses for the given module """
+            # returns a hash table for quick looks
+            # the main use of this function is to see if an address is known
+            ret = {}
+
+            symbols = self.get_all_symbols(module)
+
+            for sym in symbols:
+
+                for (addr, addrtype) in sym:
+                    ret[addr] = 1
+
+            return ret
+
+        def get_symbol_by_address(self, module, sym_address):
+            ret = ""
+            symtable = self.sys_map
+
+            mod = symtable[module]
+
+            for (name, addrs) in mod.items():
+
+                for (addr, addr_type) in addrs:
+                    if sym_address == addr:
+                        ret = name
+                        break
+
+            return ret
+
+        def get_all_symbol_names(self, module = "kernel"):
+            symtable = self.sys_map
+
+            if module in symtable:
+
+                ret = symtable[module].keys()
+
+            else:
+                debug.error("get_all_symbol_names called on non-existent module")
+
+            return ret
+
+        def get_next_symbol_address(self, sym_name, module = "kernel"):
+            """
+            This is used to find the address of the next symbol in the profile
+            For some data structures, we cannot determine their size automaticlaly so this
+            can be used to figure it out on the fly
+            """
+
+            high_addr = 0xffffffffffffffff
+            table_addr = self.get_symbol(sym_name, module = module)
+
+            addrs = self.get_all_addresses(module = module)
+
+            for addr in addrs.keys():
+
+                if table_addr < addr < high_addr:
+                    high_addr = addr
+
+            return high_addr
+
+        def get_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
+            """Gets a symbol out of the profile
+            
+            sym_name -> name of the symbol
+            nm_tyes  -> types as defined by 'nm' (man nm for examples)
+            sym_type -> the type of the symbol (passing Pointer will provide auto deref)
+            module   -> which module to get the symbol from, default is kernel, otherwise can be any name seen in 'lsmod'
+    
+            This fixes a few issues from the old static hash table method:
+            1) Conflicting symbols can be handled, if a symbol is found to conflict on any profile, 
+               then the plugin will need to provide the nm_type to differentiate, otherwise the plugin will be errored out
+            2) Can handle symbols gathered from modules on disk as well from the static kernel
+    
+            symtable is stored as a hash table of:
+            
+            symtable[module][sym_name] = [(symbol address, symbol type), (symbol addres, symbol type), ...]
+    
+            The function has overly verbose error checking on purpose...
+            """
+
+            symtable = self.sys_map
+
+            ret = None
+
+            # check if the module is there...
+            if module in symtable:
+
+                mod = symtable[module]
+
+                # check if the requested symbol is in the module
+                if sym_name in mod:
+
+                    sym_list = mod[sym_name]
+
+                    # if a symbol has multiple definitions, then the plugin needs to specify the type
+                    if len(sym_list) > 1:
+                        if nm_type == "":
+                            debug.error("Requested symbol {0:s} in module {1:s} has multiple definitions and no type given\n".format(sym_name, module))
+                        else:
+                            for (addr, stype) in sym_list:
+
+                                if stype == nm_type:
+                                    ret = addr
+                                    break
+
+                            if ret == None:
+                                debug.error("Requested symbol {0:s} in module {1:s} of type {3:s} could not be found\n".format(sym_name, module, sym_type))
+
+                    else:
+                        # get the address of the symbol
+                        ret = sym_list[0][0]
+
+                else:
+                    debug.debug("Requested symbol {0:s} not found in module {1:s}\n".format(sym_name, module))
+            else:
+                debug.info("Requested module {0:s} not found in symbol table\n".format(module))
+
+            if ret and sym_type == "Pointer":
+                # FIXME: change in 2.3 when truncation no longer occurs
+                ret = ret & 0xffffffffffff
+
+            return ret
 
     cls = AbstractMacProfile
     cls.__name__ = 'Mac' + profilename.replace('.', '_') + arch
@@ -568,6 +723,16 @@ class MacObjectClasses(obj.ProfileModification):
     def modification(self, profile):
         profile.object_classes.update({
             'VolatilityDTB': VolatilityDTB,
+            'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
         })
+
+mac_overlay = {
+ 
+    'VOLATILITY_MAGIC': [None, {
+        'DTB'           : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],
+        'IA32ValidAS'   : [ 0x0, ['VolatilityMacIntelValidAS']],
+        'AMD64ValidAS'  : [ 0x0, ['VolatilityMacIntelValidAS']],
+        }],
+}
 
 
