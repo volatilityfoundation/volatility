@@ -42,10 +42,12 @@ class mac_psaux(pslist.mac_pslist):
         
         cr3  = task.map.pmap.pm_cr3
 
-        #### FIXME - this will fail the AS check b/c kernel and userland dont share pages
-        proc_as = self.addr_space.__class__(self.addr_space.base, self.addr_space.get_config(), dtb = cr3) 
+        proc_as = self.addr_space.__class__(self.addr_space.base, self.addr_space.get_config(), dtb = cr3, dtb_is_valid = True) 
 
-        argv = proc_as.read(proc.user_stack - proc.p_argslen, proc.p_argslen)
+        argslen   = proc.p_argslen
+        argsstart = proc.user_stack - proc.p_argslen
+
+        argv = proc_as.read(argsstart, argslen)
 
         name = " ".join(argv.split("\x00"))
 
