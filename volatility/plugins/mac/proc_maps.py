@@ -22,19 +22,20 @@
 """
 
 import volatility.obj as obj
-import mac_pslist
-import mac_common
+import pslist
+import common
 
-class mac_proc_maps(mac_pslist.mac_pslist):
+class mac_proc_maps(pslist.mac_pslist):
+    """ Gets memory maps of processes """
 
     def calculate(self):
+        common.set_plugin_members(self)
 
-        procs = mac_pslist.mac_pslist.calculate(self)
+        procs = pslist.mac_pslist.calculate(self)
 
         permask = "rwx"
 
         for proc in procs:
-    
             task = obj.Object("task", offset=proc.task, vm=self.addr_space)
 
             hdr    = task.map.hdr
@@ -43,7 +44,6 @@ class mac_proc_maps(mac_pslist.mac_pslist):
             map     = hdr.links.next
 
             for i in xrange(0, numents):
-
                 start = map.links.start
                 end   = map.links.end
                 perm  = map.protection
@@ -52,7 +52,6 @@ class mac_proc_maps(mac_pslist.mac_pslist):
                 name = self.get_map_name(map)
            
                 for (ctr, i) in enumerate([1, 3, 5]):
-
                     if (perm & i) == i:
                         perms = perms + permask[ctr]
                     else:
@@ -63,12 +62,10 @@ class mac_proc_maps(mac_pslist.mac_pslist):
                 map = map.links.next
 
     def render_text(self, outfd, data):
-        
         for (start, end, perms, name) in data:
             outfd.write("{0:<16x} {1:<16x} {2} {3}\n".format(start, end, perms, name)) 
 
     def get_map_name(self, map):
-      
         hdr = map.dereference()
 
         # TODO 
@@ -78,22 +75,19 @@ class mac_proc_maps(mac_pslist.mac_pslist):
         ret = ""
 
         # find_vnode_object
-
         object = hdr.object.vm_object 
 
         while object.shadow.dereference() != None:
-            
             object = object.shadow.dereference()
 
         ops = object.pager.mo_pager_ops.v()
 
-        if ops == self.smap["_vnode_pager_ops"]:
-            
+        if ops == self.get_profile_symbol("_vnode_pager_ops"):
             vpager = obj.Object("vnode_pager", offset=object.pager, vm=self.addr_space)
             
             vnode  = vpager.vnode_handle
 
-            ret = mac_common.get_string(vnode.v_name, self.addr_space)
+            ret = common.get_string(vnode.v_name, self.addr_space)
 
         return ret
 
