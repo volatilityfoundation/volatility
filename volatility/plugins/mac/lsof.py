@@ -22,8 +22,8 @@
 """
 
 import volatility.obj as obj
-import mac_pslist
-import mac_common
+import pslist
+import common
 
 '''
   121 /* file types */
@@ -38,14 +38,14 @@ import mac_common
   130 } file_type_t;
 '''
 
-class mac_list_open_files(mac_pslist.mac_pslist):
-
+class mac_lsof(pslist.mac_pslist):
+    """ Lists per-process opened files """
     def calculate(self):
+        common.set_plugin_members(self)
 
-        procs = mac_pslist.mac_pslist.calculate(self)
+        procs = pslist.mac_pslist.calculate(self)
 
         for proc in procs:
-    
             fdinfo = proc.p_fd 
 
             files  = fdinfo.fd_ofiles
@@ -107,7 +107,7 @@ class mac_list_open_files(mac_pslist.mac_pslist):
             elements.reverse()
 
             for e in elements:
-                files.append(mac_common.get_string(e, self.addr_space))
+                files.append(common.get_string(e, self.addr_space))
 
             ret = "/".join(files)                
 
