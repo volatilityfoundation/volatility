@@ -230,7 +230,7 @@ class DWARFParser(object):
             try:
                 self.id_to_name[statement_id] = data['AT_type']
             except:
-                self.id_to_name[statement_id] = 'void'
+                self.id_to_name[statement_id] = ['void']
 
         elif kind == 'TAG_subroutine_type':
             self.id_to_name[statement_id] = ['void']         # Don't need these
