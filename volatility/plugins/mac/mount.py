@@ -22,29 +22,28 @@
 """
 
 import volatility.obj as obj
-import mac_common
+import common
 
-class mac_mount(mac_common.AbstractMacCommand):
+class mac_mount(common.AbstractMacCommand):
+    """ Prints mounted device information """
 
     def calculate(self):
+        common.set_plugin_members(self)
 
-        mountlist_addr = self.smap["_mountlist"]
+        mountlist_addr = self.get_profile_symbol("_mountlist")
 
         mount = obj.Object("mount", offset=mountlist_addr, vm=self.addr_space)
 
         while mount:
-
-            mnttype  = mac_common.get_string(mount.mnt_vfsstat.f_fstypename.obj_offset, self.addr_space, 16)
-            dev      = mac_common.get_string(mount.mnt_vfsstat.f_mntonname.obj_offset,  self.addr_space, 1024) 
-            mntpoint = mac_common.get_string(mount.mnt_vfsstat.f_mntfromname.obj_offset, self.addr_space, 1024)
+            mnttype  = common.get_string(mount.mnt_vfsstat.f_fstypename.obj_offset, self.addr_space, 16)
+            dev      = common.get_string(mount.mnt_vfsstat.f_mntonname.obj_offset,  self.addr_space, 1024) 
+            mntpoint = common.get_string(mount.mnt_vfsstat.f_mntfromname.obj_offset, self.addr_space, 1024)
 
             yield (mnttype, dev, mntpoint)
 
             mount = mount.mnt_list.tqe_next
         
     def render_text(self, outfd, data):
-        
         for (mnttype, dev, mntpoint) in data:
-            
             outfd.write("{0:32s} {1:32} {2:32}\n".format(dev, mntpoint, mnttype))
 
