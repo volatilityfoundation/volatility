@@ -83,13 +83,12 @@ def is_known_address(handler, kernel_symbol_addresses, kmods, printme=0):
 
     return good
 
-from mac_lsmod import mac_lsmod as mac_lsmod
+from lsmod import mac_lsmod as mac_lsmod
 
 def get_kernel_addrs(self):
-
     # all the known addresses in the kernel
     # TODO -- make more stringent and get only symbols from .text
-    kernel_symbol_addresses = [self.smap[sym] for sym in self.smap]
+    kernel_symbol_addresses = [addrs[0] for addrs in self.profile.get_all_symbols()]
     
     # module addresses, tuple of (start, end)
     # TODO -- make sure more stringent and parse each kext in-memory so we only allow whitelist from .text
