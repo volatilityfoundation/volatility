@@ -22,24 +22,24 @@
 """
 
 import volatility.obj as obj
-import mac_common
+import common
 
-class mac_dmesg(mac_common.AbstractMacCommand):
+class mac_dmesg(common.AbstractMacCommand):
     """ prints the kernel debug buffer """
     
     def calculate(self):
+        common.set_plugin_members(self)
 
-        msgbuf_ptr = obj.Object("Pointer", offset=self.smap["_msgbufp"], vm=self.addr_space)
+        msgbuf_ptr = obj.Object("Pointer", offset=self.get_profile_symbol("_msgbufp"), vm=self.addr_space)
 
         msgbufp    = obj.Object("msgbuf",  offset=msgbuf_ptr, vm=self.addr_space)
 
         bufx = msgbufp.msg_bufx
         size = msgbufp.msg_size
         bufc = self.addr_space.read(msgbufp.msg_bufc, size)
-        
 
         if bufc[bufx] == 0 and bufc[0] != 0:
-            buf = mac_common.get_string(bufc, self.addr_space)
+            buf = common.get_string(bufc, self.addr_space)
  
         else:     
             if bufx > size:
@@ -53,7 +53,6 @@ class mac_dmesg(mac_common.AbstractMacCommand):
         yield buf
 
     def render_text(self, outfd, data):
-        
         for buf in data:
             print buf
 
