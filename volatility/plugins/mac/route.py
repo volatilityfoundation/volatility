@@ -20,15 +20,15 @@
 @contact:      atcuno@gmail.com
 @organization: 
 """
-
-import volatility.obj as obj
-import mac_common
 import datetime
 
-class mac_route(mac_common.AbstractMacCommand):
+import volatility.obj as obj
+import common
+
+class mac_route(common.AbstractMacCommand):
+    """ Prints the routing table """
 
     def get_table(self, tbl):
-
         rnh = tbl #obj.Object("radix_node", offset=tbl.v(), vm=self.addr_space)
         rn  = rnh.rnh_treetop
         
@@ -38,7 +38,6 @@ class mac_route(mac_common.AbstractMacCommand):
         rnhash = {}
 
         while 1:
-            
             base = rn
             
             if rn in rnhash:
@@ -71,8 +70,9 @@ class mac_route(mac_common.AbstractMacCommand):
                 break
             
     def calculate(self):
+        common.set_plugin_members(self)
 
-        tables_addr = self.smap["_rt_tables"]
+        tables_addr = self.get_profile_symbol("_rt_tables")
 
         ents = obj.Object(theType = 'Array', offset = tables_addr, vm = self.addr_space, targetType = 'Pointer', count = 32)
 
@@ -85,6 +85,6 @@ class mac_route(mac_common.AbstractMacCommand):
 
     def render_text(self, outfd, data):
         for rt in data:
-            mac_common.print_rt(self, rt)
+            common.print_rt(self, rt)
 
 

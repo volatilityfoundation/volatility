@@ -129,17 +129,29 @@ def print_rt(self, rt):
 
     unit = rt.rt_ifp.if_unit
 
-    caltime = rt.base_calendartime
-    prettytime = datetime.datetime.fromtimestamp(caltime).strftime('%Y-%m-%d %H:%M:%S')
-
-    sent = rt.rt_stats.nstat_txpackets
-    rx   = rt.rt_stats.nstat_rxpackets
-
-    exp   = rt.rt_expire
-    if exp == 0:
-        delta = 0
+    if hasattr(rt, "base_calendartime"):
+        caltime = rt.base_calendartime
+        prettytime = datetime.datetime.fromtimestamp(caltime).strftime('%Y-%m-%d %H:%M:%S')
     else:
-        delta = exp - rt.base_uptime
+        caltime = -1
+        prettytime = ""
+
+    if hasattr(rt, "rt_stats"):
+        sent = rt.rt_stats.nstat_txpackets
+        rx   = rt.rt_stats.nstat_rxpackets
+    else:
+        sent = -1
+        rx   = -1
+
+    if hasattr(rt, "rt_expire"):
+        exp   = rt.rt_expire
+        if exp == 0:
+            delta = 0
+        else:
+            delta = exp - rt.base_uptime
+    else:
+        exp = -1
+        delta = -1
 
     print "%s : %s - %s%d - %d - %d | %d %s | %d %d" % (src_ip, dst_ip, name, unit, sent, rx, caltime, prettytime, exp, delta) 
 
