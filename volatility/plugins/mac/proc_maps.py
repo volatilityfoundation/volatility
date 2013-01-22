@@ -57,7 +57,7 @@ class mac_proc_maps(pslist.mac_pslist):
                     else:
                         perms = perms + "-"
 
-                yield (start, end, perms, name)
+                yield (proc, start, end, perms, name)
 
                 map = map.links.next
 
@@ -67,7 +67,7 @@ class mac_proc_maps(pslist.mac_pslist):
                           ("Perms", "9"),
                           ("Map Name", "")])
 
-        for (start, end, perms, name) in data:
+        for (proc, start, end, perms, name) in data:
             self.table_row(outfd, start, end, perms, name)
 
     def _get_vnode_for_map(self, map):
