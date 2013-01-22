@@ -27,6 +27,7 @@ from volatility import cache
 from volatility import debug
 from volatility import obj
 from volatility.plugins.overlays import basic
+import volatility.addrspace as addrspace
 
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
@@ -63,6 +64,18 @@ class VolatilityMacIntelValidAS(obj.VolatilityMagic):
             yield True
         else:
             yield False
+
+class proc(obj.CType):
+    def get_process_address_space(self):
+        task = obj.Object("task", offset=self.task, vm=self.obj_vm)  
+        cr3  = task.map.pmap.pm_cr3
+        try:
+            proc_as = self.obj_vm.__class__(self.obj_vm.base, self.obj_vm.get_config(), dtb = cr3)
+        except addrspace.ASAssertionError, e:
+            print "Error: %s" % str(e)
+            debug.error("This plugin does not work when analyzing a sample from a 64bit computer running a 32bit kernel.")
+
+        return proc_as 
 
 def exec_vtypes(filename):
     env = {}
@@ -721,15 +734,16 @@ class MacObjectClasses(obj.ProfileModification):
         profile.object_classes.update({
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
+            'proc' : proc,
         })
 
 mac_overlay = {
- 
     'VOLATILITY_MAGIC': [None, {
         'DTB'           : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],
         'IA32ValidAS'   : [ 0x0, ['VolatilityMacIntelValidAS']],
         'AMD64ValidAS'  : [ 0x0, ['VolatilityMacIntelValidAS']],
         }],
+
 }
 
 
