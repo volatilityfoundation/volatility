@@ -746,4 +746,15 @@ mac_overlay = {
 
 }
 
+mac_vtypes = {
+    'mach_trap'     : [ 16, {'mach_trap_function': [4, ['pointer', ['void']]]}]
+}
+
+class MacVTypes(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'mac'}
+    before = ['BasicObjectClasses']
+
+    def modification(self, profile):
+        profile.vtypes.update(mac_vtypes)
+
 
