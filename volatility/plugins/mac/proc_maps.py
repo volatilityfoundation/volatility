@@ -49,7 +49,7 @@ class mac_proc_maps(pslist.mac_pslist):
                 perm  = map.protection
                 perms = ""
            
-                name = self.get_map_name(map)
+                name = self._get_path_for_map(map)
            
                 for (ctr, i) in enumerate([1, 3, 5]):
                     if (perm & i) == i:
@@ -62,17 +62,20 @@ class mac_proc_maps(pslist.mac_pslist):
                 map = map.links.next
 
     def render_text(self, outfd, data):
-        for (start, end, perms, name) in data:
-            outfd.write("{0:<16x} {1:<16x} {2} {3}\n".format(start, end, perms, name)) 
+        self.table_header(outfd, [("Start", "[addrpad]"),
+                          ("End", "[addrpad]"),
+                          ("Perms", "9"),
+                          ("Map Name", "")])
 
-    def get_map_name(self, map):
+        for (start, end, perms, name) in data:
+            self.table_row(outfd, start, end, perms, name)
+
+    def _get_vnode_for_map(self, map):
         hdr = map.dereference()
 
         # TODO 
         if hdr.is_sub_map.v() == 1:
             return "sub_map" 
-
-        ret = ""
 
         # find_vnode_object
         object = hdr.object.vm_object 
@@ -85,15 +88,33 @@ class mac_proc_maps(pslist.mac_pslist):
         if ops == self.get_profile_symbol("_vnode_pager_ops"):
             vpager = obj.Object("vnode_pager", offset=object.pager, vm=self.addr_space)
             
-            vnode  = vpager.vnode_handle
-
-            ret = common.get_string(vnode.v_name, self.addr_space)
+            ret = vpager.vnode_handle
+        else:
+            ret = None
 
         return ret
 
-     
-                
+    def _get_path_for_map(self, map):
+        vnode = self._get_vnode_for_map(map)
+    
+        if type(vnode) == str and vnode == "sub_map":
+            ret = vnode  
+        elif vnode:
+            path = []
 
+            while vnode:
+                part = common.get_string(vnode.v_name, self.addr_space)
+                path.append(part)
+
+                vnode = vnode.v_parent
+
+            path.reverse()
+
+            ret = "/".join(path)
+        else:
+            ret = ""
+                
+        return ret
 
 
 
