@@ -20,6 +20,7 @@
 @contact:      atcuno@gmail.com
 @organization: 
 """
+import time
 
 import volatility.obj as obj
 import common
@@ -55,11 +56,42 @@ class mac_pslist(common.AbstractMacCommand):
 
             proc = proc.p_list.le_next
 
-    def render_text(self, outfd, data):
+    #### move this to an overlay for 'proc'
+    def _get_proc_start_time(self, proc):
+        nsecs_per = 1000000
         
+        start_time = proc.p_start 
+
+        start_secs = start_time.tv_sec + (start_time.tv_usec / nsecs_per)
+
+        sec = start_secs
+
+        # protect against invalid data in unallocated tasks
+        try:
+            ret = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(sec))
+        except ValueError:
+            ret = ""
+
+        return ret
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Offset", "[addrpad]"),
+                          ("Name", "20"),
+                          ("Pid", "15"),
+                          ("Uid", "15"),
+                          ("Gid", "9"),
+                          ("Start Time", "")])
+
         for proc in data:
             name = common.get_string(proc.p_comm.obj_offset, self.addr_space)
-            outfd.write("%d | %s\n" % (proc.p_pid, name))
+            self.table_row(outfd, proc.obj_offset,
+                                  name,
+                                  str(proc.p_pid),
+                                  str(proc.p_ucred.cr_uid),
+                                  str(proc.p_ucred.cr_gmuid),
+                                  self._get_proc_start_time(proc))
+
+
 
 
 
