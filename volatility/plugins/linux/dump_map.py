@@ -30,13 +30,11 @@ class linux_dump_map(linux_common.AbstractLinuxCommand):
     """ Writes selected memory mappings to disk """
 
     def __init__(self, config, *args):
-
         linux_common.AbstractLinuxCommand.__init__(self, config, *args)
         self._config.add_option('VMA', short_option = 's', default = None, help = 'Filter by VMA starting address', action = 'store', type = 'long')
         self._config.add_option('OUTPUTFILE', short_option = 'O', default = None, help = 'Output File', action = 'store', type = 'str')
 
     def read_addr_range(self, task, start, end):
-
         pagesize = 4096 
 
         # set the as with our new dtb so we can read from userland
@@ -44,11 +42,8 @@ class linux_dump_map(linux_common.AbstractLinuxCommand):
 
         # xrange doesn't support longs :(
         while start < end:
-
-            page = proc_as.read(start, pagesize)
-
+            page = proc_as.zread(start, pagesize)
             yield page
-
             start = start + pagesize
 
     def calculate(self):
@@ -56,9 +51,7 @@ class linux_dump_map(linux_common.AbstractLinuxCommand):
         vmas = linux_proc_maps.linux_proc_maps(self._config).calculate()
 
         for (task, vma) in vmas:
-
             if not self._config.VMA or vma.vm_start == self._config.VMA:
-
                 for page in self.read_addr_range(task, vma.vm_start, vma.vm_end):
                     if page:
                         yield page
