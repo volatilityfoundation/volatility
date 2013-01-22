@@ -127,6 +127,16 @@ module_versions_2003 = {
  'AddrObjTableSizeOffset' : [0xa78E8],
 },
 }
+ 
+## Define the maxiumum number of sockets that we expect to see on a given system. 
+## Due to the way we currently iterate over possible offsets, its easy to pick 
+## the wrong one and end up creating an array of up to 0xFFFFFFFF objects, even 
+## though there's no possibility of ever having that many active at one time. 
+## This can lead to a MemoryError, which is bad. The limit we've chosen (2 million) 
+## is based on 65535 for TCP, 65535 for UDP, for each of up to 100 IP addresses;
+## then rounded up to the nearest million. Its not perfect, but it should prevent
+## memory errors until we redesign the way we find socket and connection objects.
+MAX_SOCKETS = 2000000
 
 def determine_connections(addr_space):
     """Determines all connections for each module"""
@@ -194,7 +204,7 @@ def determine_sockets(addr_space):
                              module_versions[attempt]['AddrObjTableOffset'][0],
                     vm = addr_space)
 
-                if int(table_size) > 0:
+                if int(table_size) > 0 and int(table_size) < MAX_SOCKETS:
                     table = obj.Object("Array",
                         offset = table_addr, vm = addr_space,
                         count = table_size,
