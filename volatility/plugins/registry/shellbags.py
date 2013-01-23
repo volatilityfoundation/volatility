@@ -371,6 +371,57 @@ class FOLDER_ENTRY(obj.CType):
                 ("Folder IDs", ""),
                ]
 
+class _VOLUSER_ASSIST_TYPES(obj.CType):
+    def get_header(self):
+        if hasattr(self, "Count") and hasattr(self, "FocusCount"):
+            return [("Entry Type", "14s"),
+                    ("Count", "5"),
+                    ("Focus Count", "5"),
+                    ("Time Focused", "20"),
+                    ("Last Update", ""),
+                   ]
+        else:
+            return [("Entry Type", "14s"),
+                    ("ID", "10"),
+                    ("Count", "10"),
+                    ("Last Update", ""),
+                   ]
+
+    def __str__(self):
+        if hasattr(self, "Count") and hasattr(self, "FocusCount"):
+            return "{0:<14} {1:5} {2:5} {3:20} {4}".format("UserAssist",
+                   self.Count,
+                   self.FocusCount,
+                   self.FocusTime,
+                   self.LastUpdated)
+        else:
+            return "{0:<14} {1:5} {2:5} {3}".format("UserAssist",
+                   self.ID,
+                   self.CountStartingAtFive,
+                   self.LastUpdated)
+
+    def body(self, reg, key, subname, lastwrite):
+        ID = "N/A"
+        count = "N/A"
+        fc = "N/A"
+        tf = "N/A"
+        if hasattr(self, "ID"):
+            ID = "{0}".format(self.ID)
+        if hasattr(self, "Count"):
+            count = "{0}".format(self.Count)
+        else:
+            count = "{0}".format(self.CountStartingAtFive if self.CountStartingAtFive < 5 else self.CountStartingAtFive - 5)
+        if hasattr(self, "FocusCount"):
+            seconds = (self.FocusTime + 500) / 1000.0
+            time = datetime.timedelta(seconds = seconds) if seconds > 0 else self.FocusTime
+            fc = "{0}".format(self.FocusCount)
+            tf = "{0}".format(time)
+
+        subname = subname.replace("|", "%7c")
+
+        return "0|[SHELLBAGS USERASSIST] Registry: {1}/Key: {7}/Value: {2}/LW: {8}/ID: {3}/Count: {4}/FocusCount: {5}/TimeFocused: {6}|0|---------------|0|0|0|{0}|{0}|{0}|{0}\n".format(
+            self.LastUpdated.v(), reg, subname, ID, count, fc, tf, key, lastwrite)
+
 class CONTROL_PANEL(FOLDER_ENTRY):
     def __str__(self):
         return "{0:<14} {1:40} {2:20} {3}".format("Control Panel",
@@ -386,10 +437,11 @@ class UNKNOWN_00(FOLDER_ENTRY):
                str(self.GUID),
                KNOWN_GUIDS.get(str(self.GUID), "Unknown GUID"),
                self.get_folders())
-        elif self.DataSize in [0xa4, 0xb4, 0x7a, 0x30, 0xc4, 0x9a]:
-            return "{0:<14} {1:40} {2:20} {3}".format("Device Property",
-               str(self.Name), "", "")
-        # TODO: fix this for other types like "AugM" and 1SPS
+        #elif self.DataSize in [0xa4, 0xb4, 0x7a, 0xc4, 0x9a, 0x30]:
+        # TODO: this is not clear yet
+        #    return "{0:<14} {1:40} {2:20} {3}".format("Device Property",
+        #       str(self.Name), "", "")
+        # TODO: fix this for other types like "AugM" and 1SPS 
         else:
             return "{0:<14} {1:40} {2:20} {3}".format("Folder (unsupported)",
                 "This property is not yet supported", "", "")
@@ -490,7 +542,10 @@ class DosDate(obj.NativeType):
         year = ((date & 0xFE00) >> 9) + 1980
 
         #convert into timestamp and return:
-        return calendar.timegm(datetime.datetime(year, month, day, hours, minutes, seconds).utctimetuple())
+        try:
+            return calendar.timegm(datetime.datetime(year, month, day, hours, minutes, seconds).utctimetuple())
+        except ValueError:
+            return 0
         # if we use the following we need to s/utcfromtimestamp/fromtimestamp/ in as_datetime() function:
         #return time.mktime(datetime.datetime(year, month, day, hours, minutes, seconds).timetuple())
 
@@ -553,9 +608,8 @@ shell_item_types = {
         'PropertyList': [ 0xa, ['unsigned short']],
         'IdentifierSize': [ 0xc, ['unsigned short']],
         'GUID': [ 0xe, ['_GUID']],
-        'NameLength': [ 0x42, ['unsigned short']], # size of following data
-        'Name': [ 0x4a, ['String', dict(length = lambda x: x.NameLength * 2)]],
-
+        #'NameLength': [ 0x42, ['unsigned short']], # size of following data
+        #'Name': [ 0x4a, ['String', dict(length = lambda x: x.NameLength * 2)]],
     } ],
     'UNKNOWN_01': [ None, {
         'ShellItem': [ 0x0, ['SHELLITEM']],
@@ -619,6 +673,7 @@ class ShellBagsTypesXP(obj.ProfileModification):
             'NETWORK_VOLUME_NAME':NETWORK_VOLUME_NAME,
             'NETWORK_SHARE':NETWORK_SHARE,
             'UNKNOWN_00':UNKNOWN_00,
+            '_VOLUSER_ASSIST_TYPES':_VOLUSER_ASSIST_TYPES,
         })
         profile.vtypes.update(shell_item_types)
         profile.vtypes.update(itempos_types_XP)
@@ -674,6 +729,7 @@ class ShellBagsTypesVista(obj.ProfileModification):
             'NETWORK_VOLUME_NAME':NETWORK_VOLUME_NAME,
             'NETWORK_SHARE':NETWORK_SHARE,
             'UNKNOWN_00':UNKNOWN_00,
+            '_VOLUSER_ASSIST_TYPES':_VOLUSER_ASSIST_TYPES,
         })
         profile.vtypes.update(shell_item_types)
         profile.vtypes.update(itempos_types_Vista)
@@ -730,6 +786,7 @@ class ShellBagsTypesWin7(obj.ProfileModification):
             'NETWORK_VOLUME_NAME':NETWORK_VOLUME_NAME,
             'NETWORK_SHARE':NETWORK_SHARE,
             'UNKNOWN_00':UNKNOWN_00,
+            '_VOLUSER_ASSIST_TYPES':_VOLUSER_ASSIST_TYPES,
         })
         profile.vtypes.update(shell_item_types)
         profile.vtypes.update(itempos_types_Win7)
@@ -750,7 +807,7 @@ class ShellBags(common.AbstractWindowsCommand):
     def parse_key(self, regapi, reg, thekey, given_root = None):
         items = {} # a dictionary of shellbag objects indexed by value name
         for value, data in regapi.reg_yield_values(None, thekey, thetype = 'REG_BINARY', given_root = given_root):
-            if data == None or thekey.find("S-") != -1 or str(value).startswith("LastKnownState"):
+            if data == None or thekey.find("S-") != -1 or str(value).startswith("LastKnownState") or thekey.lower().find("cmi-create") != -1:
                 continue
             if str(value).startswith("ItemPos"):
                 items[str(value)] = []
@@ -758,9 +815,6 @@ class ShellBags(common.AbstractWindowsCommand):
                 i = 0x18
                 while i < len(data) - 0x10:
                     item = obj.Object("ITEMPOS", offset = i, vm = bufferas)
-                    if i == 0x18 and item.Size < 0x15:
-                        i = 0x34
-                        continue
                     if item != None and item.Size >= 0x15:
                         items[str(value)].append(item)
                     i += item.Size + 0x8
@@ -772,12 +826,22 @@ class ShellBags(common.AbstractWindowsCommand):
                     list[obj.Object("int", offset = i, vm = bufferas).v()] = (i / 4)
                     i += 4
                 items["MruListEx"] = list
-            elif len(data) > 0x10: 
+            elif len(data) >= 0x10: 
                 bufferas = addrspace.BufferAddressSpace(self._config, data = data)
                 item = obj.Object("SHELLITEM", offset = 0, vm = bufferas)
                 thetype = SHELL_ITEM_TYPES.get(int(item.Type), None)
                 if thetype != None:
-                    item = obj.Object(thetype, offset = 0, vm = bufferas)
+                    if thetype == "UNKNOWN_00" and len(data) == bufferas.profile.get_obj_size("_VOLUSER_ASSIST_TYPES"):
+                        # this is UserAssist Data
+                        item = obj.Object("_VOLUSER_ASSIST_TYPES", offset = 0, vm = bufferas)
+                        try:
+                            value = value.encode('rot_13')
+                        except UnicodeDecodeError:
+                            pass
+                    else:
+                        if bufferas.profile.get_obj_size(thetype) > len(data):
+                            continue
+                        item = obj.Object(thetype, offset = 0, vm = bufferas)
                     if hasattr(item, "DataSize") and item.DataSize <= 0:
                         continue
                     if thetype in self.supported:
@@ -807,11 +871,15 @@ class ShellBags(common.AbstractWindowsCommand):
         shellbag_data = []
 
         print "Gathering shellbag items and building path tree..."
+        seen = {}
         for bk in BAG_KEYS:
             for cat, current_path in regapi.reg_yield_key("ntuser.dat", bk): 
                 keys = [(k, bk + "\\" + k.Name) for k in regapi.reg_get_all_subkeys("ntuser.dat", key = None, given_root = cat)]
                 for key, start in keys:
                     if key.Name:
+                        if str(key.Name).lower().find("cmi-create") != -1 or str(key.Name).find("S-") != -1 or seen.get(start + "\\" + k.Name, None) != None:
+                            continue
+                        seen[start + "\\" + k.Name] = key.obj_offset
                         subkeys = [k for k in regapi.reg_get_all_subkeys("ntuser.dat", key = None, given_root = key)]
                         for k in subkeys:
                             keys.append((k, start + "\\" + k.Name))
@@ -821,19 +889,22 @@ class ShellBags(common.AbstractWindowsCommand):
         if version >= (6, 0):
             regapi.reset_current()
             regapi.set_current("UsrClass.dat")
+            seen = {}
             for bk in USERDAT_KEYS:
                 for cat, current_path in regapi.reg_yield_key("UsrClass.dat", bk): 
                     keys = [(k, bk + "\\" + k.Name) for k in regapi.reg_get_all_subkeys("UsrClass.dat", key = None, given_root = cat)]
                     for key, start in keys:
-                        if key.Name and str(key.Name).find("S-") == -1:
+                        if key.Name:
+                            if str(key.Name).lower().find("cmi-create") != -1 or str(key.Name).find("S-") != -1 or seen.get(start + "\\" + k.Name, None) != None:
+                                continue
+                            seen[start + "\\" + k.Name] = key.obj_offset
                             subkeys = [k for k in regapi.reg_get_all_subkeys("UsrClass.dat", key = None, given_root = key)]
                             for k in subkeys:
                                 keys.append((k, start + "\\" + k.Name))
                             items = self.parse_key(regapi, current_path, start, given_root = key)
                             if len(items) > 0: 
                                 shellbag_data.append((start, current_path, key, items))
-        for shell in shellbag_data:
-            yield shell
+        return shellbag_data
 
     def build_path(self, reg, key, item):
         path = ""
@@ -859,10 +930,11 @@ class ShellBags(common.AbstractWindowsCommand):
                 if item == "MruListEx":
                     continue
                 for shell in items[item]:
-                    if type(shell) != ITEMPOS and type(shell) != FILE_ENTRY:
-                        continue 
-                    full_path = self.build_path(reg, name, shell).replace("\\\\", "\\")
-                    outfd.write("{0}".format(shell.body("FullPath: {0}/Registry: {1}/Key: {2}/LW: {3}".format(full_path, reg, name, str(key.LastWriteTime)))))
+                    if type(shell) == ITEMPOS or type(shell) == FILE_ENTRY:
+                        full_path = self.build_path(reg, name, shell).replace("\\\\", "\\")
+                        outfd.write("{0}".format(shell.body("FullPath: {0}/Registry: {1}/Key: {2}/LW: {3}".format(full_path, reg, name, str(key.LastWriteTime)))))
+                    elif type(shell) == _VOLUSER_ASSIST_TYPES:
+                        outfd.write("{0}".format(shell.body(reg, name, item, str(key.LastWriteTime))))
 
     def render_text(self, outfd, data):
         border = "*" * 75
