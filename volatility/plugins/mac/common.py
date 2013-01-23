@@ -90,7 +90,7 @@ def get_kernel_addrs(self):
     
     # module addresses, tuple of (start, end)
     # TODO -- make sure more stringent and parse each kext in-memory so we only allow whitelist from .text
-    kmods = [(kmod.address, kmod.address + kmod.m('size'), get_string(kmod.name.obj_offset, self.addr_space)) for kmod in mac_lsmod.calculate(self)] 
+    kmods = [(kmod.address, kmod.address + kmod.m('size'), get_string(kmod.name.obj_offset, self.addr_space)) for kmod in mac_lsmod(self._config).calculate()] 
 
     return (kernel_symbol_addresses, kmods)
 
