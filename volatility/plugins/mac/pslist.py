@@ -79,7 +79,8 @@ class mac_pslist(common.AbstractMacCommand):
                           ("Name", "20"),
                           ("Pid", "15"),
                           ("Uid", "15"),
-                          ("Gid", "9"),
+                          ("Gid", "15"),
+                          ("PGID", "15"),
                           ("Start Time", "")])
 
         for proc in data:
@@ -89,6 +90,7 @@ class mac_pslist(common.AbstractMacCommand):
                                   str(proc.p_pid),
                                   str(proc.p_ucred.cr_uid),
                                   str(proc.p_ucred.cr_gmuid),
+                                  str(proc.p_pgrpid),
                                   self._get_proc_start_time(proc))
 
 
