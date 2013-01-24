@@ -744,6 +744,9 @@ mac_overlay = {
         'AMD64ValidAS'  : [ 0x0, ['VolatilityMacIntelValidAS']],
         }],
 
+    'session' : [None, {
+        's_login'          : [ None , ['String', dict(length = 255)]],
+        }],
 }
 
 mac_vtypes = {
