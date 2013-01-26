@@ -66,6 +66,28 @@ class VolatilityMacIntelValidAS(obj.VolatilityMagic):
             yield False
 
 class proc(obj.CType):
+    @property
+    def p_uid(self):
+        cred = self.p_ucred
+
+        if hasattr(cred, "cr_posix"):
+            ret = cred.cr_posix.cr_uid
+        else:
+            ret = cred.cr_uid     
+        
+        return ret
+    
+    @property
+    def p_gid(self):
+        cred = self.p_ucred
+
+        if hasattr(cred, "cr_posix"):
+            ret = cred.cr_posix.cr_gid
+        else:
+            ret = cred.cr_gid     
+        
+        return ret
+    
     def get_process_address_space(self):
         task = obj.Object("task", offset=self.task, vm=self.obj_vm)  
         cr3  = task.map.pmap.pm_cr3

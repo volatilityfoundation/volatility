@@ -88,8 +88,8 @@ class mac_pslist(common.AbstractMacCommand):
             self.table_row(outfd, proc.obj_offset,
                                   name,
                                   str(proc.p_pid),
-                                  str(proc.p_ucred.cr_uid),
-                                  str(proc.p_ucred.cr_gmuid),
+                                  str(proc.p_uid),
+                                  str(proc.p_gid),
                                   str(proc.p_pgrpid),
                                   self._get_proc_start_time(proc))
 
