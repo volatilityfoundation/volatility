@@ -81,16 +81,15 @@ def is_known_address(handler, kernel_symbol_addresses, kmods, printme=0):
 
     return good
 
-from lsmod import mac_lsmod as mac_lsmod
-
-def get_kernel_addrs(self):
+def get_kernel_addrs(obj_ref):
+    import volatility.plugins.mac.lsmod as lsmod
     # all the known addresses in the kernel
     # TODO -- make more stringent and get only symbols from .text
-    kernel_symbol_addresses = self.profile.get_all_addresses()
+    kernel_symbol_addresses = obj_ref.profile.get_all_addresses()
     
     # module addresses, tuple of (start, end)
     # TODO -- make sure more stringent and parse each kext in-memory so we only allow whitelist from .text
-    kmods = [(kmod.address, kmod.address + kmod.m('size'), get_string(kmod.name.obj_offset, self.addr_space)) for kmod in mac_lsmod(self._config).calculate()] 
+    kmods = [(kmod.address, kmod.address + kmod.m('size'), get_string(kmod.name.obj_offset, obj_ref.addr_space)) for kmod in lsmod.mac_lsmod(obj_ref._config).calculate()] 
 
     return (kernel_symbol_addresses, kmods)
 
