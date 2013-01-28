@@ -22,10 +22,10 @@
 """
 
 import volatility.obj as obj
-import mac_common
+import common
 import sys
 
-class mac_get_processors(mac_common.AbstractMacCommand):
+class mac_get_processors(common.AbstractMacCommand):
 
     def calculate(self):
 
