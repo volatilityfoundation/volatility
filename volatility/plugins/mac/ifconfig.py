@@ -31,40 +31,35 @@ class mac_ifconfig(common.AbstractMacCommand):
         common.set_plugin_members(self)    
 
         list_head_addr = self.get_profile_symbol("_dlil_ifnet_head")
-
-        list_head_ptr  = obj.Object("Pointer", offset=list_head_addr, vm=self.addr_space)
-
-        difnet = obj.Object("dlil_ifnet", offset=list_head_ptr, vm=self.addr_space)
-
-        ifnet  = obj.Object("ifnet",      offset=list_head_ptr, vm=self.addr_space)
+        list_head_ptr = obj.Object("Pointer", offset = list_head_addr, vm = self.addr_space)
+        ifnet = list_head_ptr.dereference_as("ifnet")
 
         while ifnet:
-
             name = common.get_string(ifnet.if_name, self.addr_space)
-
             unit = ifnet.if_unit
-            
             ifaddr = ifnet.if_addrhead.tqh_first
             
             ips = []
 
             while ifaddr:
-
                 ip = self.get_ip_address(ifaddr)
-                
                 if ip:
                     ips.append(ip)
-
                 ifaddr = ifaddr.ifa_link.tqe_next
      
             yield (name, unit, ips)
-            
-            ifnet = ifnet.if_link.tqe_next        
-
+            ifnet = ifnet.if_link.tqe_next
  
     def render_text(self, outfd, data):
+        self.table_header(outfd, [("Interface", "10"), ("Address", "")])
+
         for (name, unit, ips) in data:
-            print "%s%d -> %s" % (name, unit, str(ips))
+            if ips:
+                for ip in ips:
+                    self.table_row(outfd, "{0}{1}".format(name, unit), ip)
+            else:
+                # an interface with no IPs
+                self.table_row(outfd, "{0}{1}".format(name, unit), "")
 
     def ip2str(self, ip):
         ip = ip & 0xffffffff
@@ -74,7 +69,7 @@ class mac_ifconfig(common.AbstractMacCommand):
         c = (ip >> 16) & 0xff
         d = (ip >> 24) & 0xff
 
-        return "%d.%d.%d.%d" % (a, b, c, d)
+        return "{0}.{1}.{2}.{3}".format(a, b, c, d)
 
     def get_link_addr(self, addr):
         if addr == None:
@@ -83,7 +78,7 @@ class mac_ifconfig(common.AbstractMacCommand):
         ret = ""
 
         for i in xrange(0, addr.sdl_alen):
-            e  = addr.sdl_data[addr.sdl_nlen+i]
+            e  = addr.sdl_data[addr.sdl_nlen + i]
 
             ret = ret + "%.02x:" % ord(e.v())
     
@@ -107,27 +102,24 @@ class mac_ifconfig(common.AbstractMacCommand):
         return ret
 
     def get_ip_address(self, ifnet):
-        addr = ifnet.ifa_addr
 
+        addr = ifnet.ifa_addr
         family = addr.sa_family
 
         ip = ""
 
         if family == 2: # ip 4
-            addr_in = obj.Object("sockaddr_in", offset=addr, vm=self.addr_space)
+            addr_in = obj.Object("sockaddr_in", offset = addr, vm = self.addr_space)
             ip = self.ip2str(addr_in.sin_addr.s_addr.v())
 
         elif family == 30:
-            addr_in6 = obj.Object("sockaddr_in6", offset=addr, vm=self.addr_space)
+            addr_in6 = obj.Object("sockaddr_in6", offset = addr, vm = self.addr_space)
             addr = addr_in6.sin6_addr.__u6_addr.__u6_addr8
             ip = self.get_ipv6(addr)
 
         elif family == 18:
-            addr_dl = obj.Object("sockaddr_dl", offset=addr, vm=self.addr_space)
+            addr_dl = obj.Object("sockaddr_dl", offset = addr, vm = self.addr_space)
             ip = self.get_link_addr(addr_dl)
-        
-        else:
-            print "family: %d" % family
 
         return ip
         
