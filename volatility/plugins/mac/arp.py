@@ -26,7 +26,7 @@ import volatility.plugins.mac.common as common
 import volatility.plugins.mac.route as route
 
 class mac_arp(route.mac_route):
-    """ prints the arp table """
+    """ Prints the arp table """
     
     def calculate(self):
         common.set_plugin_members(self)

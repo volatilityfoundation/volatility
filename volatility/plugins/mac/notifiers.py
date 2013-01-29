@@ -26,7 +26,7 @@ import volatility.plugins.mac.common as common
 import volatility.plugins.mac.lsmod as lsmod
 
 class mac_notifiers(lsmod.mac_lsmod):
-    """ detects rootkits that add hooks into I/O Kit (e.g. LogKext) """
+    """ Detects rootkits that add hooks into I/O Kit (e.g. LogKext) """
 
     def calculate(self):
         common.set_plugin_members(self)

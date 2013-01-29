@@ -25,7 +25,7 @@ import volatility.obj as obj
 import volatility.plugins.mac.common as common
 
 class mac_dmesg(common.AbstractMacCommand):
-    """ prints the kernel debug buffer """
+    """ Prints the kernel debug buffer """
     
     def calculate(self):
         common.set_plugin_members(self)
