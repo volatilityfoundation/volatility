@@ -36,5 +36,5 @@ class mac_version(common.AbstractMacCommand):
  
     def render_text(self, outfd, data):
         for version in data:
-            print version
+            outfd.write("{0}\n".format(version))
 
