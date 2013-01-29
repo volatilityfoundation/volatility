@@ -29,7 +29,7 @@ class mac_route(common.AbstractMacCommand):
 
     def get_table(self, tbl):
         rnh = tbl #obj.Object("radix_node", offset=tbl.v(), vm=self.addr_space)
-        rn  = rnh.rnh_treetop
+        rn = rnh.rnh_treetop
         
         while rn.rn_bit >= 0:
             rn = rn.rn_u.rn_node.rn_L
@@ -56,7 +56,7 @@ class mac_route(common.AbstractMacCommand):
 
             while base.v() != 0:
     
-                rn   = base
+                rn = base
                 base = rn.rn_u.rn_leaf.rn_Dupedkey
 
                 if rn.rn_flags & 2 == 0:
@@ -73,9 +73,10 @@ class mac_route(common.AbstractMacCommand):
 
         tables_addr = self.get_profile_symbol("_rt_tables")
 
-        ents = obj.Object(theType = 'Array', offset = tables_addr, vm = self.addr_space, targetType = 'Pointer', count = 32)
+        ## FIXME: if we only use ents[2] why do we need to instantiate 32?
+        ents = obj.Object('Array', offset = tables_addr, vm = self.addr_space, targetType = 'Pointer', count = 32)
 
-        ipv4table = obj.Object("radix_node_head", offset=ents[2], vm=self.addr_space)
+        ipv4table = obj.Object("radix_node_head", offset = ents[2], vm = self.addr_space)
 
         rts = self.get_table(ipv4table)
 
@@ -84,22 +85,22 @@ class mac_route(common.AbstractMacCommand):
 
     def get_ip(self, addr):
     
-        dst = obj.Object("sockaddr", offset=addr, vm=self.addr_space)
+        dst = obj.Object("sockaddr", offset = addr, vm = self.addr_space)
     
         if dst.sa_family == 2: # AF_INET
         
-            saddr = obj.Object("sockaddr_in", offset=addr, vm=self.addr_space)
+            saddr = obj.Object("sockaddr_in", offset = addr, vm = self.addr_space)
         
             s = obj.Object(theType = 'Array', offset = saddr.sin_addr.v(), vm = self.addr_space, targetType = 'unsigned char', count = 4)
     
-            ip = "%d.%d.%d.%d" % (s[0], s[1], s[2], s[3])
+            ip = "{0}.{1}.{2}.{3}".format(s[0], s[1], s[2], s[3])
     
         elif dst.sa_family == 18:  # AF_LINK
     
-            s = obj.Object("sockaddr_dl", offset=addr, vm=self.addr_space)
+            s = obj.Object("sockaddr_dl", offset = addr, vm = self.addr_space)
     
             if [s.sdl_nlen, s.sdl_alen, s.sdl_slen] == [0,0,0]:
-                ip = "link%d" % s.sdl_index
+                ip = "link{0}".format(s.sdl_index)
             else:
                 ip = ":".join(["%02x" % ord(x.v()) for x in s.sdl_data[s.sdl_nlen : s.sdl_nlen + s.sdl_alen]])  
                 
@@ -127,13 +128,13 @@ class mac_route(common.AbstractMacCommand):
         
             if hasattr(rt, "rt_stats"):
                 sent = rt.rt_stats.nstat_txpackets
-                rx   = rt.rt_stats.nstat_rxpackets
+                rx = rt.rt_stats.nstat_rxpackets
             else:
                 sent = -1
-                rx   = -1
+                rx = -1
         
             if hasattr(rt, "rt_expire"):
-                exp   = rt.rt_expire
+                exp = rt.rt_expire
                 if exp == 0:
                     delta = 0
                 else:
