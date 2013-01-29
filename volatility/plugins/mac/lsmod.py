@@ -31,16 +31,11 @@ class mac_lsmod(common.AbstractMacCommand):
         common.set_plugin_members(self)
 
         p = self.get_profile_symbol("_kmod")
+        kmodaddr = obj.Object("Pointer", offset = p, vm = self.addr_space)
+        kmod = kmodaddr.dereference_as("kmod_info") 
 
-        kmodaddr = obj.Object("Pointer", offset=p, vm=self.addr_space)
-        kmod = obj.Object("kmod_info", offset=kmodaddr.v(), vm=self.addr_space)
-
-        while 1:
+        while kmod.is_valid():
             yield kmod
-
-            if not kmod.next:
-                break
-
             kmod = kmod.next
 
     def render_text(self, outfd, data):
