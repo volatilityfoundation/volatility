@@ -82,8 +82,66 @@ class mac_route(common.AbstractMacCommand):
         for rt in rts:
             yield rt
 
+    def get_ip(self, addr):
+    
+        dst = obj.Object("sockaddr", offset=addr, vm=self.addr_space)
+    
+        if dst.sa_family == 2: # AF_INET
+        
+            saddr = obj.Object("sockaddr_in", offset=addr, vm=self.addr_space)
+        
+            s = obj.Object(theType = 'Array', offset = saddr.sin_addr.v(), vm = self.addr_space, targetType = 'unsigned char', count = 4)
+    
+            ip = "%d.%d.%d.%d" % (s[0], s[1], s[2], s[3])
+    
+        elif dst.sa_family == 18:  # AF_LINK
+    
+            s = obj.Object("sockaddr_dl", offset=addr, vm=self.addr_space)
+    
+            if [s.sdl_nlen, s.sdl_alen, s.sdl_slen] == [0,0,0]:
+                ip = "link%d" % s.sdl_index
+            else:
+                ip = ":".join(["%02x" % ord(x.v()) for x in s.sdl_data[s.sdl_nlen : s.sdl_nlen + s.sdl_alen]])  
+                
+        else:
+            ip = "unknown"
+    
+        return ip
+
     def render_text(self, outfd, data):
+
         for rt in data:
-            common.print_rt(self, rt)
+            src_ip = self.get_ip(rt.rt_nodes[0].rn_u.rn_leaf.rn_Key)
+            dst_ip = self.get_ip(rt.rt_gateway)
+        
+            name = common.get_string(rt.rt_ifp.if_name, self.addr_space)
+        
+            unit = rt.rt_ifp.if_unit
+        
+            if hasattr(rt, "base_calendartime"):
+                caltime = rt.base_calendartime
+                prettytime = datetime.datetime.fromtimestamp(caltime).strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                caltime = -1
+                prettytime = ""
+        
+            if hasattr(rt, "rt_stats"):
+                sent = rt.rt_stats.nstat_txpackets
+                rx   = rt.rt_stats.nstat_rxpackets
+            else:
+                sent = -1
+                rx   = -1
+        
+            if hasattr(rt, "rt_expire"):
+                exp   = rt.rt_expire
+                if exp == 0:
+                    delta = 0
+                else:
+                    delta = exp - rt.base_uptime
+            else:
+                exp = -1
+                delta = -1
+        
+            outfd.write("{0} : {1} - {2}{3} - {4} - {5} | {6} {7} | {8} {9}\n".format(src_ip, dst_ip, name, unit, sent, rx, caltime, prettytime, exp, delta))
 
 

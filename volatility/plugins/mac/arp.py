@@ -23,8 +23,9 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+import volatility.plugins.mac.route as route
 
-class mac_arp(common.AbstractMacCommand):
+class mac_arp(route.mac_route):
     """ prints the arp table """
     
     def calculate(self):
@@ -40,7 +41,3 @@ class mac_arp(common.AbstractMacCommand):
             yield ent.la_rt
 
             ent = ent.la_le.le_next
-
-    def render_text(self, outfd, data):
-        for rt in data:
-            common.print_rt(self, rt) 
