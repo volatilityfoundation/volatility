@@ -27,8 +27,8 @@ import volatility.plugins.mac.common as common
 class mac_pslist(common.AbstractMacCommand):
     """ List Running Processes """
 
-    def __init__(self, config, *args):
-        common.AbstractMacCommand.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        common.AbstractMacCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('PID', short_option = 'p', default = None, help = 'Operate on these Process IDs (comma-separated)', action = 'store', type = 'str')
 
     def calculate(self):
@@ -44,9 +44,8 @@ class mac_pslist(common.AbstractMacCommand):
         
         p = self.get_profile_symbol("_allproc")
 
-        procsaddr = obj.Object("proclist", offset=p, vm=self.addr_space)
-
-        proc = obj.Object("proc", offset=procsaddr.lh_first, vm=self.addr_space)
+        procsaddr = obj.Object("proclist", offset = p, vm = self.addr_space)
+        proc = obj.Object("proc", offset = procsaddr.lh_first, vm = self.addr_space)
 
         while proc.p_list.le_next:
     
@@ -60,9 +59,7 @@ class mac_pslist(common.AbstractMacCommand):
         nsecs_per = 1000000
         
         start_time = proc.p_start 
-
         start_secs = start_time.tv_sec + (start_time.tv_usec / nsecs_per)
-
         sec = start_secs
 
         # protect against invalid data in unallocated tasks
