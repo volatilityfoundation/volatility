@@ -32,9 +32,7 @@ class mac_trustedbsd(mac_lsmod):
 
     def get_members(self):
         h = self.profile.types['mac_policy_ops']
-        h = h.keywords["members"]
-
-        return h
+        return h.keywords["members"]
 
     def calculate(self):
         common.set_plugin_members(self)
@@ -47,9 +45,9 @@ class mac_trustedbsd(mac_lsmod):
 
         list_addr = self.get_profile_symbol("_mac_policy_list")
     
-        plist = obj.Object("mac_policy_list", offset=list_addr, vm=self.addr_space)
+        plist = obj.Object("mac_policy_list", offset = list_addr, vm = self.addr_space)
 
-        parray = obj.Object(theType = 'Array', offset = plist.entries, vm = self.addr_space, targetType = 'mac_policy_list_element', count = plist.maxindex+1)
+        parray = obj.Object('Array', offset = plist.entries, vm = self.addr_space, targetType = 'mac_policy_list_element', count = plist.maxindex + 1)
 
         for (i, ent) in enumerate(parray):
             # I don't know how this can happen, but the kernel makes this check all over the place
@@ -59,7 +57,7 @@ class mac_trustedbsd(mac_lsmod):
 
             name = common.get_string(ent.mpc.mpc_name, self.addr_space)
 
-            ops = obj.Object("mac_policy_ops", offset=ent.mpc.mpc_ops, vm=self.addr_space)
+            ops = obj.Object("mac_policy_ops", offset = ent.mpc.mpc_ops, vm = self.addr_space)
 
             # walk each member of the struct
             for check in ops_members:
@@ -72,9 +70,8 @@ class mac_trustedbsd(mac_lsmod):
                     yield (good, check, name, ptr)
 
     def render_text(self, outfd, data):
+        self.table_header(outfd, [("Check", "20"), ("Name", "20"), ("Pointer", "[addrpad]")])
         for (good, check, name, ptr) in data:
-            if good == 0:
-                print "unknown hook for %s in policy %s at %x" % (check, name, ptr)
-            #else:
-            #    print "known hook for %s in policy %s at %x" % (check, name, ptr)
+            if not good:
+                self.table_row(outfd, check, name, ptr)
 
