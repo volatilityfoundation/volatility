@@ -22,7 +22,6 @@
 """
 
 import sys
-
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
 import volatility.plugins.mac.lsmod as lsmod
@@ -48,7 +47,7 @@ class mac_ip_filters(lsmod.mac_lsmod):
         list_addrs = [self.get_profile_symbol("_ipv4_filters"), self.get_profile_symbol("_ipv6_filters")]
     
         for list_addr in list_addrs:
-            plist = obj.Object("ipfilter_list", offset=list_addr, vm=self.addr_space)
+            plist = obj.Object("ipfilter_list", offset = list_addr, vm = self.addr_space)
 
             # type 'ipfilter'
             cur = plist.tqh_first
@@ -58,16 +57,22 @@ class mac_ip_filters(lsmod.mac_lsmod):
                 
                 name = common.get_string(filter.name, self.addr_space)
                    
-                yield self.check_filter("INPUT",  name, filter.ipf_input,  kernel_symbol_addresses, kmods)
+                yield self.check_filter("INPUT", name, filter.ipf_input, kernel_symbol_addresses, kmods)
                 yield self.check_filter("OUTPUT", name, filter.ipf_output, kernel_symbol_addresses, kmods)
                 yield self.check_filter("DETACH", name, filter.ipf_detach, kernel_symbol_addresses, kmods)
            
                 cur = cur.ipf_link.tqe_next
 
     def render_text(self, outfd, data):
+        self.table_header(outfd, [("Context", "10"), 
+                                  ("Filter", "16"), 
+                                  ("Pointer", "[addrpad]"), 
+                                  ("Status", "")])
+
         for (good, context, fname, ptr) in data:
             if good == 0:
-                print "unknown %s hook %s at %x" % (context, fname, ptr)
+                status = "UNKNOWN"
             else:
-                print "known %s hook %s at %x" % (context, fname, ptr)
+                status = "OK"
+            self.table_row(outfd, context, fname, ptr, status)
 
