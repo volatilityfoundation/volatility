@@ -42,30 +42,27 @@ class mac_netstat(lsof.mac_lsof):
     """ Lists active per-process network connections """
 
     def render_text(self, outfd, data):
-        for (data_ptr, data_type, i) in data:
+        for i, fd in data:
             # socket
-            if data_type == 2:
-                socket = obj.Object("socket", offset=data_ptr.v(), vm=self.addr_space)
-
+            if fd.f_fglob.fg_type == 2:
+                socket = fd.f_fglob.fg_data.dereference_as("socket") 
                 family = socket.so_proto.pr_domain.dom_family
-                ipcb    = obj.Object("inpcb", offset=socket.so_pcb, vm=self.addr_space)
-                upcb    = obj.Object("unpcb", offset=socket.so_pcb, vm=self.addr_space)
-
-                (proto, state)  = self.get_proto(socket.so_proto.pr_protocol)
     
                 (lip, lport, rip, rport) = ("", "", "", "")
 
                 if family == 1:
+                    upcb = socket.so_pcb.dereference_as("unpcb")
                     path = self.parse_unix(upcb)
-                    print "UNIX %s" % (path)
-            
-                elif family == 2:
-                    (lip, lport, rip, rport) = self.parse_ipv4(socket, ipcb, proto)
-                    print "%s %s:%s %s:%s %s" % (proto, lip, lport, rip, rport, state)
-
-                elif family == 30:
-                    (lip, lport, rip, rport) = self.parse_ipv6(socket, ipcb, proto) 
-                    print "%s %s:%s %s:%s %s" % (proto, lip, lport, rip, rport, state)
+                    outfd.write("UNIX {0}\n".format(path))
+                elif family in [2, 30]:
+                    ipcb = socket.so_pcb.dereference_as("inpcb")
+                    (proto, state) = self.get_proto(socket.so_proto.pr_protocol)
+                    if family == 2:
+                        (lip, lport, rip, rport) = self.parse_ipv4(socket, ipcb, proto)
+                        outfd.write("{0} {1}:{2} {3}:{4} {5}".format(proto, lip, lport, rip, rport, state))
+                    else:
+                        (lip, lport, rip, rport) = self.parse_ipv6(socket, ipcb, proto) 
+                        outfd.write("{0} {1}:{2} {3}:{4} {5}".format(proto, lip, lport, rip, rport, state))
 
     def get_tcp_state(self, state):
         return tcp_states[state]
@@ -95,13 +92,11 @@ class mac_netstat(lsof.mac_lsof):
     def port(self, p):
         a = ((p & 0xff00) >> 8) & 0xff
         b = ((p & 0x00ff) << 8) & 0xff
-
         c = a | b
-
         return c
 
     def parse_ipv4(self, socket, pcb, proto):
-        lip   = self.ip2str(pcb.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v())        
+        lip = self.ip2str(pcb.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v())        
         lport = self.port(pcb.inp_lport.v())
 
         rip = self.ip2str(pcb.inp_dependfaddr.inp46_foreign.ia46_addr4.s_addr.v())
@@ -109,10 +104,9 @@ class mac_netstat(lsof.mac_lsof):
         
         return (lip, lport, rip, rport)
 
-
     def ip62str(self, ipbytes):
-        ret     = ""
-        ctr     = 0
+        ret = ""
+        ctr = 0
 
         for byte in ipbytes:
             ret = ret + "%.02x" % byte
@@ -126,11 +120,10 @@ class mac_netstat(lsof.mac_lsof):
         return ret 
 
     def parse_ipv6(self, socket, pcb, proto):
-        lip   = self.ip62str(pcb.inp_dependladdr.inp6_local.__u6_addr.__u6_addr8)
+        lip = self.ip62str(pcb.inp_dependladdr.inp6_local.__u6_addr.__u6_addr8)
         lport = self.port(pcb.inp_lport.v())
 
-
-        rip   = self.ip62str(pcb.inp_dependfaddr.inp6_foreign.__u6_addr.__u6_addr8)
+        rip = self.ip62str(pcb.inp_dependfaddr.inp6_foreign.__u6_addr.__u6_addr8)
         rport = self.port(pcb.inp_fport.v())
 
         return (lip, lport, rip, rport)
