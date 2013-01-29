@@ -22,7 +22,7 @@
 """
 
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 
 class mac_dmesg(common.AbstractMacCommand):
     """ prints the kernel debug buffer """

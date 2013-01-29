@@ -22,8 +22,8 @@
 """
 
 import volatility.obj as obj
-import pslist
-import common
+import volatility.plugins.mac.pslist as pslist
+import volatility.plugins.mac.common as common
 
 class mac_pstree(pslist.mac_pslist):
     """ Show parent/child relationship of processes """

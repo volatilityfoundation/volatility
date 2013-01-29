@@ -23,7 +23,7 @@
 
 import volatility.plugins.mac.pslist as pslist
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 
 class mac_pid_hash_table(pslist.mac_pslist):
     """ Walks the pid hash table """

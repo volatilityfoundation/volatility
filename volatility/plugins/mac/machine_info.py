@@ -22,7 +22,7 @@
 """
 
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 
 class mac_machine_info(common.AbstractMacCommand):
     """ Prints machine information about the sample """

@@ -21,9 +21,8 @@
 @organization: 
 """
 import datetime
-
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 
 class mac_route(common.AbstractMacCommand):
     """ Prints the routing table """

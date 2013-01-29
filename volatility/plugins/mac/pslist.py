@@ -21,9 +21,8 @@
 @organization: 
 """
 import time
-
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 
 class mac_pslist(common.AbstractMacCommand):
     """ List Running Processes """

@@ -22,7 +22,7 @@
 """
 
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 
 class mac_check_trap_table(common.AbstractMacCommand):
     """ Checks to see if system call table entries are hooked """

@@ -22,7 +22,7 @@
 """
 
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 
 # based on sysctl_sysctl_debug_dump_node
 class mac_check_sysctl(common.AbstractMacCommand):

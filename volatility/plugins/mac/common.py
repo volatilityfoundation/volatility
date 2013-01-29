@@ -22,9 +22,8 @@
 """
 
 import volatility.commands as commands
-import volatility.utils    as utils
-import volatility.obj      as obj
-
+import volatility.utils as utils
+import volatility.obj as obj
 import datetime
 
 def set_plugin_members(obj_ref):

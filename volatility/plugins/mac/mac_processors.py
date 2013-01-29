@@ -22,7 +22,7 @@
 """
 
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 import sys
 
 class mac_get_processors(common.AbstractMacCommand):

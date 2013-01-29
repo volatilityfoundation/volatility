@@ -23,7 +23,7 @@
 
 import volatility.plugins.mac.pslist as pslist
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 
 class mac_list_sessions(pslist.mac_pslist):
     """ Enumerates sessions """

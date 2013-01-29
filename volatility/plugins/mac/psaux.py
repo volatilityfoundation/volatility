@@ -24,8 +24,8 @@
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.addrspace as addrspace
-import pslist
-import common
+import volatility.plugins.mac.pslist as pslist
+import volatility.plugins.mac.common as common
 
 class mac_psaux(pslist.mac_pslist):
     """ Prints processes with arguments in userland (**argv) """

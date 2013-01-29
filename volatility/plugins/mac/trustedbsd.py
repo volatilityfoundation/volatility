@@ -22,9 +22,8 @@
 """
 
 import sys
-
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 
 from lsmod import mac_lsmod as mac_lsmod
 

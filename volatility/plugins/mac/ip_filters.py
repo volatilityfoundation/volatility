@@ -24,7 +24,7 @@
 import sys
 
 import volatility.obj as obj
-import common
+import volatility.plugins.mac.common as common
 from lsmod import mac_lsmod as mac_lsmod
 
 class mac_ip_filters(mac_lsmod):
