@@ -31,20 +31,17 @@ class mac_vfs_events(common.AbstractMacCommand):
         common.set_plugin_members(self)
 
         list_head_addr = self.get_profile_symbol("_kfse_list_head")
-
-        list_head = obj.Object("kfse_list", offset=list_head_addr, vm=self.addr_space)
-
+        list_head = obj.Object("kfse_list", offset = list_head_addr, vm = self.addr_space)
         cur = list_head.lh_first
 
         while cur:
             s = common.get_string(cur.str, self.addr_space)
-           
             yield (cur.str, s, cur.len) 
-            
             cur = cur.kevent_list.le_next
 
     def render_text(self, outfd, data):
+        self.table_header(outfd, [("Address", "[addrpad]"), ("Name", "20"), ("Slen", "")])
         for (address, name, slen) in data:
-            outfd.write("%x %s %s" % (address, name, slen))
+            self.table_row(outfd, address, name, slen)
         
 
