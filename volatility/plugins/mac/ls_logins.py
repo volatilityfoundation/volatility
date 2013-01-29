@@ -31,14 +31,12 @@ class mac_ls_logins(common.AbstractMacCommand):
         common.set_plugin_members(self)
         
         allctx_addr = self.get_profile_symbol("_alllctx") 
- 
         lctx_list = obj.Object("lctxlist", offset = allctx_addr, vm = self.addr_space)
-
         lctx = lctx_list.lh_first
         
         while lctx:
             procs = []
-            lid   = lctx.lc_id
+            lid = lctx.lc_id
 
             p = lctx.lc_members.lh_first
             while p:
@@ -46,13 +44,14 @@ class mac_ls_logins(common.AbstractMacCommand):
                 p = p.p_list.le_next
 
             yield (lids, procs)
-
             lctx = lctx.lc_list.le_next
 
     def render_text(self, outfd, data):
+        self.table_header(outfd, [("Lid", "8"), ("Pid", "8"), ("Name")])
         for (lid, procs) in data:
-            outfd.write("%d\n" % lid)
-            for (pid, name) in procs:
-                outfd.write("\t%d -> %s" % (pid, name))
-
-
+            if procs:
+                for (pid, name) in procs:
+                    self.table_row(outfd, lid, pid, name)
+            else:
+                # a lid with no procs 
+                self.table_row(outfd, lid, "", "")
