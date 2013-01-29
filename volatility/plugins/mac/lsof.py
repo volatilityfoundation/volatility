@@ -46,37 +46,20 @@ class mac_lsof(pslist.mac_pslist):
         procs = pslist.mac_pslist.calculate(self)
 
         for proc in procs:
-            fdinfo = proc.p_fd 
+            fds = obj.Object('Array', offset = proc.p_fd.fd_ofiles, vm = self.addr_space, targetType = 'Pointer', count = proc.p_fd.fd_lastfile)
 
-            files  = fdinfo.fd_ofiles
-            max    = fdinfo.fd_lastfile
-
-            fds = obj.Object(theType = 'Array', offset = files.v(), vm = self.addr_space, targetType = 'Pointer', count = max)
-
-            for i in xrange(0, max):
-
-                if not fds[i]:
-                    continue
-
-                f    = obj.Object("fileproc", offset=fds[i], vm=self.addr_space)
-                
-                data_ptr  = f.f_fglob.fg_data
-
-                data_type = f.f_fglob.fg_type
-
-                yield (data_ptr, data_type, i)                
+            for i, fd in enumerate(fds):
+                f = fd.dereference_as("fileproc")
+                if f:
+                    yield i, f              
  
     def render_text(self, outfd, data):
         
-        for (data_ptr, data_type, i) in data:
-
+        for i, f in data:
             # file
-            if data_type == 1:
-                
-                vnode = obj.Object("vnode", offset=data_ptr.v(), vm=self.addr_space)
-
-                path  = self.calc_full_path(vnode)
-
+            if f.f_fglob.fg_type == 1:
+                vnode = obj.Object("vnode", offset = f.f_fglob.fg_data, vm = self.addr_space)
+                path = self.calc_full_path(vnode)
                 outfd.write("{0:d} -> {1:s}\n".format(i, path))
 
     def do_calc_path(self, ret, vnode, vname):
@@ -88,29 +71,26 @@ class mac_lsof(pslist.mac_pslist):
             ret.append(vname)
 
         if vnode.v_flag.v() & 0x000001 != 0 and vnode.v_mount.v() != 0: 
-                if vnode.v_mount.mnt_vnodecovered.v() != 0:
-                    self.do_calc_path(ret, vnode.v_mount.mnt_vnodecovered, vnode.v_mount.mnt_vnodecovered.v_name)
+            if vnode.v_mount.mnt_vnodecovered.v() != 0:
+                self.do_calc_path(ret, vnode.v_mount.mnt_vnodecovered, vnode.v_mount.mnt_vnodecovered.v_name)
         else:  
-                self.do_calc_path(ret, vnode.v_parent, vnode.v_parent.v_name)
+            self.do_calc_path(ret, vnode.v_parent, vnode.v_parent.v_name)
                 
     def calc_full_path(self, vnode):
     
         if vnode.v_flag.v() & 0x000001 != 0 and vnode.v_mount.v() != 0 and vnode.v_mount.mnt_flag.v() & 0x00004000 != 0:
             ret = "/"
-        else:  
-        
+        else: 
             elements = []
-            files    = []
+            files = []
 
             self.do_calc_path(elements, vnode, vnode.v_name)
-
             elements.reverse()
 
             for e in elements:
                 files.append(common.get_string(e, self.addr_space))
 
             ret = "/".join(files)                
-
             if ret:
                 ret = "/" + ret
 
