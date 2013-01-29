@@ -23,18 +23,18 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+import volatility.debug as debug
 import sys
 
 class mac_get_processors(common.AbstractMacCommand):
 
     def calculate(self):
 
-        print "broken and in testing, do not use yet"
-        sys.exit(1)
+        debug.error("broken and in testing, do not use yet")
     
         ctr = 0        
 
-        pset = obj.Object("processor_set", offset=self.smap["_pset0"], vm=self.addr_space)
+        pset = obj.Object("processor_set", offset = self.smap["_pset0"], vm = self.addr_space)
 
         while pset != None:
 
@@ -74,7 +74,6 @@ class mac_get_processors(common.AbstractMacCommand):
             '''
             print "num procs: %d" % pset.online_processor_count
 
-
             pset = pset.pset_list
 
     # this plugin really shouldn't be called on its own
@@ -83,13 +82,10 @@ class mac_get_processors(common.AbstractMacCommand):
         for processor in data:
             print "%#x" % processor.obj_offset
 
-
 class mac_runq(mac_get_processors):
 
-
     def calculate(self):
-        print "broken and in testing, do not use yet"
-        sys.exit(1)
+        debug.error("broken and in testing, do not use yet")
  
         sched_str = mac_common.get_string(self.smap["_sched_string"], self.addr_space)
 
@@ -110,7 +106,6 @@ class mac_runq(mac_get_processors):
     def render_text(self, outfd, data):
         for blah in data:
             pass
-
 
     def handle_runq(self):
         pass
