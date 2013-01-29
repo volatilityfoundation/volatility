@@ -64,8 +64,19 @@ class VolatilityMacIntelValidAS(obj.VolatilityMagic):
             yield True
         else:
             yield False
+        
+class proc(obj.CType):   
+    @property
+    def p_gid(self):
+        cred = self.p_ucred
 
-class proc(obj.CType):
+        if hasattr(cred, "cr_posix"):
+            ret = cred.cr_posix.cr_groups[0]
+        else:
+            ret = cred.cr_groups[0]     
+    
+        return ret
+
     @property
     def p_uid(self):
         cred = self.p_ucred
@@ -74,17 +85,6 @@ class proc(obj.CType):
             ret = cred.cr_posix.cr_uid
         else:
             ret = cred.cr_uid     
-        
-        return ret
-    
-    @property
-    def p_gid(self):
-        cred = self.p_ucred
-
-        if hasattr(cred, "cr_posix"):
-            ret = cred.cr_posix.cr_gid
-        else:
-            ret = cred.cr_gid     
         
         return ret
     
