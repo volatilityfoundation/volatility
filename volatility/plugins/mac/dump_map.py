@@ -30,9 +30,9 @@ import volatility.plugins.mac.common as common
 class mac_dump_maps(proc_maps.mac_proc_maps):
     """ Dumps memory ranges of processes """
 
-    def __init__(self, config, *args):         
-        proc_maps.mac_proc_maps.__init__(self, config, *args)         
-        self._config.add_option('MAP_ADDRESS', short_option = 's', default = None, help = 'Filter by starting address of map', action = 'store', type='long') 
+    def __init__(self, config, *args, **kwargs):         
+        proc_maps.mac_proc_maps.__init__(self, config, *args, **kwargs)         
+        self._config.add_option('MAP_ADDRESS', short_option = 's', default = None, help = 'Filter by starting address of map', action = 'store', type = 'long') 
         self._config.add_option('OUTPUTFILE', short_option = 'O', default = None, help = 'Output File', action = 'store', type = 'str')
     
     def render_text(self, outfd, data):
@@ -41,7 +41,7 @@ class mac_dump_maps(proc_maps.mac_proc_maps):
         elif os.path.exists(self._config.OUTPUTFILE):
             debug.error("Cowardly refusing to overwrite an existing file")
                     
-        outfile     = open(self._config.OUTPUTFILE, "wb+")
+        outfile = open(self._config.OUTPUTFILE, "wb+")
         map_address = self._config.MAP_ADDRESS
 
         size = 0
