@@ -42,11 +42,14 @@ class mac_check_trap_table(common.AbstractMacCommand):
                 continue
 
             hooked = ent_addr not in sym_addrs
-
             yield ("TrapTable", i, ent_addr, hooked)
  
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Table Name", "15"), ("Index", "6"), ("Address", "[addrpad]"), ("Symbol", "<50")])
+        self.table_header(outfd, [("Table Name", "15"), 
+                                  ("Index", "6"), 
+                                  ("Address", "[addrpad]"), 
+                                  ("Symbol", "<50")])
+
         for (table_name, i, call_addr, hooked) in data:
             if hooked == False:
                 sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
