@@ -55,7 +55,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
         
         # skip the head entry if new list (recursive call)
         if r:
-            sysctl = sysctl = sysctl.oid_link.sle_next
+            sysctl = sysctl.oid_link.sle_next
 
         while sysctl and sysctl.is_valid():
             spaces = " " * i
@@ -66,12 +66,11 @@ class mac_check_sysctl(common.AbstractMacCommand):
                 #sysctl = sysctl.oid_link.sle_next
                 break
 
-            num  = sysctl.oid_number
+            num = sysctl.oid_number
 
             perms = self._get_perms(sysctl)
 
             handler = sysctl.oid_handler
-
 
             #define CTLTYPE_NODE    1
             #define CTLTYPE_INT     2       /* name describes an integer */
@@ -98,7 +97,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
             elif ctltype == 5:
                 val = sysctl.oid_arg1.dereference()
             else:
-                val = "<UNKNOWN VALUE FOR CTLTYPE %d>" % ctltype 
+                val = "<UNKNOWN VALUE FOR CTLTYPE {0}>".format(ctltype)
 
             yield (sysctl, spaces, name, num, perms, handler, val)
 
