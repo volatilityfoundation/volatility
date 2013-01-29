@@ -42,18 +42,17 @@ class mac_psaux(pslist.mac_pslist):
     def get_task_name(self, proc):
         proc_as = proc.get_process_address_space()
 
-        argslen   = proc.p_argslen
+        argslen = proc.p_argslen
         argsstart = proc.user_stack - proc.p_argslen
 
         argv = proc_as.read(argsstart, argslen)
-
         name = " ".join(argv.split("\x00"))
 
         return name
 
     def render_text(self, outfd, data):
         for (proc, name) in data:
-            outfd.write("%d | %s\n" % (proc.p_pid, name))
+            outfd.write("{0} | {1}\n".format(proc.p_pid, name))
 
 
 
