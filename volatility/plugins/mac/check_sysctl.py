@@ -114,12 +114,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
         sysctl_list = obj.Object("sysctl_oid_list", offset = sysctl_children_addr, vm = self.addr_space)
 
         for (sysctl, spaces, name, number, perms, handler, val) in self._process_sysctl_list(sysctl_list, 0):
-            if common.is_known_address(handler, kernel_symbol_addresses, kmods):
-                good = 1
-            else:
-                good = 0
-
-            if good == 0:
+            if not common.is_known_address(handler, kernel_symbol_addresses, kmods):
                 yield (name, number, perms, handler, val)
 
     def render_text(self, outfd, data):
