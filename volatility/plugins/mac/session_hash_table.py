@@ -35,7 +35,7 @@ class mac_list_sessions(pslist.mac_pslist):
         shash = obj.Object("unsigned long", offset = shash_addr, vm = self.addr_space)
 
         shashtbl_addr = self.get_profile_symbol("_sesshashtbl")
-        shashtbl_ptr = obj.Object("Pointer", offset=shashtbl_addr, vm = self.addr_space)
+        shashtbl_ptr = obj.Object("Pointer", offset = shashtbl_addr, vm = self.addr_space)
         shash_array = obj.Object(theType = "Array", targetType = "sesshashhead", count = shash + 1, vm = self.addr_space, offset = shashtbl_ptr)
     
         for sess in shash_array:
