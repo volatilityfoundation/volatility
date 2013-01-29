@@ -25,9 +25,9 @@ import sys
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
-from lsmod import mac_lsmod as mac_lsmod
+import volatility.plugins.mac.lsmod as lsmod
 
-class mac_ip_filters(mac_lsmod):
+class mac_ip_filters(lsmod.mac_lsmod):
     """ Reports any hooked IP filters """
 
     def check_filter(self, context, fname, ptr, kernel_symbol_addresses, kmods):
