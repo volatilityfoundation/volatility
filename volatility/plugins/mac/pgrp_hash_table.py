@@ -35,8 +35,8 @@ class mac_pgrp_hash_table(pslist.mac_pslist):
         pgrphash = obj.Object("unsigned long", offset = pgrphash_addr, vm = self.addr_space)
 
         pgrphashtbl_addr = self.get_profile_symbol("_pgrphashtbl")
-        pgrphashtbl_ptr = obj.Object("Pointer", offset=pgrphashtbl_addr, vm = self.addr_space)
-        pgrphash_array = obj.Object(theType = "Array", targetType = "pgrphashhead", count = pgrphash + 1, vm = self.addr_space, offset = pgrphashtbl_ptr)
+        pgrphashtbl_ptr = obj.Object("Pointer", offset = pgrphashtbl_addr, vm = self.addr_space)
+        pgrphash_array = obj.Object("Array", targetType = "pgrphashhead", count = pgrphash + 1, vm = self.addr_space, offset = pgrphashtbl_ptr)
     
         for plist in pgrphash_array:
             pgrp = plist.lh_first
