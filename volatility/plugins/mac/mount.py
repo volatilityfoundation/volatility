@@ -33,6 +33,8 @@ class mac_mount(common.AbstractMacCommand):
         mountlist_addr = self.get_profile_symbol("_mountlist")
         mount = obj.Object("mount", offset = mountlist_addr, vm = self.addr_space)
 
+        mount = mount.mnt_list.tqe_next
+
         while mount:
             ## fixme: after we fix get_string, just yield mount instead of these three attribs from the mount object
             mnttype = common.get_string(mount.mnt_vfsstat.f_fstypename.obj_offset, self.addr_space, 16)
