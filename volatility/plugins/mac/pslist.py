@@ -20,7 +20,6 @@
 @contact:      atcuno@gmail.com
 @organization: 
 """
-import time
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
 
@@ -54,22 +53,6 @@ class mac_pslist(common.AbstractMacCommand):
 
             proc = proc.p_list.le_next
 
-    #### move this to an overlay for 'proc'
-    def _get_proc_start_time(self, proc):
-        nsecs_per = 1000000
-        
-        start_time = proc.p_start 
-        start_secs = start_time.tv_sec + (start_time.tv_usec / nsecs_per)
-        sec = start_secs
-
-        # protect against invalid data in unallocated tasks
-        try:
-            ret = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(sec))
-        except ValueError:
-            ret = ""
-
-        return ret
-
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Offset", "[addrpad]"),
                           ("Name", "20"),
@@ -86,7 +69,7 @@ class mac_pslist(common.AbstractMacCommand):
                                   str(proc.p_uid),
                                   str(proc.p_gid),
                                   str(proc.p_pgrpid),
-                                  self._get_proc_start_time(proc))
+                                  proc.start_time())
 
 
 

@@ -21,6 +21,7 @@ import re,copy
 import sys, os
 import zipfile
 import struct
+import time
 
 import volatility.plugins
 from volatility import cache
@@ -98,6 +99,21 @@ class proc(obj.CType):
             debug.error("This plugin does not work when analyzing a sample from a 64bit computer running a 32bit kernel.")
 
         return proc_as 
+
+    def start_time(self):
+        nsecs_per = 1000000
+        
+        start_time = self.p_start 
+        start_secs = start_time.tv_sec + (start_time.tv_usec / nsecs_per)
+        sec = start_secs
+
+        # protect against invalid data in unallocated tasks
+        try:
+            ret = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(sec))
+        except ValueError:
+            ret = ""
+
+        return ret
 
 class OSString(obj.CType):
 
