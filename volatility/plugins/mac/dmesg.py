@@ -38,6 +38,7 @@ class mac_dmesg(common.AbstractMacCommand):
         bufc = self.addr_space.read(msgbufp.msg_bufc, size)
 
         if bufc[bufx] == 0 and bufc[0] != 0:
+            ## FIXME: can we do this without get_string?
             buf = common.get_string(bufc, self.addr_space)
         else:     
             if bufx > size:

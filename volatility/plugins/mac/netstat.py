@@ -52,7 +52,7 @@ class mac_netstat(lsof.mac_lsof):
 
                 if family == 1:
                     upcb = socket.so_pcb.dereference_as("unpcb")
-                    path = self.parse_unix(upcb)
+                    path = upcb.unp_addr.sun_path
                     outfd.write("UNIX {0}\n".format(path))
                 elif family in [2, 30]:
                     ipcb = socket.so_pcb.dereference_as("inpcb")
@@ -127,16 +127,6 @@ class mac_netstat(lsof.mac_lsof):
         rport = self.port(pcb.inp_fport.v())
 
         return (lip, lport, rip, rport)
-
-    def parse_unix(self, pcb):
-        path = pcb.unp_addr.sun_path
-
-        if path[0] == 0:
-            ret = ""
-        else:
-            ret = common.get_string(path.obj_offset, self.addr_space, 105)
-
-        return ret
 
 
 

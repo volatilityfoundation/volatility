@@ -40,8 +40,7 @@ class mac_lsmod(common.AbstractMacCommand):
 
     def render_text(self, outfd, data):
         for kmod in data:
-            name = common.get_string(kmod.name.obj_offset, self.addr_space)
-            outfd.write("{0}\n".format(name))
+            outfd.write("{0}\n".format(kmod.name))
 
 
 

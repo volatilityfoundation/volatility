@@ -35,7 +35,7 @@ class mac_ifconfig(common.AbstractMacCommand):
         ifnet = list_head_ptr.dereference_as("ifnet")
 
         while ifnet:
-            name = common.get_string(ifnet.if_name, self.addr_space)
+            name = ifnet.if_name.dereference()
             unit = ifnet.if_unit
             ifaddr = ifnet.if_addrhead.tqh_first
             

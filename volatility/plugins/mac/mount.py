@@ -32,20 +32,17 @@ class mac_mount(common.AbstractMacCommand):
 
         mountlist_addr = self.get_profile_symbol("_mountlist")
         mount = obj.Object("mount", offset = mountlist_addr, vm = self.addr_space)
-
         mount = mount.mnt_list.tqe_next
 
         while mount:
-            ## fixme: after we fix get_string, just yield mount instead of these three attribs from the mount object
-            mnttype = common.get_string(mount.mnt_vfsstat.f_fstypename.obj_offset, self.addr_space, 16)
-            dev = common.get_string(mount.mnt_vfsstat.f_mntonname.obj_offset, self.addr_space, 1024) 
-            mntpoint = common.get_string(mount.mnt_vfsstat.f_mntfromname.obj_offset, self.addr_space, 1024)
-
-            yield (mnttype, dev, mntpoint)
+            yield mount
             mount = mount.mnt_list.tqe_next
         
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Device", "10"), ("Mount Point", "20"), ("Type", "")])
-        for (mnttype, dev, mntpoint) in data:
-            self.table_row(outfd, dev, mntpoint, mnttype)
+        for mount in data:
+            self.table_row(outfd, 
+                           mount.mnt_vfsstat.f_mntonname, 
+                           mount.mnt_vfsstat.f_mntfromname, 
+                           mount.mnt_vfsstat.f_fstypename)
 

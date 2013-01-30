@@ -53,7 +53,7 @@ class mac_list_sessions(pslist.mac_pslist):
         for sess in data:
             if sess.s_leader:
                 pid  = sess.s_leader.p_pid
-                pname = common.get_string(sess.s_leader.p_comm.obj_offset, self.addr_space)
+                pname = sess.s_leader.p_comm
             else:
                 pid = -1
                 pname = "<INVALID LEADER>"

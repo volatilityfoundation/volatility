@@ -60,7 +60,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
         while sysctl and sysctl.is_valid():
             spaces = " " * i
 
-            name = common.get_string(sysctl.oid_name, self.addr_space)
+            name = sysctl.oid_name.dereference()
 
             if len(name) == 0:
                 #sysctl = sysctl.oid_link.sle_next
@@ -91,6 +91,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
             elif ctltype == 2:
                 val = sysctl.oid_arg1.dereference()
             elif ctltype == 3:
+                ## FIXME: can we do this without get_string?
                 val = common.get_string(sysctl.oid_arg1, self.addr_space)
             elif ctltype == 4:
                 val = sysctl.oid_arg1.dereference()

@@ -98,8 +98,7 @@ class mac_proc_maps(pslist.mac_pslist):
             path = []
 
             while vnode:
-                part = common.get_string(vnode.v_name, self.addr_space)
-                path.append(part)
+                path.append(str(vnode.v_name.dereference()))
                 vnode = vnode.v_parent
 
             path.reverse()

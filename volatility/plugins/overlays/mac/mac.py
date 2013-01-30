@@ -99,6 +99,12 @@ class proc(obj.CType):
 
         return proc_as 
 
+class OSString(obj.CType):
+
+    def __str__(self):
+        string_object = obj.Object("String", offset = self.string, vm = self.obj_vm, length = self.length)
+        return str(string_object or '')
+
 def exec_vtypes(filename):
     env = {}
     exec(filename, dict(__builtins__ = None), env)
@@ -732,6 +738,7 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc' : proc,
+            'OSString' : OSString,
         })
 
 mac_overlay = {
@@ -741,8 +748,40 @@ mac_overlay = {
         'AMD64ValidAS'  : [ 0x0, ['VolatilityMacIntelValidAS']],
         }],
 
-    'session' : [None, {
-        's_login'          : [ None , ['String', dict(length = 255)]],
+    'session' : [ None, {
+        's_login' : [ None , ['String', dict(length = 256)]],
+        }],
+    'kfs_event' : [ None, {
+        'str' : [ None, ['pointer', ['String', dict(length = 256)]]], 
+        }], 
+    'mac_policy_conf' : [ None, { 
+        'mpc_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
+        }], 
+    'proc' : [ None, { 
+        'p_comm' : [ None, ['String', dict(length = 17)]], 
+        }], 
+    'ifnet' : [ None, { 
+        'if_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
+        }], 
+    'vnode' : [ None, {
+        'v_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
+        }], 
+    'vfsstatfs' : [ None, { 
+        'f_fstypename' : [ None, ['String', dict(length = 16)]],
+        'f_mntonname' : [ None, ['String', dict(length = 1024)]],
+        'f_mntfromname' : [ None, ['String', dict(length = 1024)]],
+        }], 
+    'kmod_info' : [ None, { 
+        'name' : [ None, ['String', dict(length = 64)]],
+        }], 
+    'ipf_filter' : [ None, { 
+        'name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
+        }], 
+    'sysctl_oid' : [ None, { 
+        'oid_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
+        }], 
+    'sockaddr_un': [ None, { 
+        'sun_path' : [ None, ['String', dict(length = 104)]],
         }],
 }
 

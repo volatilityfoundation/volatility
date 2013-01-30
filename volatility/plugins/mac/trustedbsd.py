@@ -46,16 +46,15 @@ class mac_trustedbsd(mac_lsmod):
         list_addr = self.get_profile_symbol("_mac_policy_list")
     
         plist = obj.Object("mac_policy_list", offset = list_addr, vm = self.addr_space)
-
         parray = obj.Object('Array', offset = plist.entries, vm = self.addr_space, targetType = 'mac_policy_list_element', count = plist.maxindex + 1)
 
-        for (i, ent) in enumerate(parray):
+        for ent in enumerate(parray):
             # I don't know how this can happen, but the kernel makes this check all over the place
             # the policy is useful without any ops so a rootkit can't abuse this
             if ent.mpc == None:
                 continue
 
-            name = common.get_string(ent.mpc.mpc_name, self.addr_space)
+            name = ent.mpc.mpc_name.dereference()
 
             ops = obj.Object("mac_policy_ops", offset = ent.mpc.mpc_ops, vm = self.addr_space)
 

@@ -40,14 +40,14 @@ class mac_ls_logins(common.AbstractMacCommand):
 
             p = lctx.lc_members.lh_first
             while p:
-                procs.append(p.p_pid, common.get_string(proc.p_comm.obj_offset, self.addr_space))
+                procs.append((p.p_pid, proc.p_comm))
                 p = p.p_list.le_next
 
             yield (lids, procs)
             lctx = lctx.lc_list.le_next
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Lid", "8"), ("Pid", "8"), ("Name")])
+        self.table_header(outfd, [("Lid", "8"), ("Pid", "8"), ("Name", "")])
         for (lid, procs) in data:
             if procs:
                 for (pid, name) in procs:

@@ -43,8 +43,7 @@ class mac_notifiers(lsmod.mac_lsmod):
             if ent == None:
                 continue
 
-            s = ent.key.dereference_as("OSString") 
-            key = common.get_string(s.string.v(), self.addr_space)
+            key = ent.key.dereference_as("OSString") 
 
             # get the value
             valset = ent.value.dereference_as("OSOrderedSet")
@@ -76,13 +75,8 @@ class mac_notifiers(lsmod.mac_lsmod):
             if ent == None:
                 continue
 
-            s = ent.key.dereference_as("OSString") 
-            key = common.get_string(s.string.v(), self.addr_space)
-
-            val = ent.value.dereference_as("OSString")
-            match = common.get_string(val.string.v(), self.addr_space, val.length)
-            
-            matches.append(match)
+            match = ent.value.dereference_as("OSString")            
+            matches.append(str(match))
 
         return ",".join(matches)
 

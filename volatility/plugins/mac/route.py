@@ -115,8 +115,7 @@ class mac_route(common.AbstractMacCommand):
             src_ip = self.get_ip(rt.rt_nodes[0].rn_u.rn_leaf.rn_Key)
             dst_ip = self.get_ip(rt.rt_gateway)
         
-            name = common.get_string(rt.rt_ifp.if_name, self.addr_space)
-        
+            name = rt.rt_ifp.if_name.dereference()
             unit = rt.rt_ifp.if_unit
         
             if hasattr(rt, "base_calendartime"):

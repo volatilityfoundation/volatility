@@ -35,13 +35,12 @@ class mac_vfs_events(common.AbstractMacCommand):
         cur = list_head.lh_first
 
         while cur:
-            s = common.get_string(cur.str, self.addr_space)
-            yield (cur.str, s, cur.len) 
+            yield cur
             cur = cur.kevent_list.le_next
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Address", "[addrpad]"), ("Name", "20"), ("Slen", "")])
-        for (address, name, slen) in data:
-            self.table_row(outfd, address, name, slen)
+        for cur in data:
+            self.table_row(outfd, cur.str.v(), cur.str.dereference(), cur.len)
         
 

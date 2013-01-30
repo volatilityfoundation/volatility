@@ -45,8 +45,7 @@ class mac_pstree(pslist.mac_pslist):
         if proc.p_pid in self.procs_seen:
             return
 
-        proc_name = common.get_string(proc.p_comm.obj_offset, self.addr_space)
-        proc_name = "." * level + proc_name
+        proc_name = "." * level + proc.p_comm
 
         outfd.write("{0:20s} {1:15s} {2:15s}\n".format(proc_name, str(proc.p_pid), str(proc.p_ucred.cr_uid)))
   

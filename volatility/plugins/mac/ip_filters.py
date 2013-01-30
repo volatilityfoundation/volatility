@@ -54,8 +54,7 @@ class mac_ip_filters(lsmod.mac_lsmod):
 
             while cur:
                 filter = cur.ipf_filter
-                
-                name = common.get_string(filter.name, self.addr_space)
+                name = filter.name.dereference()
                    
                 yield self.check_filter("INPUT", name, filter.ipf_input, kernel_symbol_addresses, kmods)
                 yield self.check_filter("OUTPUT", name, filter.ipf_output, kernel_symbol_addresses, kmods)

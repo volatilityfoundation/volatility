@@ -80,9 +80,8 @@ class mac_pslist(common.AbstractMacCommand):
                           ("Start Time", "")])
 
         for proc in data:
-            name = common.get_string(proc.p_comm.obj_offset, self.addr_space)
             self.table_row(outfd, proc.obj_offset,
-                                  name,
+                                  proc.p_comm,
                                   str(proc.p_pid),
                                   str(proc.p_uid),
                                   str(proc.p_gid),

@@ -29,10 +29,7 @@ class mac_version(common.AbstractMacCommand):
 
     def calculate(self):
         common.set_plugin_members(self)
-
-        version = common.get_string(self.get_profile_symbol("_version"), self.addr_space)
-
-        yield version
+        yield obj.Object("String", offset = self.get_profile_symbol("_version"), vm = self.addr_space, length = 256)
  
     def render_text(self, outfd, data):
         for version in data:

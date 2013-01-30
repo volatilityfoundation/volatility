@@ -88,7 +88,7 @@ class mac_lsof(pslist.mac_pslist):
             elements.reverse()
 
             for e in elements:
-                files.append(common.get_string(e, self.addr_space))
+                files.append(str(e.dereference()))
 
             ret = "/".join(files)                
             if ret:
