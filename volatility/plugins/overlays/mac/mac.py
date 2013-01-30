@@ -89,8 +89,8 @@ class proc(obj.CType):
         return ret
     
     def get_process_address_space(self):
-        task = obj.Object("task", offset=self.task, vm=self.obj_vm)  
-        cr3  = task.map.pmap.pm_cr3
+        task = obj.Object("task", offset = self.task, vm = self.obj_vm)  
+        cr3 = task.map.pmap.pm_cr3
         try:
             proc_as = self.obj_vm.__class__(self.obj_vm.base, self.obj_vm.get_config(), dtb = cr3)
         except addrspace.ASAssertionError, e:
@@ -101,7 +101,7 @@ class proc(obj.CType):
 
 def exec_vtypes(filename):
     env = {}
-    exec(filename, dict(__builtins__=None), env)
+    exec(filename, dict(__builtins__ = None), env)
     return env["mac_types"]
 
 def parse_dsymutil(data, module):
@@ -433,7 +433,6 @@ class DWARFParser(object):
             #if kind != "NULL":
             #    print "Skipping unsupported tag %s" % kind
 
-
     def process_variable(self, data):
         return
         """Process a local variable."""
@@ -493,7 +492,7 @@ class DWARFParser(object):
 
         for t in self.all_vtypes:
             print "  '%s': [ %#x, {" % (t, self.all_vtypes[t][0])
-            for m in sorted(self.all_vtypes[t][1], key=lambda m: self.all_vtypes[t][1][m][0]):
+            for m in sorted(self.all_vtypes[t][1], key = lambda m: self.all_vtypes[t][1][m][0]):
                 print "    '%s': [%#x, %s]," % (m, self.all_vtypes[t][1][m][0], self.all_vtypes[t][1][m][1])
             print "}],"
         print "}"
@@ -502,7 +501,6 @@ class DWARFParser(object):
         for v in sorted(self.all_vars, key=lambda v: self.all_vars[v][0]):
             print "  '%s': [%#010x, %s]," % (v, self.all_vars[v][0], self.all_vars[v][1])
         print "}"
-
 
 def MacProfileFactory(profpkg):
 
