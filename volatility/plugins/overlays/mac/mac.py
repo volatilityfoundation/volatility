@@ -511,13 +511,6 @@ def MacProfileFactory(profpkg):
     profilename = os.path.splitext(os.path.basename(profpkg.filename))[0]
  
     for f in profpkg.filelist:
-        '''
-        if f.filename.lower().endswith('.dwarf'):
-            data = profpkg.read(f.filename)            
-            res = self.parse_dwarf(data)
-            vtypesvar.update(res)
-            debug.debug("{2}: Found dwarf file {0} with {1} symbols".format(f.filename, len(vtypesvar.keys()), profilename))
-        '''
         if 'symbol.dsymutil' in f.filename.lower():
             memmodel, sysmap = parse_dsymutil(profpkg.read(f.filename), "kernel")
             if memmodel == "64bit":
@@ -533,16 +526,6 @@ def MacProfileFactory(profpkg):
     if not sysmapvar or not vtypesvar:
         # Might be worth throwing an exception here?
         return None
-
-    '''
-    def parse_dwarf(self, data):
-        """Parse the dwarf file."""
-        self._parser = DWARFParser()
-        for line in data.splitlines():
-            self._parser.feed_line(line)
-
-        return self._parser.finalize()
-    '''
 
     class AbstractMacProfile(obj.Profile):
         __doc__ = "A Profile for Mac " + profilename + " " + arch
@@ -731,12 +714,6 @@ for path in set(volatility.plugins.__path__):
         for fn in files:
             if zipfile.is_zipfile(os.path.join(path, fn)):
                 new_classes.append(MacProfileFactory(zipfile.ZipFile(os.path.join(path, fn))))
-
-'''
-    def register_options(config):
-        """Register profile specific options."""
-        config.add_option("PROFILE_FILE", default = None, help = "The profile file to use for mac memory analysis. Must contain a dwarf file and a System map file.")
-'''
 
 class MacOverlay(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'mac'}
