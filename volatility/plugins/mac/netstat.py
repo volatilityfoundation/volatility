@@ -58,10 +58,10 @@ class mac_netstat(lsof.mac_lsof):
                     (proto, state) = self.get_proto(socket.so_proto.pr_protocol)
                     if family == 2:
                         (lip, lport, rip, rport) = self.parse_ipv4(socket, ipcb, proto)
-                        outfd.write("{0} {1}:{2} {3}:{4} {5}".format(proto, lip, lport, rip, rport, state))
+                        outfd.write("{0} {1}:{2} {3}:{4} {5}\n".format(proto, lip, lport, rip, rport, state))
                     else:
                         (lip, lport, rip, rport) = self.parse_ipv6(socket, ipcb, proto) 
-                        outfd.write("{0} {1}:{2} {3}:{4} {5}".format(proto, lip, lport, rip, rport, state))
+                        outfd.write("{0} {1}:{2} {3}:{4} {5}\n".format(proto, lip, lport, rip, rport, state))
 
     def get_tcp_state(self, state):
         return tcp_states[state]
