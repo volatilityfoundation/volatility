@@ -43,8 +43,7 @@ class mac_netstat(lsof.mac_lsof):
 
     def render_text(self, outfd, data):
         for i, fd in data:
-            # socket
-            if fd.f_fglob.fg_type == 2:
+            if str(fd.f_fglob.fg_type) == 'DTYPE_SOCKET':
                 socket = fd.f_fglob.fg_data.dereference_as("socket") 
                 family = socket.so_proto.pr_domain.dom_family
     

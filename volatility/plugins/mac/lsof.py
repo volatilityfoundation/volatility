@@ -56,8 +56,7 @@ class mac_lsof(pslist.mac_pslist):
     def render_text(self, outfd, data):
         
         for i, f in data:
-            # file
-            if f.f_fglob.fg_type == 1:
+            if str(f.f_fglob.fg_type) == 'DTYPE_VNODE':
                 vnode = f.f_fglob.fg_data.dereference_as("vnode")
                 path = self.calc_full_path(vnode)
                 outfd.write("{0:d} -> {1:s}\n".format(i, path))
@@ -95,11 +94,3 @@ class mac_lsof(pslist.mac_pslist):
                 ret = "/" + ret
 
         return ret
-
-
-                
-
-
-
-
-
