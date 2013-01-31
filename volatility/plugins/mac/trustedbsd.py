@@ -48,7 +48,7 @@ class mac_trustedbsd(mac_lsmod):
         plist = obj.Object("mac_policy_list", offset = list_addr, vm = self.addr_space)
         parray = obj.Object('Array', offset = plist.entries, vm = self.addr_space, targetType = 'mac_policy_list_element', count = plist.maxindex + 1)
 
-        for ent in enumerate(parray):
+        for ent in parray:
             # I don't know how this can happen, but the kernel makes this check all over the place
             # the policy is useful without any ops so a rootkit can't abuse this
             if ent.mpc == None:
@@ -69,7 +69,7 @@ class mac_trustedbsd(mac_lsmod):
                     yield (good, check, name, ptr)
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Check", "20"), ("Name", "20"), ("Pointer", "[addrpad]")])
+        self.table_header(outfd, [("Check", "40"), ("Name", "20"), ("Pointer", "[addrpad]")])
         for (good, check, name, ptr) in data:
             if not good:
                 self.table_row(outfd, check, name, ptr)
