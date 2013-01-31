@@ -43,6 +43,10 @@ class AbstractMacCommand(commands.command):
         commands.Command.execute(self, *args, **kwargs)
 
     @staticmethod
+    def register_options(config):
+        config.add_option("SHIFT", type = 'int', default = 0, help = "Mac KASLR shift address")
+
+    @staticmethod
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'mac'
 

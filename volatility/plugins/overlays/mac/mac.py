@@ -70,23 +70,25 @@ class VolatilityDTB(obj.VolatilityMagic):
     ## Based off volafox's method for finding vm_kernel_shift through loGlo & hardcoded Catfish
     def _get_dtb_m_lion(self):
         tbl = self.obj_vm.profile.sys_map["kernel"]
+        config = self.obj_vm.get_config()
 
-        scanner = catfishScan(needles = ["Catfish "])
-        for catfish_offset in scanner.scan(self.obj_vm):
-            shift_address = catfish_offset - (tbl["_lowGlo"][0][0] % 0xFFFFFF80)
-            self.obj_vm.profile.shift_address = shift_address
+        if config.SHIFT:
+            shift_address = config.SHIFT
+        else:
+            scanner = catfishScan(needles = ["Catfish "])
+            for catfish_offset in scanner.scan(self.obj_vm):
+                shift_address = catfish_offset - (tbl["_lowGlo"][0][0] % 0xFFFFFF80)
+                break
 
-            bootpml4      = (tbl["_BootPML4"][0][0] % 0xFFFFFF80) + shift_address
-            boot_pml4_dtb = amd64.AMD64PagedMemory(self.obj_vm, self.obj_vm.get_config(), dtb = bootpml4)
-          
-            idlepml4_addr = (tbl['_IdlePML4'][0][0]) + shift_address
-            idlepml4_ptr = obj.Object("unsigned long", offset = idlepml4_addr, vm = boot_pml4_dtb)
+        self.obj_vm.profile.shift_address = shift_address
 
-            ret = idlepml4_ptr.v()
+        bootpml4      = (tbl["_BootPML4"][0][0] % 0xFFFFFF80) + shift_address
+        boot_pml4_dtb = amd64.AMD64PagedMemory(self.obj_vm, config, dtb = bootpml4)
+      
+        idlepml4_addr = (tbl['_IdlePML4'][0][0]) + shift_address
+        idlepml4_ptr = obj.Object("unsigned long", offset = idlepml4_addr, vm = boot_pml4_dtb)
 
-            break
-
-        return ret
+        return idlepml4_ptr.v()
 
     def generate_suggestions(self):
         profile = self.obj_vm.profile
