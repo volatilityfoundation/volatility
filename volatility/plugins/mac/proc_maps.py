@@ -32,23 +32,13 @@ class mac_proc_maps(pslist.mac_pslist):
         common.set_plugin_members(self)
 
         procs = pslist.mac_pslist.calculate(self)
-        permask = "rwx"
 
         for proc in procs:
             task = proc.task.dereference_as("task") 
             map = task.map.hdr.links.next
 
             for i in xrange(task.map.hdr.nentries):
-                perm = map.protection
-                perms = ""
-           
-                for (ctr, i) in enumerate([1, 3, 5]):
-                    if (perm & i) == i:
-                        perms = perms + permask[ctr]
-                    else:
-                        perms = perms + "-"
-
-                yield (proc, map, perms)
+                yield (proc, map)
                 map = map.links.next
 
     def render_text(self, outfd, data):
@@ -58,11 +48,11 @@ class mac_proc_maps(pslist.mac_pslist):
                           ("Map Name", "")])
 
         ## FIXME: [addrpad] gets truncated here for some reason
-        for (proc, map, perms) in data:
+        for (proc, map) in data:
             self.table_row(outfd, 
                            map.links.start, 
                            map.links.end, 
-                           perms, 
+                           map.get_perms(), 
                            self._get_path_for_map(map))
 
     def _get_vnode_for_map(self, map):

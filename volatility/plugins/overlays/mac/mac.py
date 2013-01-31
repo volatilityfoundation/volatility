@@ -160,6 +160,21 @@ class OSString(obj.CType):
         string_object = obj.Object("String", offset = self.string, vm = self.obj_vm, length = self.length)
         return str(string_object or '')
 
+class vm_map_entry(obj.CType):
+
+    def get_perms(self):
+
+        permask = "rwx"
+        perms = ""
+
+        for (ctr, i) in enumerate([1, 3, 5]):
+            if (self.protection & i) == i:
+                perms = perms + permask[ctr]
+            else:
+                perms = perms + "-"
+
+        return perms
+
 class sockaddr_dl(obj.CType):
 
     def v(self):
@@ -836,6 +851,7 @@ class MacObjectClasses(obj.ProfileModification):
             'Ipv6Address': basic.Ipv6Address,
             'ifaddr' : ifaddr, 
             'sockaddr_dl' : sockaddr_dl,
+            'vm_map_entry' : vm_map_entry,
         })
 
 mac_overlay = {
