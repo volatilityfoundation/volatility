@@ -115,6 +115,45 @@ class proc(obj.CType):
 
         return ret
 
+class sysctl_oid(obj.CType):
+
+    def get_perms(self):
+        """
+        # define CTLFLAG_RD      0x80000000      /* Allow reads of variable */
+        # define CTLFLAG_WR      0x40000000      /* Allow writes to the variable */
+        # define CTLFLAG_LOCKED  0x00800000      /* node will handle locking itself */
+        """
+        ret = ""
+
+        checks = [0x80000000, 0x40000000, 0x00800000]
+        perms  = ["R", "W", "L"]
+        
+        for (i, c) in enumerate(checks):
+            if c & self.oid_kind:
+                ret = ret + perms[i]
+            else:
+                ret = ret + "-"
+
+        return ret
+
+    def get_ctltype(self):
+        """
+        #define CTLTYPE_NODE    1
+        #define CTLTYPE_INT     2       /* name describes an integer */
+        #define CTLTYPE_STRING  3       /* name describes a string */
+        #define CTLTYPE_QUAD    4       /* name describes a 64-bit number */
+        #define CTLTYPE_OPAQUE  5       /* name describes a structure */
+        #define CTLTYPE_STRUCT  CTLTYPE_OPAQUE  /* name describes a structure */
+        """
+            
+        types = {1: 'CTLTYPE_NODE', 2: 'CTLTYPE_INT', 3: 'CTLTYPE_STRING', 4: 'CTLTYPE_QUAD', 5: 'CTLTYPE_OPAQUE'}
+        ctltype = self.oid_kind & 0xf
+
+        try:
+            return types[ctltype]
+        except KeyError:
+            return "UNKNOWN CTLTYPE: {0}".format(ctltype)
+
 class OSString(obj.CType):
 
     def __str__(self):
@@ -755,6 +794,7 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc' : proc,
             'OSString' : OSString,
+            'sysctl_oid' : sysctl_oid,
         })
 
 mac_overlay = {

@@ -28,25 +28,6 @@ import volatility.plugins.mac.common as common
 class mac_check_sysctl(common.AbstractMacCommand):
     """ Checks for unknown sysctl handlers """
 
-    # define CTLFLAG_RD      0x80000000      /* Allow reads of variable */
-    # define CTLFLAG_WR      0x40000000      /* Allow writes to the variable */
-    # define CTLFLAG_LOCKED  0x00800000      /* node will handle locking itself */
-    def _get_perms(self, sysctl):
-        ret = ""
-
-        flags = sysctl.oid_kind
-
-        checks = [0x80000000, 0x40000000, 0x00800000]
-        perms  = ["R", "W", "L"]
-        
-        for (i, c) in enumerate(checks):
-            if c & flags:
-                ret = ret + perms[i]
-            else:
-                ret = ret + "-"
-
-        return ret
-
     def _process_sysctl_list(self, sysctl_list, r = 0):
         if type(sysctl_list) == obj.Pointer:
             sysctl_list = obj.Object("sysctl_oid_list", offset = sysctl_list.dereference(), vm = self.addr_space)
@@ -64,33 +45,22 @@ class mac_check_sysctl(common.AbstractMacCommand):
                 #sysctl = sysctl.oid_link.sle_next
                 break
 
-            #define CTLTYPE_NODE    1
-            #define CTLTYPE_INT     2       /* name describes an integer */
-            #define CTLTYPE_STRING  3       /* name describes a string */
-            #define CTLTYPE_QUAD    4       /* name describes a 64-bit number */
-            #define CTLTYPE_OPAQUE  5       /* name describes a structure */
-            #define CTLTYPE_STRUCT  CTLTYPE_OPAQUE  /* name describes a structure */
-            
-            ctltype = sysctl.oid_kind & 0xf
+            ctltype = sysctl.get_ctltype()
 
             if sysctl.oid_arg1 == 0 or not sysctl.oid_arg1.is_valid():
                 val = ""
-            elif ctltype == 1:
+            elif ctltype == 'CTLTYPE_NODE':
                 if sysctl.oid_handler == 0:
                     for info in self._process_sysctl_list(sysctl.oid_arg1, r = 1):
                         yield info 
                 val = "Node"
-            elif ctltype == 2:
+            elif ctltype in ['CTLTYPE_INT', 'CTLTYPE_QUAD', 'CTLTYPE_OPAQUE']:
                 val = sysctl.oid_arg1.dereference()
-            elif ctltype == 3:
+            elif ctltype == 'CTLTYPE_STRING':
                 ## FIXME: can we do this without get_string?
                 val = common.get_string(sysctl.oid_arg1, self.addr_space)
-            elif ctltype == 4:
-                val = sysctl.oid_arg1.dereference()
-            elif ctltype == 5:
-                val = sysctl.oid_arg1.dereference()
             else:
-                val = "<UNKNOWN VALUE FOR CTLTYPE {0}>".format(ctltype)
+                val = ctltype
 
             yield (sysctl, name, val)
 
@@ -126,7 +96,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
 
             self.table_row(outfd, name, 
                            sysctl.oid_number, 
-                           self._get_perms(sysctl), 
+                           sysctl.get_perms(),
                            sysctl.oid_handler, 
                            status, val)
 
