@@ -57,8 +57,6 @@ class mac_list_sessions(pslist.mac_pslist):
             else:
                 pid = -1
                 pname = "<INVALID LEADER>"
-        
-            lname = sess.s_login
-            
-            self.table_row(outfd, pid, pname, lname)
+                    
+            self.table_row(outfd, pid, pname, sess.s_login)
 
