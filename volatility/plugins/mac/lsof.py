@@ -25,19 +25,6 @@ import volatility.obj as obj
 import volatility.plugins.mac.pslist as pslist
 import volatility.plugins.mac.common as common
 
-'''
-  121 /* file types */
-  122 typedef enum {
-  123         DTYPE_VNODE     = 1,    /* file */
-  124         DTYPE_SOCKET,           /* communications endpoint */
-  125         DTYPE_PSXSHM,           /* POSIX Shared memory */
-  126         DTYPE_PSXSEM,           /* POSIX Semaphores */
-  127         DTYPE_KQUEUE,           /* kqueue */
-  128         DTYPE_PIPE,             /* pipe */
-  129         DTYPE_FSEVENTS          /* fsevents */
-  130 } file_type_t;
-'''
-
 class mac_lsof(pslist.mac_pslist):
     """ Lists per-process opened files """
     def calculate(self):
