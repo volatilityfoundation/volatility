@@ -80,6 +80,12 @@ class mac_proc_maps(pslist.mac_pslist):
         return ret
 
     def _get_path_for_map(self, map):
+        
+        ## FIXME: we should move this code to an object class 
+        ## like vm_map_entry.get_path_name() however the subfunction        
+        ## calls self.get_profile_symbol() which is a method of
+        ## the plugin class. 
+
         vnode = self._get_vnode_for_map(map)
     
         if type(vnode) == str and vnode == "sub_map":
