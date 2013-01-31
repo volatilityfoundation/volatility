@@ -21,22 +21,10 @@
 @organization: 
 """
 
-import volatility.obj as obj
-import volatility.debug as debug
-import volatility.addrspace as addrspace
 import volatility.plugins.mac.pslist as pslist
-import volatility.plugins.mac.common as common
 
 class mac_psaux(pslist.mac_pslist):
     """ Prints processes with arguments in userland (**argv) """
-
-    def calculate(self):
-        common.set_plugin_members(self)
-
-        procs = pslist.mac_pslist.calculate(self)
-
-        for proc in procs:
-            yield proc
 
     def render_text(self, outfd, data):
         for proc in data:
