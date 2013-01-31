@@ -82,8 +82,6 @@ class VolatilityDTB(obj.VolatilityMagic):
 
             ret = idlepml4_ptr.v()
 
-            print "returning %x" % ret
-
             break
 
         return ret
@@ -107,14 +105,11 @@ class VolatilityMacIntelValidAS(obj.VolatilityMagic):
     def generate_suggestions(self):
         version_addr = self.obj_vm.profile.get_symbol("_version")
 
-        print "reading version_addr at %x" % version_addr
-
         string = self.obj_vm.read(version_addr, 6)
 
         if string == "Darwin":
             yield True
         else:
-            print "bad string: %s" % string
             yield False
         
 class proc(obj.CType):   
