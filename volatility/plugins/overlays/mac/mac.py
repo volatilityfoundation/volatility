@@ -29,7 +29,6 @@ import volatility.obj as obj
 import volatility.plugins.overlays.basic as basic
 import volatility.addrspace as addrspace
 import volatility.scan as scan
-import volatility.plugins.kdbgscan as kdbgscan
 
 import volatility.plugins.addrspaces.amd64 as amd64
 
