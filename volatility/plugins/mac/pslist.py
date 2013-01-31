@@ -72,7 +72,3 @@ class mac_pslist(common.AbstractMacCommand):
                                   proc.start_time())
 
 
-
-
-
-

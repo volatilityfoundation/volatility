@@ -94,5 +94,3 @@ class mac_notifiers(lsmod.mac_lsmod):
                 status = "OK"
 
             self.table_row(outfd, status, key, notifier.handler, matches)
-                
-

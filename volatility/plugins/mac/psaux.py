@@ -53,7 +53,3 @@ class mac_psaux(pslist.mac_pslist):
     def render_text(self, outfd, data):
         for (proc, name) in data:
             outfd.write("{0} | {1}\n".format(proc.p_pid, name))
-
-
-
-

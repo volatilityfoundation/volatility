@@ -126,6 +126,3 @@ class mac_netstat(lsof.mac_lsof):
         rport = self.port(pcb.inp_fport.v())
 
         return (lip, lport, rip, rport)
-
-
-

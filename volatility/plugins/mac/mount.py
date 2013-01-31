@@ -45,4 +45,3 @@ class mac_mount(common.AbstractMacCommand):
                            mount.mnt_vfsstat.f_mntonname, 
                            mount.mnt_vfsstat.f_mntfromname, 
                            mount.mnt_vfsstat.f_fstypename)
-

@@ -143,5 +143,3 @@ class mac_route(common.AbstractMacCommand):
                 delta = -1
         
             outfd.write("{0} : {1} - {2}{3} - {4} - {5} | {6} {7} | {8} {9}\n".format(src_ip, dst_ip, name, unit, sent, rx, caltime, prettytime, exp, delta))
-
-

@@ -49,4 +49,3 @@ class mac_pgrp_hash_table(pslist.mac_pslist):
                     p = p.p_pglist.le_next 
     
                 pgrp = pgrp.pg_hash.le_next
-

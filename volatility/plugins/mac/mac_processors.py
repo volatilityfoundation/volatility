@@ -109,16 +109,3 @@ class mac_runq(mac_get_processors):
 
     def handle_runq(self):
         pass
-
-
-
-
-
-
-
-
-
-
-
-
-

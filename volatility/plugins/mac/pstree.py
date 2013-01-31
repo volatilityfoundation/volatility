@@ -60,10 +60,3 @@ class mac_pstree(pslist.mac_pslist):
             proc = proc.p_sibling.le_next
             if not proc:
                 break
-                
-
-
-
-
-
-

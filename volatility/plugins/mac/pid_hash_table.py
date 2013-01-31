@@ -44,4 +44,3 @@ class mac_pid_hash_table(pslist.mac_pslist):
             while p:
                 yield p                
                 p = p.p_hash.le_next
-

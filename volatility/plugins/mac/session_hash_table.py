@@ -61,5 +61,4 @@ class mac_list_sessions(pslist.mac_pslist):
             lname = sess.s_login
             
             self.table_row(outfd, pid, pname, lname)
-                    
 

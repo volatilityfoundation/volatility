@@ -899,5 +899,3 @@ class MacVTypes(obj.ProfileModification):
 
     def modification(self, profile):
         profile.vtypes.update(mac_vtypes)
-
-

@@ -42,5 +42,3 @@ class mac_vfs_events(common.AbstractMacCommand):
         self.table_header(outfd, [("Address", "[addrpad]"), ("Name", "20"), ("Slen", "")])
         for cur in data:
             self.table_row(outfd, cur.str.v(), cur.str.dereference(), cur.len)
-        
-

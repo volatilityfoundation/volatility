@@ -73,4 +73,3 @@ class mac_trustedbsd(mac_lsmod):
         for (good, check, name, ptr) in data:
             if not good:
                 self.table_row(outfd, check, name, ptr)
-

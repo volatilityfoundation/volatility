@@ -47,5 +47,3 @@ class mac_machine_info(common.AbstractMacCommand):
 
             for i in info:
                 outfd.write("{0:15} {1}\n".format(i[0], i[1]))
-            
- 

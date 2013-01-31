@@ -108,7 +108,3 @@ class mac_proc_maps(pslist.mac_pslist):
                 
         return ret
 
-
-
-
-
