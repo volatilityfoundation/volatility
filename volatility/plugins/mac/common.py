@@ -58,7 +58,7 @@ class AbstractMacCommand(commands.command):
         '''
         return self.profile.get_symbol(sym_name, nm_type, sym_type, module)
 
-def is_known_address(handler, kernel_symbol_addresses, kmods, printme=0):
+def is_known_address(handler, kernel_symbol_addresses, kmods, printme = 0):
     # see if this handler is in a known location
     good = 0 
 
@@ -73,7 +73,7 @@ def is_known_address(handler, kernel_symbol_addresses, kmods, printme=0):
         for (start, end, name) in kmods:
             if start <= handler <= end:
                 if printme:
-                    print " in module %s " % name,
+                    print " in module %s ".format(name),
                 good = 1
                 break
 
@@ -91,6 +91,7 @@ def get_kernel_addrs(obj_ref):
 
     return (kernel_symbol_addresses, kmods)
 
+## FIXME: remove this function after all references from plugins are removed
 def get_string(addr, addr_space, maxlen = 256):
 
     name = addr_space.read(addr, maxlen)
