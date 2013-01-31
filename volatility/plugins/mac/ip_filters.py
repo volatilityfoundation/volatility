@@ -21,7 +21,6 @@
 @organization: 
 """
 
-import sys
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
 import volatility.plugins.mac.lsmod as lsmod
