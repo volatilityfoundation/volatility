@@ -45,7 +45,7 @@ class mac_dump_maps(proc_maps.mac_proc_maps):
 
         size = 0
         for proc, map in data:
-            if not map_address or map_address == start:
+            if not map_address or map_address == map.links.start:
                 for page in self._read_addr_range(proc, map.links.start, map.links.end):
                     size += len(page)
                     outfile.write(page)
