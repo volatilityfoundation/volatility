@@ -93,21 +93,6 @@ class mac_netstat(lsof.mac_lsof):
         
         return (lip, lport, rip, rport)
 
-    def ip62str(self, ipbytes):
-        ret = ""
-        ctr = 0
-
-        for byte in ipbytes:
-            ret = ret + "%.02x" % byte
-                    
-            # make it the : notation
-            if ctr % 2 and ctr != 15:
-                ret = ret + ":"
-
-            ctr = ctr + 1
-
-        return ret 
-
     def parse_ipv6(self, socket, pcb, proto):
         lip = pcb.inp_dependladdr.inp6_local.__u6_addr.v()
         lport = self.port(pcb.inp_lport.v())
