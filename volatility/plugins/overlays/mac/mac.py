@@ -447,17 +447,6 @@ class DWARFParser(object):
                 self.process_statement(**parsed)
 
     def process_statement(self, kind, level, data, statement_id):
-
-        if not hasattr(self, "idx"):
-            idx = 0
-
-        #print "%s | %s | %s" % (str(kind), str(level), str(data))
-
-        idx = idx + 1
-
-        if idx == 2:
-            sys.exit(1)
-
         """Process a single parsed statement."""
         new_level = int(level)
         if new_level > self.current_level:
@@ -473,11 +462,6 @@ class DWARFParser(object):
             parent_kind, parent_name = self.name_stack[-2]
         except IndexError:
             parent_kind, parent_name = (None, None)
-
-        if not hasattr(self, "wtf"):
-            self.wtf = {}
-
-        self.wtf[kind] = 1
 
         if kind == 'TAG_compile_unit':
             self.finalize()
