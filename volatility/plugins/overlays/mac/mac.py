@@ -50,6 +50,8 @@ class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
 
     def _get_dtb_pre_m_lion(self):
+        profile = self.obj_vm.profile
+
         if self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit":
             ret = profile.get_symbol("_IdlePDPT")
             # on 10.5.x the PDTD symbol is a pointer instead of an array like 10.6 and 10.7
@@ -88,7 +90,6 @@ class VolatilityDTB(obj.VolatilityMagic):
 
     def generate_suggestions(self):
         profile = self.obj_vm.profile
-
         bootpml = profile.get_symbol("_BootPML4")
         
         if bootpml:        
