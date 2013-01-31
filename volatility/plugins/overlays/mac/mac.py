@@ -866,8 +866,6 @@ def MacProfileFactory(profpkg):
                 # FIXME: change in 2.3 when truncation no longer occurs
                 ret = ret & 0xffffffffffff
 
-            print "shift_address %x looking up %s" % (self.shift_address, sym_name)
-
             if self.shift_address and ret:
                 ret = ret + self.shift_address
 
