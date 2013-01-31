@@ -60,7 +60,7 @@ class mac_route(common.AbstractMacCommand):
                 base = rn.rn_u.rn_leaf.rn_Dupedkey
 
                 if rn.rn_flags & 2 == 0:
-                    rt = obj.Object("rtentry", offset=rn, vm=self.addr_space)
+                    rt = obj.Object("rtentry", offset = rn, vm = self.addr_space)
                     yield rt
 
             rn = nextptr
@@ -83,54 +83,33 @@ class mac_route(common.AbstractMacCommand):
         for rt in rts:
             yield rt
 
-    def get_ip(self, addr):
-    
-        dst = obj.Object("sockaddr", offset = addr, vm = self.addr_space)
-    
-        if dst.sa_family == 2: # AF_INET
-        
-            saddr = obj.Object("sockaddr_in", offset = addr, vm = self.addr_space)
-        
-            s = obj.Object(theType = 'Array', offset = saddr.sin_addr.v(), vm = self.addr_space, targetType = 'unsigned char', count = 4)
-    
-            ip = "{0}.{1}.{2}.{3}".format(s[0], s[1], s[2], s[3])
-    
-        elif dst.sa_family == 18:  # AF_LINK
-    
-            s = obj.Object("sockaddr_dl", offset = addr, vm = self.addr_space)
-    
-            if [s.sdl_nlen, s.sdl_alen, s.sdl_slen] == [0,0,0]:
-                ip = "link{0}".format(s.sdl_index)
-            else:
-                ip = ":".join(["%02x" % ord(x.v()) for x in s.sdl_data[s.sdl_nlen : s.sdl_nlen + s.sdl_alen]])  
-                
-        else:
-            ip = "unknown"
-    
-        return ip
-
     def render_text(self, outfd, data):
 
+        self.table_header(outfd, [("Source IP", "16"), 
+                                  ("Dest. IP", "16"), 
+                                  ("Name", "^10"), 
+                                  ("Sent", "^10"),
+                                  ("Recv", "^10"), 
+                                  ("CalTime", "^16"), 
+                                  ("Time", "^20"), 
+                                  ("Exp.", "^10"), 
+                                  ("Delta", "")])
+
         for rt in data:
-            src_ip = self.get_ip(rt.rt_nodes[0].rn_u.rn_leaf.rn_Key)
-            dst_ip = self.get_ip(rt.rt_gateway)
-        
-            name = rt.rt_ifp.if_name.dereference()
-            unit = rt.rt_ifp.if_unit
         
             if hasattr(rt, "base_calendartime"):
                 caltime = rt.base_calendartime
                 prettytime = datetime.datetime.fromtimestamp(caltime).strftime('%Y-%m-%d %H:%M:%S')
             else:
-                caltime = -1
+                caltime = "N/A"
                 prettytime = ""
         
             if hasattr(rt, "rt_stats"):
                 sent = rt.rt_stats.nstat_txpackets
                 rx = rt.rt_stats.nstat_rxpackets
             else:
-                sent = -1
-                rx = -1
+                sent = "N/A"
+                rx = "N/A"
         
             if hasattr(rt, "rt_expire"):
                 exp = rt.rt_expire
@@ -139,7 +118,20 @@ class mac_route(common.AbstractMacCommand):
                 else:
                     delta = exp - rt.base_uptime
             else:
-                exp = -1
-                delta = -1
+                exp = "N/A"
+                delta = "N/A"
         
-            outfd.write("{0} : {1} - {2}{3} - {4} - {5} | {6} {7} | {8} {9}\n".format(src_ip, dst_ip, name, unit, sent, rx, caltime, prettytime, exp, delta))
+            name = "{0}{1}".format(rt.rt_ifp.if_name.dereference(), rt.rt_ifp.if_unit)
+            source_ip = rt.rt_nodes[0].rn_u.rn_leaf.rn_Key.dereference_as("sockaddr").get_address()
+            dest_ip = rt.rt_gateway.get_address()
+
+            self.table_row(outfd, 
+                           source_ip, 
+                           dest_ip,
+                           name,
+                           sent, rx, 
+                           caltime, 
+                           prettytime, 
+                           exp, 
+                           delta)
+                        

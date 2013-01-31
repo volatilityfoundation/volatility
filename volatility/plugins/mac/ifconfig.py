@@ -42,7 +42,7 @@ class mac_ifconfig(common.AbstractMacCommand):
             ips = []
 
             while ifaddr:
-                ip = ifaddr.get_address() 
+                ip = ifaddr.ifa_addr.get_address() 
                 if ip:
                     ips.append(ip)
                 ifaddr = ifaddr.ifa_link.tqe_next

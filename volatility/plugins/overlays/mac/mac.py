@@ -202,24 +202,24 @@ class sockaddr_dl(obj.CType):
 
         return ret
 
-class ifaddr(obj.CType):
-
+class sockaddr(obj.CType):
+    
     def get_address(self):
 
-        family = self.ifa_addr.sa_family
+        family = self.sa_family
 
         ip = ""
 
-        if family == 2: # ip 4
-            addr_in = self.ifa_addr.dereference_as("sockaddr_in")
+        if family == 2: # AF_INET
+            addr_in = obj.Object("sockaddr_in", offset = self.obj_offset, vm = self.obj_vm) 
             ip = addr_in.sin_addr.s_addr.v()
 
-        elif family == 30:
-            addr_in6 = self.ifa_addr.dereference_as("sockaddr_in6") 
+        elif family == 30: # AF_INET6
+            addr_in6 = obj.Object("sockaddr_in6", offset = self.obj_offset, vm = self.obj_vm) 
             ip = addr_in6.sin6_addr.__u6_addr.v()
 
-        elif family == 18:
-            addr_dl = self.ifa_addr.dereference_as("sockaddr_dl") 
+        elif family == 18: # AF_LINK
+            addr_dl = obj.Object("sockaddr_dl", offset = self.obj_offset, vm = self.obj_vm) 
             ip = addr_dl.v()
 
         return ip
@@ -860,7 +860,7 @@ class MacObjectClasses(obj.ProfileModification):
             'sysctl_oid' : sysctl_oid,
             'IpAddress': basic.IpAddress,
             'Ipv6Address': basic.Ipv6Address,
-            'ifaddr' : ifaddr, 
+            'sockaddr' : sockaddr, 
             'sockaddr_dl' : sockaddr_dl,
             'vm_map_entry' : vm_map_entry,
         })
