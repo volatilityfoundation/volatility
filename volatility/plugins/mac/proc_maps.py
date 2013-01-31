@@ -39,12 +39,8 @@ class mac_proc_maps(pslist.mac_pslist):
             map = task.map.hdr.links.next
 
             for i in xrange(task.map.hdr.nentries):
-                start = map.links.start
-                end = map.links.end
                 perm = map.protection
                 perms = ""
-           
-                name = self._get_path_for_map(map)
            
                 for (ctr, i) in enumerate([1, 3, 5]):
                     if (perm & i) == i:
@@ -52,7 +48,7 @@ class mac_proc_maps(pslist.mac_pslist):
                     else:
                         perms = perms + "-"
 
-                yield (proc, start, end, perms, name)
+                yield (proc, map, perms)
                 map = map.links.next
 
     def render_text(self, outfd, data):
@@ -62,8 +58,12 @@ class mac_proc_maps(pslist.mac_pslist):
                           ("Map Name", "")])
 
         ## FIXME: [addrpad] gets truncated here for some reason
-        for (proc, start, end, perms, name) in data:
-            self.table_row(outfd, start, end, perms, name)
+        for (proc, map, perms) in data:
+            self.table_row(outfd, 
+                           map.links.start, 
+                           map.links.end, 
+                           perms, 
+                           self._get_path_for_map(map))
 
     def _get_vnode_for_map(self, map):
         hdr = map.dereference()
