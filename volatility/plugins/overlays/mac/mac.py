@@ -115,6 +115,17 @@ class proc(obj.CType):
 
         return ret
 
+    def get_task_name(self):
+        proc_as = self.get_process_address_space()
+
+        argslen = self.p_argslen
+        argsstart = self.user_stack - self.p_argslen
+
+        argv = proc_as.read(argsstart, argslen)
+        name = " ".join(argv.split("\x00"))
+
+        return name
+
 class sysctl_oid(obj.CType):
 
     def get_perms(self):
