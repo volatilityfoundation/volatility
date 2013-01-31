@@ -64,11 +64,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
                 #sysctl = sysctl.oid_link.sle_next
                 break
 
-            num = sysctl.oid_number
-
             perms = self._get_perms(sysctl)
-
-            handler = sysctl.oid_handler
 
             #define CTLTYPE_NODE    1
             #define CTLTYPE_INT     2       /* name describes an integer */
@@ -82,7 +78,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
             if sysctl.oid_arg1 == 0 or not sysctl.oid_arg1.is_valid():
                 val = ""
             elif ctltype == 1:
-                if handler == 0:
+                if sysctl.oid_handler == 0:
                     for info in self._process_sysctl_list(sysctl.oid_arg1, r = 1):
                         yield info 
                 val = "Node"
@@ -98,7 +94,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
             else:
                 val = "<UNKNOWN VALUE FOR CTLTYPE {0}>".format(ctltype)
 
-            yield (sysctl, name, num, perms, handler, val)
+            yield (sysctl, name, perms, val)
 
             sysctl = sysctl.oid_link.sle_next
     
@@ -111,9 +107,9 @@ class mac_check_sysctl(common.AbstractMacCommand):
 
         sysctl_list = obj.Object("sysctl_oid_list", offset = sysctl_children_addr, vm = self.addr_space)
 
-        for (sysctl, name, number, perms, handler, val) in self._process_sysctl_list(sysctl_list):
-            is_known = common.is_known_address(handler, kernel_symbol_addresses, kmods)
-            yield (name, number, perms, handler, val, is_known)
+        for (sysctl, name, perms, val) in self._process_sysctl_list(sysctl_list):
+            is_known = common.is_known_address(sysctl.oid_handler, kernel_symbol_addresses, kmods)
+            yield (sysctl, name, perms, val, is_known)
 
     def render_text(self, outfd, data):
 
@@ -124,12 +120,12 @@ class mac_check_sysctl(common.AbstractMacCommand):
                                   ("Status", "10"),
                                   ("Value", "")])
 
-        for (name, number, perms, handler, val, is_known) in data:
+        for (sysctl, name, perms, val, is_known) in data:
             if is_known:
                 status = "OK"
             else:
                 status = "UNKNOWN"
-            self.table_row(outfd, name, number, perms, handler, status, val)
+            self.table_row(outfd, name, sysctl.oid_number, perms, sysctl.oid_handler, status, val)
 
 
 
