@@ -41,7 +41,7 @@ class mac_lsmod(common.AbstractMacCommand):
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Address", "[addrpad]"), 
                                   ("Size", "[addr]"), 
-                                  ("Refs", "8"),
+                                  ("Refs", "^8"),
                                   ("Version", "12"),  
                                   ("Name", "")])
         for kmod in data:
