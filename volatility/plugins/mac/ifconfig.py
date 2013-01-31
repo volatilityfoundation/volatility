@@ -79,7 +79,6 @@ class mac_ifconfig(common.AbstractMacCommand):
 
     def get_ip_address(self, ifnet):
 
-        addr = 
         family = addr.sa_family
 
         ip = ""
