@@ -23,7 +23,6 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.lsof as lsof
-import volatility.plugins.mac.common as common
 
 tcp_states = ("",
               "ESTABLISHED",
