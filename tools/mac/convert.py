@@ -27,6 +27,8 @@ class DWARFParser(object):
         'long unsigned int': 'unsigned long',
         'short int': 'short',
         'short unsigned int': 'unsigned short',
+        'unsigned short' : 'unsigned short',
+        'short' : 'short',
         'signed char': 'signed char',
         'unsigned char': 'unsigned char',
         'unsigned int': 'unsigned int',
@@ -140,17 +142,6 @@ class DWARFParser(object):
         #    print "line %s does not match" % line.strip()
 
     def process_statement(self, kind, level, data, statement_id):
-
-        if not hasattr(self, "idx"):
-            idx = 0
-
-        #print "%s | %s | %s" % (str(kind), str(level), str(data))
-
-        idx = idx + 1
-
-        if idx == 2:
-            sys.exit(1)
-
         """Process a single parsed statement."""
         new_level = int(level)
         if new_level > self.current_level:
@@ -166,11 +157,6 @@ class DWARFParser(object):
             parent_kind, parent_name = self.name_stack[-2]
         except IndexError:
             parent_kind, parent_name = (None, None)
-
-        if not hasattr(self, "wtf"):
-            self.wtf = {}
-
-        self.wtf[kind] = 1
 
         if kind == 'TAG_compile_unit':
             self.finalize()
@@ -193,11 +179,27 @@ class DWARFParser(object):
                 except:
                     self.vtypes[name] = [ int(data['AT_byte_size'], 16), {} ]
 
+        elif kind == 'TAG_class_type':
+            name = data.get('AT_name', "__unnamed_%s" % statement_id)
+            self.name_stack[-1][1] = name
+            self.id_to_name[statement_id] = [name]
+
+            # If it's just a forward declaration, we want the name around,
+            # but there won't be a size
+            if 'AT_declaration' not in data:
+                try:
+                    self.vtypes[name] = [ int(data['AT_byte_size']), {} ]
+                except:
+                    self.vtypes[name] = [ int(data['AT_byte_size'], 16), {} ]
+
         elif kind == 'TAG_union_type':
             name = data.get('AT_name', "__unnamed_%s" % statement_id)
             self.name_stack[-1][1] = name
             self.id_to_name[statement_id] = [name]
-            self.vtypes[name] = [ int(data['AT_byte_size']), {} ]
+            try:
+                self.vtypes[name] = [ int(data['AT_byte_size']), {} ]
+            except:
+                self.vtypes[name] = [ 0, {} ]
 
         elif kind == 'TAG_array_type':
             self.name_stack[-1][1] = statement_id
@@ -211,7 +213,10 @@ class DWARFParser(object):
             # If it's just a forward declaration, we want the name around,
             # but there won't be a size
             if 'AT_declaration' not in data:
-                sz = int(data['AT_byte_size'])
+                try:
+                    sz = int(data['AT_byte_size'])
+                except:
+                    sz = 0
                 self.enums[name] = [sz, {}]
 
         elif kind == 'TAG_pointer_type':
