@@ -795,6 +795,8 @@ class MacObjectClasses(obj.ProfileModification):
             'proc' : proc,
             'OSString' : OSString,
             'sysctl_oid' : sysctl_oid,
+            'IpAddress': basic.IpAddress,
+            'Ipv6Address': basic.Ipv6Address,
         })
 
 mac_overlay = {
@@ -839,6 +841,12 @@ mac_overlay = {
     'sockaddr_un': [ None, { 
         'sun_path' : [ None, ['String', dict(length = 104)]],
         }],
+    'in_addr' : [ None, { 
+        's_addr' : [ None, ['IpAddress']], 
+        }], 
+    'in6_addr' : [ None, {
+        '__u6_addr' : [ None, ['Ipv6Address']], 
+        }], 
 }
 
 mac_vtypes = {

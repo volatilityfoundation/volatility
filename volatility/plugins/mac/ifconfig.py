@@ -61,16 +61,6 @@ class mac_ifconfig(common.AbstractMacCommand):
                 # an interface with no IPs
                 self.table_row(outfd, "{0}{1}".format(name, unit), "")
 
-    def ip2str(self, ip):
-        ip = ip & 0xffffffff
-
-        a = ip & 0xff
-        b = (ip >> 8) & 0xff
-        c = (ip >> 16) & 0xff
-        d = (ip >> 24) & 0xff
-
-        return "{0}.{1}.{2}.{3}".format(a, b, c, d)
-
     def get_link_addr(self, addr):
         if addr == None:
             return None
@@ -87,38 +77,23 @@ class mac_ifconfig(common.AbstractMacCommand):
 
         return ret
 
-    def get_ipv6(self, addr):
-        ret = ""
-
-        for idx,a in enumerate(addr):
-            ret = ret + "%.02x" % a.v()
- 
-            if idx and idx % 2 != 0:
-                ret = ret + ":"
-
-        if ret and ret[-1] == ":":
-            ret = ret[:-1]
-
-        return ret
-
     def get_ip_address(self, ifnet):
 
-        addr = ifnet.ifa_addr
+        addr = 
         family = addr.sa_family
 
         ip = ""
 
         if family == 2: # ip 4
-            addr_in = obj.Object("sockaddr_in", offset = addr, vm = self.addr_space)
-            ip = self.ip2str(addr_in.sin_addr.s_addr.v())
+            addr_in = ifnet.ifa_addr.dereference_as("sockaddr_in")
+            ip = addr_in.sin_addr.s_addr.v()
 
         elif family == 30:
-            addr_in6 = obj.Object("sockaddr_in6", offset = addr, vm = self.addr_space)
-            addr = addr_in6.sin6_addr.__u6_addr.__u6_addr8
-            ip = self.get_ipv6(addr)
+            addr_in6 = ifnet.ifa_addr.dereference_as("sockaddr_in6") 
+            ip = addr_in6.sin6_addr.__u6_addr.v()
 
         elif family == 18:
-            addr_dl = obj.Object("sockaddr_dl", offset = addr, vm = self.addr_space)
+            addr_dl = ifnet.ifa_addr.dereference_as("sockaddr_dl") 
             ip = self.get_link_addr(addr_dl)
 
         return ip
