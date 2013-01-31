@@ -47,7 +47,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
 
         return ret
 
-    def _process_sysctl_list(self, sysctl_list, i, r = 0):
+    def _process_sysctl_list(self, sysctl_list, r = 0):
         if type(sysctl_list) == obj.Pointer:
             sysctl_list = obj.Object("sysctl_oid_list", offset = sysctl_list.dereference(), vm = self.addr_space)
 
@@ -58,8 +58,6 @@ class mac_check_sysctl(common.AbstractMacCommand):
             sysctl = sysctl.oid_link.sle_next
 
         while sysctl and sysctl.is_valid():
-            spaces = " " * i
-
             name = sysctl.oid_name.dereference()
 
             if len(name) == 0:
@@ -85,7 +83,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
                 val = ""
             elif ctltype == 1:
                 if handler == 0:
-                    for info in self._process_sysctl_list(sysctl.oid_arg1, i + 2, r = 1):
+                    for info in self._process_sysctl_list(sysctl.oid_arg1, r = 1):
                         yield info 
                 val = "Node"
             elif ctltype == 2:
@@ -100,7 +98,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
             else:
                 val = "<UNKNOWN VALUE FOR CTLTYPE {0}>".format(ctltype)
 
-            yield (sysctl, spaces, name, num, perms, handler, val)
+            yield (sysctl, name, num, perms, handler, val)
 
             sysctl = sysctl.oid_link.sle_next
     
@@ -113,7 +111,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
 
         sysctl_list = obj.Object("sysctl_oid_list", offset = sysctl_children_addr, vm = self.addr_space)
 
-        for (sysctl, spaces, name, number, perms, handler, val) in self._process_sysctl_list(sysctl_list, 0):
+        for (sysctl, name, number, perms, handler, val) in self._process_sysctl_list(sysctl_list):
             is_known = common.is_known_address(handler, kernel_symbol_addresses, kmods)
             yield (name, number, perms, handler, val, is_known)
 
