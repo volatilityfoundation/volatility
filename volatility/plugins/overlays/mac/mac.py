@@ -887,6 +887,10 @@ mac_overlay = {
     'in6_addr' : [ None, {
         '__u6_addr' : [ None, ['Ipv6Address']], 
         }], 
+    'inpcb' : [ None, { 
+        'inp_lport' : [ None, ['unsigned be short']], 
+        'inp_fport' : [ None, ['unsigned be short']], 
+        }], 
 }
 
 mac_vtypes = {
