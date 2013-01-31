@@ -78,16 +78,6 @@ class mac_netstat(lsof.mac_lsof):
 
         return ret
 
-    def ip2str(self, ip):
-        ip = ip & 0xffffffff
-
-        a = ip & 0xff
-        b = (ip >> 8) & 0xff
-        c = (ip >> 16) & 0xff
-        d = (ip >> 24) & 0xff
-
-        return "%d.%d.%d.%d" % (a, b, c, d)
-
     def port(self, p):
         a = ((p & 0xff00) >> 8) & 0xff
         b = ((p & 0x00ff) << 8) & 0xff
@@ -95,10 +85,10 @@ class mac_netstat(lsof.mac_lsof):
         return c
 
     def parse_ipv4(self, socket, pcb, proto):
-        lip = self.ip2str(pcb.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v())        
+        lip = pcb.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v()    
         lport = self.port(pcb.inp_lport.v())
 
-        rip = self.ip2str(pcb.inp_dependfaddr.inp46_foreign.ia46_addr4.s_addr.v())
+        rip = pcb.inp_dependfaddr.inp46_foreign.ia46_addr4.s_addr.v()
         rport = self.port(pcb.inp_fport.v())
         
         return (lip, lport, rip, rport)
@@ -119,10 +109,10 @@ class mac_netstat(lsof.mac_lsof):
         return ret 
 
     def parse_ipv6(self, socket, pcb, proto):
-        lip = self.ip62str(pcb.inp_dependladdr.inp6_local.__u6_addr.__u6_addr8)
+        lip = pcb.inp_dependladdr.inp6_local.__u6_addr.v()
         lport = self.port(pcb.inp_lport.v())
 
-        rip = self.ip62str(pcb.inp_dependfaddr.inp6_foreign.__u6_addr.__u6_addr8)
+        rip = pcb.inp_dependfaddr.inp6_foreign.__u6_addr.v() 
         rport = self.port(pcb.inp_fport.v())
 
         return (lip, lport, rip, rport)
