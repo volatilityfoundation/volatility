@@ -870,6 +870,7 @@ mac_overlay = {
         }], 
     'kmod_info' : [ None, { 
         'name' : [ None, ['String', dict(length = 64)]],
+        'version' : [ None, ['String', dict(length = 64)]],
         }], 
     'ipf_filter' : [ None, { 
         'name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
