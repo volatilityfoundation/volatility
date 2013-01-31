@@ -64,8 +64,6 @@ class mac_check_sysctl(common.AbstractMacCommand):
                 #sysctl = sysctl.oid_link.sle_next
                 break
 
-            perms = self._get_perms(sysctl)
-
             #define CTLTYPE_NODE    1
             #define CTLTYPE_INT     2       /* name describes an integer */
             #define CTLTYPE_STRING  3       /* name describes a string */
@@ -94,7 +92,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
             else:
                 val = "<UNKNOWN VALUE FOR CTLTYPE {0}>".format(ctltype)
 
-            yield (sysctl, name, perms, val)
+            yield (sysctl, name, val)
 
             sysctl = sysctl.oid_link.sle_next
     
@@ -107,9 +105,9 @@ class mac_check_sysctl(common.AbstractMacCommand):
 
         sysctl_list = obj.Object("sysctl_oid_list", offset = sysctl_children_addr, vm = self.addr_space)
 
-        for (sysctl, name, perms, val) in self._process_sysctl_list(sysctl_list):
+        for (sysctl, name, val) in self._process_sysctl_list(sysctl_list):
             is_known = common.is_known_address(sysctl.oid_handler, kernel_symbol_addresses, kmods)
-            yield (sysctl, name, perms, val, is_known)
+            yield (sysctl, name, val, is_known)
 
     def render_text(self, outfd, data):
 
@@ -120,12 +118,17 @@ class mac_check_sysctl(common.AbstractMacCommand):
                                   ("Status", "10"),
                                   ("Value", "")])
 
-        for (sysctl, name, perms, val, is_known) in data:
+        for (sysctl, name, val, is_known) in data:
             if is_known:
                 status = "OK"
             else:
                 status = "UNKNOWN"
-            self.table_row(outfd, name, sysctl.oid_number, perms, sysctl.oid_handler, status, val)
+
+            self.table_row(outfd, name, 
+                           sysctl.oid_number, 
+                           self._get_perms(sysctl), 
+                           sysctl.oid_handler, 
+                           status, val)
 
 
 
