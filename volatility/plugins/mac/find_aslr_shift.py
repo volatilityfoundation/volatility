@@ -24,7 +24,7 @@
 import volatility.plugins.mac.common as common
 import volatility.debug as debug
 
-class mac_find_aslr_dtb(common.AbstractMacCommand):
+class mac_find_aslr_shift(common.AbstractMacCommand):
     """ Prints mounted device information """
 
     def calculate(self):
