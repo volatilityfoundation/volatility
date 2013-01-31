@@ -160,6 +160,44 @@ class OSString(obj.CType):
         string_object = obj.Object("String", offset = self.string, vm = self.obj_vm, length = self.length)
         return str(string_object or '')
 
+class sockaddr_dl(obj.CType):
+
+    def v(self):
+        """Get the value of the sockaddr_dl object."""
+
+        ret = ""
+
+        for i in xrange(self.sdl_alen):
+            e  = self.sdl_data[self.sdl_nlen + i]
+            ret = ret + "%.02x:" % ord(e.v())
+    
+        if ret and ret[-1] == ":":
+            ret = ret[:-1]
+
+        return ret
+
+class ifaddr(obj.CType):
+
+    def get_address(self):
+
+        family = self.ifa_addr.sa_family
+
+        ip = ""
+
+        if family == 2: # ip 4
+            addr_in = self.ifa_addr.dereference_as("sockaddr_in")
+            ip = addr_in.sin_addr.s_addr.v()
+
+        elif family == 30:
+            addr_in6 = self.ifa_addr.dereference_as("sockaddr_in6") 
+            ip = addr_in6.sin6_addr.__u6_addr.v()
+
+        elif family == 18:
+            addr_dl = self.ifa_addr.dereference_as("sockaddr_dl") 
+            ip = addr_dl.v()
+
+        return ip
+
 def exec_vtypes(filename):
     env = {}
     exec(filename, dict(__builtins__ = None), env)
@@ -242,7 +280,6 @@ class DWARFParser(object):
         'unsigned char': 'unsigned char',
         'unsigned int': 'unsigned int',
     }
-
 
     def __init__(self):
         self.current_level = -1
@@ -797,6 +834,8 @@ class MacObjectClasses(obj.ProfileModification):
             'sysctl_oid' : sysctl_oid,
             'IpAddress': basic.IpAddress,
             'Ipv6Address': basic.Ipv6Address,
+            'ifaddr' : ifaddr, 
+            'sockaddr_dl' : sockaddr_dl,
         })
 
 mac_overlay = {

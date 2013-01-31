@@ -42,7 +42,7 @@ class mac_ifconfig(common.AbstractMacCommand):
             ips = []
 
             while ifaddr:
-                ip = self.get_ip_address(ifaddr)
+                ip = ifaddr.get_address() 
                 if ip:
                     ips.append(ip)
                 ifaddr = ifaddr.ifa_link.tqe_next
@@ -60,42 +60,6 @@ class mac_ifconfig(common.AbstractMacCommand):
             else:
                 # an interface with no IPs
                 self.table_row(outfd, "{0}{1}".format(name, unit), "")
-
-    def get_link_addr(self, addr):
-        if addr == None:
-            return None
-
-        ret = ""
-
-        for i in xrange(0, addr.sdl_alen):
-            e  = addr.sdl_data[addr.sdl_nlen + i]
-
-            ret = ret + "%.02x:" % ord(e.v())
-    
-        if ret and ret[-1] == ":":
-            ret = ret[:-1]
-
-        return ret
-
-    def get_ip_address(self, ifnet):
-
-        family = addr.sa_family
-
-        ip = ""
-
-        if family == 2: # ip 4
-            addr_in = ifnet.ifa_addr.dereference_as("sockaddr_in")
-            ip = addr_in.sin_addr.s_addr.v()
-
-        elif family == 30:
-            addr_in6 = ifnet.ifa_addr.dereference_as("sockaddr_in6") 
-            ip = addr_in6.sin6_addr.__u6_addr.v()
-
-        elif family == 18:
-            addr_dl = ifnet.ifa_addr.dereference_as("sockaddr_dl") 
-            ip = self.get_link_addr(addr_dl)
-
-        return ip
         
 
 
