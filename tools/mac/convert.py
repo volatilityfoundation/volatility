@@ -181,9 +181,13 @@ class DWARFParser(object):
 
         elif kind == 'TAG_class_type':
             name = data.get('AT_name', "__unnamed_%s" % statement_id)
+
+            name = name + "_class"
+
             self.name_stack[-1][1] = name
             self.id_to_name[statement_id] = [name]
 
+            
             # If it's just a forward declaration, we want the name around,
             # but there won't be a size
             if 'AT_declaration' not in data:
