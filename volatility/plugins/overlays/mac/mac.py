@@ -28,14 +28,28 @@ import volatility.debug as debug
 import volatility.obj as obj
 import volatility.plugins.overlays.basic as basic
 import volatility.addrspace as addrspace
+import volatility.scan as scan
+import volatility.plugins.kdbgscan as kdbgscan
+
+import volatility.plugins.addrspaces.amd64 as amd64
+
+class catfishScan(scan.BaseScanner):
+    """ Scanner for Catfish string for Mountain Lion """
+    checks = []
+
+    def __init__(self, needles = None):
+        self.needles = needles
+        self.checks = [ ("MultiStringFinderCheck", {'needles':needles}) ]
+        scan.BaseScanner.__init__(self) 
+
+    def scan(self, address_space, offset = 0, maxlen = None):
+        for offset in scan.BaseScanner.scan(self, address_space, offset, maxlen):
+            yield offset
 
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
 
-    def generate_suggestions(self):
-
-        profile = self.obj_vm.profile
-
+    def _get_dtb_pre_m_lion(self):
         if self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit":
             ret = profile.get_symbol("_IdlePDPT")
             # on 10.5.x the PDTD symbol is a pointer instead of an array like 10.6 and 10.7
@@ -49,6 +63,41 @@ class VolatilityDTB(obj.VolatilityMagic):
             if ret > 0xffffff8000000000:
                 ret = ret - 0xffffff8000000000
 
+        return ret
+
+    ## Based off volafox's method for finding vm_kernel_shift through loGlo & hardcoded Catfish
+    def _get_dtb_m_lion(self):
+        tbl = self.obj_vm.profile.sys_map["kernel"]
+
+        scanner = catfishScan(needles = ["Catfish "])
+        for catfish_offset in scanner.scan(self.obj_vm):
+            shift_address = catfish_offset - (tbl["_lowGlo"][0][0] % 0xFFFFFF80)
+            self.obj_vm.profile.shift_address = shift_address
+
+            bootpml4      = (tbl["_BootPML4"][0][0] % 0xFFFFFF80) + shift_address
+            boot_pml4_dtb = amd64.AMD64PagedMemory(self.obj_vm, self.obj_vm.get_config(), dtb = bootpml4)
+          
+            idlepml4_addr = (tbl['_IdlePML4'][0][0]) + shift_address
+            idlepml4_ptr = obj.Object("unsigned long", offset = idlepml4_addr, vm = boot_pml4_dtb)
+
+            ret = idlepml4_ptr.v()
+
+            print "returning %x" % ret
+
+            break
+
+        return ret
+
+    def generate_suggestions(self):
+        profile = self.obj_vm.profile
+
+        bootpml = profile.get_symbol("_BootPML4")
+        
+        if bootpml:        
+            ret = self._get_dtb_m_lion()
+        else:
+            ret = self._get_dtb_pre_m_lion()                  
+        
         yield ret
 
 # the intel check, simply checks for the static paging of init_task
@@ -58,11 +107,14 @@ class VolatilityMacIntelValidAS(obj.VolatilityMagic):
     def generate_suggestions(self):
         version_addr = self.obj_vm.profile.get_symbol("_version")
 
+        print "reading version_addr at %x" % version_addr
+
         string = self.obj_vm.read(version_addr, 6)
 
         if string == "Darwin":
             yield True
         else:
+            print "bad string: %s" % string
             yield False
         
 class proc(obj.CType):   
@@ -657,6 +709,7 @@ def MacProfileFactory(profpkg):
 
         def __init__(self, *args, **kwargs):
             self.sys_map = {}
+            self.shift_address = 0
             obj.Profile.__init__(self, *args, **kwargs)
 
         def clear(self):
@@ -817,6 +870,11 @@ def MacProfileFactory(profpkg):
             if ret and sym_type == "Pointer":
                 # FIXME: change in 2.3 when truncation no longer occurs
                 ret = ret & 0xffffffffffff
+
+            print "shift_address %x looking up %s" % (self.shift_address, sym_name)
+
+            if self.shift_address and ret:
+                ret = ret + self.shift_address
 
             return ret
 
