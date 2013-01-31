@@ -23,11 +23,10 @@ import zipfile
 import struct
 import time
 
-import volatility.plugins
-from volatility import cache
-from volatility import debug
-from volatility import obj
-from volatility.plugins.overlays import basic
+import volatility.plugins as plugins
+import volatility.debug as debug
+import volatility.obj as obj
+import volatility.plugins.overlays.basic as basic
 import volatility.addrspace as addrspace
 
 class VolatilityDTB(obj.VolatilityMagic):
@@ -833,7 +832,7 @@ def MacProfileFactory(profpkg):
 
 new_classes = []
 
-for path in set(volatility.plugins.__path__):
+for path in set(plugins.__path__):
     for path, _, files in os.walk(path):
         for fn in files:
             if zipfile.is_zipfile(os.path.join(path, fn)):
