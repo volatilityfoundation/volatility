@@ -60,10 +60,3 @@ class mac_ifconfig(common.AbstractMacCommand):
             else:
                 # an interface with no IPs
                 self.table_row(outfd, "{0}{1}".format(name, unit), "")
-        
-
-
-
-
-
-

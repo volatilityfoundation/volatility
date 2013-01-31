@@ -99,6 +99,3 @@ class mac_check_sysctl(common.AbstractMacCommand):
                            sysctl.get_perms(),
                            sysctl.oid_handler, 
                            status, val)
-
-
-

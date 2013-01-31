@@ -64,8 +64,3 @@ class mac_dump_maps(proc_maps.mac_proc_maps):
             page = proc_as.zread(start, pagesize)
             yield page
             start = start + pagesize
-
-
-
-
-

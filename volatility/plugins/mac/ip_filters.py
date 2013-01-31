@@ -74,4 +74,3 @@ class mac_ip_filters(lsmod.mac_lsmod):
             else:
                 status = "OK"
             self.table_row(outfd, context, fname, ptr, status)
-

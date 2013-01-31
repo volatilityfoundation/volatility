@@ -57,6 +57,3 @@ class mac_check_trap_table(common.AbstractMacCommand):
                 sym_name = "HOOKED"
 
             self.table_row(outfd, table_name, i, call_addr, sym_name)
-
-
-

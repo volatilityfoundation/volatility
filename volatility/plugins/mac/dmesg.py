@@ -53,4 +53,3 @@ class mac_dmesg(common.AbstractMacCommand):
     def render_text(self, outfd, data):
         for buf in data:
             outfd.write("{0}\n".format(buf))
-

@@ -111,6 +111,3 @@ def get_cpp_sym(name, profile):
             return addr
 
     return None
-
-
-
