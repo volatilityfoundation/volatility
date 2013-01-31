@@ -25,7 +25,6 @@ import os
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.mac.proc_maps as proc_maps
-import volatility.plugins.mac.common as common
 
 class mac_dump_maps(proc_maps.mac_proc_maps):
     """ Dumps memory ranges of processes """
