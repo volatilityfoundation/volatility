@@ -60,7 +60,10 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
                                   ("DTB", "[addrpad]"),
                                   ("Start Time", "")])
         for task in data:
-            dtb = self.addr_space.vtop(task.mm.pgd) or task.mm.pgd
+            if task.mm.pgd == None:
+                dtb = task.mm.pgd
+            else:
+                dtb = self.addr_space.vtop(task.mm.pgd) or task.mm.pgd
             self.table_row(outfd, task.obj_offset,
                                   task.comm,
                                   str(task.pid),
