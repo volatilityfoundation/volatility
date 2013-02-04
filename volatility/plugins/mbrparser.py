@@ -31,6 +31,7 @@ import volatility.utils as utils
 import volatility.debug as debug
 import struct
 import hashlib
+import os
 
 try:
     import distorm3
@@ -214,16 +215,55 @@ class MBRParser(commands.command):
         config.add_option('CHECK', short_option = 'C', default = False,
                           help = "Check partitions", 
                           action = "store_true")
+        config.add_option('DISK', short_option = 'm', default = None,
+                         help = "Disk or extracted MBR",
+                         action = "store", type = "str")
+        config.add_option('MAXDISTANCE', short_option = 'z', default = None,
+                         help = "Maximum Levenshtein distance for MBR vs Disk",
+                         action = "store", type = "int")
         self.code_data = ""
+        self.disk_mbr = None
 
+
+    # Taken from:
+    # http://en.wikibooks.org/wiki/Algorithm_implementation/Strings/Levenshtein_distance#Python
+    def levenshtein(self, s1, s2):
+        if len(s1) < len(s2):
+            return self.levenshtein(s2, s1) 
+ 
+        # len(s1) >= len(s2)
+        if len(s2) == 0:
+            return len(s1)
+ 
+        previous_row = xrange(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
+                deletions = current_row[j] + 1       # than s2
+                substitutions = previous_row[j] + (c1 != c2) 
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+ 
+        return previous_row[-1]
 
     def calculate(self):
         address_space = utils.load_as(self._config, astype = 'physical')
         if not has_distorm3 and not self._config.HEX:
             debug.error("Install distorm3 code.google.com/p/distorm/")
+        if self._config.MAXDISTANCE and not self._config.DISK:
+            debug.error("Must supply the path for the extracted MBR/Disk when using MAXDISTANCE")
+        if not os.path.isfile(self._config.DISK):
+            debug.error(self._config.DISK + " does not exist")
+
         diff = 0
         if self._config.DISOFFSET:
             diff = self._config.DISOFFSET
+
+        if self._config.DISK:
+            file = open(self._config.DISK, "rb")
+            self.disk_mbr = file.read(440)
+            file.close()
 
         if self._config.OFFSET:
             PARTITION_TABLE = obj.Object('PARTITION_TABLE', vm = address_space,
@@ -253,13 +293,25 @@ class MBRParser(commands.command):
 
             yield offset + given_offset, hexdata, translated_data
 
+    def _get_instructions(self, boot_code):
+        if self._config.HEX:
+            return "".join(["{2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code, 0)])
+        iterable = distorm3.DecodeGenerator(0, boot_code, distorm3.Decode16Bits)
+        ret = ""  
+        for (offset, size, instruction, hexdump) in iterable:
+            ret += "{0}".format(instruction)
+            if instruction == "RET":
+                hexstuff = "".join(["{2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code[offset + size:], 0)]) 
+                ret += hexstuff
+                break
+        return ret 
 
     def get_disasm_text(self, boot_code, start):
         iterable = distorm3.DecodeGenerator(0, boot_code, distorm3.Decode16Bits)
         ret = ""  
         self.code_data = boot_code
         for (offset, size, instruction, hexdump) in iterable:
-            ret += "0x%.8x: %-32s %s\n" % (offset + start, hexdump, instruction)
+            ret += "0x{0:08x}: {1:<32} {2}\n".format(offset + start, hexdump, instruction)
             if instruction == "RET":
                 self.code_data = boot_code[0:offset + size]
                 hexstuff = "\n" + "\n".join(["{0:#010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code[offset + size:], offset + start + size)])
@@ -268,6 +320,7 @@ class MBRParser(commands.command):
         return ret
 
     def render_text(self, outfd, data):
+        border = "*" * 75
         dis = 0
         if self._config.DISOFFSET:
             dis = self._config.DISOFFSET
@@ -283,6 +336,9 @@ class MBRParser(commands.command):
                 # but we only skip MBRs with these types of partitions if we are checking
                 continue
             disasm = self.get_disasm_text(boot_code, offset + dis)
+            distance = 0
+            if disasm == "" or self.code_data == "":
+                continue
             h = hashlib.md5()
             f = hashlib.md5()
             h.update(self.code_data)
@@ -295,7 +351,12 @@ class MBRParser(commands.command):
                 hash = "{0}".format(f.hexdigest())
                 if hash.lower() != self._config.FULLHASH.lower():
                     continue
+            if self.disk_mbr:
+                distance = self.levenshtein(self._get_instructions(self.disk_mbr), self._get_instructions(boot_code))
+                if self._config.MAXDISTANCE and distance > self._config.MAXDISTANCE:
+                    continue
 
+            outfd.write("{0}\n".format(border))
             outfd.write("Potential MBR at physical offset: {0:#x}\n".format(offset))
             outfd.write("Disk Signature: {0:02x}-{1:02x}-{2:02x}-{3:02x}\n".format(
                 PARTITION_TABLE.DiskSignature[0], 
@@ -305,6 +366,8 @@ class MBRParser(commands.command):
 
             outfd.write("Bootcode md5: {0}\n".format(h.hexdigest()))
             outfd.write("Bootcode (FULL) md5: {0}\n".format(f.hexdigest()))
+            if self.disk_mbr:
+                outfd.write("\nLevenshtein Distance from Supplied MBR: {0}\n\n".format(distance))
             if self._config.HEX:
                 hexstuff = "\n" + "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code, offset)])
                 outfd.write("Bootable code: \n{0} \n".format(hexstuff))
@@ -322,4 +385,4 @@ class MBRParser(commands.command):
 
             outfd.write("===== Partition Table #4 =====\n")
             outfd.write(str(entry4))
-            outfd.write("\n\n")
+            outfd.write("{0}\n\n".format(border))
