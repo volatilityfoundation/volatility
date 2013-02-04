@@ -57,13 +57,16 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
                                   ("Pid", "15"),
                                   ("Uid", "15"),
                                   ("Gid", "6"),
+                                  ("DTB", "[addrpad]"),
                                   ("Start Time", "")])
         for task in data:
+            dtb = self.addr_space.vtop(task.mm.pgd) or task.mm.pgd
             self.table_row(outfd, task.obj_offset,
                                   task.comm,
                                   str(task.pid),
                                   str(task.uid) if task.uid else "-",
                                   str(task.gid) if task.gid else "-",
+                                  dtb,
                                   self.get_task_start_time(task))
 
 class linux_memmap(linux_pslist):
