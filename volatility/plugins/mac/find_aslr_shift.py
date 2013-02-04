@@ -25,7 +25,7 @@ import volatility.plugins.mac.common as common
 import volatility.debug as debug
 
 class mac_find_aslr_shift(common.AbstractMacCommand):
-    """ Prints mounted device information """
+    """ Find the ASLR shift value for 10.8+ images """
 
     def calculate(self):
         common.set_plugin_members(self)
