@@ -283,7 +283,7 @@ class volshell(common.AbstractWindowsCommand):
                 nobj = obj.Object(objname, lst.obj_offset - offset, vm)
                 yield nobj
 
-        def dt(objct, address = None, address_space = None):
+        def dt(objct, address = None, space = None):
             """Describe an object or show type info.
 
             Show the names and values of a complex object (struct). If the name of a
@@ -301,10 +301,10 @@ class volshell(common.AbstractWindowsCommand):
                 dt('_EPROCESS', 0x81234567)
             """
 
-            profile = (address_space or self.proc.obj_vm).profile
+            profile = (space or self.proc.obj_vm).profile
 
             if address is not None:
-                objct = obj.Object(objct, address, address_space or self.proc.get_process_address_space())
+                objct = obj.Object(objct, address, space or self.proc.get_process_address_space())
 
             if isinstance(objct, str):
                 size = profile.get_obj_size(objct)
