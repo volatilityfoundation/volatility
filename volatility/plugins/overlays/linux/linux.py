@@ -641,15 +641,9 @@ class VolatilityDTB(obj.VolatilityMagic):
 
     def generate_suggestions(self):
         """Tries to locate the DTB."""
-        profile = self.obj_vm.profile
-
-        if self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit":
-            shift = 0xc0000000
-        else:
-            shift = 0xffffffff80000000
-
+        shift = 0xc0000000
         # this is the only code allowed to reference the internal sys_map!
-        yield profile.get_symbol("swapper_pg_dir") - shift
+        yield self.obj_vm.profile.get_symbol("swapper_pg_dir") - shift
 
 # the intel check, simply checks for the static paging of init_task
 class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
