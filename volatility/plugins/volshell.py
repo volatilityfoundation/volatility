@@ -63,16 +63,16 @@ class volshell(common.AbstractWindowsCommand):
                           action = 'store', type = 'str')
 
         self.addrspace = None
-        self.eproc = None
+        self.proc = None
 
     def getpidlist(self):
         return win32.tasks.pslist(self.addrspace)
 
     def context_display(self):
-        print "Current context: process {0}, pid={1}, ppid={2} DTB={3:#x}".format(self.eproc.ImageFileName,
-                                                                                  self.eproc.UniqueProcessId.v(),
-                                                                                  self.eproc.InheritedFromUniqueProcessId.v(),
-                                                                                  self.eproc.Pcb.DirectoryTableBase.v())
+        print "Current context: process {0}, pid={1}, ppid={2} DTB={3:#x}".format(self.proc.ImageFileName,
+                                                                                  self.proc.UniqueProcessId.v(),
+                                                                                  self.proc.InheritedFromUniqueProcessId.v(),
+                                                                                  self.proc.Pcb.DirectoryTableBase.v())
 
     def ps(self, procs = None):
         print "{0:16} {1:6} {2:6} {3:8}".format("Name", "PID", "PPID", "Offset")
@@ -117,7 +117,7 @@ class volshell(common.AbstractWindowsCommand):
             print "Must provide one of: offset, name, or pid as a argument."
             return
 
-        self.eproc = obj.Object("_EPROCESS", offset = offset, vm = self.addrspace)
+        self.proc = obj.Object("_EPROCESS", offset = offset, vm = self.addrspace)
 
         self.context_display()
 
@@ -165,7 +165,7 @@ class volshell(common.AbstractWindowsCommand):
             optionally specify the address space to read the data from.
             """
             if not space:
-                space = self.eproc.get_process_address_space()
+                space = self.proc.get_process_address_space()
             #if length % 4 != 0:
             #    length = (length+4) - (length%4)
             data = space.read(address, length)
@@ -189,7 +189,7 @@ class volshell(common.AbstractWindowsCommand):
             to read the data from.
             """
             if not space:
-                space = self.eproc.get_process_address_space()
+                space = self.proc.get_process_address_space()
             # round up to multiple of 4
             if length % 4 != 0:
                 length = (length + 4) - (length % 4)
@@ -223,7 +223,7 @@ class volshell(common.AbstractWindowsCommand):
             to read the data from.
             """
             if not space:
-                space = self.eproc.get_process_address_space()
+                space = self.proc.get_process_address_space()
 
             # round up 
             if length % 8 != 0:
@@ -253,7 +253,7 @@ class volshell(common.AbstractWindowsCommand):
             objects of type objname. The value of offset should be set to the
             offset of the _LIST_ENTRY within the desired object."""
 
-            vm = self.eproc.get_process_address_space()
+            vm = self.proc.get_process_address_space()
             seen = set()
 
             if fieldname:
@@ -294,17 +294,17 @@ class volshell(common.AbstractWindowsCommand):
 
             Examples:
                 # Dump the current process object
-                dt(self.eproc)
+                dt(self.proc)
                 # Show the _EPROCESS structure
                 dt('_EPROCESS')
                 # Overlay an _EPROCESS structure at 0x81234567
                 dt('_EPROCESS', 0x81234567)
             """
 
-            profile = (address_space or self.eproc.obj_vm).profile
+            profile = (address_space or self.proc.obj_vm).profile
 
             if address is not None:
-                objct = obj.Object(objct, address, address_space or self.eproc.get_process_address_space())
+                objct = obj.Object(objct, address, address_space or self.proc.get_process_address_space())
 
             if isinstance(objct, str):
                 size = profile.get_obj_size(objct)
@@ -359,7 +359,7 @@ class volshell(common.AbstractWindowsCommand):
                 print "ERROR: Disassembly unavailable, distorm not found"
                 return
             if not space:
-                space = self.eproc.get_process_address_space()
+                space = self.proc.get_process_address_space()
 
             if not mode:
                 mode = space.profile.metadata.get('memory_model', '32bit')
