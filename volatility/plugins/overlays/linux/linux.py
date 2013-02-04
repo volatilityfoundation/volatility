@@ -576,7 +576,11 @@ class task_struct(obj.CType):
     def gid(self):
         ret = self.members.get("gid")
         if ret is None:
-            ret = self.cred.gid
+            gid = self.cred.gid
+            if hasattr(gid, 'counter'):
+                ret = obj.Object("int", offset = gid.v(), vm = self.obj_vm)
+            else:
+                ret = gid
         else:
             ret = self.m("gid")
 
