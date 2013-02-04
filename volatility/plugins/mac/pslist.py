@@ -56,10 +56,11 @@ class mac_pslist(common.AbstractMacCommand):
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Offset", "[addrpad]"),
                           ("Name", "20"),
-                          ("Pid", "15"),
-                          ("Uid", "15"),
-                          ("Gid", "15"),
-                          ("PGID", "15"),
+                          ("Pid", "8"),
+                          ("Uid", "8"),
+                          ("Gid", "8"),
+                          ("PGID", "8"),
+                          ("DTB", "[addrpad]"),
                           ("Start Time", "")])
 
         for proc in data:
@@ -69,6 +70,7 @@ class mac_pslist(common.AbstractMacCommand):
                                   str(proc.p_uid),
                                   str(proc.p_gid),
                                   str(proc.p_pgrpid),
+                                  proc.task.dereference_as("task").map.pmap.pm_cr3,
                                   proc.start_time())
 
 
