@@ -16,35 +16,35 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
-import volatility.plugins.linux.pslist as pslist
+import volatility.plugins.mac.pslist as pslist
 import volatility.plugins.volshell as volshell
 import volatility.obj as obj
 
-class linux_volshell(volshell.volshell):
+class mac_volshell(volshell.volshell):
     """Shell in the memory image"""
 
     @staticmethod
     def is_valid_profile(profile):
-        return profile.metadata.get('os', 'Unknown').lower() == 'linux'
+        return profile.metadata.get('os', 'Unknown').lower() == 'mac'
 
     def getpidlist(self):
-        return pslist.linux_pslist(self._config).calculate()
+        return pslist.mac_pslist(self._config).calculate()
 
     def ps(self, procs = None):
         print "{0:16} {1:6} {2:8}".format("Name", "PID", "Offset")
         for proc in procs or self.getpidlist():
-            print "{0:16} {1:<6} {2:#08x}".format(proc.comm, proc.pid, proc.obj_offset)
+            print "{0:16} {1:<6} {2:#08x}".format(proc.p_comm, proc.p_pid, proc.obj_offset)
 
     def context_display(self):
-        dtb = self.addrspace.vtop(self.proc.mm.pgd) or self.proc.mm.pgd
-        print "Current context: process {0}, pid={1} DTB={2:#x}".format(self.proc.comm,
-                                                                        self.proc.pid, dtb)
+        dtb = self.proc.task.dereference_as("task").map.pmap.pm_cr3
+        print "Current context: process {0}, pid={1} DTB={2:#x}".format(self.proc.p_comm,
+                                                                        self.proc.p_pid, dtb)
 
     def set_context(self, offset = None, pid = None, name = None):
         if pid is not None:
             offsets = []
             for p in self.getpidlist():
-                if p.pid.v() == pid:
+                if p.p_pid.v() == pid:
                     offsets.append(p)
             if not offsets:
                 print "Unable to find process matching pid {0}".format(pid)
@@ -59,7 +59,7 @@ class linux_volshell(volshell.volshell):
         elif name is not None:
             offsets = []
             for p in self.getpidlist():
-                if p.comm.find(name) >= 0:
+                if p.p_comm.find(name) >= 0:
                     offsets.append(p)
             if not offsets:
                 print "Unable to find process matching name {0}".format(name)
@@ -75,6 +75,6 @@ class linux_volshell(volshell.volshell):
             print "Must provide one of: offset, name, or pid as a argument."
             return
 
-        self.proc = obj.Object("task_struct", offset = offset, vm = self.addrspace)
+        self.proc = obj.Object("proc", offset = offset, vm = self.addrspace)
 
         self.context_display()
