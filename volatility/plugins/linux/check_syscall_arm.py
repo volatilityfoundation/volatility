@@ -25,7 +25,6 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 
-
 class linux_check_syscall_arm(linux_common.AbstractLinuxCommand):
     """ Checks if the system call table has been altered """
     
@@ -36,7 +35,7 @@ class linux_check_syscall_arm(linux_common.AbstractLinuxCommand):
         
         max_opcodes_to_check = 1024
         while (max_opcodes_to_check):
-            opcode = obj.Object("unsigned int", offset=vector_swi_addr, vm=self.addr_space)
+            opcode = obj.Object("unsigned int", offset = vector_swi_addr, vm = self.addr_space)
             if ((opcode & 0xffff0000) == 0xe3570000):
                 shift = 0x10 - ((opcode & 0xff00) >> 8)
                 size = (opcode & 0xff) << (2 * shift)
@@ -69,7 +68,6 @@ class linux_check_syscall_arm(linux_common.AbstractLinuxCommand):
         
         sym_addrs = self.profile.get_all_addresses()
         
-        
         table = obj.Object("Array", offset = syscall_addr, vm = self.addr_space, targetType = "unsigned int", count = num_syscalls)
         
         for (i, call_addr) in enumerate(table):
@@ -85,7 +83,6 @@ class linux_check_syscall_arm(linux_common.AbstractLinuxCommand):
             else:
                 yield(i, call_addr, 0)
 
-          
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Index", "[addr]"), ("Address", "[addrpad]"), ("Symbol", "<30")])
         for (i, call_addr, hooked) in data:
