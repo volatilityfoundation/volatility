@@ -27,12 +27,12 @@ import volatility.plugins.linux.common as linux_common
 
 
 class linux_check_evt_arm(linux_common.AbstractLinuxCommand):
+    ''' Checks the Exception Vector Table to look for syscall table hooking '''
+
     VECTOR_BASE = 0xffff0000
     SWI_BASE = VECTOR_BASE + 8
         
     def calculate(self):
-        ''' Performs various checks on the Exception Vector Table to look for syscall table hooking '''
-        
         linux_common.set_plugin_members(self)
         # Get instructions executed when an inturrupt exception occurs
         swi = obj.Object("unsigned int", offset = self.SWI_BASE, vm = self.addr_space)
