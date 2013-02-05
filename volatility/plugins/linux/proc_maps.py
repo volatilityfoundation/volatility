@@ -54,7 +54,7 @@ class linux_proc_maps(linux_pslist.linux_pslist):
         self.table_header(outfd, [("Start", "[addrpad]"),
                                   ("End",   "[addrpad]"),
                                   ("Flags", "6"),
-                                  ("Pgoff", "6"),
+                                  ("Pgoff", "[addr]"),
                                   ("Major", "6"),
                                   ("Minor", "6"),
                                   ("Inode", "10"),
