@@ -21,6 +21,7 @@
 @organization: Digital Forensics Solutions
 """
 
+import re, os
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
@@ -213,4 +214,53 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
         return ret
 
+class linux_moddump(linux_common.AbstractLinuxCommand):
+    """Extract loaded kernel modules"""
+    
+    def __init__(self, config, *args, **kwargs):
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
+        
+        config.add_option('DUMP-DIR', short_option = 'D', default = None,       
+                      help = 'Directory in which to dump the files',
+                      action = 'store', type = 'string')
+        config.add_option('REGEX', short_option = 'r',
+                      help = 'Dump modules matching REGEX',
+                      action = 'store', type = 'string')
+        config.add_option('IGNORE-CASE', short_option = 'i',
+                      help = 'Ignore case in pattern match',
+                      action = 'store_true', default = False)
 
+    def calculate(self):
+        linux_common.set_plugin_members(self)
+        modules_addr = self.get_profile_symbol("modules")
+        modules = obj.Object("list_head", vm = self.addr_space, offset = modules_addr)
+    
+        if self._config.REGEX:
+            try:
+                if self._config.IGNORE_CASE:
+                    mod_re = re.compile(self._config.REGEX, re.I)
+                else:
+                    mod_re = re.compile(self._config.REGEX)
+            except re.error, e:
+                debug.error('Error parsing regular expression: {0}'.format(e))
+                
+        # walk the modules list
+        for module in modules.list_of_type("module", "list"):
+            if self._config.REGEX:
+                if not mod_re.search(str(module.name)):
+                    continue
+            yield module
+            
+    def render_text(self, outfd, data):
+    
+        if not self._config.DUMP_DIR:
+            debug.error("You must supply a --dump-dir output directory")
+        
+        for module in data:
+            ## TODO: pass module.name through a char sanitizer 
+            file_name = "{0}.{1:#x}.lkm".format(module.name, module.module_core)
+            mod_file = open(os.path.join(self._config.DUMP_DIR, file_name), 'wb')
+            mod_data = self.addr_space.zread(module.module_core, module.core_size)
+            mod_file.write(mod_data)
+            mod_file.close()
+            outfd.write("Wrote {0} bytes to {1}\n".format(module.core_size, file_name))
