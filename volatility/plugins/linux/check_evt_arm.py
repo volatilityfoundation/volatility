@@ -25,7 +25,6 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 
-
 class linux_check_evt_arm(linux_common.AbstractLinuxCommand):
     ''' Checks the Exception Vector Table to look for syscall table hooking '''
 
@@ -46,7 +45,6 @@ class linux_check_evt_arm(linux_common.AbstractLinuxCommand):
         else:
             yield ("SWI Offset Instruction", "FAIL", "{0:X}".format(swi))
             return
-            
         
         # Get vector_swi_addr from table
         vector_swi_addr = obj.Object("unsigned int", offset = self.SWI_BASE + (offset), vm = self.addr_space)
@@ -58,12 +56,11 @@ class linux_check_evt_arm(linux_common.AbstractLinuxCommand):
             yield ("vector_swi address", "FAIL", "0x{0:X}".format(vector_swi_addr))
             return
             
-            
         # Check for hooking of sys_call table pointer
         sc_opcode = None;
         max_opcodes_to_check = 1024
         while (max_opcodes_to_check):
-            opcode = obj.Object("unsigned int", offset=vector_swi_addr, vm=self.addr_space)
+            opcode = obj.Object("unsigned int", offset=  vector_swi_addr, vm = self.addr_space)
             if ((opcode & 0xffffff00) == 0xe28f8000):
                 sc_opcode = opcode
                 break
