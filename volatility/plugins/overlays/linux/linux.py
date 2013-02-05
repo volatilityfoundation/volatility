@@ -35,6 +35,7 @@ import volatility.exceptions as exceptions
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.dwarf as dwarf
+import volatility.plugins.linux.common as linux_common
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
 
@@ -552,7 +553,6 @@ class module_sect_attr(obj.CType):
         return name         
 
 class task_struct(obj.CType):
-
     def is_valid_task(self):
 
         ret = self.fs.v() != 0 and self.files.v() != 0
@@ -613,6 +613,46 @@ class task_struct(obj.CType):
         process_as.name = "Process {0}".format(self.pid)
 
         return process_as
+
+    def get_proc_maps(self):
+        for vma in linux_common.walk_internal_list("vm_area_struct", "vm_next", self.mm.mmap):
+            yield vma
+    
+    def search_process_memory(self, s):
+        def iterfind(data, string):
+            offset = data.find(string, 0)
+            while offset >= 0:
+                yield offset
+                offset = data.find(string, offset + len(string))
+
+        # Allow for some overlap in case objects are 
+        # right on page boundaries 
+        overlap = 1024
+        
+        # Make sure s in a list. This allows you to search for
+        # multiple strings at once, without changing the API.
+        if type(s) != list:
+            debug.warning("Single strings to search_process_memory is deprecated, use a list instead")
+            s = [s]
+
+        scan_blk_sz = 1024 * 1024 * 10
+
+        addr_space = self.get_process_address_space()
+
+        for vma in self.get_proc_maps():
+            offset = vma.vm_start
+            out_of_range = vma.vm_start + (vma.vm_end - vma.vm_start)
+            while offset < out_of_range:
+                # Read some data and match it.
+                to_read = min(scan_blk_sz + overlap, out_of_range - offset)
+                data = addr_space.zread(offset, to_read)
+                if not data:
+                    break
+                for x in s:
+                    for hit in iterfind(data, x):
+                        yield offset + hit
+                offset += min(to_read, scan_blk_sz)
+
 
 class linux_fs_struct(obj.CType):
 

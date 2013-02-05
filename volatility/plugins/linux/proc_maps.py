@@ -47,11 +47,10 @@ class linux_proc_maps(linux_pslist.linux_pslist):
 
         for task in tasks:
             if task.mm:
-                for vma in linux_common.walk_internal_list("vm_area_struct", "vm_next", task.mm.mmap):
-                    yield task, vma
+                for vma in task.get_proc_maps():
+                    yield task, vma            
 
     def render_text(self, outfd, data):
-       
         self.table_header(outfd, [("Start", "[addrpad]"),
                                   ("End",   "[addrpad]"),
                                   ("Flags", "6"),
