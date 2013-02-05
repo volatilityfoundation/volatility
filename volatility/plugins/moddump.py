@@ -57,7 +57,7 @@ class ModDump(procdump.ProcExeDump):
                 else:
                     mod_re = re.compile(self._config.REGEX)
             except re.error, e:
-                debug.error('Error parsing regular expression: %s' % e)
+                debug.error('Error parsing regular expression: {0}'.format(e))
 
         mods = dict((mod.DllBase.v(), mod) for mod in modules.lsmod(addr_space))
         # We need the process list to find spaces for some drivers. Enumerate them here
