@@ -254,7 +254,7 @@ class MBRParser(commands.command):
         address_space = utils.load_as(self._config, astype = 'physical')
         if not has_distorm3 and not self._config.HEX:
             debug.error("Install distorm3 code.google.com/p/distorm/")
-        if self._config.MAXDISTANCE and not self._config.DISK:
+        if self._config.MAXDISTANCE != None and not self._config.DISK:
             debug.error("Must supply the path for the extracted MBR/Disk when using MAXDISTANCE")
         if self._config.DISK and not os.path.isfile(self._config.DISK):
             debug.error(self._config.DISK + " does not exist")
@@ -341,12 +341,18 @@ class MBRParser(commands.command):
             disasm = ""
             distance = 0
             start = offset
+            boot_code_output = ""
             if self._config.ZEROSTART:
                 start = 0
             if not self._config.HEX:
                 disasm = self.get_disasm_text(boot_code, start + dis)
-            if (disasm == "" or self.code_data == None) and not self._config.HEX:
-                continue
+                if disasm == "" or self.code_data == None:
+                    continue
+                boot_code_output = "Disassembly of Bootable Code:\n{0}\n\n".format(disasm)
+            else:
+                hexstuff = "\n" + "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code, start)])
+                boot_code_output = "Bootable code: \n{0} \n\n".format(hexstuff)
+                
             h = hashlib.md5()
             f = hashlib.md5()
             h.update(self.code_data)
@@ -361,7 +367,7 @@ class MBRParser(commands.command):
                     continue
             if self.disk_mbr:
                 distance = self.levenshtein(self._get_instructions(self.disk_mbr), self._get_instructions(boot_code))
-                if self._config.MAXDISTANCE and distance > self._config.MAXDISTANCE:
+                if self._config.MAXDISTANCE != None and distance > self._config.MAXDISTANCE:
                     continue
 
             outfd.write("{0}\n".format(border))
@@ -376,11 +382,8 @@ class MBRParser(commands.command):
             outfd.write("Bootcode (FULL) md5: {0}\n".format(f.hexdigest()))
             if self.disk_mbr:
                 outfd.write("\nLevenshtein Distance from Supplied MBR: {0}\n\n".format(distance))
-            if self._config.HEX:
-                hexstuff = "\n" + "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code, start)])
-                outfd.write("Bootable code: \n{0} \n\n".format(hexstuff))
-            else:
-                outfd.write("Disassembly of Bootable Code:\n{0}\n\n".format(disasm))
+
+            outfd.write(boot_code_output)
 
             outfd.write("===== Partition Table #1 =====\n")
             outfd.write(str(entry1))
