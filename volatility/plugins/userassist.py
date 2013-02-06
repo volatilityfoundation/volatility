@@ -43,7 +43,7 @@ ua_win7_vtypes = {
     'Count': [0x04, ['unsigned int']],
     'FocusCount': [0x08, ['unsigned int']],
     'FocusTime': [0x0C, ['unsigned int']],
-    'LastUpdated' : [0x3C, ['WinTimeStamp']]
+    'LastUpdated' : [0x3C, ['WinTimeStamp', dict(is_utc = True)]]
 } ],
 }
 
@@ -51,7 +51,7 @@ ua_vtypes = {
   '_VOLUSER_ASSIST_TYPES' : [ 0x10, {
     'ID': [0x0, ['unsigned int']],
     'CountStartingAtFive': [0x04, ['unsigned int']],
-    'LastUpdated' : [0x08, ['WinTimeStamp']]
+    'LastUpdated' : [0x08, ['WinTimeStamp', dict(is_utc = True)]]
 } ],
 }
 
@@ -275,6 +275,6 @@ class UserAssist(printkey.PrintKey, hivelist.HiveList):
                     if tp == 'REG_MULTI_SZ':
                         for i in range(len(dat)):
                             dat[i] = dat[i].encode("ascii", 'backslashreplace')
-                    outfd.write("\n{0:13} {1:15} : {2:3s}\n".format(tp, subname, dat))
+                    outfd.write("\n{0:13} {1:15} : {2}\n".format(tp, subname, dat))
         if not keyfound:
             outfd.write("The requested key could not be found in the hive(s) searched\n")

@@ -181,8 +181,8 @@ class ThrdScan(ModScan):
                            ("PID", ">6"),
                            ("TID", ">6"),
                            ("Start Address", "[addr]"),
-                           ("Create Time", "25"),
-                           ("Exit Time", "25"),
+                           ("Create Time", "30"),
+                           ("Exit Time", "30"),
                            ])
 
         for thread in data:

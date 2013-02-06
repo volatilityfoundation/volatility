@@ -50,20 +50,20 @@ windows_overlay = {
     }],
 
     '_EPROCESS' : [ None, {
-    'CreateTime' : [ None, ['WinTimeStamp', {}]],
-    'ExitTime' : [ None, ['WinTimeStamp', {}]],
+    'CreateTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
+    'ExitTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
     'InheritedFromUniqueProcessId' : [ None, ['unsigned int']],
     'ImageFileName' : [ None, ['String', dict(length = 16)]],
     'UniqueProcessId' : [ None, ['unsigned int']],
     }],
 
     '_ETHREAD' : [ None, {
-    'CreateTime' : [ None, ['ThreadCreateTimeStamp', {}]],
-    'ExitTime' : [ None, ['WinTimeStamp', {}]],
+    'CreateTime' : [ None, ['ThreadCreateTimeStamp', dict(is_utc = True)]],
+    'ExitTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
     }],
 
     '_OBJECT_SYMBOLIC_LINK' : [ None, {
-    'CreationTime' : [ None, ['WinTimeStamp', {}]],
+    'CreationTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
     }],
 
     '_KUSER_SHARED_DATA' : [ None, {
@@ -92,7 +92,7 @@ windows_overlay = {
 
     '_CM_KEY_NODE' : [ None, {
     'Signature' : [ None, ['String', dict(length = 2)]],
-    'LastWriteTime' : [ None, ['WinTimeStamp', {}]],
+    'LastWriteTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
     'Name' : [ None, ['String', dict(length = lambda x: x.NameLength)]],
     }],
 
@@ -117,7 +117,7 @@ windows_overlay = {
 
     'PO_MEMORY_IMAGE' : [ None, {
     'Signature':   [ None, ['String', dict(length = 4)]],
-    'SystemTime' : [ None, ['WinTimeStamp', {}]],
+    'SystemTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
     }],
 
     '_PHYSICAL_MEMORY_DESCRIPTOR' : [ None, {

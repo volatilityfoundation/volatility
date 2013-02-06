@@ -131,8 +131,8 @@ class PSList(DllList):
                            ("Hnds", ">8"),
                            ("Sess", ">6"),
                            ("Wow64", ">6"),
-                           ("Start", "20"),
-                           ("Exit", "20")]
+                           ("Start", "30"),
+                           ("Exit", "30")]
                           )
 
         for task in data:

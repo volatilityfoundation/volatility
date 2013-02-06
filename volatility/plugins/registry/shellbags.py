@@ -299,7 +299,7 @@ class ITEMPOS(obj.CType):
             details)
 
     def __str__(self):
-        return "{0:<14} {1:20} {2:20} {3:20} {4:25} {5}".format(self.Attributes.FileName,
+        return "{0:<14} {1:30} {2:30} {3:30} {4:25} {5}".format(self.Attributes.FileName,
                 str(self.Attributes.ModifiedDate),
                 str(self.Attributes.CreatedDate),
                 str(self.Attributes.AccessDate),
@@ -308,9 +308,9 @@ class ITEMPOS(obj.CType):
 
     def get_header(self):
         return [("File Name", "14s"),
-                ("Modified Date", "20"),
-                ("Create Date", "20"),
-                ("Access Date", "20"),
+                ("Modified Date", "30"),
+                ("Create Date", "30"),
+                ("Access Date", "30"),
                 ("File Attr", "25"),
                 ("Unicode Name", ""),
                ]
@@ -334,7 +334,7 @@ class FILE_ENTRY(ITEMPOS):
             details)
 
     def __str__(self):
-        return "{0:<14} {1:20} {2:20} {3:20} {4:25}".format(self.Attributes.FileName,
+        return "{0:<14} {1:30} {2:30} {3:30} {4:25}".format(self.Attributes.FileName,
                 str(self.Attributes.ModifiedDate),
                 str(self.Attributes.CreatedDate),
                 str(self.Attributes.AccessDate),
@@ -342,9 +342,9 @@ class FILE_ENTRY(ITEMPOS):
 
     def get_header(self):
         return [("File Name", "14s"),
-                ("Modified Date", "20"),
-                ("Create Date", "20"),
-                ("Access Date", "20"),
+                ("Modified Date", "30"),
+                ("Create Date", "30"),
+                ("Access Date", "30"),
                 ("File Attr", "25"),
                 ("Path", ""),
                ]
@@ -630,15 +630,15 @@ shell_item_types = {
 
 itempos_types_XP = {
     'ATTRIBUTES': [ None, {
-        'ModifiedDate': [ 0x0, ['DosDate']], 
+        'ModifiedDate': [ 0x0, ['DosDate', dict(is_utc = True)]], 
         'FileAttrs': [ 0x4, ['unsigned short']],
         'FileName': [ 0x6, ['String', dict(length = 255)]], # 8.3 File name although sometimes it's longer than 14 chars
         'FDataSize': [ lambda x: x.FileName.obj_offset + len(x.FileName) + (1 if len(x.FileName) % 2 == 1 else 2), ['unsigned short']],
         'EVersion': [ lambda x: x.FDataSize.obj_offset + 2, ['unsigned short']],
         'Unknown1': [ lambda x: x.EVersion.obj_offset + 2, ['unsigned short']],
         'Unknown2': [ lambda x: x.Unknown1.obj_offset + 2, ['unsigned short']], # 0xBEEF
-        'CreatedDate': [ lambda x: x.Unknown2.obj_offset + 2, ['DosDate']],
-        'AccessDate': [ lambda x: x.CreatedDate.obj_offset + 4, ['DosDate']],
+        'CreatedDate': [ lambda x: x.Unknown2.obj_offset + 2, ['DosDate', dict(is_utc = True)]],
+        'AccessDate': [ lambda x: x.CreatedDate.obj_offset + 4, ['DosDate', dict(is_utc = True)]],
         'Unknown3': [ lambda x: x.AccessDate.obj_offset + 4, ['unsigned int']],
         'UnicodeFilename': [ lambda x: x.Unknown3.obj_offset + 4, ['NullString', dict(length = 4096, encoding = 'utf8')]],
     } ],
@@ -663,7 +663,7 @@ class ShellBagsTypesXP(obj.ProfileModification):
     def modification(self, profile):
         profile.object_classes.update({
             'NullString': NullString,
-            'DosDate': DosDate,
+            'DosDate':DosDate,
             '_GUID':_GUID,
             'ITEMPOS':ITEMPOS,
             'FILE_ENTRY':FILE_ENTRY,
@@ -681,15 +681,15 @@ class ShellBagsTypesXP(obj.ProfileModification):
 
 itempos_types_Vista = {
     'ATTRIBUTES' : [ None, {
-        'ModifiedDate': [ 0x0, ['DosDate']],
+        'ModifiedDate': [ 0x0, ['DosDate', dict(is_utc = True)]],
         'FileAttrs': [ 0x4, ['unsigned short']],
         'FileName': [ 0x6, ['String', dict(length = 255)]], 
         'FDataSize': [ lambda x: x.FileName.obj_offset + len(x.FileName) + (1 if len(x.FileName) % 2 == 1 else 2), ['unsigned short']],
         'EVersion': [ lambda x: x.FDataSize.obj_offset + 2, ['unsigned short']],
         'Unknown1': [ lambda x: x.EVersion.obj_offset + 2, ['unsigned short']],
         'Unknown2': [ lambda x: x.Unknown1.obj_offset + 2, ['unsigned short']], # 0xBEEF
-        'CreatedDate': [ lambda x: x.Unknown2.obj_offset + 2, ['DosDate']],
-        'AccessDate': [ lambda x: x.CreatedDate.obj_offset + 4, ['DosDate']],
+        'CreatedDate': [ lambda x: x.Unknown2.obj_offset + 2, ['DosDate', dict(is_utc = True)]],
+        'AccessDate': [ lambda x: x.CreatedDate.obj_offset + 4, ['DosDate', dict(is_utc = True)]],
         'Unknown3': [ lambda x: x.AccessDate.obj_offset + 4, ['unsigned int']],
         'FileReference': [ lambda x: x.Unknown3.obj_offset + 4, ['unsigned long long']], #MFT entry index 0-6, Sequense number 6-7
         'Unknown4': [ lambda x: x.FileReference.obj_offset + 8, ['unsigned long long']],
@@ -719,7 +719,7 @@ class ShellBagsTypesVista(obj.ProfileModification):
     def modification(self, profile):
         profile.object_classes.update({
             'NullString': NullString,
-            'DosDate': DosDate,
+            'DosDate':DosDate,
             '_GUID':_GUID,
             'ITEMPOS':ITEMPOS,
             'FILE_ENTRY':FILE_ENTRY,
@@ -737,15 +737,15 @@ class ShellBagsTypesVista(obj.ProfileModification):
 
 itempos_types_Win7 = {
     'ATTRIBUTES': [ None, {
-        'ModifiedDate': [ 0x0, ['DosDate']],
+        'ModifiedDate': [ 0x0, ['DosDate', dict(is_utc = True)]],
         'FileAttrs': [ 0x4, ['unsigned short']],
         'FileName': [ 0x6, ['String', dict(length = 255)]], 
         'FDataSize': [ lambda x: x.FileName.obj_offset + len(x.FileName) + (1 if len(x.FileName) % 2 == 1 else 2), ['unsigned short']],
         'EVersion': [ lambda x: x.FDataSize.obj_offset + 2, ['unsigned short']],
         'Unknown1': [ lambda x: x.EVersion.obj_offset + 2, ['unsigned short']],
         'Unknown2': [ lambda x: x.Unknown1.obj_offset + 2, ['unsigned short']], # 0xBEEF
-        'CreatedDate': [ lambda x: x.Unknown2.obj_offset + 2, ['DosDate']],
-        'AccessDate': [ lambda x: x.CreatedDate.obj_offset + 4, ['DosDate']],
+        'CreatedDate': [ lambda x: x.Unknown2.obj_offset + 2, ['DosDate', dict(is_utc = True)]],
+        'AccessDate': [ lambda x: x.CreatedDate.obj_offset + 4, ['DosDate', dict(is_utc = True)]],
         'Unknown3': [ lambda x: x.AccessDate.obj_offset + 4, ['unsigned int']],
         'FileReference': [ lambda x: x.Unknown3.obj_offset + 4, ['unsigned long long']], #MFT entry index 0-6, Sequense number 6-7
         'Unknown4': [ lambda x: x.FileReference.obj_offset + 8, ['unsigned long long']],
@@ -776,7 +776,7 @@ class ShellBagsTypesWin7(obj.ProfileModification):
     def modification(self, profile):
         profile.object_classes.update({
             'NullString': NullString,
-            'DosDate': DosDate,
+            'DosDate':DosDate,
             '_GUID':_GUID,
             'ITEMPOS':ITEMPOS,
             'FILE_ENTRY':FILE_ENTRY,

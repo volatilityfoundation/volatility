@@ -50,8 +50,8 @@ class IEHistoryVTypes(obj.ProfileModification):
             '_URL_RECORD' : [ None, {
             'Signature' : [ 0, ['String', dict(length = 4)]], 
             'Length' : [ 0x4, ['unsigned int']], 
-            'LastModified' : [ 0x08, ['WinTimeStamp', {}]], # secondary
-            'LastAccessed' : [ 0x10, ['WinTimeStamp', {}]], # primary
+            'LastModified' : [ 0x08, ['WinTimeStamp', dict(is_utc = True)]], # secondary
+            'LastAccessed' : [ 0x10, ['WinTimeStamp', dict(is_utc = True)]], # primary
             'UrlOffset' : [ 0x34, ['unsigned char']], 
             'FileOffset' : [ 0x3C, ['unsigned int']], 
             'DataOffset' : [ 0x44, ['unsigned int']], 

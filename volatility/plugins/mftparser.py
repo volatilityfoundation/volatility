@@ -209,15 +209,15 @@ class STANDARD_INFORMATION(obj.CType):
         return type
 
     def get_header(self):
-        return [("Creation", "20"),
-                ("Modified", "20"),
-                ("MFT Altered", "20"),
-                ("Access Date", "20"),
+        return [("Creation", "30"),
+                ("Modified", "30"),
+                ("MFT Altered", "30"),
+                ("Access Date", "30"),
                 ("Type", ""),
                ]
    
     def __str__(self):
-        return "{0:20} {1:20} {2:20} {3:20} {4}".format(str(self.CreationTime),
+        return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
             str(self.ModifiedTime),
             str(self.MFTAlteredTime),
             str(self.FileAccessedTime),
@@ -254,11 +254,9 @@ class FILE_NAME(STANDARD_INFORMATION):
     # we return valid if we any timestamp other than Null
     # filename must also be a non-empty string
     def is_valid(self):
-        return ("1970-01-01 00:00:00" != str(self.ModifiedTime).strip() or \
-               "1970-01-01 00:00:00" != str(self.MFTAlteredTime).strip() or \
-               "1970-01-01 00:00:00" != str(self.FileAccessedTime).strip() or \
-               "1970-01-01 00:00:00" != str(self.CreationTime).strip()) and \
-               self.remove_unprintable(self.get_name()) != ""
+        return (self.ModifiedTime.v() != 0 or self.MFTAlteredTime.v() != 0 or \
+                self.FileAccessedTime.v() != 0 or self.CreationTime.v() != 0) and \
+                self.remove_unprintable(self.get_name()) != ""
 
     def get_name(self):
         if self.NameLength == None or self.NameLength == 0:
@@ -266,22 +264,22 @@ class FILE_NAME(STANDARD_INFORMATION):
         return "{0}".format(str(self.Name).replace("\x00", ""))
 
     def get_header(self):
-        return [("Creation", "20"),
-                ("Modified", "20"),
-                ("MFT Altered", "20"),
-                ("Access Date", "20"),
+        return [("Creation", "30"),
+                ("Modified", "30"),
+                ("MFT Altered", "30"),
+                ("Access Date", "30"),
                 ("Name/Path", ""),
                ]
 
     def __str__(self):
-        return "{0:20} {1:20} {2:20} {3:20} {4}".format(str(self.CreationTime),
+        return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
             str(self.ModifiedTime),
             str(self.MFTAlteredTime),
             str(self.FileAccessedTime),
             self.remove_unprintable(self.get_name()))
 
     def get_full(self, full):
-        return "{0:20} {1:20} {2:20} {3:20} {4}".format(str(self.CreationTime),
+        return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
             str(self.ModifiedTime),
             str(self.MFTAlteredTime),
             str(self.FileAccessedTime),
@@ -387,10 +385,10 @@ MFT_types = {
 
 
     'STANDARD_INFORMATION': [0x48, {
-        'CreationTime': [0x0, ['WinTimeStamp', {}]],
-        'ModifiedTime': [0x8, ['WinTimeStamp', {}]],
-        'MFTAlteredTime': [0x10, ['WinTimeStamp', {}]],
-        'FileAccessedTime': [0x18, ['WinTimeStamp', {}]],
+        'CreationTime': [0x0, ['WinTimeStamp', dict(is_utc = True)]],
+        'ModifiedTime': [0x8, ['WinTimeStamp', dict(is_utc = True)]],
+        'MFTAlteredTime': [0x10, ['WinTimeStamp', dict(is_utc = True)]],
+        'FileAccessedTime': [0x18, ['WinTimeStamp', dict(is_utc = True)]],
         'Flags': [0x20, ['int']],
         'MaxVersionNumber': [0x24, ['unsigned int']],
         'VersionNumber': [0x28, ['unsigned int']],
@@ -404,10 +402,10 @@ MFT_types = {
 
     'FILE_NAME': [None, {
         'ParentDirectory': [0x0, ['unsigned long long']],
-        'CreationTime': [0x8, ['WinTimeStamp', {}]],
-        'ModifiedTime': [0x10, ['WinTimeStamp', {}]],
-        'MFTAlteredTime': [0x18, ['WinTimeStamp', {}]],
-        'FileAccessedTime': [0x20, ['WinTimeStamp', {}]],
+        'CreationTime': [0x8, ['WinTimeStamp', dict(is_utc = True)]],
+        'ModifiedTime': [0x10, ['WinTimeStamp', dict(is_utc = True)]],
+        'MFTAlteredTime': [0x18, ['WinTimeStamp', dict(is_utc = True)]],
+        'FileAccessedTime': [0x20, ['WinTimeStamp', dict(is_utc = True)]],
         'AllocatedFileSize': [0x28, ['unsigned long long']],
         'RealFileSize': [0x30, ['unsigned long long']],
         'Flags': [0x38, ['unsigned int']],
@@ -658,7 +656,7 @@ class MFTParser(common.AbstractWindowsCommand):
                 continue
             outfd.write(border + "\n")
             outfd.write("MFT entry found at offset 0x{0:x}\n".format(offset))
-            outfd.write("Type: {0}\n".format(mft_entry.get_mft_type())) 
+            outfd.write("Attribute: {0}\n".format(mft_entry.get_mft_type())) 
             outfd.write("Record Number: {0}\n".format(mft_entry.RecordNumber))
             outfd.write("Link count: {0}\n".format(mft_entry.LinkCount))
             outfd.write("\n")

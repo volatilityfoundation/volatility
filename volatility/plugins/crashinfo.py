@@ -52,12 +52,12 @@ class CrashInfoModification(obj.ProfileModification):
                 '_DMP_HEADER' : [ None, {
                     'Comment' : [ None, ['String', dict(length = 128)]],
                     'DumpType' : [ None, ['Enumeration', dict(choices = {0x1: "Full Dump", 0x2: "Kernel Dump"})]],
-                    'SystemTime' : [ None, ['WinTimeStamp', {}]],
+                    'SystemTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
                 }],
                 '_DMP_HEADER64' : [ None, {
                     'Comment' : [ None, ['String', dict(length = 128)]],
                     'DumpType' : [ None, ['Enumeration', dict(choices = {0x1: "Full Dump", 0x2: "Kernel Dump"})]],
-                    'SystemTime' : [ None, ['WinTimeStamp', {}]],
+                    'SystemTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
                 }],
             })
 

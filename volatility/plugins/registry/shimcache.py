@@ -64,9 +64,9 @@ shimrecs_type_win7 = {
 appcompat_type_xp_x86 = {
     'AppCompatCacheEntry' : [ 0x228, {
         'Path' : [ 0x0, ['NullString', dict(length = 0x208, encoding = 'utf8')]],
-        'LastModified' : [ 0x210, ['WinTimeStamp', {}]],
+        'LastModified' : [ 0x210, ['WinTimeStamp', dict(is_utc = True)]],
         'FileSize': [0x218, ['long long']],
-        'LastUpdate' : [ 0x220, ['WinTimeStamp', {}]],
+        'LastUpdate' : [ 0x220, ['WinTimeStamp', dict(is_utc = True)]],
     } ],
 }
 
@@ -75,7 +75,7 @@ appcompat_type_2003_x86 = {
         'Length' : [ 0x0, ['unsigned short']],
         'MaximumLength' : [0x2, ['unsigned short']],
         'PathOffset' : [ 0x4, ['unsigned int']],
-        'LastModified' : [ 0x8, ['WinTimeStamp', {}]],
+        'LastModified' : [ 0x8, ['WinTimeStamp', dict(is_utc = True)]],
         'FileSize': [0x10, ['_LARGE_INTEGER']],
     } ],
 }
@@ -85,7 +85,7 @@ appcompat_type_vista_x86 = {
         'Length' : [ 0x0, ['unsigned short']],
         'MaximumLength' : [0x2, ['unsigned short']],
         'PathOffset' : [ 0x4, ['unsigned int']],
-        'LastModified' : [ 0x8, ['WinTimeStamp', {}]],
+        'LastModified' : [ 0x8, ['WinTimeStamp', dict(is_utc = True)]],
         'InsertFlags' : [0x10, ['unsigned int']],
         'Flags' : [0x14, ['unsigned int']],
     } ],
@@ -96,7 +96,7 @@ appcompat_type_win7_x86 = {
         'Length' : [ 0x0, ['unsigned short']],
         'MaximumLength' : [0x2, ['unsigned short']],
         'PathOffset' : [ 0x4, ['unsigned int']],
-        'LastModified' : [ 0x8, ['WinTimeStamp', {}]],
+        'LastModified' : [ 0x8, ['WinTimeStamp', dict(is_utc = True)]],
         'InsertFlags' : [0x10, ['unsigned int']],
         'ShimFlags' : [0x14, ['unsigned int']],
         'BlobSize' : [0x18, ['unsigned int']],
@@ -109,7 +109,7 @@ appcompat_type_2003_x64 = {
         'Length' : [ 0x0, ['unsigned short']],
         'MaximumLength' : [0x2, ['unsigned short']],
         'PathOffset' : [ 0x8, ['unsigned long long']],
-        'LastModified' : [ 0x10, ['WinTimeStamp', {}]],
+        'LastModified' : [ 0x10, ['WinTimeStamp', dict(is_utc = True)]],
         'FileSize': [0x18, ['_LARGE_INTEGER']],
     } ],
 }
@@ -119,7 +119,7 @@ appcompat_type_vista_x64 = {
         'Length' : [ 0x0, ['unsigned short']],
         'MaximumLength' : [0x2, ['unsigned short']],
         'PathOffset' : [ 0x8, ['unsigned int']],
-        'LastModified' : [ 0x10, ['WinTimeStamp', {}]],
+        'LastModified' : [ 0x10, ['WinTimeStamp', dict(is_utc = True)]],
         'InsertFlags' : [0x18, ['unsigned int']],
         'Flags' : [0x1c, ['unsigned int']],
     } ],
@@ -130,7 +130,7 @@ appcompat_type_win7_x64 = {
         'Length' : [ 0x0, ['unsigned short']],
         'MaximumLength' : [0x2, ['unsigned short']],
         'PathOffset' : [ 0x8, ['unsigned long long']],
-        'LastModified' : [ 0x10, ['WinTimeStamp', {}]],
+        'LastModified' : [ 0x10, ['WinTimeStamp', dict(is_utc = True)]],
         'InsertFlags' : [0x18, ['unsigned int']],
         'ShimFlags' : [0x1c, ['unsigned int']],
         'BlobSize' : [0x20, ['unsigned long long']],
@@ -258,16 +258,16 @@ class ShimCache(commands.Command):
         for path, lm, lu in data:
             if lu:
                 if first:
-                    self.table_header(outfd, [("Last Modified", "20"),
-                                              ("Last Update", "20"),
+                    self.table_header(outfd, [("Last Modified", "30"),
+                                              ("Last Update", "30"),
                                               ("Path", ""),
                                              ])
                     first = False
-                outfd.write("{0:20} {1:20} {2}\n".format(lm, lu, path))
+                outfd.write("{0:30} {1:30} {2}\n".format(lm, lu, path))
             else:
                 if first:
-                    self.table_header(outfd, [("Last Modified", "20"),
+                    self.table_header(outfd, [("Last Modified", "30"),
                                               ("Path", ""),
                                              ])
                     first = False
-                outfd.write("{0:20} {1}\n".format(lm, path))
+                outfd.write("{0:30} {1}\n".format(lm, path))
