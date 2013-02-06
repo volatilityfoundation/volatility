@@ -436,8 +436,8 @@ class PSScan(common.AbstractWindowsCommand):
                                   ('PID', '>6'),
                                   ('PPID', '>6'),
                                   ('PDB', '[addrpad]'),
-                                  ('Time created', '20'),
-                                  ('Time exited', '20')
+                                  ('Time created', '30'),
+                                  ('Time exited', '30')
                                   ])
 
         for eprocess in data:
