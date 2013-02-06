@@ -253,7 +253,7 @@ class MBRParser(commands.command):
             debug.error("Install distorm3 code.google.com/p/distorm/")
         if self._config.MAXDISTANCE and not self._config.DISK:
             debug.error("Must supply the path for the extracted MBR/Disk when using MAXDISTANCE")
-        if not os.path.isfile(self._config.DISK):
+        if self._config.DISK and not os.path.isfile(self._config.DISK):
             debug.error(self._config.DISK + " does not exist")
 
         diff = 0
