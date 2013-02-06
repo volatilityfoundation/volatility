@@ -218,9 +218,12 @@ class MBRParser(commands.command):
         config.add_option('DISK', short_option = 'm', default = None,
                          help = "Disk or extracted MBR",
                          action = "store", type = "str")
-        config.add_option('MAXDISTANCE', short_option = 'z', default = None,
+        config.add_option('MAXDISTANCE', short_option = 'x', default = None,
                          help = "Maximum Levenshtein distance for MBR vs Disk",
                          action = "store", type = "int")
+        config.add_option('ZEROSTART', short_option = 'z', default = False,
+                          help = 'Start the output header at zero',
+                          action = "store_true")
         self.code_data = ""
         self.disk_mbr = None
 
@@ -335,9 +338,14 @@ class MBRParser(commands.command):
                 # it doesn't really make sense to have a partition that is bootable, but empty or invalid
                 # but we only skip MBRs with these types of partitions if we are checking
                 continue
-            disasm = self.get_disasm_text(boot_code, offset + dis)
+            disasm = ""
             distance = 0
-            if disasm == "" or self.code_data == "":
+            start = offset
+            if self._config.ZEROSTART:
+                start = 0
+            if not self._config.HEX:
+                disasm = self.get_disasm_text(boot_code, start + dis)
+            if (disasm == "" or self.code_data == None) and not self._config.HEX:
                 continue
             h = hashlib.md5()
             f = hashlib.md5()
@@ -369,8 +377,8 @@ class MBRParser(commands.command):
             if self.disk_mbr:
                 outfd.write("\nLevenshtein Distance from Supplied MBR: {0}\n\n".format(distance))
             if self._config.HEX:
-                hexstuff = "\n" + "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code, offset)])
-                outfd.write("Bootable code: \n{0} \n".format(hexstuff))
+                hexstuff = "\n" + "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code, start)])
+                outfd.write("Bootable code: \n{0} \n\n".format(hexstuff))
             else:
                 outfd.write("Disassembly of Bootable Code:\n{0}\n\n".format(disasm))
 
