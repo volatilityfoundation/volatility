@@ -120,7 +120,37 @@ class Raw2dmp(imagecopy.ImageCopy):
         # Yield the header
         yield 0, headerspace.read(0, headerlen)
 
+        # Physical offset of the KPCR for CPU #0
+        kpcr_phys = vspace.vtop(list(kdbg.kpcrs())[0].obj_offset)
+        kpcr_size = vspace.profile.get_obj_size("_KPCR")
+    
         # Write the main body
         for s, l in pspace.get_available_addresses():
             for i in range(s, s + l, blocksize):
-                yield i + headerlen, pspace.read(i, min(blocksize, s + l - i))
+                size_to_write = min(blocksize, s + l - i)
+                data_to_write = pspace.read(i, size_to_write)
+                # Found a block that fully contains the KPCR structure 
+                if kpcr_phys >= i and kpcr_phys + kpcr_size < i + size_to_write:
+                    # Isolate the KPCR bytes from the block 
+                    kpcr_data = data_to_write[kpcr_phys - i : kpcr_phys - i + kpcr_size]
+                    # Create an AS for the KPCR bytes 
+                    kpcr_space = addrspace.BufferAddressSpace(self._config, base_offset = 0, data = kpcr_data)
+                    # A KPCR object in the new AS
+                    kpcr = obj.Object("_KPCR", offset = 0, vm = kpcr_space)
+                    # Account for differences in the KPCR member names 
+                    if memory_model == "32bit":
+                        member = "PrcbData"
+                    else:
+                        member = "Prcb"
+                    # Set the required CONTEXT registers 
+                    kpcr.m(member).ProcessorState.ContextFrame.SegGs = 0x00
+                    kpcr.m(member).ProcessorState.ContextFrame.SegCs = 0x08
+                    kpcr.m(member).ProcessorState.ContextFrame.SegDs = 0x23
+                    kpcr.m(member).ProcessorState.ContextFrame.SegEs = 0x23
+                    kpcr.m(member).ProcessorState.ContextFrame.SegFs = 0x30
+                    kpcr.m(member).ProcessorState.ContextFrame.SegSs = 0x10
+                    # Get the modified data back as a byte buffer 
+                    new_data = kpcr_space.read(0, kpcr_size)
+                    # Splice the changes into our original block
+                    data_to_write = data_to_write[0: kpcr_phys - i] + new_data + data_to_write[kpcr_phys - i + kpcr_size:]
+                yield i + headerlen, data_to_write
