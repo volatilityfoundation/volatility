@@ -70,7 +70,7 @@ class Raw2dmp(imagecopy.ImageCopy):
 
         # The PaeEnabled member is essential for x86 crash files
         if memory_model == "32bit":
-            if hasattr(vspace, "pae"):
+            if hasattr(vspace, "pae") and vspace.pae == True:
                 header.PaeEnabled = 0x1
             else:
                 header.PaeEnabled = 0x0
