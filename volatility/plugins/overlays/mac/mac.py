@@ -914,6 +914,9 @@ mac_overlay = {
     'kfs_event' : [ None, {
         'str' : [ None, ['pointer', ['String', dict(length = 256)]]], 
         }], 
+    'zone' : [ None, {
+        'zone_name': [ None, ['pointer', ['String', dict(length = 256)]]],
+        }],
     'mac_policy_conf' : [ None, { 
         'mpc_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
         }], 
