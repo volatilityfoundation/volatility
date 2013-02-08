@@ -139,16 +139,19 @@ class Raw2dmp(imagecopy.ImageCopy):
                     kpcr = obj.Object("_KPCR", offset = 0, vm = kpcr_space)
                     # Account for differences in the KPCR member names 
                     if memory_model == "32bit":
-                        member = "PrcbData"
+                        kpcr.PrcbData.ProcessorState.ContextFrame.SegGs = 0x00
+                        kpcr.PrcbData.ProcessorState.ContextFrame.SegCs = 0x08
+                        kpcr.PrcbData.ProcessorState.ContextFrame.SegDs = 0x23
+                        kpcr.PrcbData.ProcessorState.ContextFrame.SegEs = 0x23
+                        kpcr.PrcbData.ProcessorState.ContextFrame.SegFs = 0x30
+                        kpcr.PrcbData.ProcessorState.ContextFrame.SegSs = 0x10
                     else:
-                        member = "Prcb"
-                    # Set the required CONTEXT registers 
-                    kpcr.m(member).ProcessorState.ContextFrame.SegGs = 0x00
-                    kpcr.m(member).ProcessorState.ContextFrame.SegCs = 0x08
-                    kpcr.m(member).ProcessorState.ContextFrame.SegDs = 0x23
-                    kpcr.m(member).ProcessorState.ContextFrame.SegEs = 0x23
-                    kpcr.m(member).ProcessorState.ContextFrame.SegFs = 0x30
-                    kpcr.m(member).ProcessorState.ContextFrame.SegSs = 0x10
+                        kpcr.Prcb.ProcessorState.ContextFrame.SegGs = 0x00
+                        kpcr.Prcb.ProcessorState.ContextFrame.SegCs = 0x18
+                        kpcr.Prcb.ProcessorState.ContextFrame.SegDs = 0x2b
+                        kpcr.Prcb.ProcessorState.ContextFrame.SegEs = 0x2b
+                        kpcr.Prcb.ProcessorState.ContextFrame.SegFs = 0x53
+                        kpcr.Prcb.ProcessorState.ContextFrame.SegSs = 0x18                    
                     # Get the modified data back as a byte buffer 
                     new_data = kpcr_space.read(0, kpcr_size)
                     # Splice the changes into our original block
