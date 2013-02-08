@@ -64,7 +64,7 @@ class mac_pslist(common.AbstractMacCommand):
                           ("Start Time", "")])
 
         for proc in data:
-            self.table_row(outfd, proc.obj_offset,
+            self.table_row(outfd, proc.v(),
                                   proc.p_comm,
                                   str(proc.p_pid),
                                   str(proc.p_uid),
