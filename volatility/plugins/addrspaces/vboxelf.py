@@ -149,15 +149,29 @@ class VirtualBoxCoreDumpElf64(addrspace.BaseAddressSpace):
         return self.get_addr(phys_addr) is not None
 
     def get_available_pages(self):
-        """Get a list of physical memory pages"""
-        for phys_addr, _, length in self.runs:
-            yield phys_addr, length
+        page_list = []
+        for phys_addr, length in self.get_available_addresses():
+            start = phys_addr
+            for page in range(start, start + length):
+                page_list.append([page * 0x1000, 0x1000])
+        return page_list
 
     def get_available_addresses(self):
         """Get a list of physical memory runs"""
-        # Since runs are in order and not contiguous 
-        # we can reuse the output from available_pages
-        return self.get_available_pages()
+        
+        ## The first (and possibly the only) main memory run 
+        first_run_addr, _, first_run_size = self.runs[0]
+        yield (first_run_addr, first_run_size)
+        
+        ## If a system has more than 3.5 GB RAM, it will be 
+        ## split into multiple runs due to the VGA device mem
+        ## constant VBE_DISPI_LFB_PHYSICAL_ADDRESS 0xE0000000. 
+        if first_run_size == 0xE0000000:
+            for run_addr, _, run_size in self.runs[1:]:
+                ## not all segments above 0xE0000000 are main 
+                ## memory, try to skip those that are not. 
+                if run_addr >= 0x100000000:
+                    yield (run_addr, run_size)
 
     def get_address_range(self):
         """ This relates to the logical address range that is indexable """
