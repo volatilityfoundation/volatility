@@ -300,15 +300,17 @@ class VMWareSnapshotFile(addrspace.BaseAddressSpace):
         return self.get_addr(phys_addr) is not None
 
     def get_available_pages(self):
-        """Get a list of physical memory pages"""
-        for phys_addr, _, length in self.runs:
-            yield phys_addr, length
+        page_list = []
+        for phys_addr, length in self.get_available_addresses():
+            start = phys_addr
+            for page in range(start, start + length):
+                page_list.append([page * 0x1000, 0x1000])
+        return page_list
 
     def get_available_addresses(self):
         """Get a list of physical memory runs"""
-        # Since runs are in order and not contiguous 
-        # we can reuse the output from available_pages
-        return self.get_available_pages()
+        for phys_addr, _, length in self.runs:
+            yield phys_addr, length
 
     def get_address_range(self):
         """ This relates to the logical address range that is indexable """
