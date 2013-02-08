@@ -929,6 +929,9 @@ mac_overlay = {
     'vnode' : [ None, {
         'v_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
         }], 
+    'boot_args' : [ None, {
+        'CommandLine' : [ None, ['String', dict(length = 1024)]],
+        }], 
     'vfsstatfs' : [ None, { 
         'f_fstypename' : [ None, ['String', dict(length = 16)]],
         'f_mntonname' : [ None, ['String', dict(length = 1024)]],
