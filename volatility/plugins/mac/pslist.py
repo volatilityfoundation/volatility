@@ -64,6 +64,9 @@ class mac_pslist(common.AbstractMacCommand):
                           ("Start Time", "")])
 
         for proc in data:
+            if not proc.is_valid() or len(proc.p_comm) == 0:
+                continue
+
             self.table_row(outfd, proc.v(),
                                   proc.p_comm,
                                   str(proc.p_pid),

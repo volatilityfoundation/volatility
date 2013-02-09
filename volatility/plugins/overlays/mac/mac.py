@@ -31,6 +31,12 @@ import volatility.addrspace as addrspace
 import volatility.scan as scan
 
 import volatility.plugins.addrspaces.amd64 as amd64
+import volatility.plugins.overlays.native_types as native_types
+
+x64_native_types = copy.deepcopy(native_types.x64_native_types)
+
+x64_native_types['long'] = [8, '<q']
+x64_native_types['unsigned long'] = [8, '<Q']
 
 class catfishScan(scan.BaseScanner):
     """ Scanner for Catfish string for Mountain Lion """
@@ -85,7 +91,7 @@ class VolatilityDTB(obj.VolatilityMagic):
         boot_pml4_dtb = amd64.AMD64PagedMemory(self.obj_vm, config, dtb = bootpml4)
       
         idlepml4_addr = (tbl['_IdlePML4'][0][0]) + shift_address
-        idlepml4_ptr = obj.Object("unsigned long", offset = idlepml4_addr, vm = boot_pml4_dtb)
+        idlepml4_ptr = obj.Object("unsigned int", offset = idlepml4_addr, vm = boot_pml4_dtb)
 
         return idlepml4_ptr.v()
 
@@ -119,6 +125,9 @@ class proc(obj.CType):
     def p_gid(self):
         cred = self.p_ucred
 
+        if not cred.is_valid():
+            return "-"
+
         if hasattr(cred, "cr_posix"):
             ret = cred.cr_posix.cr_groups[0]
         else:
@@ -129,6 +138,9 @@ class proc(obj.CType):
     @property
     def p_uid(self):
         cred = self.p_ucred
+
+        if not cred.is_valid():
+            return "-"
 
         if hasattr(cred, "cr_posix"):
             ret = cred.cr_posix.cr_uid
@@ -173,6 +185,68 @@ class proc(obj.CType):
         name = " ".join(argv.split("\x00"))
 
         return name
+
+class zone(obj.CType):
+    def _get_from_active_zones(self):
+        ret = []
+        first_elem = self.active_zones
+        elem = first_elem
+
+        # TODO
+        sz = 16
+
+        i = 0
+
+        while elem != first_elem.v() or i == 0:
+            print "-------------"
+            a = elem.v()
+            b = sz
+            off = a + b
+            print "adding: %x + %d = %x" % (a, b, off)
+
+            ret.append(off)
+        
+            i = i + 1
+            if i == 4:
+                break
+            elem = elem.m("next")
+
+        return ret
+
+    def get_active_elements(self, elem_type, zone_idx=-1):
+        ret = []
+
+        if hasattr(self, "active_zones"):
+            objs = self._get_from_active_zones()
+        else:
+            debug.error("zone does not have active zones.")        
+
+        for o in objs:
+            val = obj.Object(elem_type, offset = o, vm = self.obj_vm)
+            ret.append(val)            
+
+        return ret
+
+    def get_free_elements(self, elem_type):
+        ret = []
+
+        nxt = obj.Object("zone_free_element", offset = self.free_elements, vm = self.obj_vm)
+
+        i = 0
+        while 1:
+            o = nxt.obj_offset
+
+            val = obj.Object(elem_type, offset = o, vm = self.obj_vm)
+            ret.append(val)
+ 
+            nxt = nxt.m("next")
+        
+            i = i + 1
+            if i == 100:
+                break
+
+
+        return ret
 
 class sysctl_oid(obj.CType):
 
@@ -688,6 +762,10 @@ def MacProfileFactory(profpkg):
         _md_os = "mac"
         _md_memory_model = memmodel
 
+        native_mapping = {'32bit': native_types.x86_native_types,
+                          '64bit': x64_native_types}
+
+
         def __init__(self, *args, **kwargs):
             self.sys_map = {}
             self.shift_address = 0
@@ -892,6 +970,7 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc' : proc,
+            'zone' : zone,
             'OSString' : OSString,
             'sysctl_oid' : sysctl_oid,
             'IpAddress': basic.IpAddress,

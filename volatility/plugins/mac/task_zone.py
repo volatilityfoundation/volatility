@@ -23,25 +23,22 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+import volatility.plugins.mac.list_zones as list_zones
+import volatility.plugins.mac.pslist as pslist
 
-class mac_list_zones(common.AbstractMacCommand):
+class mac_task_zone(pslist.mac_pslist):
     """ Prints active zones """
 
     def calculate(self):
         common.set_plugin_members(self)
+    
+        zones = list_zones.mac_list_zones(self._config).calculate()
 
-        first_zone_addr = self.get_profile_symbol("_first_zone")
-
-        zone_ptr = obj.Object("Pointer", offset = first_zone_addr, vm = self.addr_space)
-        zone = zone_ptr.dereference_as("zone")
-
-        while zone:
-            yield zone
-            zone = zone.next_zone       
- 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Name", "30"), ("Active Count", "10"), ("Free Count", ""), ("Element Size", "")])
-        for zone in data:
-            name = zone.zone_name.dereference().replace(" ", ".")
-            self.table_row(outfd, name, zone.count, zone.sum_count - zone.count, zone.elem_size)
+        for zone in zones:
+            name = str(zone.zone_name.dereference())
+            if name == "proc":
+                #elems = zone.get_active_elements("proc")
+                procs = zone.get_free_elements("proc")        
+                for proc in procs:
+                    yield proc
 
