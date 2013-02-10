@@ -75,6 +75,21 @@ class WindowsCrashDumpSpace32(addrspace.BaseAddressSpace):
             offset += run[1]
         return None
 
+    def write(self, phys_addr, buf):
+        """This is mostly for support of raw2dmp so that 
+        it can modify the kernel CONTEXT after the crash
+        dump has been written to disk"""
+
+        if not self._config.WRITE:
+            return False 
+
+        file_addr = self.get_addr(phys_addr)
+
+        if file_addr is None:
+            return False
+
+        return self.base.write(file_addr, buf)
+
     def is_valid_address(self, addr):
         return self.get_addr(addr) != None
 

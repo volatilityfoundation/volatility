@@ -100,8 +100,14 @@ class Raw2dmp(imagecopy.ImageCopy):
         header.BugCheckCodeParameter[2] = 0x00000000
         header.BugCheckCodeParameter[3] = 0x00000000
 
-        # Set the sample run information
-        num_pages = sum([ size for (_, size) in pspace.get_available_addresses()]) / 0x1000
+        # Set the sample run information. We used to take the sum of the size 
+        # of all runs, but that assumed the base layer was raw. In the case 
+        # of base layers such as ELF64 core dump or any other run-based address 
+        # space that may have holes for device memory, that would fail because
+        # any runs after the first hole would then be at the wrong offset.
+        last_run = list(pspace.get_available_addresses())[-1]
+        num_pages = (last_run[0] + last_run[1]) / 0x1000
+            
         header.PhysicalMemoryBlockBuffer.NumberOfRuns = 0x00000001
         header.PhysicalMemoryBlockBuffer.NumberOfPages = num_pages
         header.PhysicalMemoryBlockBuffer.Run[0].BasePage = 0x0000000000000000
@@ -119,41 +125,42 @@ class Raw2dmp(imagecopy.ImageCopy):
 
         # Yield the header
         yield 0, headerspace.read(0, headerlen)
-
-        # Physical offset of the KPCR for CPU #0
-        kpcr_phys = vspace.vtop(list(kdbg.kpcrs())[0].obj_offset)
-        kpcr_size = vspace.profile.get_obj_size("_KPCR")
     
         # Write the main body
         for s, l in pspace.get_available_addresses():
             for i in range(s, s + l, blocksize):
-                size_to_write = min(blocksize, s + l - i)
-                data_to_write = pspace.read(i, size_to_write)
-                # Found a block that fully contains the KPCR structure 
-                if kpcr_phys >= i and kpcr_phys + kpcr_size < i + size_to_write:
-                    # Isolate the KPCR bytes from the block 
-                    kpcr_data = data_to_write[kpcr_phys - i : kpcr_phys - i + kpcr_size]
-                    # Create an AS for the KPCR bytes 
-                    kpcr_space = addrspace.BufferAddressSpace(self._config, base_offset = 0, data = kpcr_data)
-                    # A KPCR object in the new AS
-                    kpcr = obj.Object("_KPCR", offset = 0, vm = kpcr_space)
-                    # Account for differences in the KPCR member names 
-                    if memory_model == "32bit":
-                        kpcr.PrcbData.ProcessorState.ContextFrame.SegGs = 0x00
-                        kpcr.PrcbData.ProcessorState.ContextFrame.SegCs = 0x08
-                        kpcr.PrcbData.ProcessorState.ContextFrame.SegDs = 0x23
-                        kpcr.PrcbData.ProcessorState.ContextFrame.SegEs = 0x23
-                        kpcr.PrcbData.ProcessorState.ContextFrame.SegFs = 0x30
-                        kpcr.PrcbData.ProcessorState.ContextFrame.SegSs = 0x10
-                    else:
-                        kpcr.Prcb.ProcessorState.ContextFrame.SegGs = 0x00
-                        kpcr.Prcb.ProcessorState.ContextFrame.SegCs = 0x18
-                        kpcr.Prcb.ProcessorState.ContextFrame.SegDs = 0x2b
-                        kpcr.Prcb.ProcessorState.ContextFrame.SegEs = 0x2b
-                        kpcr.Prcb.ProcessorState.ContextFrame.SegFs = 0x53
-                        kpcr.Prcb.ProcessorState.ContextFrame.SegSs = 0x18                    
-                    # Get the modified data back as a byte buffer 
-                    new_data = kpcr_space.read(0, kpcr_size)
-                    # Splice the changes into our original block
-                    data_to_write = data_to_write[0: kpcr_phys - i] + new_data + data_to_write[kpcr_phys - i + kpcr_size:]
-                yield i + headerlen, data_to_write
+                yield i + headerlen, pspace.read(i, min(blocksize, s + l - i))
+
+        # Reset the config so volatility opens the crash dump 
+        self._config.LOCATION = "file://" + self._config.OUTPUT_IMAGE
+
+        # Crash virtual space 
+        crash_vspace = utils.load_as(self._config)
+
+        # The KDBG in the new crash dump
+        crash_kdbg = obj.Object("_KDDEBUGGER_DATA64",
+                          offset = obj.VolMagic(crash_vspace).KDBG.v(),
+                          vm = crash_vspace)
+
+        # The KPCR for the first CPU 
+        kpcr = list(crash_kdbg.kpcrs())[0]
+        
+        # Set the CPU CONTEXT properly for the architecure 
+        if memory_model == "32bit":
+            kpcr.PrcbData.ProcessorState.ContextFrame.SegGs = 0x00
+            kpcr.PrcbData.ProcessorState.ContextFrame.SegCs = 0x08
+            kpcr.PrcbData.ProcessorState.ContextFrame.SegDs = 0x23
+            kpcr.PrcbData.ProcessorState.ContextFrame.SegEs = 0x23
+            kpcr.PrcbData.ProcessorState.ContextFrame.SegFs = 0x30
+            kpcr.PrcbData.ProcessorState.ContextFrame.SegSs = 0x10
+        else:
+            kpcr.Prcb.ProcessorState.ContextFrame.SegGs = 0x00
+            kpcr.Prcb.ProcessorState.ContextFrame.SegCs = 0x18
+            kpcr.Prcb.ProcessorState.ContextFrame.SegDs = 0x2b
+            kpcr.Prcb.ProcessorState.ContextFrame.SegEs = 0x2b
+            kpcr.Prcb.ProcessorState.ContextFrame.SegFs = 0x53
+            kpcr.Prcb.ProcessorState.ContextFrame.SegSs = 0x18   
+
+
+
+        
