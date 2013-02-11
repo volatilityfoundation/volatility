@@ -86,6 +86,14 @@ windows_overlay = {
     'Name' : [ 0x0, ['String', dict(length = 8)]],
     }],
 
+    '_IMAGE_FILE_HEADER': [ None, {
+    'TimeDateStamp' : [None, ['UnixTimeStamp', dict(is_utc = True)]],
+    }],
+
+    '_LDR_DATA_TABLE_ENTRY': [ None, {
+    'TimeDateStamp' : [None, ['UnixTimeStamp', dict(is_utc = True)]],
+    }],
+
     '_DBGKD_GET_VERSION64' : [  None, {
     'DebuggerDataList' : [ None, ['pointer', ['unsigned long']]],
     }],
