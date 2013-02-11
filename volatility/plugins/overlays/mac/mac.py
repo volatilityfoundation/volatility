@@ -711,7 +711,7 @@ class DWARFParser(object):
                     vals = dict((v, k) for k, v in self.enums[d][1].items())
                     self.all_vtypes[t][1][m] = self.deep_replace(
                         memb, [d],
-                        ['Enumeration', dict(target = self.sz2tp[sz], choices = vals)]
+                        ['Enumeration', dict(target = 'int', choices = vals)]
                     )
 
         return self.all_vtypes
