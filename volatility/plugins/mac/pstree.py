@@ -45,7 +45,7 @@ class mac_pstree(pslist.mac_pslist):
 
         proc_name = "." * level + proc.p_comm
 
-        outfd.write("{0:20s} {1:15s} {2:15s}\n".format(proc_name, str(proc.p_pid), str(proc.p_ucred.cr_uid)))
+        outfd.write("{0:20s} {1:15s} {2:15s}\n".format(proc_name, str(proc.p_pid), str(proc.p_uid)))
   
         self.procs_seen[proc.p_pid] = 1
         
