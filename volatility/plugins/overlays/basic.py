@@ -22,13 +22,14 @@
 """ This file defines some basic types which might be useful for many
 OS's
 """
-import struct, socket
+import struct, socket, datetime
 
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.constants as constants
 import volatility.plugins.overlays.native_types as native_types
 import volatility.utils as utils
+import volatility.timefmt as timefmt
 
 class String(obj.BaseObject):
     """Class for dealing with Strings"""
@@ -221,6 +222,39 @@ class VolatilityDTB(obj.VolatilityMagic):
             offset += len(data)
             data = self.obj_vm.read(offset, constants.SCAN_BLOCKSIZE)
 
+class UnixTimeStamp(obj.NativeType):
+    """Class for handling Unix Time Stamps"""
+
+    def __init__(self, theType, offset, vm, is_utc = False, **kwargs):
+        self.is_utc = is_utc
+        obj.NativeType.__init__(self, theType, offset, vm, format_string = "I", **kwargs)
+
+    def v(self):
+        return obj.NativeType.v(self)
+
+    def __nonzero__(self):
+        return self.v() != 0
+
+    def __str__(self):
+        return "{0}".format(self)
+
+    def as_datetime(self):
+        try:
+            dt = datetime.datetime.utcfromtimestamp(self.v())
+            if self.is_utc:
+                # Only do dt.replace when dealing with UTC
+                dt = dt.replace(tzinfo = timefmt.UTC())
+        except ValueError, e:
+            return obj.NoneObject("Datetime conversion failure: " + str(e))
+        return dt
+
+    def __format__(self, formatspec):
+        """Formats the datetime according to the timefmt module"""
+        dt = self.as_datetime()
+        if dt != None:
+            return format(timefmt.display_datetime(dt), formatspec)
+        return "-"
+
 class BasicObjectClasses(obj.ProfileModification):
 
     def modification(self, profile):
@@ -230,6 +264,7 @@ class BasicObjectClasses(obj.ProfileModification):
             'Enumeration': Enumeration,
             'VOLATILITY_MAGIC': VOLATILITY_MAGIC,
             'VolatilityDTB': VolatilityDTB,
+            'UnixTimeStamp': UnixTimeStamp,
             })
 
 
