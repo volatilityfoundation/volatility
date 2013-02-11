@@ -53,8 +53,8 @@ evt_log_types = {
         'RecordLength' : [ 0x0, ['int']],
         'Magic' : [ 0x4, ['int']],  #LfLe
         'RecordNumber' : [ 0x8, ['int']],
-        'TimeGenerated' : [ 0xc, ['unsigned int']], 
-        'TimeWritten' : [ 0x10, ['unsigned int']],
+        'TimeGenerated' : [ 0xc, ['UnixTimeStamp', dict(is_utc = True)]], 
+        'TimeWritten' : [ 0x10, ['UnixTimeStamp', dict(is_utc = True)]],
         'EventID' : [ 0x14, ['unsigned short']], #specific to event source and uniquely identifies the event
         'EventType' : [ 0x18, ['Enumeration', dict(target = 'unsigned short', choices = {0x01: "Error", 0x02: "Warning", 0x04: "Info", 0x08: "Success", 0x10: "Failure"})]], 
         'NumStrings' : [ 0x1a, ['unsigned short']], #number of description strings in even message
@@ -69,24 +69,6 @@ evt_log_types = {
     } ],
 }
 
-class EVTRecordStruct(obj.CType):
-    """A class for event log records"""
-
-    def _unix_time(self, tm):
-        """Get the UTC from a unix timestamp"""
-        try:
-            return datetime.datetime.utcfromtimestamp(tm)
-        except ValueError:
-            return None
-
-    @property
-    def TimeGenerated(self):
-        return self._unix_time(self.m('TimeGenerated'))
-        
-    @property
-    def TimeWritten(self):
-        return self._unix_time(self.m('TimeWritten'))
-
 class EVTObjectTypes(obj.ProfileModification):
     before = ["WindowsVTypes"]
     conditions = {'os': lambda x: x == 'windows', 
@@ -94,7 +76,6 @@ class EVTObjectTypes(obj.ProfileModification):
                   'minor': lambda x: x >= 1}
     def modification(self, profile):
         profile.vtypes.update(evt_log_types)
-        profile.object_classes.update({'EVTRecordStruct': EVTRecordStruct})
 
 class EvtLogs(common.AbstractWindowsCommand):
     """Extract Windows Event Logs (XP/2003 only)"""
