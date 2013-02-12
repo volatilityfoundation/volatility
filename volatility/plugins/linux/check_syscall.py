@@ -128,10 +128,8 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         memory_model = self.addr_space.profile.metadata.get('memory_model', '32bit')
 
         if memory_model == '32bit':
-            mask = 0xffffffff
             table_name = "32bit"
         else:
-            mask = 0xffffffffffffffff
             table_name = "64bit"
 
         sym_addrs = self.profile.get_all_addresses()
@@ -148,15 +146,14 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
         for (table_name, (tableaddr, tblsz)) in addrs:
 
-            table = obj.Object(theType = 'Array', offset = tableaddr, vm = self.addr_space, targetType = 'long', count = tblsz)
+            table = obj.Object(theType = 'Array', offset = tableaddr, vm = self.addr_space, targetType = 'unsigned long', count = tblsz)
 
             for (i, call_addr) in enumerate(table):
 
                 if not call_addr:
                     continue
 
-                # have to treat them as 'long' so need to mask
-                call_addr = call_addr & mask
+                call_addr = int(call_addr)
 
                 if not call_addr in sym_addrs:
                     yield(table_name, i, call_addr, 1)
