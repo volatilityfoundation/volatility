@@ -50,8 +50,6 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                                  ]) 
         for task, vma in data:
 
-            mm = task.mm
-
             if vma.vm_file:
                 inode = vma.vm_file.dentry.d_inode
                 major, minor = inode.i_sb.major, inode.i_sb.minor
@@ -61,12 +59,10 @@ class linux_proc_maps(linux_pslist.linux_pslist):
             else:
                 (major, minor, ino, pgoff) = [0] * 4
 
-                if vma.vm_start <= mm.start_brk and vma.vm_end >= mm.brk:
+                if vma.vm_start <= task.mm.start_brk and vma.vm_end >= task.mm.brk:
                     fname = "[heap]"
-
-                elif vma.vm_start <= mm.start_stack and vma.vm_end >= mm.start_stack:
+                elif vma.vm_start <= task.mm.start_stack and vma.vm_end >= task.mm.start_stack:
                     fname = "[stack]"
-
                 else:
                     fname = ""
 
