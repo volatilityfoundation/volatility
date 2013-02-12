@@ -35,10 +35,6 @@ from volatility.cache import CacheDecorator
 
 #pylint: disable-msg=C0111
 
-# for backward compatibility, remove after 2.2 or so
-# see Issue 191 on google code 
-find_module = tasks.find_module
-
 def find_tables(start_addr, vm):
     """
     This function finds the RVAs to KeServiceDescriptorTable
