@@ -54,8 +54,7 @@ class linux_proc_maps(linux_pslist.linux_pslist):
 
             if vma.vm_file:
                 inode = vma.vm_file.dentry.d_inode
-                sb = obj.Object("super_block", offset = inode.i_sb, vm = self.addr_space)
-                major, minor = sb.major, sb.minor
+                major, minor = inode.i_sb.major, inode.i_sb.minor
                 ino = inode.i_ino
                 pgoff = vma.vm_pgoff << 12
                 fname = linux_common.get_path(task, vma.vm_file)
