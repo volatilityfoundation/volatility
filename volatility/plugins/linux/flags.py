@@ -24,10 +24,6 @@
 # flags used throughout the plugins
 # these aren't going to change due to binary breakage if they would
 
-VM_READ = 0x00000001
-VM_WRITE = 0x00000002
-VM_EXEC = 0x00000004
-
 # Protocol strings should use volatility.protos
 
 tcp_states = ("",

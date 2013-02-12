@@ -77,25 +77,12 @@ class linux_proc_maps(linux_pslist.linux_pslist):
             self.table_row(outfd,
                 vma.vm_start,
                 vma.vm_end,
-                self.format_perms(vma.vm_flags),
+                str(vma.vm_flags),
                 pgoff,
                 self.MAJOR(dev),
                 self.MINOR(dev),
                 ino,
                 fname)
-
-    def format_perms(self, vma_flags):
-
-        ret = ""
-        check = [linux_flags.VM_READ, linux_flags.VM_WRITE, linux_flags.VM_EXEC]
-        perms = "rwx"
-
-        for idx in range(len(check)):
-            if vma_flags & check[idx]:
-                ret = ret + perms[idx]
-            else:
-                ret = ret + "-"
-        return ret
 
     def MAJOR(self, num):
         return num >> self.MINORBITS

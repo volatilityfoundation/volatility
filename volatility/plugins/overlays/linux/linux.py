@@ -42,6 +42,23 @@ x64_native_types = copy.deepcopy(native_types.x64_native_types)
 x64_native_types['long'] = [8, '<q']
 x64_native_types['unsigned long'] = [8, '<Q']
 
+class LinuxPermissionFlags(basic.Flags):
+    """A Flags object for printing vm_area_struct permissions
+    in a format like rwx or r-x"""
+
+    def __str__(self):
+        result = []
+        value = self.v()
+        keys = self.bitmap.keys()
+        keys.sort()
+        for k in keys:
+            if value & (1 << self.bitmap[k]):
+                result.append(k)
+            else:
+                result.append('-')
+
+        return ''.join(result)
+
 linux_overlay = {
     'task_struct' : [None, {
         'comm'          : [ None , ['String', dict(length = 16)]],
@@ -76,6 +93,9 @@ linux_overlay = {
         'ArmValidAS'   :  [ 0x0, ['VolatilityLinuxARMValidAS']],
         'IA32ValidAS'  :  [ 0x0, ['VolatilityLinuxIntelValidAS']],
         'AMD64ValidAS'  :  [ 0x0, ['VolatilityLinuxIntelValidAS']],
+        }],
+    'vm_area_struct' : [ None, { 
+        'vm_flags' : [ None, ['LinuxPermissionFlags', {'bitmap': {'r': 0, 'w': 1, 'x': 2}}]],
         }],
     }
 
@@ -653,7 +673,6 @@ class task_struct(obj.CType):
                         yield offset + hit
                 offset += min(to_read, scan_blk_sz)
 
-
 class linux_fs_struct(obj.CType):
 
     def get_root_dentry(self):
@@ -755,6 +774,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'desc_struct' : desc_struct,
             'page': page,
             'net_device': net_device,
+            'LinuxPermissionFlags': LinuxPermissionFlags,
             })
 
 class LinuxOverlay(obj.ProfileModification):
