@@ -125,17 +125,9 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         if not has_distorm:
             debug.warning("distorm not installed. The best method to calculate the system call table size will not be used.")
 
-        memory_model = self.addr_space.profile.metadata.get('memory_model', '32bit')
-
-        if memory_model == '32bit':
-            table_name = "32bit"
-        else:
-            table_name = "64bit"
-
+        table_name = self.addr_space.profile.metadata.get('memory_model', '32bit')
         sym_addrs = self.profile.get_all_addresses()
-
         sys_call_info = self._get_table_info("sys_call_table")
-
         addrs = [(table_name, sys_call_info)]
 
         # 64 bit systems with 32 bit emulation
