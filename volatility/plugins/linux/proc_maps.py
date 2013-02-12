@@ -29,9 +29,6 @@ import volatility.plugins.linux.pslist as linux_pslist
 class linux_proc_maps(linux_pslist.linux_pslist):
     """Gathers process maps for linux"""
 
-    MINORBITS = 20
-    MINORMASK = ((1 << MINORBITS) - 1)
-
     def calculate(self):
         linux_common.set_plugin_members(self)
         tasks = linux_pslist.linux_pslist.calculate(self)
@@ -58,12 +55,12 @@ class linux_proc_maps(linux_pslist.linux_pslist):
             if vma.vm_file:
                 inode = vma.vm_file.dentry.d_inode
                 sb = obj.Object("super_block", offset = inode.i_sb, vm = self.addr_space)
-                dev = sb.s_dev
+                major, minor = sb.major, sb.minor
                 ino = inode.i_ino
                 pgoff = vma.vm_pgoff << 12
                 fname = linux_common.get_path(task, vma.vm_file)
             else:
-                (dev, ino, pgoff) = [0] * 3
+                (major, minor, ino, pgoff) = [0] * 4
 
                 if vma.vm_start <= mm.start_brk and vma.vm_end >= mm.brk:
                     fname = "[heap]"
@@ -79,13 +76,7 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                 vma.vm_end,
                 str(vma.vm_flags),
                 pgoff,
-                self.MAJOR(dev),
-                self.MINOR(dev),
+                major,
+                minor,
                 ino,
                 fname)
-
-    def MAJOR(self, num):
-        return num >> self.MINORBITS
-
-    def MINOR(self, num):
-        return num & self.MINORMASK

@@ -699,6 +699,16 @@ class net_device(obj.CType):
     def promisc(self):
         return self.flags & 0x100 == 0x100 # IFF_PROMISC
 
+class super_block(obj.CType):
+
+    @property
+    def major(self):
+        return self.s_dev >> 20
+        
+    @property
+    def minor(self):
+        return self.s_dev & ((1 << 20) - 1)
+
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
 
@@ -775,6 +785,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'page': page,
             'net_device': net_device,
             'LinuxPermissionFlags': LinuxPermissionFlags,
+            'super_block' : super_block, 
             })
 
 class LinuxOverlay(obj.ProfileModification):
