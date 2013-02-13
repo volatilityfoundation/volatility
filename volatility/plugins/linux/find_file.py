@@ -96,7 +96,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             else:
                 parent = ""
 
-            ret = self.walk_sb(sb.s_root, find_file, None, parent=parent)
+            ret = self.walk_sb(sb.s_root, find_file, None, parent = parent)
             
             if ret:
                 break
@@ -119,7 +119,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
         elif inode_addr and inode_addr > 0 and outfile and len(outfile) > 0:
         
-            inode = obj.Object("inode", offset=inode_addr, vm=self.addr_space)
+            inode = obj.Object("inode", offset = inode_addr, vm = self.addr_space)
             
             contents = self.get_file_contents(inode)
 
@@ -165,29 +165,19 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
                 return None
 
             off = root.obj_offset + self.profile.get_obj_offset("radix_tree_root", "rnode")
-
             page = obj.Object("Pointer", offset = off, vm = self.addr_space)
-
             return page
 
         node = self.radix_tree_indirect_to_ptr(node)
-
         height = node.height
-
         shift = (height - 1) * self.RADIX_TREE_MAP_SHIFT
-
         slot = -1
 
         while 1:
-
             idx = (index >> shift) & self.RADIX_TREE_MAP_MASK
-
             slot = node.slots[idx]
-
             shift = shift - self.RADIX_TREE_MAP_SHIFT
-
             height = height - 1
-
             if height <= 0:
                 break
 
@@ -198,7 +188,6 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
     def SHMEM_I(self, inode):
         offset = self.profile.get_obj_offset("shmem_inode_info", "vfs_inode")
-
         return obj.Object("shmem_inode_info", offset = inode.obj_offset - offset, vm = self.addr_space)
 
     def find_get_page(self, inode, offset):
@@ -215,11 +204,8 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
         if page_addr:
             page = obj.Object("page", offset = page_addr, vm = self.addr_space)
-
             phys_offset = page.to_paddr()
-
             phys_as = utils.load_as(self._config, astype = 'physical')
-
             data = phys_as.zread(phys_offset, 4096)
         else:
             data = "\x00" * 4096
@@ -232,9 +218,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         linux_common.set_plugin_members(self)
         data = ""
         file_size = inode.i_size
-
         extra = file_size % 4096
-
         idxs = file_size / 4096
 
         if extra != 0:
@@ -242,14 +226,12 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             idxs = idxs + 1
 
         for idx in range(0, idxs):
-
             data = data + self.get_page_contents(inode, idx)
 
         # this is chop off any extra data on the last page
 
         if extra != 0:
             extra = extra * -1
-
             data = data[:extra]
 
         return data
