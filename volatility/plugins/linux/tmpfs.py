@@ -73,7 +73,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
                 (perms, _size, atime, mtime) = (inode.i_mode, inode.i_size, inode.i_atime, inode.i_mtime)
 
-                if linux_common.S_ISDIR(inode.i_mode):
+                if inode.is_dir():
                     # since the directory may already exist
                     try:
                         os.mkdir(new_file)
@@ -84,7 +84,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
                     self.process_directory(dentry, 1, new_file)
 
-                elif linux_common.S_ISREG(inode.i_mode):
+                elif inode.is_reg():
 
                     contents = linux_find_file.linux_find_file(self._config).get_file_contents(inode)
 

@@ -25,7 +25,6 @@ import volatility.commands as commands
 import volatility.utils as utils
 import volatility.debug as debug
 import volatility.obj as obj
-import volatility.plugins.linux.flags as linux_flags
 
 MAX_STRING_LENGTH = 256
 
@@ -141,12 +140,6 @@ def get_path(task, filp):
     vfsmnt = filp.vfsmnt
 
     return do_get_path(rdentry, rmnt, dentry, vfsmnt)
-
-def S_ISDIR(mode):
-    return (mode & linux_flags.S_IFMT) == linux_flags.S_IFDIR
-
-def S_ISREG(mode):
-    return (mode & linux_flags.S_IFMT) == linux_flags.S_IFREG
 
 # This returns the name of the module that contains an address or None
 # The module_list parameter comes from a call to get_modules

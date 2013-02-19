@@ -62,12 +62,10 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
                 ret = dentry                
                 break
 
-            if inode:
-                               
-                if linux_common.S_ISDIR(inode.i_mode):
-                    ret = self.walk_sb(dentry, find_file, last_dentry, 1, new_file)
-                    if ret:
-                        break
+            if inode and inode.is_dir():
+                ret = self.walk_sb(dentry, find_file, last_dentry, 1, new_file)
+                if ret:
+                    break
     
         return ret
                     

@@ -36,6 +36,7 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.dwarf as dwarf
 import volatility.plugins.linux.common as linux_common
+import volatility.plugins.linux.flags as linux_flags
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
 
@@ -792,6 +793,16 @@ class super_block(obj.CType):
     def minor(self):
         return self.s_dev & ((1 << 20) - 1)
 
+class inode(obj.CType):
+
+    def is_dir(self):
+        """Mimic the S_ISDIR macro"""
+        return self.i_mode & linux_flags.S_IFMT == linux_flags.S_IFDIR
+    
+    def is_reg(self):
+        """Mimic the S_ISREG macro"""
+        return self.i_mode & linux_flags.S_IFMT == linux_flags.S_IFREG
+
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
 
@@ -869,6 +880,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'net_device': net_device,
             'LinuxPermissionFlags': LinuxPermissionFlags,
             'super_block' : super_block, 
+            'inode' : inode,
             })
 
 class LinuxOverlay(obj.ProfileModification):
