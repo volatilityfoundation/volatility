@@ -81,10 +81,10 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
     def calculate_v3(self):
         self.seen_tasks = {}
 
-        pidhash_shift = obj.Object("unsigned int", offset = self.get_profile_symbol("pidhash_shift"), vm = self.addr_space)
+        pidhash_shift = obj.Object("unsigned int", offset = self.addr_space.profile.get_symbol("pidhash_shift"), vm = self.addr_space)
         pidhash_size = 1 << pidhash_shift
 
-        pidhash_addr = self.get_profile_symbol("pid_hash")
+        pidhash_addr = self.addr_space.profile.get_symbol("pid_hash")
         pidhash_ptr = obj.Object("Pointer", offset = pidhash_addr, vm = self.addr_space)
 
         # pidhash is an array of hlist_heads
@@ -151,9 +151,9 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
 
     def determine_func(self):
 
-        pidhash = self.get_profile_symbol("pidhash")
-        pid_hash = self.get_profile_symbol("pid_hash")
-        pidhash_shift = self.get_profile_symbol("pidhash_shift")
+        pidhash = self.addr_space.profile.get_symbol("pidhash")
+        pid_hash = self.addr_space.profile.get_symbol("pid_hash")
+        pidhash_shift = self.addr_space.profile.get_symbol("pidhash_shift")
 
         if pid_hash and pidhash_shift:
             func = self.get_both()

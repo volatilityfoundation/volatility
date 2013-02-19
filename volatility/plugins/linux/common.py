@@ -76,10 +76,10 @@ class AbstractLinuxCommand(commands.Command):
     # This handles both formats so plugins needing per-cpu vars are cleaner
     def get_per_cpu_symbol(self, sym_name, module = "kernel"):
 
-        ret = self.get_profile_symbol(sym_name, module = module)
+        ret = self.addr_space.profile.get_symbol(sym_name, module = module)
 
         if not ret:
-            ret = self.get_profile_symbol("per_cpu__" + sym_name, module = module)
+            ret = self.addr_space.profile.get_symbol("per_cpu__" + sym_name, module = module)
 
         return ret
 
@@ -102,8 +102,8 @@ class AbstractLinuxCommand(commands.Command):
 
     # returns a list of online cpus (the processor numbers)
     def online_cpus(self):
-        cpu_online_bits_addr = self.get_profile_symbol("cpu_online_bits")
-        cpu_present_map_addr = self.get_profile_symbol("cpu_present_map")
+        cpu_online_bits_addr = self.addr_space.profile.get_symbol("cpu_online_bits")
+        cpu_present_map_addr = self.addr_space.profile.get_symbol("cpu_present_map")
 
         #later kernels..
         if cpu_online_bits_addr:
@@ -129,7 +129,7 @@ class AbstractLinuxCommand(commands.Command):
         # get the highest numbered cpu
         max_cpu = cpus[-1] + 1
 
-        offset_var = self.get_profile_symbol("__per_cpu_offset")
+        offset_var = self.addr_space.profile.get_symbol("__per_cpu_offset")
         per_offsets = obj.Object(theType = 'Array', targetType = 'unsigned long', count = max_cpu, offset = offset_var, vm = self.addr_space)
 
         for i in range(max_cpu):
@@ -162,8 +162,8 @@ class AbstractLinuxCommand(commands.Command):
         This just figures out which is in use and returns the correct variables
         '''
 
-        wall_addr = self.get_profile_symbol("wall_to_monotonic")
-        sleep_addr = self.get_profile_symbol("total_sleep_time")
+        wall_addr = self.addr_space.profile.get_symbol("wall_to_monotonic")
+        sleep_addr = self.addr_space.profile.get_symbol("total_sleep_time")
 
         # old way
         if wall_addr and sleep_addr:
@@ -173,7 +173,7 @@ class AbstractLinuxCommand(commands.Command):
         elif wall_addr:
             wall  = obj.Object("timespec", offset = wall_addr, vm = self.addr_space)
 
-            init_task_addr = self.get_profile_symbol("init_task")            
+            init_task_addr = self.addr_space.profile.get_symbol("init_task")            
             init_task  = obj.Object("task_struct", offset = init_task_addr, vm = self.addr_space)
 
             time_val = init_task.utime + init_task.stime
@@ -187,7 +187,7 @@ class AbstractLinuxCommand(commands.Command):
 
         # timekeeper way
         else:
-            timekeeper_addr = self.get_profile_symbol("timekeeper")
+            timekeeper_addr = self.addr_space.profile.get_symbol("timekeeper")
 
             timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm = self.addr_space)
 

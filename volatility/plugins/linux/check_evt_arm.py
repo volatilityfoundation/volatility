@@ -50,7 +50,7 @@ class linux_check_evt_arm(linux_common.AbstractLinuxCommand):
         vector_swi_addr = obj.Object("unsigned int", offset = self.SWI_BASE + (offset), vm = self.addr_space)
         
         # Check to see if vector_swi handler has been hooked
-        if vector_swi_addr == self.get_profile_symbol("vector_swi"):
+        if vector_swi_addr == self.addr_space.profile.get_symbol("vector_swi"):
             yield ("vector_swi address", "PASS", "0x{0:X}".format(vector_swi_addr))
         else:
             yield ("vector_swi address", "FAIL", "0x{0:X}".format(vector_swi_addr))

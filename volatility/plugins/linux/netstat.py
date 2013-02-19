@@ -44,7 +44,7 @@ class linux_netstat(linux_pslist.linux_pslist):
         for (task, filp, i) in openfiles:
 
             # its a socket!
-            if filp.f_op == self.get_profile_symbol("socket_file_ops") or filp.dentry.d_op == self.get_profile_symbol("sockfs_dentry_operations"):
+            if filp.f_op == self.addr_space.profile.get_symbol("socket_file_ops") or filp.dentry.d_op == self.addr_space.profile.get_symbol("sockfs_dentry_operations"):
 
                 iaddr = filp.dentry.d_inode
                 skt = self.SOCKET_I(iaddr)

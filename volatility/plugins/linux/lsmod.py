@@ -38,15 +38,15 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
     def get_param_val(self, param, _over = 0):
 
         ints = {
-                self.get_profile_symbol("param_get_invbool", sym_type = "Pointer") : "int",
-                self.get_profile_symbol("param_get_bool", sym_type = "Pointer") : "int",
-                self.get_profile_symbol("param_get_int", sym_type = "Pointer") : "int",
-                self.get_profile_symbol("param_get_ulong", sym_type = "Pointer") : "unsigned long",
-                self.get_profile_symbol("param_get_long", sym_type = "Pointer") : "long",
-                self.get_profile_symbol("param_get_uint", sym_type = "Pointer") : "unsigned int",
-                self.get_profile_symbol("param_get_ushort", sym_type = "Pointer") : "unsigned short",
-                self.get_profile_symbol("param_get_short", sym_type = "Pointer") : "short",
-                self.get_profile_symbol("param_get_byte", sym_type = "Pointer") : "char",
+                self.addr_space.profile.get_symbol("param_get_invbool", sym_type = "Pointer") : "int",
+                self.addr_space.profile.get_symbol("param_get_bool", sym_type = "Pointer") : "int",
+                self.addr_space.profile.get_symbol("param_get_int", sym_type = "Pointer") : "int",
+                self.addr_space.profile.get_symbol("param_get_ulong", sym_type = "Pointer") : "unsigned long",
+                self.addr_space.profile.get_symbol("param_get_long", sym_type = "Pointer") : "long",
+                self.addr_space.profile.get_symbol("param_get_uint", sym_type = "Pointer") : "unsigned int",
+                self.addr_space.profile.get_symbol("param_get_ushort", sym_type = "Pointer") : "unsigned short",
+                self.addr_space.profile.get_symbol("param_get_short", sym_type = "Pointer") : "short",
+                self.addr_space.profile.get_symbol("param_get_byte", sym_type = "Pointer") : "char",
                }
 
         getfn = param.get
@@ -54,7 +54,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
         if getfn == 0:
             val = ""
 
-        elif getfn == self.get_profile_symbol("param_array_get"):
+        elif getfn == self.addr_space.profile.get_symbol("param_array_get"):
 
             val = ""
 
@@ -77,10 +77,10 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
                 mret = self.get_param_val(overwrite)
                 val = val + str(mret or '')
 
-        elif getfn == self.get_profile_symbol("param_get_string"):
+        elif getfn == self.addr_space.profile.get_symbol("param_get_string"):
             val = param.str.dereference_as("String", length = param.str.maxlen)
 
-        elif getfn == self.get_profile_symbol("param_get_charp"):
+        elif getfn == self.addr_space.profile.get_symbol("param_get_charp"):
             addr = obj.Object("Pointer", offset = param.arg, vm = self.addr_space)
             if addr == 0:
                 val = "(null)"
@@ -90,13 +90,13 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
         elif getfn.v() in ints:
             val = obj.Object(ints[getfn.v()], offset = param.arg, vm = self.addr_space)
 
-            if getfn == self.get_profile_symbol("param_get_bool"):
+            if getfn == self.addr_space.profile.get_symbol("param_get_bool"):
                 if val:
                     val = 'Y'
                 else:
                     val = 'N'
 
-            if getfn == self.get_profile_symbol("param_get_invbool"):
+            if getfn == self.addr_space.profile.get_symbol("param_get_invbool"):
                 if val:
                     val = 'N'
                 else:
@@ -151,7 +151,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
         linux_common.set_plugin_members(self)
-        modules_addr = self.get_profile_symbol("modules")
+        modules_addr = self.addr_space.profile.get_symbol("modules")
 
         modules = obj.Object("list_head", vm = self.addr_space, offset = modules_addr)
 
@@ -232,7 +232,7 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
         linux_common.set_plugin_members(self)
-        modules_addr = self.get_profile_symbol("modules")
+        modules_addr = self.addr_space.profile.get_symbol("modules")
         modules = obj.Object("list_head", vm = self.addr_space, offset = modules_addr)
     
         if self._config.REGEX:

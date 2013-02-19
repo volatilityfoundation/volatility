@@ -32,11 +32,11 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
         linux_common.set_plugin_members(self)
 
         # newer kernels
-        if self.get_profile_symbol("net_namespace_list"):
+        if self.addr_space.profile.get_symbol("net_namespace_list"):
             for (net_dev, in_dev) in self.get_devs_namespace():
                 yield (net_dev, in_dev)
 
-        elif self.get_profile_symbol("dev_base"):
+        elif self.addr_space.profile.get_symbol("dev_base"):
             for (net_dev, in_dev) in self.get_devs_base():
                 yield (net_dev, in_dev)
 
@@ -45,7 +45,7 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
 
     def get_devs_base(self):
 
-        net_device_ptr = obj.Object("Pointer", offset = self.get_profile_symbol("dev_base"), vm = self.addr_space)
+        net_device_ptr = obj.Object("Pointer", offset = self.addr_space.profile.get_symbol("dev_base"), vm = self.addr_space)
         net_device = net_device_ptr.dereference_as("net_device")
 
         for net_dev in linux_common.walk_internal_list("net_device", "next", net_device):
@@ -56,7 +56,7 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
 
     def get_devs_namespace(self):
 
-        nslist_addr = self.get_profile_symbol("net_namespace_list")
+        nslist_addr = self.addr_space.profile.get_symbol("net_namespace_list")
         nethead = obj.Object("list_head", offset = nslist_addr, vm = self.addr_space)
 
         # walk each network namespace

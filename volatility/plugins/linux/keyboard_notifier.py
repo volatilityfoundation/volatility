@@ -31,7 +31,7 @@ class linux_keyboard_notifier(linux_common.AbstractLinuxCommand):
     def calculate(self):
         linux_common.set_plugin_members(self)
 
-        knl_addr = self.get_profile_symbol("keyboard_notifier_list")
+        knl_addr = self.addr_space.profile.get_symbol("keyboard_notifier_list")
         
         if not knl_addr:
             debug.error("Symbol keyboard_notifier_list not found in kernel")

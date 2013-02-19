@@ -84,7 +84,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
             mode = distorm3.Decode64Bits
             func = "system_call_fastpath"
 
-        func_addr = self.get_profile_symbol(func)
+        func_addr = self.addr_space.profile.get_symbol(func)
 
         if func_addr:
 
@@ -102,7 +102,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         return table_size
 
     def _get_table_info(self, table_name):
-        table_addr = self.get_profile_symbol(table_name)
+        table_addr = self.addr_space.profile.get_symbol(table_name)
 
         table_size = self._get_table_info_distorm()
 
@@ -131,7 +131,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         addrs = [(table_name, sys_call_info)]
 
         # 64 bit systems with 32 bit emulation
-        ia32 = self.get_profile_symbol("ia32_sys_call_table")
+        ia32 = self.addr_space.profile.get_symbol("ia32_sys_call_table")
         if ia32:
             ia32_info = self._get_table_info("ia32_sys_call_table")
             addrs.append(("32bit", ia32_info))

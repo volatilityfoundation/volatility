@@ -48,7 +48,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
 
     def check_proc_fop(self, f_op_members, modules):
 
-        proc_mnt_addr = self.get_profile_symbol("proc_mnt")
+        proc_mnt_addr = self.addr_space.profile.get_symbol("proc_mnt")
         if not proc_mnt_addr:
             return
 
@@ -97,7 +97,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
     def check_proc_root_fops(self, f_op_members, modules):   
         self.seen_proc = {}
  
-        proc_root_addr = self.get_profile_symbol("proc_root") 
+        proc_root_addr = self.addr_space.profile.get_symbol("proc_root") 
         proc_root = obj.Object("proc_dir_entry", offset = proc_root_addr, vm = self.addr_space)
 
         for (hooked_member, hook_address) in self.verify_ops(proc_root.proc_fops, f_op_members, modules):

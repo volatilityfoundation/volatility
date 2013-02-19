@@ -45,7 +45,7 @@ class linux_cpuinfo(linux_common.AbstractLinuxCommand):
 
     def get_info_single(self):
 
-        cpu = obj.Object("cpuinfo_x86", offset = self.get_profile_symbol("boot_cpu_data"), vm = self.addr_space)
+        cpu = obj.Object("cpuinfo_x86", offset = self.addr_space.profile.get_symbol("boot_cpu_data"), vm = self.addr_space)
 
         yield 0, cpu
 

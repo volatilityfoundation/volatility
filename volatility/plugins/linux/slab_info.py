@@ -121,8 +121,8 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
 
     def get_all_kmem_caches(self):
         linux_common.set_plugin_members(self)
-        cache_chain = self.get_profile_symbol("cache_chain")
-        slab_caches = self.get_profile_symbol("slab_caches")
+        cache_chain = self.addr_space.profile.get_symbol("cache_chain")
+        slab_caches = self.addr_space.profile.get_symbol("slab_caches")
 
         if cache_chain: #slab
             caches = obj.Object("list_head", offset = cache_chain, vm = self.addr_space)

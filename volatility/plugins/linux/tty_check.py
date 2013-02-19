@@ -32,7 +32,7 @@ class linux_check_tty(linux_common.AbstractLinuxCommand):
     def calculate(self):
         linux_common.set_plugin_members(self)
 
-        tty_addr = self.get_profile_symbol("tty_drivers")
+        tty_addr = self.addr_space.profile.get_symbol("tty_drivers")
         
         if not tty_addr:
             debug.error("Symbol tty_drivers not found in kernel")

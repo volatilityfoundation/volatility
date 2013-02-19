@@ -48,7 +48,7 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
 
         # this is written as a list b/c there are supposdly kernels with per-CPU IDTs
         # but I haven't found one yet...
-        addrs = [self.get_profile_symbol("idt_table")]
+        addrs = [self.addr_space.profile.get_symbol("idt_table")]
 
         for tableaddr in addrs:
 

@@ -31,7 +31,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
     def calculate(self):
         linux_common.set_plugin_members(self)
-        mntptr = obj.Object("Pointer", offset = self.get_profile_symbol("mount_hashtable"), vm = self.addr_space)
+        mntptr = obj.Object("Pointer", offset = self.addr_space.profile.get_symbol("mount_hashtable"), vm = self.addr_space)
 
         mnt_list = obj.Object(theType = "Array", offset = mntptr.v(), vm = self.addr_space, targetType = "list_head", count = 512)
 

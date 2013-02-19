@@ -31,7 +31,7 @@ class linux_check_syscall_arm(linux_common.AbstractLinuxCommand):
     def _get_syscall_table_size(self):
         """ Get size of syscall table from the vector_swi function """
     
-        vector_swi_addr = self.get_profile_symbol("vector_swi")
+        vector_swi_addr = self.addr_space.profile.get_symbol("vector_swi")
         
         max_opcodes_to_check = 1024
         while (max_opcodes_to_check):
@@ -48,7 +48,7 @@ class linux_check_syscall_arm(linux_common.AbstractLinuxCommand):
         
     def _get_syscall_table_address(self):
         """ returns the address of the syscall table """
-        syscall_table_address = self.get_profile_symbol("sys_call_table")
+        syscall_table_address = self.addr_space.profile.get_symbol("sys_call_table")
         
         if syscall_table_address:
             return syscall_table_address

@@ -40,7 +40,7 @@ class linux_arp(linux_common.AbstractLinuxCommand):
     def calculate(self):
         linux_common.set_plugin_members(self)
 
-        ntables_ptr = obj.Object("Pointer", offset = self.get_profile_symbol("neigh_tables"), vm = self.addr_space)
+        ntables_ptr = obj.Object("Pointer", offset = self.addr_space.profile.get_symbol("neigh_tables"), vm = self.addr_space)
 
         for ntable in linux_common.walk_internal_list("neigh_table", "next", ntables_ptr):
             yield self.handle_table(ntable)

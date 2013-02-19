@@ -68,7 +68,7 @@ class linux_check_afinfo(linux_common.AbstractLinuxCommand):
 
             for global_var_name in proto[1]:
                 
-                global_var_addr = self.get_profile_symbol(global_var_name)
+                global_var_addr = self.addr_space.profile.get_symbol(global_var_name)
 
                 if not global_var_addr:
                     continue
