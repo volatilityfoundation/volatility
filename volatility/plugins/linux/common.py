@@ -59,60 +59,6 @@ class AbstractLinuxCommand(commands.Command):
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'linux'
 
-    # In 2.6.3x, Linux changed how the symbols for per_cpu variables were named
-    # This handles both formats so plugins needing per-cpu vars are cleaner
-    def get_per_cpu_symbol(self, sym_name, module = "kernel"):
-
-        ret = self.addr_space.profile.get_symbol(sym_name, module = module)
-
-        if not ret:
-            ret = self.addr_space.profile.get_symbol("per_cpu__" + sym_name, module = module)
-
-        return ret
-
-    # returns a list of online cpus (the processor numbers)
-    def online_cpus(self):
-        cpu_online_bits_addr = self.addr_space.profile.get_symbol("cpu_online_bits")
-        cpu_present_map_addr = self.addr_space.profile.get_symbol("cpu_present_map")
-
-        #later kernels..
-        if cpu_online_bits_addr:
-            bmap = obj.Object("unsigned long", offset = cpu_online_bits_addr, vm = self.addr_space)
-
-        elif cpu_present_map_addr:
-            bmap = obj.Object("unsigned long", offset = cpu_present_map_addr, vm = self.addr_space)
-
-        else:
-            raise AttributeError, "Unable to determine number of online CPUs for memory capture"
-
-        cpus = []
-        for i in range(8):
-            if bmap & (1 << i):
-                cpus.append(i)
-
-        return cpus
-
-    def walk_per_cpu_var(self, per_var, var_type):
-
-        cpus = self.online_cpus()
-
-        # get the highest numbered cpu
-        max_cpu = cpus[-1] + 1
-
-        offset_var = self.addr_space.profile.get_symbol("__per_cpu_offset")
-        per_offsets = obj.Object(theType = 'Array', targetType = 'unsigned long', count = max_cpu, offset = offset_var, vm = self.addr_space)
-
-        for i in range(max_cpu):
-
-            offset = per_offsets[i]
-
-            cpu_var = self.get_per_cpu_symbol(per_var)
-
-            addr = cpu_var + offset.v()
-            var = obj.Object(var_type, offset = addr, vm = self.addr_space)
-
-            yield i, var
-
     def is_known_address(self, addr, modules):
 
         text = self.profile.get_symbol("_text", sym_type = "Pointer")
