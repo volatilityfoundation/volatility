@@ -55,10 +55,10 @@ class GDITimers(common.AbstractWindowsCommand, sessions.SessionsMixin):
 
         for session, handle, timer in data:
 
-            process = "{0}:{1}".format(
-                handle.Process.ImageFileName,
-                handle.Process.UniqueProcessId, 
-                )
+            # Get the process info from the object handle header if 
+            # available, otherwise from the timer object itself. 
+            p = handle.Process or timer.pti.ppi.Process
+            process = "{0}:{1}".format(p.ImageFileName, p.UniqueProcessId)
 
             self.table_row(outfd,
                             session.SessionId,
