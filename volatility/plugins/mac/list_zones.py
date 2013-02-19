@@ -30,7 +30,7 @@ class mac_list_zones(common.AbstractMacCommand):
     def calculate(self):
         common.set_plugin_members(self)
 
-        first_zone_addr = self.get_profile_symbol("_first_zone")
+        first_zone_addr = self.addr_space.profile.get_symbol("_first_zone")
 
         zone_ptr = obj.Object("Pointer", offset = first_zone_addr, vm = self.addr_space)
         zone = zone_ptr.dereference_as("zone")

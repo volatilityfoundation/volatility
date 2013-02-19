@@ -30,7 +30,7 @@ class mac_dmesg(common.AbstractMacCommand):
     def calculate(self):
         common.set_plugin_members(self)
 
-        msgbuf_ptr = obj.Object("Pointer", offset = self.get_profile_symbol("_msgbufp"), vm = self.addr_space)
+        msgbuf_ptr = obj.Object("Pointer", offset = self.addr_space.profile.get_symbol("_msgbufp"), vm = self.addr_space)
         msgbufp = msgbuf_ptr.dereference_as("msgbuf") 
 
         bufx = msgbufp.msg_bufx

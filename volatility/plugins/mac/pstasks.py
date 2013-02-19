@@ -28,7 +28,7 @@ class mac_tasks(common.AbstractMacCommand):
     def calculate(self):
         common.set_plugin_members(self)
         
-        tasksaddr = self.get_profile_symbol("_tasks")
+        tasksaddr = self.addr_space.profile.get_symbol("_tasks")
 
         tasks = obj.Object("queue_entry", offset = tasksaddr, vm = self.addr_space)
         task  = tasks.next.dereference_as("task")

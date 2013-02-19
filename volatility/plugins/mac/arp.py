@@ -31,7 +31,7 @@ class mac_arp(route.mac_route):
     def calculate(self):
         common.set_plugin_members(self)
 
-        arp_addr = self.get_profile_symbol("_llinfo_arp")
+        arp_addr = self.addr_space.profile.get_symbol("_llinfo_arp")
         ptr = obj.Object("Pointer", offset = arp_addr, vm = self.addr_space)
         ent = ptr.dereference_as("llinfo_arp") 
 

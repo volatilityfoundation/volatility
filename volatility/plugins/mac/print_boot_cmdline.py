@@ -30,7 +30,7 @@ class mac_print_boot_cmdline(common.AbstractMacCommand):
     def calculate(self):
         common.set_plugin_members(self)
 
-        pe_state_addr = self.get_profile_symbol("_PE_state")
+        pe_state_addr = self.addr_space.profile.get_symbol("_PE_state")
         pe_state = obj.Object("PE_state", offset = pe_state_addr, vm = self.addr_space)
         bootargs = pe_state.bootArgs.dereference_as("boot_args")      
  

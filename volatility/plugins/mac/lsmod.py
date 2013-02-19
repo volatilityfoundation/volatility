@@ -30,7 +30,7 @@ class mac_lsmod(common.AbstractMacCommand):
     def calculate(self):
         common.set_plugin_members(self)
 
-        p = self.get_profile_symbol("_kmod")
+        p = self.addr_space.profile.get_symbol("_kmod")
         kmodaddr = obj.Object("Pointer", offset = p, vm = self.addr_space)
         kmod = kmodaddr.dereference_as("kmod_info") 
 

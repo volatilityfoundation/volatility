@@ -41,7 +41,7 @@ class mac_pslist(common.AbstractMacCommand):
         except:
             pass
         
-        p = self.get_profile_symbol("_allproc")
+        p = self.addr_space.profile.get_symbol("_allproc")
 
         procsaddr = obj.Object("proclist", offset = p, vm = self.addr_space)
         proc = obj.Object("proc", offset = procsaddr.lh_first, vm = self.addr_space)

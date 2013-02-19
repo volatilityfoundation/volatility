@@ -43,7 +43,7 @@ class mac_ip_filters(lsmod.mac_lsmod):
         # get the symbols need to check for if rootkit or not
         (kernel_symbol_addresses, kmods) = common.get_kernel_addrs(self)
 
-        list_addrs = [self.get_profile_symbol("_ipv4_filters"), self.get_profile_symbol("_ipv6_filters")]
+        list_addrs = [self.addr_space.profile.get_symbol("_ipv4_filters"), self.addr_space.profile.get_symbol("_ipv6_filters")]
     
         for list_addr in list_addrs:
             plist = obj.Object("ipfilter_list", offset = list_addr, vm = self.addr_space)

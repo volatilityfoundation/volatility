@@ -71,7 +71,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
             
         (kernel_symbol_addresses, kmods) = common.get_kernel_addrs(self)
     
-        sysctl_children_addr = self.get_profile_symbol("_sysctl__children")
+        sysctl_children_addr = self.addr_space.profile.get_symbol("_sysctl__children")
 
         sysctl_list = obj.Object("sysctl_oid_list", offset = sysctl_children_addr, vm = self.addr_space)
 

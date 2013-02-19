@@ -43,7 +43,7 @@ class mac_trustedbsd(mac_lsmod):
         # get the symbols need to check for if rootkit or not
         (kernel_symbol_addresses, kmods) = common.get_kernel_addrs(self)
 
-        list_addr = self.get_profile_symbol("_mac_policy_list")
+        list_addr = self.addr_space.profile.get_symbol("_mac_policy_list")
     
         plist = obj.Object("mac_policy_list", offset = list_addr, vm = self.addr_space)
         parray = obj.Object('Array', offset = plist.entries, vm = self.addr_space, targetType = 'mac_policy_list_element', count = plist.maxindex + 1)

@@ -70,7 +70,7 @@ class mac_proc_maps(pslist.mac_pslist):
 
         ops = object.pager.mo_pager_ops.v()
 
-        if ops == self.get_profile_symbol("_vnode_pager_ops"):
+        if ops == self.addr_space.profile.get_symbol("_vnode_pager_ops"):
             vpager = obj.Object("vnode_pager", offset = object.pager, vm = self.addr_space)
             
             ret = vpager.vnode_handle
@@ -83,7 +83,7 @@ class mac_proc_maps(pslist.mac_pslist):
         
         ## FIXME: we should move this code to an object class 
         ## like vm_map_entry.get_path_name() however the subfunction        
-        ## calls self.get_profile_symbol() which is a method of
+        ## calls self.addr_space.profile.get_symbol() which is a method of
         ## the plugin class. 
 
         vnode = self._get_vnode_for_map(map)

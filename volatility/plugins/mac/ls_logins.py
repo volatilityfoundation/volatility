@@ -30,7 +30,7 @@ class mac_ls_logins(common.AbstractMacCommand):
     def calculate(self):
         common.set_plugin_members(self)
         
-        allctx_addr = self.get_profile_symbol("_alllctx") 
+        allctx_addr = self.addr_space.profile.get_symbol("_alllctx") 
         lctx_list = obj.Object("lctxlist", offset = allctx_addr, vm = self.addr_space)
         lctx = lctx_list.lh_first
         

@@ -71,7 +71,7 @@ class mac_route(common.AbstractMacCommand):
     def calculate(self):
         common.set_plugin_members(self)
 
-        tables_addr = self.get_profile_symbol("_rt_tables")
+        tables_addr = self.addr_space.profile.get_symbol("_rt_tables")
 
         ## FIXME: if we only use ents[2] why do we need to instantiate 32?
         ents = obj.Object('Array', offset = tables_addr, vm = self.addr_space, targetType = 'Pointer', count = 32)

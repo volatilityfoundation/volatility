@@ -31,10 +31,10 @@ class mac_pid_hash_table(pslist.mac_pslist):
     def calculate(self):
         common.set_plugin_members(self)
             
-        pidhash_addr = self.get_profile_symbol("_pidhash") 
+        pidhash_addr = self.addr_space.profile.get_symbol("_pidhash") 
         pidhash = obj.Object("unsigned long", offset = pidhash_addr, vm = self.addr_space)
 
-        pidhashtbl_addr = self.get_profile_symbol("_pidhashtbl")
+        pidhashtbl_addr = self.addr_space.profile.get_symbol("_pidhashtbl")
         pidhashtbl_ptr = obj.Object("Pointer", offset = pidhashtbl_addr, vm = self.addr_space)
         pidhash_array = obj.Object("Array", targetType = "pidhashhead", count = pidhash + 1, vm = self.addr_space, offset = pidhashtbl_ptr)
     

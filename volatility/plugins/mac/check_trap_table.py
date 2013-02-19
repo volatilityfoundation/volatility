@@ -32,8 +32,8 @@ class mac_check_trap_table(common.AbstractMacCommand):
 
         sym_addrs = self.profile.get_all_addresses()
 
-        ntraps = obj.Object("int", offset = self.get_profile_symbol("_mach_trap_count"), vm = self.addr_space)
-        traps = obj.Object(theType = "Array", offset = self.get_profile_symbol("_mach_trap_table"), vm = self.addr_space, count = ntraps, targetType = "mach_trap")
+        ntraps = obj.Object("int", offset = self.addr_space.profile.get_symbol("_mach_trap_count"), vm = self.addr_space)
+        traps = obj.Object(theType = "Array", offset = self.addr_space.profile.get_symbol("_mach_trap_table"), vm = self.addr_space, count = ntraps, targetType = "mach_trap")
 
         for (i, trap) in enumerate(traps):
             ent_addr = trap.mach_trap_function.v()

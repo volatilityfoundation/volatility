@@ -31,10 +31,10 @@ class mac_list_sessions(pslist.mac_pslist):
     def calculate(self):
         common.set_plugin_members(self)
             
-        shash_addr = self.get_profile_symbol("_sesshash") 
+        shash_addr = self.addr_space.profile.get_symbol("_sesshash") 
         shash = obj.Object("unsigned long", offset = shash_addr, vm = self.addr_space)
 
-        shashtbl_addr = self.get_profile_symbol("_sesshashtbl")
+        shashtbl_addr = self.addr_space.profile.get_symbol("_sesshashtbl")
         shashtbl_ptr = obj.Object("Pointer", offset = shashtbl_addr, vm = self.addr_space)
         shash_array = obj.Object(theType = "Array", targetType = "sesshashhead", count = shash + 1, vm = self.addr_space, offset = shashtbl_ptr)
     
