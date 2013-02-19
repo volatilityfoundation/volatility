@@ -81,14 +81,7 @@ class AbstractLinuxCommand(commands.Command):
                 
                 if known == 0:
                     yield (check, addr)
-
-# similar to for_each_process for this usage
-def walk_list_head(struct_name, list_member, list_head_ptr, _addr_space):
-    debug.warning("Deprecated use of walk_list_head")
-
-    for item in list_head_ptr.list_of_type(struct_name, list_member):
-        yield item
-
+                    
 def walk_internal_list(struct_name, list_member, list_start, addr_space = None):
     if not addr_space:
         addr_space = list_start.obj_vm
@@ -97,7 +90,6 @@ def walk_internal_list(struct_name, list_member, list_start, addr_space = None):
         list_struct = obj.Object(struct_name, vm = addr_space, offset = list_start.v())
         yield list_struct
         list_start = getattr(list_struct, list_member)
-
 
 # based on __d_path
 def do_get_path(rdentry, rmnt, dentry, vfsmnt):
