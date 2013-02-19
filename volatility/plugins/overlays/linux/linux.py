@@ -24,7 +24,7 @@
 @organization: Georgia Institute of Technology
 """
 
-import os
+import os, time
 import copy
 import zipfile
 
@@ -672,6 +672,89 @@ class task_struct(obj.CType):
                     for hit in iterfind(data, x):
                         yield offset + hit
                 offset += min(to_read, scan_blk_sz)
+
+    def ACTHZ(self, CLOCK_TICK_RATE, HZ):
+        LATCH = ((CLOCK_TICK_RATE + HZ/2) / HZ)
+        return self.SH_DIV(CLOCK_TICK_RATE, LATCH, 8)
+
+    def SH_DIV(self, NOM, DEN, LSH):
+        return ((NOM / DEN) << LSH) + (((NOM % DEN) << LSH) + DEN / 2) / DEN
+
+    def TICK_NSEC(self):
+        HZ = 1000
+        CLOCK_TICK_RATE = 1193182 
+
+        return self.SH_DIV(1000000 * 1000, self.ACTHZ(CLOCK_TICK_RATE, HZ), 8)
+
+    def get_time_vars(self):
+        '''
+        Sometime in 3.[3-5], Linux switched to a global timekeeper structure
+        This just figures out which is in use and returns the correct variables
+        '''
+
+        wall_addr = self.obj_vm.profile.get_symbol("wall_to_monotonic")
+        sleep_addr = self.obj_vm.profile.get_symbol("total_sleep_time")
+
+        # old way
+        if wall_addr and sleep_addr:
+            wall = obj.Object("timespec", offset = wall_addr, vm = self.obj_vm)
+            timeo = obj.Object("timespec", offset = sleep_addr, vm = self.obj_vm)
+
+        elif wall_addr:
+            wall  = obj.Object("timespec", offset = wall_addr, vm = self.obj_vm)
+
+            init_task_addr = self.obj_vm.profile.get_symbol("init_task")            
+            init_task  = obj.Object("task_struct", offset = init_task_addr, vm = self.obj_vm)
+
+            time_val = init_task.utime + init_task.stime
+            nsec = time_val * self.TICK_NSEC()
+            tv_sec  = nsec / linux_common.nsecs_per
+            tv_nsec = nsec % linux_common.nsecs_per      
+            timeo = linux_common.vol_timespec(tv_sec, tv_nsec)    
+
+        # timekeeper way
+        else:
+            timekeeper_addr = self.obj_vm.profile.get_symbol("timekeeper")
+            timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm = self.obj_vm)
+            wall = timekeeper.wall_to_monotonic
+            timeo = timekeeper.total_sleep_time
+
+        return (wall, timeo)
+
+    # based on 2.6.35 getboottime
+    def get_boot_time(self):
+
+        (wall, timeo) = self.get_time_vars()
+        secs = wall.tv_sec + timeo.tv_sec
+        nsecs = wall.tv_nsec + timeo.tv_nsec
+        secs = secs * -1
+        nsecs = nsecs * -1
+
+        while nsecs >= linux_common.nsecs_per:
+            nsecs = nsecs - linux_common.nsecs_per
+            secs = secs + 1
+
+        while nsecs < 0:
+            nsecs = nsecs + linux_common.nsecs_per
+            secs = secs - 1
+
+        boot_time = secs + (nsecs / linux_common.nsecs_per / 100)
+        return boot_time
+        
+    ## FIXME: This currently returns using localtime, we should probably use UTC?
+    def get_task_start_time(self):
+
+        start_time = self.start_time
+        start_secs = start_time.tv_sec + (start_time.tv_nsec / linux_common.nsecs_per / 100)
+        sec = self.get_boot_time() + start_secs
+
+        # protect against invalid data in unallocated tasks
+        try:
+            ret = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.localtime(sec))
+        except ValueError:
+            ret = ""
+
+        return ret
 
 class linux_fs_struct(obj.CType):
 

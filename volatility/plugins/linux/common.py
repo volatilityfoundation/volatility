@@ -29,7 +29,6 @@ import volatility.plugins.linux.flags as linux_flags
 
 MAX_STRING_LENGTH = 256
 
-import time
 nsecs_per = 1000000000
 
 class vol_timespec:
@@ -68,23 +67,6 @@ class AbstractLinuxCommand(commands.Command):
 
         if not ret:
             ret = self.addr_space.profile.get_symbol("per_cpu__" + sym_name, module = module)
-
-        return ret
-
-    ## FIXME: This currently returns using localtime, we should probably use UTC?
-    def get_task_start_time(self, task):
-
-        start_time = task.start_time
-
-        start_secs = start_time.tv_sec + (start_time.tv_nsec / nsecs_per / 100)
-
-        sec = self.get_boot_time() + start_secs
-
-        # protect against invalid data in unallocated tasks
-        try:
-            ret = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.localtime(sec))
-        except ValueError:
-            ret = ""
 
         return ret
 
@@ -130,86 +112,6 @@ class AbstractLinuxCommand(commands.Command):
             var = obj.Object(var_type, offset = addr, vm = self.addr_space)
 
             yield i, var
-
-    def ACTHZ(self, CLOCK_TICK_RATE, HZ):
-        LATCH = ((CLOCK_TICK_RATE + HZ/2) / HZ)
-        return self.SH_DIV(CLOCK_TICK_RATE, LATCH, 8)
-
-    def SH_DIV(self, NOM, DEN, LSH):
-        return ((NOM / DEN) << LSH) + (((NOM % DEN) << LSH) + DEN / 2) / DEN
-
-    def TICK_NSEC(self):
-        HZ = 1000
-        CLOCK_TICK_RATE = 1193182 
-
-        return self.SH_DIV(1000000 * 1000, self.ACTHZ(CLOCK_TICK_RATE, HZ), 8)
-
-    def get_time_vars(self):
-        '''
-        Sometime in 3.[3-5], Linux switched to a global timekeeper structure
-        This just figures out which is in use and returns the correct variables
-        '''
-
-        wall_addr = self.addr_space.profile.get_symbol("wall_to_monotonic")
-        sleep_addr = self.addr_space.profile.get_symbol("total_sleep_time")
-
-        # old way
-        if wall_addr and sleep_addr:
-            wall  = obj.Object("timespec", offset = wall_addr, vm = self.addr_space)
-            timeo = obj.Object("timespec", offset = sleep_addr, vm = self.addr_space)
-
-        elif wall_addr:
-            wall  = obj.Object("timespec", offset = wall_addr, vm = self.addr_space)
-
-            init_task_addr = self.addr_space.profile.get_symbol("init_task")            
-            init_task  = obj.Object("task_struct", offset = init_task_addr, vm = self.addr_space)
-
-            time_val = init_task.utime + init_task.stime
-
-            nsec = time_val * self.TICK_NSEC()
-
-            tv_sec  = nsec / nsecs_per
-            tv_nsec = nsec % nsecs_per      
-            
-            timeo = vol_timespec(tv_sec, tv_nsec)    
-
-        # timekeeper way
-        else:
-            timekeeper_addr = self.addr_space.profile.get_symbol("timekeeper")
-
-            timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm = self.addr_space)
-
-            wall = timekeeper.wall_to_monotonic
-            timeo = timekeeper.total_sleep_time
-
-        return (wall, timeo)
-
-    # based on 2.6.35 getboottime
-    def get_boot_time(self):
-
-        (wall, timeo) = self.get_time_vars()
-
-        secs = wall.tv_sec + timeo.tv_sec
-        nsecs = wall.tv_nsec + timeo.tv_nsec
-
-        secs = secs * -1
-        nsecs = nsecs * -1
-
-        while nsecs >= nsecs_per:
-
-            nsecs = nsecs - nsecs_per
-
-            secs = secs + 1
-
-        while nsecs < 0:
-
-            nsecs = nsecs + nsecs_per
-
-            secs = secs - 1
-
-        boot_time = secs + (nsecs / nsecs_per / 100)
-
-        return boot_time
 
     def is_known_address(self, addr, modules):
 

@@ -70,7 +70,7 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
                                   str(task.uid) if task.uid else "-",
                                   str(task.gid) if task.gid else "-",
                                   dtb,
-                                  self.get_task_start_time(task))
+                                  task.get_task_start_time())
 
 class linux_memmap(linux_pslist):
     """Dumps the memory map for linux tasks"""
