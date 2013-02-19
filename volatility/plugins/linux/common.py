@@ -60,18 +60,6 @@ class AbstractLinuxCommand(commands.Command):
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'linux'
 
-    def get_profile_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
-        '''
-        Gets a symbol out of the profile
-        syn_name -> name of the symbol
-        nm_tyes  -> types as defined by 'nm' (man nm for examples)
-        sym_type -> the type of the symbol (passing Pointer will provide auto deref)
-        module   -> which module to get the symbol from, default is kernel, otherwise can be any name seen in 'lsmod'
-
-        Just a wrapper for AbstractLinuxProfile.get_symbol
-        '''
-        return self.profile.get_symbol(sym_name, nm_type, sym_type, module)
-
     # In 2.6.3x, Linux changed how the symbols for per_cpu variables were named
     # This handles both formats so plugins needing per-cpu vars are cleaner
     def get_per_cpu_symbol(self, sym_name, module = "kernel"):
