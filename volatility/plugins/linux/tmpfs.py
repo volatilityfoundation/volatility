@@ -22,9 +22,7 @@
 """
 
 import os
-
 import volatility.debug as debug
-
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.mount  as linux_mount
 import volatility.plugins.linux.find_file as linux_find_file
@@ -41,8 +39,8 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
         # used to keep correct time for directories
         self.dir_times = {}
 
-        self.edir     = None
-        self.sb_num   = 0
+        self.edir = None
+        self.sb_num  = 0
         self.list_sbs = False
 
     # fix metadata for new files
@@ -62,15 +60,11 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
     def process_directory(self, dentry, _recursive = 0, parent = ""):
 
         for dentry in dentry.d_subdirs.list_of_type("dentry", "d_u"):
-
             name = dentry.d_name.name.dereference_as("String", length = 255)
-
             inode = dentry.d_inode
 
             if inode:
-
                 new_file = os.path.join(parent, str(name))
-
                 (perms, _size, atime, mtime) = (inode.i_mode, inode.i_size, inode.i_atime, inode.i_mtime)
 
                 if inode.is_dir():
@@ -81,7 +75,6 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
                         pass
 
                     self.fix_md(new_file, perms, atime, mtime, 1)
-
                     self.process_directory(dentry, 1, new_file)
 
                 elif inode.is_reg():
@@ -104,13 +97,11 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
     def walk_sb(self, root_dentry):
 
         cur_dir = os.path.join(self.edir)
-
         self.process_directory(root_dentry, parent = cur_dir)
 
         # post processing
         for new_file in self.dir_times:
             (atime, mtime) = self.dir_times[new_file]
-
             os.utime(new_file, (atime, mtime))
 
     def get_tmpfs_sbs(self):
@@ -123,13 +114,10 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
         '''
 
         ret = []
-
         mnts = linux_mount.linux_mount(self._config).calculate()
 
         for (sb, _dev_name, path, fstype, _rr, _mnt_string) in linux_mount.linux_mount(self._config).parse_mnt(mnts):
-
             if str(fstype) == "tmpfs":
-
                 ret.append((sb, path))
 
         return ret
@@ -149,14 +137,12 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
             # this path never 'yield's, just writes the filesystem to disk
             tmpfs_sbs = self.get_tmpfs_sbs()
-
             sb_idx = self.sb_num - 1
 
             if sb_idx >= len(tmpfs_sbs):
                 debug.error("Invalid superblock number given. Please use the -L option to determine valid numbers.")
         
             root_dentry = tmpfs_sbs[sb_idx][0].s_root
-
             self.walk_sb(root_dentry)
 
         elif self.list_sbs:
@@ -165,16 +151,12 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
             tmpfs_sbs = self.get_tmpfs_sbs()
 
             for (i, (_sb, path)) in enumerate(tmpfs_sbs):
-
                 yield (i + 1, path)
-
         else:
             debug.error("No sb number/output directory combination given and list superblocks not given")
 
     # we only render the -L option
     def render_text(self, outfd, data):
-
         for (i, path) in data:
-
             outfd.write("{0:d} -> {1}\n".format(i, path))
 
