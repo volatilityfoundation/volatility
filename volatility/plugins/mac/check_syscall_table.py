@@ -32,8 +32,8 @@ class mac_check_syscalls(common.AbstractMacCommand):
 
         sym_addrs = self.profile.get_all_addresses()
 
-        nsysent = obj.Object("int", offset = self.get_profile_symbol("_nsysent"), vm = self.addr_space)
-        sysents = obj.Object(theType = "Array", offset = self.get_profile_symbol("_sysent"), vm = self.addr_space, count = nsysent, targetType = "sysent")
+        nsysent = obj.Object("int", offset = self.addr_space.profile.get_symbol("_nsysent"), vm = self.addr_space)
+        sysents = obj.Object(theType = "Array", offset = self.addr_space.profile.get_symbol("_sysent"), vm = self.addr_space, count = nsysent, targetType = "sysent")
 
         for (i, sysent) in enumerate(sysents):
             ent_addr = sysent.sy_call.v()
