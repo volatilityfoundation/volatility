@@ -24,7 +24,7 @@
 @organization: Georgia Institute of Technology
 """
 
-import os, time
+import os, struct
 import copy
 import zipfile
 
@@ -37,6 +37,7 @@ import volatility.debug as debug
 import volatility.dwarf as dwarf
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.flags as linux_flags
+import volatility.addrspace as addrspace
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
 
@@ -742,20 +743,18 @@ class task_struct(obj.CType):
         boot_time = secs + (nsecs / linux_common.nsecs_per / 100)
         return boot_time
         
-    ## FIXME: This currently returns using localtime, we should probably use UTC?
     def get_task_start_time(self):
 
         start_time = self.start_time
         start_secs = start_time.tv_sec + (start_time.tv_nsec / linux_common.nsecs_per / 100)
         sec = self.get_boot_time() + start_secs
+                
+        # convert the integer as little endian 
+        data = struct.pack("<I", sec)
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = data)
+        dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)
 
-        # protect against invalid data in unallocated tasks
-        try:
-            ret = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.localtime(sec))
-        except ValueError:
-            ret = ""
-
-        return ret
+        return dt
 
 class linux_fs_struct(obj.CType):
 
