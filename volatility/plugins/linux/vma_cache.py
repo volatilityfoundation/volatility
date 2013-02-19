@@ -53,7 +53,7 @@ class linux_vma_cache(linux_common.AbstractLinuxCommand):
                 (task_name, pid) = ("", "")
             
             if vm.vm_file and vm.vm_file.is_valid():
-                path = linux_common.get_partial_path(vm.vm_file.dentry)
+                path = vm.vm_file.dentry.get_partial_path()
             else:
                 path = ""
 

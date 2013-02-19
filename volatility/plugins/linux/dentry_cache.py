@@ -34,15 +34,20 @@ class linux_dentry_cache(linux_common.AbstractLinuxCommand):
                         help = 'Show unallocated',
                         action = 'store_true')
 
-    def make_body(self, path, dentry):
+    def make_body(self, dentry):
+        """Create a pipe-delimited bodyfile from a dentry structure. 
+        
+        MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime
+        """
+        
+        path = dentry.get_partial_path() or ""
         i = dentry.d_inode
-
-        # MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime
+        
         if i:
             ret = [0, path, i.i_ino, 0, i.i_uid, i.i_gid, i.i_size, i.i_atime, i.i_mtime, 0, i.i_ctime]
         else:
             ret = [0, path] + [0] * 8
-
+            
         ret = "|".join([str(val) for val in ret])
         return ret
 
@@ -56,10 +61,7 @@ class linux_dentry_cache(linux_common.AbstractLinuxCommand):
             cache = linux_slabinfo(self._config).get_kmem_cache("dentry_cache", self._config.UNALLOCATED, struct_name = "dentry")
 
         for dentry in cache:
-            path = linux_common.get_partial_path(dentry)
-            bodyline = self.make_body(path, dentry)
-
-            yield bodyline
+            yield self.make_body(dentry)
 
     def render_text(self, outfd, data):
 

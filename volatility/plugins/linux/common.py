@@ -156,23 +156,4 @@ def address_in_module(module_list, address):
 
     return ret
 
-# we can't get the full path b/c we 
-# do not have a ref to the vfsmnt
-def get_partial_path(dentry):
-    path = []
-
-    name = ""
-
-    while dentry and dentry != dentry.d_parent:
-        name = dentry.d_name.name.dereference_as("String", length = 255)
-        if name.is_valid():
-            path.append(str(name))
-        dentry = dentry.d_parent
-
-    path.reverse()
-
-    str_path = "/".join([p for p in path])
-
-    return str_path
-
 

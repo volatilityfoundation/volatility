@@ -803,6 +803,26 @@ class inode(obj.CType):
         """Mimic the S_ISREG macro"""
         return self.i_mode & linux_flags.S_IFMT == linux_flags.S_IFREG
 
+class dentry(obj.CType):
+
+    def get_partial_path(self):
+        """ we can't get the full path b/c we 
+        do not have a ref to the vfsmnt """
+
+        path = []
+        name = ""
+        dentry = self
+    
+        while dentry and dentry != dentry.d_parent:
+            name = dentry.d_name.name.dereference_as("String", length = 255)
+            if name.is_valid():
+                path.append(str(name))
+            dentry = dentry.d_parent
+    
+        path.reverse()
+        str_path = "/".join([p for p in path])
+        return str_path
+
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
 
@@ -881,6 +901,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'LinuxPermissionFlags': LinuxPermissionFlags,
             'super_block' : super_block, 
             'inode' : inode,
+            'dentry' : dentry,
             })
 
 class LinuxOverlay(obj.ProfileModification):
