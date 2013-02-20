@@ -66,8 +66,7 @@ class linux_yarascan(malfind.YaraScan):
             if self.addr_space.profile.metadata.get('memory_model', '32bit') == "32bit":
                 kernel_start = 0xc0000000
             else:
-                ## masking like a pointer - remove after x64 ptr fix
-                kernel_start = 0xffffffff80000000 & 0xffffffffffff
+                kernel_start = 0xffffffff80000000
             
             scanner = malfind.DiscontigYaraScanner(rules = rules,
                                                    address_space = self.addr_space)

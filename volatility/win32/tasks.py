@@ -88,15 +88,18 @@ def find_module(modlist, mod_addrs, addr):
 
     This is much faster than a series of linear checks if you have
     to do it many times. Note that modlist and mod_addrs must be sorted
-    in order of the module base address."""
+    in order of the module base address.
+    
+    NOTE: the mod_addrs and addr parameters must already be masked for 
+    the address space"""
 
     pos = bisect_right(mod_addrs, addr) - 1
     if pos == -1:
         return None
     mod = modlist[mod_addrs[pos]]
 
-    if (addr >= mod.DllBase.v() and
-        addr < mod.DllBase.v() + mod.SizeOfImage.v()):
+    if (mod.obj_vm.address_compare(addr, mod.DllBase) != -1 and
+            mod.obj_vm.address_compare(addr, mod.DllBase + mod.SizeOfImage) == -1):
         return mod
     else:
         return None

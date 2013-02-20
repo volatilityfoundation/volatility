@@ -29,6 +29,8 @@ import volatility.scan as scan
 import volatility.cache as cache
 import volatility.plugins.common as common
 import volatility.obj as obj
+import volatility.plugins.addrspaces.intel as intel
+import volatility.plugins.addrspaces.amd64 as amd64
 
 class KPCRScan(common.AbstractWindowsCommand):
     """Search for and dump potential KPCR values"""
@@ -120,6 +122,9 @@ class KPCRScannerCheck(scan.ScannerCheck):
             self.SelfPcr_offset = kpcr.SelfPcr.obj_offset
             self.Prcb_offset = kpcr.Prcb.obj_offset
             self.PrcbData_offset = kpcr.PrcbData.obj_offset
+            # In the check() routine, we need to compare masked virtual 
+            # addresses, but self.address_space is a BufferAddressSpace. 
+            self.address_equality = amd64.AMD64PagedMemory.address_equality
         else:
             # The self-referencing member of _KPCR is Self on x64
             self.SelfPcr_offset = kpcr.Self.obj_offset
@@ -127,6 +132,7 @@ class KPCRScannerCheck(scan.ScannerCheck):
             self.Prcb_offset = kpcr.CurrentPrcb.obj_offset
             # The nested _KPRCB in Prcb on x64
             self.PrcbData_offset = kpcr.Prcb.obj_offset
+            self.address_equality = intel.JKIA32PagedMemory.address_equality
         self.KPCR = None
 
     def check(self, offset):
@@ -137,7 +143,7 @@ class KPCRScannerCheck(scan.ScannerCheck):
         try:
             pSelfPCR = obj.Object('Pointer', offset = (offset + self.SelfPcr_offset), vm = self.address_space)
             pPrcb = obj.Object('Pointer', offset = (offset + self.Prcb_offset), vm = self.address_space)
-            if pSelfPCR == paKCPR and pPrcb == paPRCBDATA:
+            if self.address_equality(pSelfPCR, paKCPR) and self.address_equality(pPrcb, paPRCBDATA):
                 self.KPCR = pSelfPCR
                 return True
 

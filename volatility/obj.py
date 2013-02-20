@@ -540,17 +540,6 @@ class Pointer(NativeType):
         result = self.dereference()
         return result.m(memname)
 
-    def __eq__(self, other):
-        if other == None:
-            return False
-        return self.v() == 0xffffffffffff & other
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def v(self):
-        return NativeType.v(self) & 0xffffffffffff
-
 class Void(NativeType):
     def __init__(self, theType, offset, vm, **kwargs):
         # Default to profile-endian unsigned long

@@ -31,14 +31,11 @@ class mac_tasks(common.AbstractMacCommand):
         tasksaddr = self.addr_space.profile.get_symbol("_tasks")
 
         tasks = obj.Object("queue_entry", offset = tasksaddr, vm = self.addr_space)
-        task  = tasks.next.dereference_as("task")
+        task = tasks.next.dereference_as("task")
         
-        # TODO - use ptr comp function when implemented
-
-        checkaddr = tasksaddr & 0xffffffffffff
-        while task != checkaddr:
+        while not self.addr_space.address_equality(task.obj_offset, tasksaddr):
             yield task
-            task  = task.tasks.next.dereference_as("task")
+            task = task.tasks.next.dereference_as("task")
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Offset", "[addrpad]"),

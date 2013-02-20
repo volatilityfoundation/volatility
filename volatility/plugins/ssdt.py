@@ -123,7 +123,7 @@ class SSDT(common.AbstractWindowsCommand):
         addr_space = utils.load_as(self._config)
 
         ## Get a sorted list of module addresses
-        mods = dict((mod.DllBase.v(), mod) for mod in modules.lsmod(addr_space))
+        mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in modules.lsmod(addr_space))
         mod_addrs = sorted(mods.keys())
 
         ssdts = set()
@@ -194,7 +194,7 @@ class SSDT(common.AbstractWindowsCommand):
                 except IndexError:
                     syscall_name = "UNKNOWN"
 
-                syscall_mod = tasks.find_module(mods, mod_addrs, syscall_addr)
+                syscall_mod = tasks.find_module(mods, mod_addrs, addr_space.address_mask(syscall_addr))
                 if syscall_mod:
                     syscall_modname = syscall_mod.BaseDllName
                 else:

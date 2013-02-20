@@ -22,7 +22,6 @@
 """
 
 import os
-
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsof as linux_lsof
@@ -47,7 +46,7 @@ class linux_check_afinfo(linux_common.AbstractLinuxCommand):
                 yield (var_name, hooked_member, hook_address) 
                 
         elif not self.is_known_address(var.seq_show, modules):
-            yield(var_name, "show", var.seq_show)
+            yield (var_name, "show", var.seq_show)
 
     def calculate(self):
         linux_common.set_plugin_members(self)

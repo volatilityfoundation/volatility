@@ -123,7 +123,7 @@ class Strings(taskmods.DllList):
         reverse_map = {}
 
         verbfd.write("Enumerating kernel modules...\n")
-        mods = dict((mod.DllBase, mod) for mod in win32.modules.lsmod(addr_space))
+        mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in win32.modules.lsmod(addr_space))
         mod_addrs = sorted(mods.keys())
             
         verbfd.write("Calculating kernel mapping...\n")
@@ -137,7 +137,7 @@ class Strings(taskmods.DllList):
                     pagelist = [True]
                     reverse_map[kpage + i] = pagelist
                 # Try to lookup the owning kernel module
-                module = win32.tasks.find_module(mods, mod_addrs, vpage + i)
+                module = win32.tasks.find_module(mods, mod_addrs, addr_space.address_mask(vpage + i))
                 if module:
                     hint = str(module.BaseDllName)
                 else:

@@ -152,6 +152,21 @@ class BaseAddressSpace(object):
     def __setstate__(self, state):
         self.__init__(**state)
 
+    @classmethod
+    def address_mask(cls, addr):
+        """Masks an address value for this address space"""
+        return addr
+
+    @classmethod
+    def address_compare(cls, a, b):
+        """Compares two addresses, a and b, and return -1 if a is less than b, 0 if they're equal and 1 if a is greater than b"""
+        return cmp(cls.address_mask(a), cls.address_mask(b))
+
+    @classmethod
+    def address_equality(cls, a, b):
+        """Compare two addresses and returns True if they're the same, or False if they're not"""
+        return cls.address_compare(a, b) == 0
+
 class AbstractVirtualAddressSpace(BaseAddressSpace):
     """Base Ancestor for all Virtual address spaces, as determined by astype"""
     def __init__(self, base, config, astype = 'virtual', *args, **kwargs):

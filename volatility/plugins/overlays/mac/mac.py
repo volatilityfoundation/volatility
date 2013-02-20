@@ -245,7 +245,6 @@ class zone(obj.CType):
             if i == 100:
                 break
 
-
         return ret
 
 class sysctl_oid(obj.CType):
@@ -925,10 +924,6 @@ def MacProfileFactory(profpkg):
                     debug.debug("Requested symbol {0:s} not found in module {1:s}\n".format(sym_name, module))
             else:
                 debug.info("Requested module {0:s} not found in symbol table\n".format(module))
-
-            if ret and sym_type == "Pointer":
-                # FIXME: change in 2.3 when truncation no longer occurs
-                ret = ret & 0xffffffffffff
 
             if self.shift_address and ret:
                 ret = ret + self.shift_address

@@ -60,10 +60,18 @@ class AbstractLinuxCommand(commands.Command):
 
     def is_known_address(self, addr, modules):
 
-        text = self.profile.get_symbol("_text", sym_type = "Pointer")
-        etext = self.profile.get_symbol("_etext", sym_type = "Pointer")
+        text = self.profile.get_symbol("_text")
+        etext = self.profile.get_symbol("_etext")
 
-        return  (text <= addr < etext or address_in_module(modules, addr))
+        return (self.addr_space.address_compare(addr, text) != -1 and self.addr_space.address_compare(addr, etext) == -1) or self.address_in_module(addr, modules)
+
+    def address_in_module(self, addr, modules):
+    
+        for (_, start, end) in modules:
+            if self.addr_space.address_compare(addr, start) != -1 and self.addr_space.address_compare(addr, end) == -1:
+                return True
+    
+        return False
 
     def verify_ops(self, ops, op_members, modules):
 
@@ -140,20 +148,4 @@ def get_path(task, filp):
     vfsmnt = filp.vfsmnt
 
     return do_get_path(rdentry, rmnt, dentry, vfsmnt)
-
-# This returns the name of the module that contains an address or None
-# The module_list parameter comes from a call to get_modules
-# This function will be updated after 2.2 to resolve symbols within the module as well
-def address_in_module(module_list, address):
-    ret = False
-
-    for (name, start, end) in module_list:
-
-        if start <= address < end:
-
-            ret = True
-            break
-
-    return ret
-
 

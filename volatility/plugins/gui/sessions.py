@@ -78,7 +78,7 @@ class Sessions(common.AbstractWindowsCommand, SessionsMixin):
         kernel_space = utils.load_as(self._config)
 
         # Modules sorted for address lookups 
-        mods = dict((mod.DllBase, mod) for mod in modules.lsmod(kernel_space))
+        mods = dict((kernel_space.address_mask(mod.DllBase), mod) for mod in modules.lsmod(kernel_space))
         mod_addrs = sorted(mods.keys())
 
         for session in data:
@@ -99,7 +99,7 @@ class Sessions(common.AbstractWindowsCommand, SessionsMixin):
                     process.CreateTime,
                     ))
             for image in session.images():
-                module = tasks.find_module(mods, mod_addrs, image.Address)
+                module = tasks.find_module(mods, mod_addrs, kernel_space.address_mask(image.Address))
                 outfd.write(" Image: {0:#x}, Address {1:x}, Name: {2}\n".format(
                     image.obj_offset,
                     image.Address,

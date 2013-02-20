@@ -355,19 +355,13 @@ def LinuxProfileFactory(profpkg):
 
                             if ret == None:
                                 debug.error("Requested symbol {0:s} in module {1:s} of type {3:s} could not be found\n".format(sym_name, module, sym_type))
-
                     else:
                         # get the address of the symbol
                         ret = sym_list[0][0]
-
                 else:
                     debug.debug("Requested symbol {0:s} not found in module {1:s}\n".format(sym_name, module))
             else:
                 debug.info("Requested module {0:s} not found in symbol table\n".format(module))
-
-            if ret and sym_type == "Pointer":
-                # FIXME: change in 2.3 when truncation no longer occurs
-                ret = ret & 0xffffffffffff
 
             return ret
 
@@ -474,8 +468,7 @@ class list_head(obj.CType):
         seen = set()
         if head_sentinel:
             # We're a header element and not to be included in the list
-            # FIXME: change in 2.3 when truncation no longer occurs
-            seen.add(self.obj_offset & 0xffffffffffff)
+            seen.add(self.obj_offset)
 
         while nxt.is_valid() and nxt.obj_offset not in seen:
             ## Instantiate the object
@@ -926,8 +919,7 @@ class page(obj.CType):
 
         elif mem_section_addr:
             # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
-            # NOTE: This is really 0xffff0xea0000000000 but we chop to its 48 bit equivalent
-            mem_map_ptr = 0xea0000000000
+            mem_map_ptr = 0xffffea0000000000
 
         else:
             debug.error("phys_addr_of_page: Unable to determine physical address of page\n")
