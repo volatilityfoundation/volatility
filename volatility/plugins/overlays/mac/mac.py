@@ -87,7 +87,7 @@ class VolatilityDTB(obj.VolatilityMagic):
 
         self.obj_vm.profile.shift_address = shift_address
 
-        bootpml4      = (tbl["_BootPML4"][0][0] % 0xFFFFFF80) + shift_address
+        bootpml4 = (tbl["_BootPML4"][0][0] % 0xFFFFFF80) + shift_address
         boot_pml4_dtb = amd64.AMD64PagedMemory(self.obj_vm, config, dtb = bootpml4)
       
         idlepml4_addr = (tbl['_IdlePML4'][0][0]) + shift_address
@@ -155,7 +155,6 @@ class proc(obj.CType):
         try:
             proc_as = self.obj_vm.__class__(self.obj_vm.base, self.obj_vm.get_config(), dtb = cr3)
         except addrspace.ASAssertionError, e:
-            print "Error: %s" % str(e)
             debug.error("This plugin does not work when analyzing a sample from a 64bit computer running a 32bit kernel.")
 
         return proc_as 
@@ -198,11 +197,9 @@ class zone(obj.CType):
         i = 0
 
         while elem != first_elem.v() or i == 0:
-            print "-------------"
             a = elem.v()
             b = sz
             off = a + b
-            print "adding: %x + %d = %x" % (a, b, off)
 
             ret.append(off)
         
@@ -915,11 +912,9 @@ def MacProfileFactory(profpkg):
 
                             if ret == None:
                                 debug.error("Requested symbol {0:s} in module {1:s} of type {3:s} could not be found\n".format(sym_name, module, sym_type))
-
                     else:
                         # get the address of the symbol
                         ret = sym_list[0][0]
-
                 else:
                     debug.debug("Requested symbol {0:s} not found in module {1:s}\n".format(sym_name, module))
             else:
