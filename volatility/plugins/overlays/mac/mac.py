@@ -865,12 +865,11 @@ def MacProfileFactory(profpkg):
 
             return high_addr
 
-        def get_symbol(self, sym_name, nm_type = "", sym_type = "", module = "kernel"):
+        def get_symbol(self, sym_name, nm_type = "", module = "kernel"):
             """Gets a symbol out of the profile
             
             sym_name -> name of the symbol
             nm_tyes  -> types as defined by 'nm' (man nm for examples)
-            sym_type -> the type of the symbol (passing Pointer will provide auto deref)
             module   -> which module to get the symbol from, default is kernel, otherwise can be any name seen in 'lsmod'
     
             This fixes a few issues from the old static hash table method:
@@ -911,7 +910,7 @@ def MacProfileFactory(profpkg):
                                     break
 
                             if ret == None:
-                                debug.error("Requested symbol {0:s} in module {1:s} of type {3:s} could not be found\n".format(sym_name, module, sym_type))
+                                debug.error("Requested symbol {0:s} in module {1:s} could not be found\n".format(sym_name, module))
                     else:
                         # get the address of the symbol
                         ret = sym_list[0][0]

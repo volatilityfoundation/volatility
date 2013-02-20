@@ -38,15 +38,15 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
     def get_param_val(self, param, _over = 0):
 
         ints = {
-                self.addr_space.profile.get_symbol("param_get_invbool", sym_type = "Pointer") : "int",
-                self.addr_space.profile.get_symbol("param_get_bool", sym_type = "Pointer") : "int",
-                self.addr_space.profile.get_symbol("param_get_int", sym_type = "Pointer") : "int",
-                self.addr_space.profile.get_symbol("param_get_ulong", sym_type = "Pointer") : "unsigned long",
-                self.addr_space.profile.get_symbol("param_get_long", sym_type = "Pointer") : "long",
-                self.addr_space.profile.get_symbol("param_get_uint", sym_type = "Pointer") : "unsigned int",
-                self.addr_space.profile.get_symbol("param_get_ushort", sym_type = "Pointer") : "unsigned short",
-                self.addr_space.profile.get_symbol("param_get_short", sym_type = "Pointer") : "short",
-                self.addr_space.profile.get_symbol("param_get_byte", sym_type = "Pointer") : "char",
+                self.addr_space.profile.get_symbol("param_get_invbool") : "int",
+                self.addr_space.profile.get_symbol("param_get_bool") : "int",
+                self.addr_space.profile.get_symbol("param_get_int") : "int",
+                self.addr_space.profile.get_symbol("param_get_ulong") : "unsigned long",
+                self.addr_space.profile.get_symbol("param_get_long") : "long",
+                self.addr_space.profile.get_symbol("param_get_uint") : "unsigned int",
+                self.addr_space.profile.get_symbol("param_get_ushort") : "unsigned short",
+                self.addr_space.profile.get_symbol("param_get_short") : "short",
+                self.addr_space.profile.get_symbol("param_get_byte") : "char",
                }
 
         getfn = param.get
