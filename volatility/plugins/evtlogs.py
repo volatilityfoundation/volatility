@@ -197,6 +197,11 @@ class EvtLogs(common.AbstractWindowsCommand):
                 end = evtlog.StringOffset
                 sid_string = "N/A"
             else:
+                ## detect manged records based on invalid SID length
+                if evtlog.SidLength > 68:
+                    loc = buf.find("LfLe", loc + 1)
+                    continue
+                ## these should be appropriately sized SIDs
                 end = evtlog.SidOffset
                 sid_string = self.get_sid_string(rec[end:end + evtlog.SidLength])
 
