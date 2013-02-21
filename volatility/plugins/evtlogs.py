@@ -38,19 +38,19 @@ import os, datetime, ntpath
 # for more information on Event Log structures see WFA 2E pg 260-263 by Harlan Carvey
 evt_log_types = {
     'EVTLogHeader' : [ 0x30, {
-        'HeaderSize' : [ 0x0, ['int']],
+        'HeaderSize' : [ 0x0, ['unsigned int']],
         'Magic' : [ 0x4, ['int']],  #LfLe
-        'OffsetOldest' : [ 0x10, ['int']],  #offset of oldest record
-        'OffsetNextToWrite' : [ 0x14, ['int']],  #offset of next record to be written
+        'OffsetOldest' : [ 0x10, ['unsigned int']],  #offset of oldest record
+        'OffsetNextToWrite' : [ 0x14, ['unsigned int']],  #offset of next record to be written
         'NextID' : [ 0x18, ['int']],  #next event record ID
         'OldestID' : [ 0x1c, ['int']], #oldest event record ID
-        'MaxSize' : [ 0x20, ['int']],  #maximum size of event record (from registry)
+        'MaxSize' : [ 0x20, ['unsigned int']],  #maximum size of event record (from registry)
         'RetentionTime' : [ 0x28, ['int']], #retention time of records (from registry)
-        'RecordSize' : [ 0x2c, ['int']],  #size of the record (repeat of DWORD at offset 0)
+        'RecordSize' : [ 0x2c, ['unsigned int']],  #size of the record (repeat of DWORD at offset 0)
     } ],
 
     'EVTRecordStruct' : [ 0x38, {
-        'RecordLength' : [ 0x0, ['int']],
+        'RecordLength' : [ 0x0, ['unsigned int']],
         'Magic' : [ 0x4, ['int']],  #LfLe
         'RecordNumber' : [ 0x8, ['int']],
         'TimeGenerated' : [ 0xc, ['UnixTimeStamp', dict(is_utc = True)]], 
@@ -61,11 +61,11 @@ evt_log_types = {
         'EventCategory' : [ 0x1c, ['unsigned short']],
         'ReservedFlags' : [ 0x1e, ['unsigned short']],
         'ClosingRecordNum' : [ 0x20, ['int']],
-        'StringOffset' : [ 0x24, ['int']], #offset w/in record of description strings
-        'SidLength' : [ 0x28, ['int']], #length of SID: if 0 no SID is present
-        'SidOffset' : [ 0x2c, ['int']], #offset w/in record to start of SID (if present)
-        'DataLength' : [ 0x30, ['int']], #length of binary data of record
-        'DataOffset' : [ 0x34, ['int']], #offset of data w/in record
+        'StringOffset' : [ 0x24, ['unsigned int']], #offset w/in record of description strings
+        'SidLength' : [ 0x28, ['unsigned int']], #length of SID: if 0 no SID is present
+        'SidOffset' : [ 0x2c, ['unsigned int']], #offset w/in record to start of SID (if present)
+        'DataLength' : [ 0x30, ['unsigned int']], #length of binary data of record
+        'DataOffset' : [ 0x34, ['unsigned int']], #offset of data w/in record
     } ],
 }
 
