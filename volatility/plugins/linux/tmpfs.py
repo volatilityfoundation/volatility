@@ -46,9 +46,8 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
     # fix metadata for new files
     def fix_md(self, new_file, perms, atime, mtime, isdir = 0):
 
-        # FIXME
-        atime = atime.tv_sec + 18000
-        mtime = mtime.tv_sec + 18000
+        atime = atime.as_timestamp().v()
+        mtime = mtime.as_timestamp().v()
 
         if isdir:
             self.dir_times[new_file] = (atime, mtime)

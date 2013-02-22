@@ -794,6 +794,16 @@ class inode(obj.CType):
         """Mimic the S_ISREG macro"""
         return self.i_mode & linux_flags.S_IFMT == linux_flags.S_IFREG
 
+class timespec(obj.CType):
+
+    def as_timestamp(self):
+    
+        time_val = struct.pack("<I", self.tv_sec + 18000)
+        time_buf = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = time_val)
+        time_obj = obj.Object("UnixTimeStamp", offset = 0, vm = time_buf, is_utc = True)
+        
+        return time_obj
+
 class dentry(obj.CType):
 
     def get_partial_path(self):
@@ -893,6 +903,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'super_block' : super_block, 
             'inode' : inode,
             'dentry' : dentry,
+            'timespec' : timespec,
             })
 
 class LinuxOverlay(obj.ProfileModification):
