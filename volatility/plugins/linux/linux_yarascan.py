@@ -44,6 +44,7 @@ class VmaYaraScanner(malfind.BaseYaraScanner):
                 yield match
 
 class linux_yarascan(malfind.YaraScan):
+    """A shell in the Linux memory image"""
 
     @staticmethod
     def is_valid_profile(profile):
