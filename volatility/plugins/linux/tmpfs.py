@@ -39,8 +39,8 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
         # used to keep correct time for directories
         self.dir_times = {}
 
-    # fix metadata for new files
     def fix_md(self, new_file, perms, atime, mtime, isdir = 0):
+        """Fix metadata for new files"""
 
         atime = atime.as_timestamp().v()
         mtime = mtime.as_timestamp().v()
