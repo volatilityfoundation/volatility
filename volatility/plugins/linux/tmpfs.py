@@ -39,10 +39,6 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
         # used to keep correct time for directories
         self.dir_times = {}
 
-        self.edir = None
-        self.sb_num  = 0
-        self.list_sbs = False
-
     # fix metadata for new files
     def fix_md(self, new_file, perms, atime, mtime, isdir = 0):
 
@@ -95,7 +91,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
     def walk_sb(self, root_dentry):
 
-        cur_dir = os.path.join(self.edir)
+        cur_dir = os.path.join(self._config.DUMP_DIR)
         self.process_directory(root_dentry, parent = cur_dir)
 
         # post processing
@@ -124,19 +120,15 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
     def calculate(self):
         linux_common.set_plugin_members(self)
 
-        self.edir = self._config.DUMP_DIR
-        self.sb_num = self._config.SB
-        self.list_sbs = self._config.LIST_SBS
-
         # a list of root directory entries
-        if self.edir and self.sb_num:
+        if self._config.DUMP_DIR and self._config.SB:
 
-            if not os.path.isdir(self.edir):
-                debug.error(self.edir + " is not a directory")
+            if not os.path.isdir(self._config.DUMP_DIR):
+                debug.error(self._config.DUMP_DIR + " is not a directory")
 
             # this path never 'yield's, just writes the filesystem to disk
             tmpfs_sbs = self.get_tmpfs_sbs()
-            sb_idx = self.sb_num - 1
+            sb_idx = self._config.SB - 1
 
             if sb_idx >= len(tmpfs_sbs):
                 debug.error("Invalid superblock number given. Please use the -L option to determine valid numbers.")
@@ -144,7 +136,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
             root_dentry = tmpfs_sbs[sb_idx][0].s_root
             self.walk_sb(root_dentry)
 
-        elif self.list_sbs:
+        elif self._config.LIST_SBS:
 
             # vfsmnt.mnt_sb.s_root
             tmpfs_sbs = self.get_tmpfs_sbs()
