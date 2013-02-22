@@ -60,7 +60,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
             if inode:
                 new_file = os.path.join(parent, str(name))
-                (perms, _size, atime, mtime) = (inode.i_mode, inode.i_size, inode.i_atime, inode.i_mtime)
+                (perms, atime, mtime) = (inode.i_mode, inode.i_atime, inode.i_mtime)
 
                 if inode.is_dir():
                     # since the directory may already exist
