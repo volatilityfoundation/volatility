@@ -30,6 +30,7 @@ import volatility.win32.tasks as tasks
 import volatility.win32.modules as modules
 import volatility.plugins.common as common
 import volatility.utils as utils
+import volatility.plugins.malware.apihooks as apihooks
 import volatility.debug as debug #pylint: disable-msg=W0611
 from volatility.cache import CacheDecorator
 
@@ -204,4 +205,31 @@ class SSDT(common.AbstractWindowsCommand):
                                                                    syscall_addr,
                                                                    syscall_name,
                                                                    syscall_modname))
+
+                ## check for inline hooks if in --verbose mode, we're analyzing
+                ## an x86 model system and the sycall_mod is available 
+                if (self._config.VERBOSE and 
+                            addr_space.profile.metadata.get('memory_model', '32bit') == '32bit' and 
+                            syscall_mod is not None):
+
+                        ## leverage this static method from apihooks
+                        ret = apihooks.ApiHooks.check_inline(va = syscall_addr, addr_space = vm, 
+                                                mem_start = syscall_mod.DllBase, 
+                                                mem_end = syscall_mod.DllBase + syscall_mod.SizeOfImage)
+                        ## could not analyze the memory
+                        if ret == None:
+                            continue 
+                        (hooked, data, dest_addr) = ret
+                        ## the function isn't hooked
+                        if not hooked:
+                            continue 
+                        ## we found a hook, try to resolve the hooker. no mask required because
+                        ## we currently only work on x86 anyway
+                        hook_mod = tasks.find_module(mods, mod_addrs, dest_addr)
+                        if hook_mod: 
+                            hook_name = hook_mod.BaseDllName
+                        else:
+                            hook_name = "UNKNOWN"
+                        ## report it now 
+                        outfd.write("  ** INLINE HOOK? => {0:#x} ({1})\n".format(dest_addr, hook_name))
 
