@@ -11,4 +11,3 @@ pmem: pmem.c
 
 clean:
 	$(MAKE) -C $(KDIR)/lib/modules/$(KVER)/build M=$(PWD) clean
-	rm -f module.dwarf
