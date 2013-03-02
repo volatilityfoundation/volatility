@@ -38,6 +38,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/version.h>
 #include <linux/types.h>
 #include <linux/miscdevice.h>
 #include <linux/init.h>
@@ -230,7 +231,11 @@ static int pmem_mmap(struct file *filp, struct vm_area_struct *vma) {
 
   /* don't do anything here: The fault handler will fill the holes */
   vma->vm_ops = &pmem_vm_ops;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0)
   vma->vm_flags |= VM_RESERVED | VM_CAN_NONLINEAR;
+#else
+  vma->vm_flags |= VM_IO;
+#endif
 
   return 0;
 };
