@@ -32,11 +32,8 @@ class linux_pstree(linux_pslist.linux_pslist):
     def render_text(self, outfd, data):
 
         self.procs = {}
-
         outfd.write("{0:20s} {1:15s} {2:15s}\n".format("Name", "Pid", "Uid"))
-
         for task in data:
-
             self.recurse_task(outfd, task, 0)
 
     def recurse_task(self, outfd, task, level):
@@ -50,12 +47,9 @@ class linux_pstree(linux_pslist.linux_pslist):
             proc_name = "[" + task.comm + "]"
 
         proc_name = "." * level + proc_name
-
         outfd.write("{0:20s} {1:15s} {2:15s}\n".format(proc_name, str(task.pid), str(task.uid or '')))
-
         self.procs[task.pid] = 1
 
         for child in task.children.list_of_type("task_struct", "sibling"):
-
             self.recurse_task(outfd, child, level + 1)
 
