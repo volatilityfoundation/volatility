@@ -254,7 +254,7 @@ class RegistryApi(object):
         # Get subkeys
         if reg:
             for k, reg_name, name in keys:
-                time = "{0}".format(k.LastWriteTime) if not rawtime else root.LastWriteTime
+                time = "{0}".format(k.LastWriteTime) if not rawtime else k.LastWriteTime
                 if start and end and str(time) >= start and str(time) <= end:
                     yield (time, reg_name, name)
                 elif start == None and end == None:
@@ -265,7 +265,7 @@ class RegistryApi(object):
                         keys.append([s, reg_name, item])
         else:
             for k, name in keys:
-                time = "{0}".format(k.LastWriteTime) if not rawtime else root.LastWriteTime
+                time = "{0}".format(k.LastWriteTime) if not rawtime else k.LastWriteTime
                 if start and end and str(time) >= start and str(time) <= end:
                     yield (time, name)
                 elif start == None and end == None:
