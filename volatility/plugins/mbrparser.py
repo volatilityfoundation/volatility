@@ -168,15 +168,12 @@ class PARTITION_ENTRY(obj.CType):
         processed_entry += "Size in sectors: {0:#x} ({0})\n\n".format(self.SizeInSectors)
         return processed_entry
 
-
-
 class MbrObjectTypes(obj.ProfileModification):
     def modification(self, profile):
         profile.object_classes.update({
             'PARTITION_ENTRY': PARTITION_ENTRY,
         })
         profile.vtypes.update(MBR_types)
-
 
 class MBRScanner(scan.BaseScanner):
     checks = [ ] 
@@ -190,11 +187,10 @@ class MBRScanner(scan.BaseScanner):
         for offset in scan.BaseScanner.scan(self, address_space, offset, maxlen):
             yield offset - 0x1fe
 
-
-class MBRParser(commands.command):
+class MBRParser(commands.Command):
     """ Scans for and parses potential Master Boot Records (MBRs) """
     def __init__(self, config, *args, **kwargs):
-        commands.command.__init__(self, config, *args)
+        commands.Command.__init__(self, config, *args)
         # We have all these options, however another will be added for diffing 
         # when it is more refined
         config.add_option('HEX', short_option = 'H', default = False,

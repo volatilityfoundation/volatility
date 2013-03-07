@@ -28,7 +28,7 @@ import volatility.obj as obj
 def set_plugin_members(obj_ref):
     obj_ref.addr_space = utils.load_as(obj_ref._config)
 
-class AbstractMacCommand(commands.command):
+class AbstractMacCommand(commands.Command):
     def __init__(self, *args, **kwargs):
         self.addr_space = None
         commands.Command.__init__(self, *args, **kwargs)
