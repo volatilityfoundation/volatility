@@ -61,7 +61,7 @@ class PSTree(common.AbstractWindowsCommand):
                           ("PPid", ">6"),
                           ("Thds", ">6"),
                           ("Hnds", ">6"),
-                          ("Time", "20")])
+                          ("Time", "")])
 
         def draw_branch(pad, inherited_from):
             for task in data.values():
