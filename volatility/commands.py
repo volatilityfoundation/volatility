@@ -201,10 +201,3 @@ class Command(object):
             result = self._elide(("{0:" + spec.to_string() + "}").format(args[index]), spec.minwidth)
             reslist.append(result)
         outfd.write(self.tablesep.join(reslist) + "\n")
-
-### Deprecated components
-#
-# This is for removal after 2.2 has been released
-#
-
-command = Command
