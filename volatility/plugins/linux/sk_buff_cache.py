@@ -29,9 +29,9 @@ from volatility.plugins.linux.slab_info import linux_slabinfo
 class linux_sk_buff_cache(linux_common.AbstractLinuxCommand):
     """Recovers packets from the sk_buff kmem_cache"""
 
-    def __init__(self, config, *args):
+    def __init__(self, config, *args, **kwargs):
         self.edir = None
-        linux_common.AbstractLinuxCommand.__init__(self, config, *args)
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('UNALLOCATED', short_option = 'u', default = False, help = 'Show unallocated', action = 'store_true')
         self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'output directory for recovered packets', action = 'store', type = 'str')
 

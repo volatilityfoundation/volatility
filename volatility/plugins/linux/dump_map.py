@@ -29,8 +29,8 @@ import volatility.plugins.linux.proc_maps as linux_proc_maps
 class linux_dump_map(linux_common.AbstractLinuxCommand):
     """ Writes selected memory mappings to disk """
 
-    def __init__(self, config, *args):
-        linux_common.AbstractLinuxCommand.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('VMA', short_option = 's', default = None, help = 'Filter by VMA starting address', action = 'store', type = 'long')
         self._config.add_option('OUTPUTFILE', short_option = 'O', default = None, help = 'Output File', action = 'store', type = 'str')
 

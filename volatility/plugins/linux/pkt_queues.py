@@ -29,8 +29,8 @@ import volatility.plugins.linux.common as linux_common
 class linux_pkt_queues(linux_netstat.linux_netstat):
     """Writes per-process packet queues out to disk"""
 
-    def __init__(self, config, *args):
-        linux_netstat.linux_netstat.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        linux_netstat.linux_netstat.__init__(self, config, *args, **kwargs)
         self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'output directory for recovered packets', action = 'store', type = 'str')
 
     def process_queue(self, name, pid, fd_num, queue):

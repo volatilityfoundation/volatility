@@ -28,8 +28,8 @@ import volatility.plugins.linux.pslist as linux_pslist
 class linux_pslist_cache(linux_pslist.linux_pslist):
     """Gather tasks from the kmem_cache"""
 
-    def __init__(self, config, *args):
-        linux_pslist.linux_pslist.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        linux_pslist.linux_pslist.__init__(self, config, *args, **kwargs)
         self._config.add_option('UNALLOCATED', short_option = 'u',
                         default = False,
                         help = 'Show unallocated',

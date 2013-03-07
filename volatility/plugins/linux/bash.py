@@ -54,8 +54,8 @@ class BashTypes(obj.ProfileModification):
 class linux_bash(linux_pslist.linux_pslist):
     """Recover bash history from bash process memory"""
 
-    def __init__(self, config, *args): 
-        linux_pslist.linux_pslist.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs): 
+        linux_pslist.linux_pslist.__init__(self, config, *args, **kwargs)
         self._config.add_option('PRINTUNALLOC', short_option = 'P', default = None, help = 'print unallocated entries, please redirect to a file', action = 'store_true')
         self._config.add_option('HISTORY_LIST', short_option = 'H', default = None, help = 'address from history_list - see the Volatility wiki', action = 'store', type = 'long')        
     

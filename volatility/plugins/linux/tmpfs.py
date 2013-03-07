@@ -30,8 +30,8 @@ import volatility.plugins.linux.find_file as linux_find_file
 class linux_tmpfs(linux_common.AbstractLinuxCommand):
     '''Recovers tmpfs filesystems from memory'''
 
-    def __init__(self, config, *args):
-        linux_common.AbstractLinuxCommand.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'output directory for recovered files', action = 'store', type = 'str')
         self._config.add_option('SB', short_option = 'S', default = None, help = 'superblock to process, see -l', action = 'store', type = 'int')
         self._config.add_option('LIST_SBS', short_option = 'L', default = None, help = 'list avaiable tmpfs superblocks', action = 'store_true')

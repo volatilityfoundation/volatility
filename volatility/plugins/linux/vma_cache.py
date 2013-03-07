@@ -28,8 +28,8 @@ from volatility.plugins.linux.slab_info import linux_slabinfo
 class linux_vma_cache(linux_common.AbstractLinuxCommand):
     """Gather VMAs from the vm_area_struct cache"""
     
-    def __init__(self, config, *args): 
-        linux_common.AbstractLinuxCommand.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs): 
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('UNALLOCATED', short_option = 'u', 
                         default = False,
                         help = 'Show unallocated',

@@ -29,8 +29,8 @@ from volatility.plugins.linux.slab_info import linux_slabinfo
 class linux_mount_cache(linux_mount.linux_mount):
     """Gather mounted fs/devices from kmem_cache"""
 
-    def __init__(self, config, *args):
-        linux_mount.linux_mount.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        linux_mount.linux_mount.__init__(self, config, *args, **kwargs)
         self._config.add_option('UNALLOCATED', short_option = 'u',
                         default = False,
                         help = 'Show unallocated',

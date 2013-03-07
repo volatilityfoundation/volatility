@@ -33,8 +33,8 @@ from volatility.plugins.linux.slab_info import linux_slabinfo
 class linux_check_fop(linux_common.AbstractLinuxCommand):
     """Check file operation structures for rootkit modifications"""
 
-    def __init__(self, config, *args):
-        linux_common.AbstractLinuxCommand.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('INODE', short_option = 'i', default = None, help = 'inode to check', action = 'store', type='int')
 
     def check_open_files_fop(self, f_op_members, modules):

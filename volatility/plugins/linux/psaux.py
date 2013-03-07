@@ -29,11 +29,8 @@ class linux_psaux(linux_pslist.linux_pslist):
     def calculate(self):
 
         tasks = linux_pslist.linux_pslist.calculate(self)
-
         for task in tasks:
-
             name = self.get_task_name(task)
-
             yield task, name
 
     def render_text(self, outfd, data):

@@ -29,9 +29,9 @@ import volatility.plugins.linux.common as linux_common
 class linux_lsmod(linux_common.AbstractLinuxCommand):
     """Gather loaded kernel modules"""
 
-    def __init__(self, config, *args):
+    def __init__(self, config, *args, **kwargs):
 
-        linux_common.AbstractLinuxCommand.__init__(self, config, *args)
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('SECTIONS', short_option = 'S', default = None, help = 'show section addresses', action = 'store_true')
         self._config.add_option('PARAMS', short_option = 'P', default = None, help = 'show module parameters', action = 'store_true')
 

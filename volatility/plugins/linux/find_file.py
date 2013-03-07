@@ -32,8 +32,8 @@ import volatility.utils as utils
 class linux_find_file(linux_common.AbstractLinuxCommand):
     '''Recovers tmpfs filesystems from memory'''
 
-    def __init__(self, config, *args):
-        linux_common.AbstractLinuxCommand.__init__(self, config, *args)
+    def __init__(self, config, *args, **kwargs):
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('FIND',  short_option = 'F', default = None, help = 'file (path) to find', action = 'store', type = 'str')
         self._config.add_option('INODE', short_option = 'i', default = None, help = 'inode to write to disk', action = 'store', type = 'int')
         self._config.add_option('OUTFILE', short_option = 'O', default = None, help = 'output file path', action = 'store', type = 'str')
