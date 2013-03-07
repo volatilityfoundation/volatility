@@ -240,12 +240,14 @@ class ShimCache(commands.Command):
 
         data_raw = regapi.reg_get_value('system', key, "AppCompatCache")
         if data_raw == None or len(data_raw) < 0x1c:
-            debug.error("No ShimCache data found")
+            debug.warning("No ShimCache data found")
+            return
 
         bufferas = addrspace.BufferAddressSpace(self._config, data = data_raw)
         shimdata = obj.Object("ShimRecords", offset = 0, vm = bufferas)
         if shimdata == None:
-            debug.error("No ShimCache data found")
+            debug.warning("No ShimCache data found")
+            return
 
         for e in shimdata.Entries:
             if xp:
