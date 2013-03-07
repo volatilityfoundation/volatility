@@ -38,7 +38,8 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                     yield task, vma            
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Start", "[addrpad]"),
+        self.table_header(outfd, [("Pid", "8"),
+                                  ("Start", "[addrpad]"),
                                   ("End",   "[addrpad]"),
                                   ("Flags", "6"),
                                   ("Pgoff", "[addr]"),
@@ -65,7 +66,7 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                 else:
                     fname = ""
 
-            self.table_row(outfd,
+            self.table_row(outfd, task.pid, 
                 vma.vm_start,
                 vma.vm_end,
                 str(vma.vm_flags),
