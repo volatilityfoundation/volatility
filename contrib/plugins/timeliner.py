@@ -88,19 +88,13 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassi
                 outfd.write(line) 
 
     def render_xlsx(self, outfd, data):
-        wb = Workbook() 
-        dest_filename = self._config.OUTPUT_FILE
-        ws = wb.worksheets[0]
+        wb = Workbook(optimized_write = True)
+        ws = wb.create_sheet()
         ws.title = 'Timeline Output'
-        row = 1
         for line in data:
             coldata = line.split("|")
-            col = 1 
-            for val in coldata:
-                ws.cell("{0}{1}".format(get_column_letter(col), row)).value = val
-                col += 1
-            row += 1
-        wb.save(filename = dest_filename)
+            ws.append(coldata)
+        wb.save(filename = self._config.OUTPUT_FILE)
             
 
     def calculate(self):
@@ -108,6 +102,7 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassi
             debug.error("You must install OpenPyxl for xlsx format:\n\thttps://bitbucket.org/ericgazoni/openpyxl/wiki/Home")
         elif self._config.OUTPUT == "xlsx" and not self._config.OUTPUT_FILE:
             debug.error("You must specify an output *.xlsx file!\n\t(Example: --output-file=OUTPUT.xlsx)")
+
         addr_space = utils.load_as(self._config)
         version = (addr_space.profile.metadata.get('major', 0), 
                    addr_space.profile.metadata.get('minor', 0))
