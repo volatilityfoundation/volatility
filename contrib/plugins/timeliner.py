@@ -49,6 +49,14 @@ import volatility.debug as debug
 import volatility.obj as obj 
 import datetime
 
+try:
+    from openpyxl.workbook import Workbook
+    from openpyxl.writer.excel import ExcelWriter
+    from openpyxl.cell import get_column_letter
+    has_openpyxl = True 
+except ImportError:
+    has_openpyxl = False
+
 
 class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassist.UserAssist):
     """ Creates a timeline from various artifacts in memory """
@@ -79,7 +87,27 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassi
             if line != None:
                 outfd.write(line) 
 
+    def render_xlsx(self, outfd, data):
+        wb = Workbook() 
+        dest_filename = self._config.OUTPUT_FILE
+        ws = wb.worksheets[0]
+        ws.title = 'Timeline Output'
+        row = 1
+        for line in data:
+            coldata = line.split("|")
+            col = 1 
+            for val in coldata:
+                ws.cell("{0}{1}".format(get_column_letter(col), row)).value = val
+                col += 1
+            row += 1
+        wb.save(filename = dest_filename)
+            
+
     def calculate(self):
+        if self._config.OUTPUT == "xlsx" and not has_openpyxl:
+            debug.error("You must install OpenPyxl for xlsx format:\n\thttps://bitbucket.org/ericgazoni/openpyxl/wiki/Home")
+        elif self._config.OUTPUT == "xlsx" and not self._config.OUTPUT_FILE:
+            debug.error("You must specify an output *.xlsx file!\n\t(Example: --output-file=OUTPUT.xlsx)")
         addr_space = utils.load_as(self._config)
         version = (addr_space.profile.metadata.get('major', 0), 
                    addr_space.profile.metadata.get('minor', 0))
