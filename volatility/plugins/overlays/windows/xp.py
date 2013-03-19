@@ -22,8 +22,7 @@
 @license:      GNU General Public License 2.0 or later
 @contact:      bdolangavitt@wesleyan.edu
 
-This file provides support for windows XP SP2. We provide a profile
-for SP2.
+This file provides support for Windows XP.
 """
 
 #pylint: disable-msg=C0111

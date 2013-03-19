@@ -17,11 +17,11 @@
 #
 
 """
-@author:       Bradley L Schatz
+@author:       The Volatility Project
 @license:      GNU General Public License 2.0 or later
-@contact:      bradley@schatzforensic.com.au
+@contact:      awalters@4tphi.net
 
-This file provides support for windows Windows 7 SP 0.
+This file provides support for Windows 7.
 """
 
 #pylint: disable-msg=C0111

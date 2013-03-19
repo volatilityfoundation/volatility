@@ -22,7 +22,7 @@
 @license:      GNU General Public License 2.0 or later
 @contact:      jamie.levy@gmail.com
 
-This file provides support for Windows 2003 SP0. 
+This file provides support for Windows 2003.
 """
 
 #pylint: disable-msg=C0111

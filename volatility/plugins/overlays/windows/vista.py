@@ -18,12 +18,11 @@
 #
 
 """
-@author:       Bradley L Schatz
+@author:       The Volatility Project
 @license:      GNU General Public License 2.0 or later
-@contact:      bradley@schatzforensic.com.au
+@contact:      awalters@4tphi.net
 
-This file provides support for windows XP SP3. We provide a profile
-for SP3.
+This file provides support for Windows Vista. 
 """
 
 #pylint: disable-msg=C0111
