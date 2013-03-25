@@ -63,7 +63,7 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
 
                 idt_addr = ent.Address
 
-                if not idt_addr in sym_addrs:
+                if idt_addr != 0 and not idt_addr in sym_addrs:
                     yield(i, idt_addr, 1)
                 else:
                     yield(i, idt_addr, 0)
