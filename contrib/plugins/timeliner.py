@@ -57,7 +57,6 @@ try:
 except ImportError:
     has_openpyxl = False
 
-
 class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassist.UserAssist):
     """ Creates a timeline from various artifacts in memory """
 
@@ -66,10 +65,17 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassi
         config.remove_option("SAVE-EVT")
         userassist.UserAssist.__init__(self, config, *args)
         config.remove_option("HIVE-OFFSET")
+        config.remove_option("KEY")
         dlldump.DLLDump.__init__(self, config, *args)
+        config.remove_option("BASE")
+        config.remove_option("REGEX")
+        config.remove_option("IGNORE-CASE")
         procdump.ProcExeDump.__init__(self, config, *args)
-        config.add_option("UNSAFE", short_option = "u", default = False, action = 'store_true',
-                          help = 'Bypasses certain sanity checks when creating image')
+        config.remove_option("DUMP-DIR")
+        config.remove_option("OFFSET")
+        config.remove_option("PID")
+        config.remove_option("UNSAFE")
+
         config.add_option('HIVE', short_option = 'H',
                           help = 'Registry Hive', type = 'str')
         config.add_option('USER', short_option = 'U',
@@ -95,7 +101,6 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassi
             coldata = line.split("|")
             ws.append(coldata)
         wb.save(filename = self._config.OUTPUT_FILE)
-            
 
     def calculate(self):
         if self._config.OUTPUT == "xlsx" and not has_openpyxl:
@@ -121,7 +126,6 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassi
             event = "0|[END LIVE RESPONSE]|0|---------------|0|0|0|{0}|{0}|{0}|{0}\n".format(im['ImageDatetime'].v())
         yield event
                 
-
         # Get EPROCESS 
         psscan = filescan.PSScan(self._config).calculate()
         for eprocess in psscan:
@@ -258,7 +262,6 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassi
                             mod_name, mod_base)
 
                 yield line
-
 
         # get EPROCESS PE timestamps
         # XXX revert back, now in loop
