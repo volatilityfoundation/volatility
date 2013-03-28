@@ -42,7 +42,7 @@ class linux_check_tty(linux_common.AbstractLinuxCommand):
         for tty in drivers.list_of_type("tty_driver", "tty_drivers"):
             name = tty.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
             
-            ttys = obj.Object("Array", targetType="Pointer", vm = self.addr_space, offset = tty.ttys, count = tty.num)
+            ttys = obj.Object("Array", targetType = "Pointer", vm = self.addr_space, offset = tty.ttys, count = tty.num)
             for tty_dev in ttys:
                 if tty_dev == 0:
                     continue
