@@ -60,7 +60,7 @@ class mac_pslist(common.AbstractMacCommand):
                           ("Uid", "8"),
                           ("Gid", "8"),
                           ("PGID", "8"),
-                          ("DTB", "[addrpad]"),
+                          ("DTB", "#018x"),
                           ("Start Time", "")])
 
         for proc in data:
