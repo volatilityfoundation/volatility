@@ -183,6 +183,18 @@ class proc(obj.CType):
 
         return name
 
+class rtentry(obj.CType):
+
+    def get_time(self):
+        if not hasattr(self, "base_calendartime"):
+            return "N/A"
+
+        data = struct.pack("<I", self.base_calendartime)
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = data)
+        dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True) 
+
+        return dt
+
 class zone(obj.CType):
     def _get_from_active_zones(self):
         ret = []
@@ -965,6 +977,7 @@ class MacObjectClasses(obj.ProfileModification):
             'sockaddr' : sockaddr, 
             'sockaddr_dl' : sockaddr_dl,
             'vm_map_entry' : vm_map_entry,
+            'rtentry' : rtentry,
         })
 
 mac_overlay = {
