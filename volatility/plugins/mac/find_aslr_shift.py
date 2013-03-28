@@ -33,7 +33,7 @@ class mac_find_aslr_shift(common.AbstractMacCommand):
         yield self.profile.shift_address
  
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("DTB Value", "[addr]")])
+        self.table_header(outfd, [("DTB Value", "#018x")])
         for shift_address in data:
             if shift_address == 0:
                 debug.error("Shift addresses are only required on 10.8+ images")

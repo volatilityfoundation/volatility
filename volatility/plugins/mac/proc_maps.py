@@ -42,12 +42,11 @@ class mac_proc_maps(pslist.mac_pslist):
                 map = map.links.next
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Start", "[addrpad]"),
-                          ("End", "[addrpad]"),
+        self.table_header(outfd, [("Start", "#018x"),
+                          ("End", "#018x"),
                           ("Perms", "9"),
                           ("Map Name", "")])
 
-        ## FIXME: [addrpad] gets truncated here for some reason
         for (proc, map) in data:
             self.table_row(outfd, 
                            map.links.start, 
