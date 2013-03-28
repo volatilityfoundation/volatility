@@ -90,7 +90,6 @@ class mac_route(common.AbstractMacCommand):
                                   ("Name", "^10"), 
                                   ("Sent", "^18"),
                                   ("Recv", "^18"), 
-                                  ("CalTime", "^16"), 
                                   ("Time", "^20"), 
                                   ("Exp.", "^10"), 
                                   ("Delta", "")])
@@ -98,10 +97,8 @@ class mac_route(common.AbstractMacCommand):
         for rt in data:
         
             if hasattr(rt, "base_calendartime"):
-                caltime = rt.base_calendartime
                 prettytime = datetime.datetime.fromtimestamp(caltime).strftime('%Y-%m-%d %H:%M:%S')
             else:
-                caltime = "N/A"
                 prettytime = ""
         
             if hasattr(rt, "rt_stats"):
@@ -130,7 +127,6 @@ class mac_route(common.AbstractMacCommand):
                            dest_ip,
                            name,
                            sent, rx, 
-                           caltime, 
                            prettytime, 
                            exp, 
                            delta)
