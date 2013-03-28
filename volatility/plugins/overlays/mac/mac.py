@@ -164,15 +164,13 @@ class proc(obj.CType):
         
         start_time = self.p_start 
         start_secs = start_time.tv_sec + (start_time.tv_usec / nsecs_per)
-        sec = start_secs
 
-        # protect against invalid data in unallocated tasks
-        try:
-            ret = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(sec))
-        except ValueError:
-            ret = ""
+        # convert the integer as little endian 
+        data = struct.pack("<I", start_secs)
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = data)
+        dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)
 
-        return ret
+        return dt
 
     def get_task_name(self):
         proc_as = self.get_process_address_space()
