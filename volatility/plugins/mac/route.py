@@ -85,11 +85,11 @@ class mac_route(common.AbstractMacCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("Source IP", "16"), 
-                                  ("Dest. IP", "16"), 
+        self.table_header(outfd, [("Source IP", "24"), 
+                                  ("Dest. IP", "24"), 
                                   ("Name", "^10"), 
-                                  ("Sent", "^10"),
-                                  ("Recv", "^10"), 
+                                  ("Sent", "^18"),
+                                  ("Recv", "^18"), 
                                   ("CalTime", "^16"), 
                                   ("Time", "^20"), 
                                   ("Exp.", "^10"), 
