@@ -45,7 +45,7 @@ class mac_tasks(common.AbstractMacCommand):
 
         for task in data:
             proc = task.bsd_info.dereference_as("proc")
-            self.table_row(outfd, task.obj_offset,
+            self.table_row(outfd, proc.obj_offset,
                                   proc.p_comm,
                                   str(proc.p_pid))
 
