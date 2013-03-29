@@ -39,7 +39,7 @@ class mac_mount(common.AbstractMacCommand):
             mount = mount.mnt_list.tqe_next
         
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Device", "30"), ("Mount Point", "30"), ("Type", "")])
+        self.table_header(outfd, [("Device", "30"), ("Mount Point", "60"), ("Type", "")])
         for mount in data:
             self.table_row(outfd, 
                            mount.mnt_vfsstat.f_mntonname, 
