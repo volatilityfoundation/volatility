@@ -42,13 +42,16 @@ class mac_proc_maps(pslist.mac_pslist):
                 map = map.links.next
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Start", "#018x"),
+        self.table_header(outfd, [("Pid", "8"), 
+                          ("Name", "20"),
+                          ("Start", "#018x"),
                           ("End", "#018x"),
                           ("Perms", "9"),
                           ("Map Name", "")])
 
         for (proc, map) in data:
             self.table_row(outfd, 
+                           str(proc.p_pid), proc.p_comm, 
                            map.links.start, 
                            map.links.end, 
                            map.get_perms(), 
