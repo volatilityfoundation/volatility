@@ -80,7 +80,7 @@ class VolatilityDTB(obj.VolatilityMagic):
         if config.SHIFT:
             shift_address = config.SHIFT
         else:
-            scanner = catfishScan(needles = ["Catfish "])
+            scanner = catfishScan(needles = ["Catfish \x00\x00"])
             for catfish_offset in scanner.scan(self.obj_vm):
                 shift_address = catfish_offset - (tbl["_lowGlo"][0][0] % 0xFFFFFF80)
                 break
