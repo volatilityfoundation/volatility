@@ -195,6 +195,18 @@ class rtentry(obj.CType):
 
         return dt
 
+class queue_entry(obj.CType):
+
+    def __iter__(self):
+        n = self.next.dereference_as("task")
+        while n:
+            yield n
+            n = n.tasks.next.dereference_as("task")
+        p = self.prev.dereference_as("task")
+        while p:
+            yield p
+            p = p.tasks.prev.dereference_as("task")
+
 class zone(obj.CType):
     def _get_from_active_zones(self):
         ret = []
@@ -978,6 +990,7 @@ class MacObjectClasses(obj.ProfileModification):
             'sockaddr_dl' : sockaddr_dl,
             'vm_map_entry' : vm_map_entry,
             'rtentry' : rtentry,
+            'queue_entry' : queue_entry,
         })
 
 mac_overlay = {

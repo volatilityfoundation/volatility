@@ -29,13 +29,14 @@ class mac_tasks(common.AbstractMacCommand):
         common.set_plugin_members(self)
         
         tasksaddr = self.addr_space.profile.get_symbol("_tasks")
+        queue_entry = obj.Object("queue_entry", offset = tasksaddr, vm = self.addr_space)
 
-        tasks = obj.Object("queue_entry", offset = tasksaddr, vm = self.addr_space)
-        task = tasks.next.dereference_as("task")
-        
-        while not self.addr_space.address_equality(task.obj_offset, tasksaddr):
-            yield task
-            task = task.tasks.next.dereference_as("task")
+        seen = [tasksaddr]
+
+        for task in queue_entry:
+            if (task.bsd_info and task.obj_offset not in seen):
+                yield task 
+                seen.append(task.obj_offset)
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Offset", "[addrpad]"),
