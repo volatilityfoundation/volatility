@@ -937,7 +937,7 @@ class page(obj.CType):
             mem_map_ptr = 0xffffea0000000000
 
         else:
-            debug.error("phys_addr_of_page: Unable to determine physical address of page\n")
+            debug.error("phys_addr_of_page: Unable to determine physical address of page. NUMA is not supported at this time.\n")
 
         phys_offset = (self.obj_offset - mem_map_ptr) / self.obj_vm.profile.get_obj_size("page")
 
