@@ -742,7 +742,12 @@ class task_struct(obj.CType):
         sec = self.get_boot_time() + start_secs
                 
         # convert the integer as little endian 
-        data = struct.pack("<I", sec)
+        try:
+            data = struct.pack("<I", sec)
+        except struct.error:
+            # in case we exceed 0 <= number <= 4294967295
+            return ""
+
         bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = data)
         dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)
 
