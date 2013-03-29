@@ -57,7 +57,9 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
                 yield task
 
         if chained == 0:
-            yield obj.Object("task_struct", offset = pid_tasks_0 - self.profile.get_obj_offset("task_struct", "pids"), vm = self.addr_space)
+            task = obj.Object("task_struct", offset = pid_tasks_0 - self.profile.get_obj_offset("task_struct", "pids"), vm = self.addr_space)
+            if task.pid > 0:
+                yield task
 
     def _walk_upid(self, upid):
 
@@ -96,7 +98,6 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
             ent = hlist.first
 
             while ent.v():
-
                 upid = self.get_obj(ent.obj_offset, "upid", "pid_chain")
 
                 for task in self._walk_upid(upid):
