@@ -566,6 +566,18 @@ class module_sect_attr(obj.CType):
 
         return name         
 
+class tty_ldisc(obj.CType):
+
+    @property
+    def ops(self):
+        check = self.members.get("ops")
+        if check:
+            ret = self.m('ops')
+        else:
+            ret = self
+
+        return ret
+
 class task_struct(obj.CType):
     def is_valid_task(self):
 
@@ -892,6 +904,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'hlist_node': hlist_node,
             'files_struct': files_struct,
             'task_struct': task_struct,
+            'tty_ldisc' : tty_ldisc,
             'module_sect_attr' : module_sect_attr,
             'VolatilityDTB': VolatilityDTB,
             'IpAddress': basic.IpAddress,

@@ -35,7 +35,6 @@ class VolatilityDTB(obj.VolatilityMagic):
 
         yield profile.get_symbol("init_level4_pgt") - 0xffffffff80000000
 
-
 class Linux64ObjectClasses(obj.ProfileModification):
     """ Makes slight changes to the DTB checker """
     conditions = {'os': lambda x: x == 'linux',
