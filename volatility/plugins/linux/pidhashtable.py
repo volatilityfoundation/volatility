@@ -112,7 +112,7 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
     # but I was unable to find a profile/kernel that needed them (maybe too old or just a one-off distro kernel
     # if someone actually triggers this message, I can quickly add in the support as I will have a sample to test again
     def profile_unsupported(self, func_name):
-        debug.error("{0:s}: This profile is currently unsupported by this plugin. Please file a bug report on our issue tracker to have supprot added.".format(func_name))
+        debug.error("{0:s}: This profile is currently unsupported by this plugin. Please file a bug report on our issue tracker to have support added.".format(func_name))
 
     def calculate_v2(self):
         self.profile_unsupported("calculate_v2")
