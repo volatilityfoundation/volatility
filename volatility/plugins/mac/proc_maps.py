@@ -38,6 +38,8 @@ class mac_proc_maps(pslist.mac_pslist):
             map = task.map.hdr.links.next
 
             for i in xrange(task.map.hdr.nentries):
+                if not map:
+                    break
                 yield (proc, map)
                 map = map.links.next
 
