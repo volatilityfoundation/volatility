@@ -40,7 +40,7 @@ class mac_list_zones(common.AbstractMacCommand):
             zone = zone.next_zone       
  
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Name", "30"), ("Active Count", "10"), ("Free Count", ""), ("Element Size", "")])
+        self.table_header(outfd, [("Name", "30"), ("Active Count", ">10"), ("Free Count", ">10"), ("Element Size", ">10")])
         for zone in data:
             name = zone.zone_name.dereference().replace(" ", ".")
             self.table_row(outfd, name, zone.count, zone.sum_count - zone.count, zone.elem_size)
