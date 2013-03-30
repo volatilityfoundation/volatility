@@ -334,8 +334,12 @@ class sockaddr_dl(obj.CType):
         ret = ""
 
         for i in xrange(self.sdl_alen):
-            e  = self.sdl_data[self.sdl_nlen + i]
-            ret = ret + "%.02x:" % ord(e.v())
+            try:
+                e = self.sdl_data[self.sdl_nlen + i]
+                e = ord(e.v())
+            except IndexError:
+                e = 0
+            ret = ret + "%.02x:" % e
     
         if ret and ret[-1] == ":":
             ret = ret[:-1]
