@@ -33,7 +33,7 @@ class mac_tasks(common.AbstractMacCommand):
 
         seen = [tasksaddr]
 
-        for task in queue_entry:
+        for task in queue_entry.walk_list(list_head = tasksaddr):
             if (task.bsd_info and task.obj_offset not in seen):
                 yield task 
                 seen.append(task.obj_offset)

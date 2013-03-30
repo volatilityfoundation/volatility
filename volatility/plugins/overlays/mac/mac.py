@@ -197,13 +197,13 @@ class rtentry(obj.CType):
 
 class queue_entry(obj.CType):
 
-    def __iter__(self):
+    def walk_list(self, list_head):
         n = self.next.dereference_as("task")
-        while n:
+        while n and n.obj_offset != list_head:
             yield n
             n = n.tasks.next.dereference_as("task")
         p = self.prev.dereference_as("task")
-        while p:
+        while p and p.obj_offset != list_head:
             yield p
             p = p.tasks.prev.dereference_as("task")
 
