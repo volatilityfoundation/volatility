@@ -22,15 +22,15 @@
 """
 
 import volatility.obj as obj
-import volatility.plugins.mac.pslist as pslist
+import volatility.plugins.mac.pstasks as pstasks
 import volatility.plugins.mac.common as common
 
-class mac_lsof(pslist.mac_pslist):
+class mac_lsof(pstasks.mac_tasks):
     """ Lists per-process opened files """
     def calculate(self):
         common.set_plugin_members(self)
 
-        procs = pslist.mac_pslist.calculate(self)
+        procs = pstasks.mac_tasks.calculate(self)
 
         for proc in procs:
             fds = obj.Object('Array', offset = proc.p_fd.fd_ofiles, vm = self.addr_space, targetType = 'Pointer', count = proc.p_fd.fd_lastfile)
