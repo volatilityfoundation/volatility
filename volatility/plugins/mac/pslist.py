@@ -46,12 +46,12 @@ class mac_pslist(common.AbstractMacCommand):
         procsaddr = obj.Object("proclist", offset = p, vm = self.addr_space)
         proc = obj.Object("proc", offset = procsaddr.lh_first, vm = self.addr_space)
 
-        while proc.p_list.le_next:
+        while proc.is_valid():
     
             if not pidlist or proc.p_pid in pidlist:
                 yield proc 
 
-            proc = proc.p_list.le_next
+            proc = proc.p_list.le_next.dereference()
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Offset", "[addrpad]"),
