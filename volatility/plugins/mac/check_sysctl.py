@@ -81,7 +81,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("Name", "25"), 
+        self.table_header(outfd, [("Name", "30"), 
                                   ("Number", "8"), 
                                   ("Perms", "6"), 
                                   ("Handler", "[addrpad]"), 
