@@ -21,9 +21,9 @@
 @organization: 
 """
 
-import volatility.plugins.mac.pslist as pslist
+import volatility.plugins.mac.pstasks as pstasks
 
-class mac_pstree(pslist.mac_pslist):
+class mac_pstree(pstasks.mac_tasks):
     """ Show parent/child relationship of processes """
 
     def render_text(self, outfd, data):
