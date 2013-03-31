@@ -22,16 +22,16 @@
 """
 
 import volatility.obj as obj
-import volatility.plugins.mac.pslist as pslist
+import volatility.plugins.mac.pstasks as pstasks 
 import volatility.plugins.mac.common as common
 
-class mac_proc_maps(pslist.mac_pslist):
+class mac_proc_maps(pstasks.mac_tasks):
     """ Gets memory maps of processes """
 
     def calculate(self):
         common.set_plugin_members(self)
 
-        procs = pslist.mac_pslist.calculate(self)
+        procs = pstasks.mac_tasks.calculate(self)
 
         for proc in procs:
             task = proc.task.dereference_as("task") 
