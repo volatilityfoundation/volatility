@@ -44,7 +44,7 @@ class mac_psxview(common.AbstractMacCommand):
         return [s.s_leader.v() for s in session_hash_table.mac_list_sessions(self._config).calculate() if s.s_leader.is_valid()]
     
     def _get_procs_from_tasks(self):
-        return [t.bsd_info.v() for t in pstasks.mac_tasks(self._config).calculate()]            
+        return [p.v() for p in pstasks.mac_tasks(self._config).calculate()]            
 
     def calculate(self):
         common.set_plugin_members(self)
