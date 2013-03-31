@@ -16,7 +16,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
-import volatility.plugins.mac.pslist as pslist
+import volatility.plugins.mac.pstasks as pstasks
 import volatility.plugins.volshell as volshell
 import volatility.obj as obj
 
@@ -28,7 +28,7 @@ class mac_volshell(volshell.volshell):
         return profile.metadata.get('os', 'Unknown').lower() == 'mac'
 
     def getpidlist(self):
-        return pslist.mac_pslist(self._config).calculate()
+        return pstasks.mac_tasks(self._config).calculate()
 
     def ps(self, procs = None):
         print "{0:16} {1:6} {2:8}".format("Name", "PID", "Offset")
