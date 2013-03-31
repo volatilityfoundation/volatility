@@ -43,5 +43,13 @@ class mac_list_zones(common.AbstractMacCommand):
         self.table_header(outfd, [("Name", "30"), ("Active Count", ">10"), ("Free Count", ">10"), ("Element Size", ">10")])
         for zone in data:
             name = zone.zone_name.dereference().replace(" ", ".")
-            self.table_row(outfd, name, zone.count, zone.sum_count - zone.count, zone.elem_size)
+    
+            # sum_count was introduced in 10.8.x
+            # do not want to overlay as 0 b/c we mess up subtraction
+            if hasattr(zone, "sum_count"):
+                sum_count = zone.sum_count - zone.count
+            else:
+                sum_count = "N/A"
+
+            self.table_row(outfd, name, zone.count, sum_count, zone.elem_size)
 
