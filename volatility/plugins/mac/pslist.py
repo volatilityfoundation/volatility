@@ -22,6 +22,7 @@
 """
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+import volatility.debug as debug
 
 class mac_pslist(common.AbstractMacCommand):
     """ List Running Processes """
@@ -45,9 +46,15 @@ class mac_pslist(common.AbstractMacCommand):
 
         procsaddr = obj.Object("proclist", offset = p, vm = self.addr_space)
         proc = obj.Object("proc", offset = procsaddr.lh_first, vm = self.addr_space)
+        seen = []
 
         while proc.is_valid():
     
+            if proc.obj_offset in seen:
+                debug.error("Recursive process list detected (a result of non-atomic acquisition). Use mac_tasks or mac_psxview)")
+            else:
+                seen.append(proc.obj_offset)
+
             if not pidlist or proc.p_pid in pidlist:
                 yield proc 
 
