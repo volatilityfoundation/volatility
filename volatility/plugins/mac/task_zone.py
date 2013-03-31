@@ -26,8 +26,8 @@ import volatility.plugins.mac.common as common
 import volatility.plugins.mac.list_zones as list_zones
 import volatility.plugins.mac.pslist as pslist
 
-class mac_task_zone(pslist.mac_pslist):
-    """ Prints active zones """
+class mac_dead_procs(pslist.mac_pslist):
+    """ Prints terminated/de-allocated processes """
 
     def calculate(self):
         common.set_plugin_members(self)
@@ -37,7 +37,6 @@ class mac_task_zone(pslist.mac_pslist):
         for zone in zones:
             name = str(zone.zone_name.dereference())
             if name == "proc":
-                #elems = zone.get_active_elements("proc")
                 procs = zone.get_free_elements("proc")        
                 for proc in procs:
                     yield proc
