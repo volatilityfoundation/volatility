@@ -26,8 +26,18 @@ import volatility.plugins.mac.common as common
 
 class mac_tasks(pslist.mac_pslist):
     """ List Active Tasks """
+    def __init__(self, config, *args, **kwargs):
+        pslist.mac_pslist.__init__(self, config, *args, **kwargs)
+
     def calculate(self):
         common.set_plugin_members(self)
+        
+        pidlist = None
+        try:
+            if self._config.PID:
+                pidlist = [int(p) for p in self._config.PID.split(',')]
+        except:
+            pass
         
         tasksaddr = self.addr_space.profile.get_symbol("_tasks")
         queue_entry = obj.Object("queue_entry", offset = tasksaddr, vm = self.addr_space)
@@ -37,5 +47,6 @@ class mac_tasks(pslist.mac_pslist):
         for task in queue_entry.walk_list(list_head = tasksaddr):
             if (task.bsd_info and task.obj_offset not in seen):
                 proc = task.bsd_info.dereference_as("proc") 
-                yield proc 
+                if not pidlist or proc.p_pid in pidlist:
+                    yield proc 
                 seen.append(task.obj_offset)
