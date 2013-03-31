@@ -21,9 +21,9 @@
 @organization: 
 """
 
-import volatility.plugins.mac.pslist as pslist
+import volatility.plugins.mac.pstasks as pstasks
 
-class mac_psaux(pslist.mac_pslist):
+class mac_psaux(pstasks.mac_tasks):
     """ Prints processes with arguments in userland (**argv) """
 
     def render_text(self, outfd, data):
