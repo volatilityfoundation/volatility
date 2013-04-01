@@ -31,12 +31,12 @@ class mac_route(common.AbstractMacCommand):
         rnh = tbl #obj.Object("radix_node", offset=tbl.v(), vm=self.addr_space)
         rn = rnh.rnh_treetop
         
-        while rn.rn_bit >= 0:
+        while rn.is_valid() and rn.rn_bit >= 0:
             rn = rn.rn_u.rn_node.rn_L
 
         rnhash = {}
 
-        while 1:
+        while rn.is_valid():
             base = rn
             
             if rn in rnhash:
@@ -44,12 +44,12 @@ class mac_route(common.AbstractMacCommand):
 
             rnhash[rn] = 1
 
-            while rn.rn_parent.rn_u.rn_node.rn_R == rn and rn.rn_flags & 2 == 0:
+            while rn.is_valid() and rn.rn_parent.rn_u.rn_node.rn_R == rn and rn.rn_flags & 2 == 0:
                 rn = rn.rn_parent
 
             rn = rn.rn_parent.rn_u.rn_node.rn_R
 
-            while rn.rn_bit >= 0:
+            while rn.is_valid() and rn.rn_bit >= 0:
                 rn = rn.rn_u.rn_node.rn_L
 
             nextptr = rn
