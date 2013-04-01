@@ -50,11 +50,7 @@ class mac_pstree(pstasks.mac_tasks):
         self.procs_seen[proc.p_pid] = 1
         
         proc = proc.p_children.lh_first
-        if not proc.is_valid():
-            return
 
-        while 1:
+        while proc.is_valid():
             self._recurse_task(outfd, proc, level + 1)
             proc = proc.p_sibling.le_next
-            if not proc:
-                break
