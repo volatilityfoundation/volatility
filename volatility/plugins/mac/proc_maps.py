@@ -98,7 +98,7 @@ class mac_proc_maps(pstasks.mac_tasks):
             path = []
 
             while vnode:
-                path.append(str(vnode.v_name.dereference()))
+                path.append(str(vnode.v_name.dereference() or ''))
                 vnode = vnode.v_parent
 
             path.reverse()
