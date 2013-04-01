@@ -21,8 +21,10 @@
 @organization: 
 """
 
+import struct
 import volatility.obj as obj
 import volatility.debug as debug
+import volatility.addrspace as addrspace
 import volatility.plugins.linux.common  as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
 
@@ -42,6 +44,26 @@ bash_vtypes_64 = {
     }],
 }
 
+class _hist_entry(obj.CType):
+
+    def is_valid(self):
+        return (obj.CType.is_valid(self) and 
+                    self.line.is_valid() and 
+                    len(self.line.dereference()) and 
+                    self.timestamp.is_valid() and 
+                    len(self.timestamp.dereference()))
+
+    def time_object(self):
+        # Get the string and remove the leading "#" from the timestamp 
+        time_string = str(self.timestamp.dereference())[1:] 
+        # Convert the string into an integer (number of seconds)
+        nsecs = int(time_string)
+        # Build a timestamp object from the integer 
+        time_val = struct.pack("<I", nsecs)
+        time_buf = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = time_val)
+        time_obj = obj.Object("UnixTimeStamp", offset = 0, vm = time_buf, is_utc = True)
+        return time_obj
+
 class BashTypes(obj.ProfileModification):
 
     def modification(self, profile):
@@ -50,6 +72,8 @@ class BashTypes(obj.ProfileModification):
             profile.vtypes.update(bash_vtypes_32)
         else:
             profile.vtypes.update(bash_vtypes_64)
+
+        profile.object_classes.update({"_hist_entry": _hist_entry})
 
 class linux_bash(linux_pslist.linux_pslist):
     """Recover bash history from bash process memory"""
@@ -91,19 +115,18 @@ class linux_bash(linux_pslist.linux_pslist):
 
                 hist = obj.Object("_hist_entry", offset = ptr, vm = proc_as)       
     
-                cmd = hist.line.dereference()
-                cmdtime = hist.timestamp.dereference()
-
-                if cmd and len(cmd) and cmdtime and len(cmdtime):
-                    yield (cmd, cmdtime)
+                if hist.is_valid():
+                    yield hist
     
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("Command Time", "20"),
+        self.table_header(outfd, [("Command Time", "30"),
                                   ("Command", ""),])
                                     
-        for (cmd, cmdtime) in data:
-            self.table_row(outfd, cmdtime, cmd)
+        for hist_entry in data:
+            self.table_row(outfd, 
+                           hist_entry.time_object(), 
+                           hist_entry.line.dereference())
             
 
 
