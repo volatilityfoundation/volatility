@@ -51,7 +51,8 @@ class mac_pslist(common.AbstractMacCommand):
         while proc.is_valid():
     
             if proc.obj_offset in seen:
-                debug.error("Recursive process list detected (a result of non-atomic acquisition). Use mac_tasks or mac_psxview)")
+                debug.warning("Recursive process list detected (a result of non-atomic acquisition). Use mac_tasks or mac_psxview)")
+                break
             else:
                 seen.append(proc.obj_offset)
 
