@@ -109,11 +109,6 @@ class linux_bash(linux_pslist.linux_pslist):
     
         tasks = linux_pslist.linux_pslist(self._config).calculate()
 
-        if not self._config.HISTORY_LIST:
-            debug.error("History list address not specified.")
-        
-        the_history_addr = self._config.HISTORY_LIST
-
         for task in tasks:
             proc_as = task.get_process_address_space()
             
@@ -121,23 +116,52 @@ class linux_bash(linux_pslist.linux_pslist):
             if not proc_as:
                 continue
 
-            the_history = obj.Object("Pointer", vm = proc_as, offset = the_history_addr)
+            if not self._config.HISTORY_LIST:
+                # Brute force the history list of an address isn't provided 
+                ts_offset = proc_as.profile.get_obj_offset("_hist_entry", "timestamp") 
 
-            max_ents = 2001
+                # Are we dealing with 32 or 64-bit pointers
+                if proc_as.profile.metadata.get('memory_model', '32bit') == '32bit':
+                    pack_format = "I"
+                else:
+                    pack_format = "Q"
 
-            the_history = obj.Object(theType = 'Array', offset = the_history, vm = proc_as, targetType = 'Pointer', count = max_ents)
+                # Look for strings that begin with pound/hash on the process heap 
+                for ptr_hash in task.search_process_memory(["#"], heap_only = True):
+                    
+                    # Find pointers to this strings address, also on the heap 
+                    addr = struct.pack(pack_format, ptr_hash)
 
-            for ptr in the_history:
-                if not ptr:
-                    if self._config.PRINTUNALLOC:
-                        continue
-                    else:
-                        break
+                    for ptr_string in task.search_process_memory([addr], heap_only = True):
+                        
+                        # Check if we found a valid history entry object 
+                        hist = obj.Object("_hist_entry", 
+                                          offset = ptr_string - ts_offset, 
+                                          vm = proc_as)
 
-                hist = obj.Object("_hist_entry", offset = ptr, vm = proc_as)       
+                        if hist.is_valid():
+                            yield hist
+                            # We can terminate this inner loop now 
+                            break
+            else:    
+                the_history_addr = the_history_addr = self._config.HISTORY_LIST
+                the_history = obj.Object("Pointer", vm = proc_as, offset = the_history_addr)
+                max_ents = 2001
+                the_history = obj.Object(theType = 'Array', offset = the_history, 
+                                         vm = proc_as, targetType = 'Pointer', 
+                                         count = max_ents)
+
+                for ptr in the_history:
+                    if not ptr:
+                        if self._config.PRINTUNALLOC:
+                            continue
+                        else:
+                            break
+
+                    hist = ptr.dereference_as("_hist_entry")      
     
-                if hist.is_valid():
-                    yield hist
+                    if hist.is_valid():
+                        yield hist
     
     def render_text(self, outfd, data):
 
