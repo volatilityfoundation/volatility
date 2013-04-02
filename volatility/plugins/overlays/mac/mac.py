@@ -1018,6 +1018,7 @@ mac_overlay = {
         }], 
     'proc' : [ None, { 
         'p_comm' : [ None, ['String', dict(length = 17)]], 
+        'task' : [ None, ['pointer', ['task']]], 
         }], 
     'ifnet' : [ None, { 
         'if_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
