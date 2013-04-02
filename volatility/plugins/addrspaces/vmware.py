@@ -180,10 +180,7 @@ class VMWareSnapshotFile(addrspace.BaseAddressSpace):
         region_count = self._get_tag(grp_name = "memory",
                                      tag_name = "regionsCount", data_type = "unsigned int")
 
-        self.as_assert(region_count is not None,
-                      "Cannot find the regionsCount tag")
-
-        if region_count == 0:
+        if not region_count.is_valid() or region_count == 0:
             ## Create a single run from the main memory region 
             memory_tag = self._get_tag(grp_name = "memory", tag_name = "Memory")
 
