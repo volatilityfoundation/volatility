@@ -159,7 +159,7 @@ class linux_bash(linux_pslist.linux_pslist):
                 
                 # Report everything we found in order
                 for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
-                    yield hist              
+                    yield task, hist              
             else:    
                 the_history_addr = the_history_addr = self._config.HISTORY_LIST
                 the_history = obj.Object("Pointer", vm = proc_as, offset = the_history_addr)
@@ -178,15 +178,17 @@ class linux_bash(linux_pslist.linux_pslist):
                     hist = ptr.dereference_as("_hist_entry")      
     
                     if hist.is_valid():
-                        yield hist
+                        yield task, hist
     
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("Command Time", "30"),
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Command Time", "30"),
                                   ("Command", ""),])
                                     
-        for hist_entry in data:
-            self.table_row(outfd, 
+        for task, hist_entry in data:
+            self.table_row(outfd, task.pid, task.comm, 
                            hist_entry.time_object(), 
                            hist_entry.line.dereference())
             
