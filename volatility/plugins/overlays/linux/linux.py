@@ -86,10 +86,6 @@ linux_overlay = {
     'dentry' : [None, {
         'd_u'      : [ None , ['list_head', {}]],
     }],
-    'vm_area_struct' : [None, {
-        'vm_end'    : [ None , ['unsigned long']],
-        'vm_start'  : [ None , ['unsigned long']],
-    }],
     'cpuinfo_x86' : [None, {
         'x86_model_id'  : [ None , ['String', dict(length = 64)]],
         'x86_vendor_id' : [ None, ['String', dict(length = 16)]],
@@ -102,6 +98,8 @@ linux_overlay = {
         }],
     'vm_area_struct' : [ None, { 
         'vm_flags' : [ None, ['LinuxPermissionFlags', {'bitmap': {'r': 0, 'w': 1, 'x': 2}}]],
+        'vm_end'    : [ None , ['unsigned long']],
+        'vm_start'  : [ None , ['unsigned long']],
         }],
     }
 
