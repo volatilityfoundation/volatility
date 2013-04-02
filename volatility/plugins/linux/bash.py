@@ -22,6 +22,7 @@
 """
 
 import struct
+from operator import attrgetter
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.addrspace as addrspace
@@ -74,11 +75,15 @@ class _hist_entry(obj.CType):
 
         return True
 
-    def time_object(self):
+    @property
+    def time_as_integer(self):
         # Get the string and remove the leading "#" from the timestamp 
         time_string = str(self.timestamp.dereference())[1:] 
         # Convert the string into an integer (number of seconds)
-        nsecs = int(time_string)
+        return int(time_string)
+
+    def time_object(self):
+        nsecs = self.time_as_integer
         # Build a timestamp object from the integer 
         time_val = struct.pack("<I", nsecs)
         time_buf = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = time_val)
@@ -122,6 +127,9 @@ class linux_bash(linux_pslist.linux_pslist):
                 if not (self._config.SCAN_ALL or str(task.comm) == "bash"):
                     continue
 
+                # Keep a bucket of history objects so we can order them
+                history_entries = []
+
                 # Brute force the history list of an address isn't provided 
                 ts_offset = proc_as.profile.get_obj_offset("_hist_entry", "timestamp") 
 
@@ -145,9 +153,13 @@ class linux_bash(linux_pslist.linux_pslist):
                                           vm = proc_as)
 
                         if hist.is_valid():
-                            yield hist
+                            history_entries.append(hist)
                             # We can terminate this inner loop now 
                             break
+                
+                # Report everything we found in order
+                for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
+                    yield hist              
             else:    
                 the_history_addr = the_history_addr = self._config.HISTORY_LIST
                 the_history = obj.Object("Pointer", vm = proc_as, offset = the_history_addr)
