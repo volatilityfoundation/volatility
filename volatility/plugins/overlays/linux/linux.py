@@ -87,8 +87,8 @@ linux_overlay = {
         'd_u'      : [ None , ['list_head', {}]],
     }],
     'vm_area_struct' : [None, {
-        'vm_end'    : [ None , ['unsigned long', {}]],
-        'vm_start'  : [ None , ['unsigned long', {}]],
+        'vm_end'    : [ None , ['unsigned long']],
+        'vm_start'  : [ None , ['unsigned long']],
     }],
     'cpuinfo_x86' : [None, {
         'x86_model_id'  : [ None , ['String', dict(length = 64)]],

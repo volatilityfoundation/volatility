@@ -39,8 +39,8 @@ class linux_proc_maps(linux_pslist.linux_pslist):
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Pid", "8"),
-                                  ("Start", "[addrpad]"),
-                                  ("End",   "[addrpad]"),
+                                  ("Start", "#018x"),
+                                  ("End",   "#018x"),
                                   ("Flags", "6"),
                                   ("Pgoff", "[addr]"),
                                   ("Major", "6"),
