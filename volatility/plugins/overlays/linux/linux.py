@@ -648,7 +648,7 @@ class task_struct(obj.CType):
         for vma in linux_common.walk_internal_list("vm_area_struct", "vm_next", self.mm.mmap):
             yield vma
     
-    def search_process_memory(self, s):
+    def search_process_memory(self, s, heap_only = False):
         def iterfind(data, string):
             offset = data.find(string, 0)
             while offset >= 0:
@@ -670,6 +670,9 @@ class task_struct(obj.CType):
         addr_space = self.get_process_address_space()
 
         for vma in self.get_proc_maps():
+            if heap_only:
+                if not (vma.vm_start <= self.mm.start_brk and vma.vm_end >= self.mm.brk):
+                    continue
             offset = vma.vm_start
             out_of_range = vma.vm_start + (vma.vm_end - vma.vm_start)
             while offset < out_of_range:
