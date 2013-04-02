@@ -103,7 +103,8 @@ class linux_bash(linux_pslist.linux_pslist):
         linux_pslist.linux_pslist.__init__(self, config, *args, **kwargs)
         self._config.add_option('PRINTUNALLOC', short_option = 'P', default = None, help = 'print unallocated entries, please redirect to a file', action = 'store_true')
         self._config.add_option('HISTORY_LIST', short_option = 'H', default = None, help = 'address from history_list - see the Volatility wiki', action = 'store', type = 'long')        
-    
+        self._config.add_option('SCAN_ALL', short_option = 'A', default = False, help = 'scan all processes, not just those named bash', action = 'store_true')    
+
     def calculate(self):
         linux_common.set_plugin_members(self)
     
@@ -117,6 +118,10 @@ class linux_bash(linux_pslist.linux_pslist):
                 continue
 
             if not self._config.HISTORY_LIST:
+                # Do we scan everything or just /bin/bash instances?
+                if not (self._config.SCAN_ALL or str(task.comm) == "bash"):
+                    continue
+
                 # Brute force the history list of an address isn't provided 
                 ts_offset = proc_as.profile.get_obj_offset("_hist_entry", "timestamp") 
 
