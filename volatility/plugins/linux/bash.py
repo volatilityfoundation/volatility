@@ -45,13 +45,34 @@ bash_vtypes_64 = {
 }
 
 class _hist_entry(obj.CType):
+    """A class for history entries"""
 
     def is_valid(self):
-        return (obj.CType.is_valid(self) and 
-                    self.line.is_valid() and 
-                    len(self.line.dereference()) and 
-                    self.timestamp.is_valid() and 
-                    len(self.timestamp.dereference()))
+        
+        # Check the basic structure members 
+        if (not obj.CType.is_valid(self) or  
+                    not self.line.is_valid() or 
+                    len(self.line.dereference()) == 0 or  
+                    not self.timestamp.is_valid()):
+            return False
+
+        # A pointer to the timestamp string 
+        ts = self.timestamp.dereference()
+
+        # At this point in time, the epoc integer size will 
+        # never be less than 10 characters, and the stamp is 
+        # always preceded by a pound/hash character. 
+        if len(ts) < 10 or str(ts)[0] != "#":
+            return False
+
+        # The final check is to make sure the entire string
+        # is composed of numbers. Try to convert to an int. 
+        try:
+            int(str(ts)[1:])
+        except ValueError:
+            return False 
+
+        return True
 
     def time_object(self):
         # Get the string and remove the leading "#" from the timestamp 
