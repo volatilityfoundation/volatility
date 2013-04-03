@@ -201,8 +201,15 @@ class proc(obj.CType):
         start_time = self.p_start 
         start_secs = start_time.tv_sec + (start_time.tv_usec / nsecs_per)
 
-        # convert the integer as little endian 
-        data = struct.pack("<I", start_secs)
+        # convert the integer as little endian. we catch struct.error
+        # here because if the process has exited (i.e. detected with mac_dead_procs)
+        # then the timestamp may not be valid. start_secs could be negative
+        # or higher than can fit in a 32-bit "I" integer field. 
+        try:
+            data = struct.pack("<I", start_secs)
+        except struct.error:
+            return ""
+
         bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = data)
         dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)
 
