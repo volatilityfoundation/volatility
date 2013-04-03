@@ -1,8 +1,5 @@
 import os, sys, re
 
-# I wrote the conversion function really fast b/c I was annoyed and so its really gross
-# try not to look to hard, will clean it up properly soon ;)
-
 class DWARFParser(object):
     """A parser for DWARF files."""
 
@@ -33,7 +30,6 @@ class DWARFParser(object):
         'unsigned char': 'unsigned char',
         'unsigned int': 'unsigned int',
     }
-
 
     def __init__(self):
         self.current_level = -1
@@ -122,17 +118,6 @@ class DWARFParser(object):
                 if m:
                     d = m.groupdict()
                     parsed['data'][d['keyname']] = d['val']
-            
-            #if not hasattr(self, "ictr"):
-            #    self.ictr = 0
-
-            
-            #print "%s | %s | %s" % (parsed['kind'], parsed['level'], parsed['data'])
-            
-            #i = i + 1
-
-            #if i == 2:
-            #    sys.exit(1)
 
             if parsed['kind'] in ('TAG_formal_parameter','TAG_variable'):
                 self.process_variable(parsed['data'])
@@ -357,7 +342,7 @@ class DWARFParser(object):
                     vals = dict((v, k) for k, v in self.enums[d][1].items())
                     self.all_vtypes[t][1][m] = self.deep_replace(
                         memb, [d],
-                        ['Enumeration', dict(target = self.sz2tp[sz], choices = vals)]
+                        ['Enumeration', dict(target = 'int', choices = vals)]
                     )
 
         return self.all_vtypes
@@ -639,27 +624,18 @@ def convert_file(mac_file, outfile):
                 #print "State machine broken! level %d!%s" % (level, line)
                 #sys.exit(1)
 
-
-
 def main():
 
     if len(sys.argv) == 4:
 
         print "converting file"
-
         mac_file = open(sys.argv[1], "r")
-    
         outfile = open(sys.argv[2], "w")
-
         convert_file(mac_file, outfile)
-    
         outfile.close()
 
     else:
         parse_dwarf()     
-
-
-
 
 if __name__ == "__main__":
     main()
