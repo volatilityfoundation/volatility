@@ -43,7 +43,8 @@ class mac_lsof(pstasks.mac_tasks):
     def render_text(self, outfd, data):
         
         for i, f in data:
-            if str(f.f_fglob.fg_type) == 'DTYPE_VNODE':
+            fg_type = obj.Object("int", f.f_fglob.fg_type.obj_offset, vm = self.addr_space)
+            if fg_type == 1: # VNODE
                 vnode = f.f_fglob.fg_data.dereference_as("vnode")
                 path = self.calc_full_path(vnode)
                 outfd.write("{0:d} -> {1:s}\n".format(i, path))
