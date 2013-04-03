@@ -73,7 +73,7 @@ def find_tables(start_addr, vm):
 
     if use_distorm:
         data = vm.zread(start_addr, function_size)
-        for op in distorm3.Decompose(start_addr, data, distorm3.Decode64Bits):
+        for op in distorm3.DecomposeGenerator(start_addr, data, distorm3.Decode64Bits):
             # Stop decomposing if we reach the function end 
             if op.flowControl == 'FC_RET':
                 break
