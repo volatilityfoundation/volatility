@@ -208,6 +208,16 @@ class proc(obj.CType):
 
         return dt
 
+    def get_proc_maps(self):
+
+        map = self.task.map.hdr.links.next
+
+        for i in xrange(self.task.map.hdr.nentries):
+            if not map:
+                break
+            yield map
+            map = map.links.next
+
     def get_arguments(self):
         proc_as = self.get_process_address_space()
 

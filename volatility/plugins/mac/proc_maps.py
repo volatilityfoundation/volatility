@@ -34,14 +34,8 @@ class mac_proc_maps(pstasks.mac_tasks):
         procs = pstasks.mac_tasks.calculate(self)
 
         for proc in procs:
-            task = proc.task.dereference_as("task") 
-            map = task.map.hdr.links.next
-
-            for i in xrange(task.map.hdr.nentries):
-                if not map:
-                    break
-                yield (proc, map)
-                map = map.links.next
+            for map in proc.get_proc_maps():
+                yield proc, map
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Pid", "8"), 
