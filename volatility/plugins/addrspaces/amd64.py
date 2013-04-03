@@ -67,7 +67,7 @@ class AMD64PagedMemory(intel.JKIA32PagedMemoryPae):
             self.cache = False
 
     def is_valid_profile(self, profile):
-        return profile.metadata.get('memory_model', '32bit') == '64bit'
+        return profile.metadata.get('memory_model', '32bit') == '64bit' or profile.metadata.get('os', 'Unknown').lower() == 'mac'
 
     def pml4e_index(self, vaddr):
         ''' 

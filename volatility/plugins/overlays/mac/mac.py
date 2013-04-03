@@ -22,15 +22,15 @@ import sys, os
 import zipfile
 import struct
 import time
-
+import string
 import volatility.plugins as plugins
 import volatility.debug as debug
 import volatility.obj as obj
 import volatility.plugins.overlays.basic as basic
 import volatility.addrspace as addrspace
 import volatility.scan as scan
-
 import volatility.plugins.addrspaces.amd64 as amd64
+import volatility.plugins.addrspaces.intel as intel
 import volatility.plugins.overlays.native_types as native_types
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
@@ -150,12 +150,49 @@ class proc(obj.CType):
         return ret
     
     def get_process_address_space(self):
-        task = obj.Object("task", offset = self.task, vm = self.obj_vm)  
-        cr3 = task.map.pmap.pm_cr3
-        try:
-            proc_as = self.obj_vm.__class__(self.obj_vm.base, self.obj_vm.get_config(), dtb = cr3)
-        except addrspace.ASAssertionError, e:
-            debug.error("This plugin does not work when analyzing a sample from a 64bit computer running a 32bit kernel.")
+
+        cr3 = self.task.map.pmap.pm_cr3
+        map_val = str(self.task.map.pmap.pm_task_map)
+
+        if (map_val == "TASK_MAP_32BIT" and 
+                self.obj_vm.profile.metadata.get('memory_model', '64bit') == "64bit"):
+            
+            # A 32 bit process on a 64 bit system, requires 64 bit paging
+
+            # Catch exceptions when trying to get a process AS for kernel_task
+            # which isn't really even a process. It needs to use the default cr3
+            try:
+                proc_as = amd64.AMD64PagedMemory(self.obj_vm.base, 
+                                                 self.obj_vm.get_config(), dtb = cr3)
+            except IOError:
+                proc_as = self.obj_vm
+
+        elif map_val == "TASK_MAP_32BIT":
+
+            # A 32 bit process on a 32 bit system need 
+            # bypass b/c no sharing of address space
+
+            proc_as = intel.JKIA32PagedMemoryPae(self.obj_vm.base, 
+                                                 self.obj_vm.get_config(), dtb = cr3, 
+                                                 skip_as_check = True)
+
+        elif (map_val == "TASK_MAP_64BIT_SHARED" and 
+                    self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit"):
+
+            # A 64 bit process running on a 32 bit system
+            proc_as = amd64.AMD64PagedMemory(self.obj_vm.base, 
+                                             self.obj_vm.get_config(), dtb = cr3,
+                                             skip_as_check = True)
+            
+        elif map_val in ["TASK_MAP_64BIT", "TASK_MAP_64BIT_SHARED"]:
+
+            # A 64 bit process on a 64 bit system
+            cr3 &= 0xFFFFFFE0
+            proc_as = amd64.AMD64PagedMemory(self.obj_vm.base, 
+                                             self.obj_vm.get_config(), dtb = cr3, 
+                                             skip_as_check = True)
+        else:
+            proc_as = obj.NoneObject("Cannot get process AS for pm_task_map: {0}".format(map_val))
 
         return proc_as 
 
@@ -172,16 +209,44 @@ class proc(obj.CType):
 
         return dt
 
-    def get_task_name(self):
+    def get_arguments(self):
         proc_as = self.get_process_address_space()
 
-        argslen = self.p_argslen
+        # We need a valid process AS to continue 
+        if not proc_as:
+            return ""
+
         argsstart = self.user_stack - self.p_argslen
 
-        argv = proc_as.read(argsstart, argslen)
-        name = " ".join(argv.split("\x00"))
+        # Stack location may be paged out or not contain any args
+        if (not proc_as.is_valid_address(argsstart) or 
+                self.p_argslen == 0 or self.p_argc == 0):
+            return ""
 
-        return name
+        # Add one because the first two are usually duplicates
+        argc = self.p_argc + 1
+        args = []
+
+        while argc > 0:
+            arg = obj.Object("String", offset = argsstart, vm = proc_as, length = 256)
+                
+            # Initial address of the next string
+            argsstart += len(str(arg)) + 1
+
+            # Very first one is aligned in some crack ass way
+            if len(args) == 0:
+                while (proc_as.read(argsstart, 1) == "\x00" and 
+                        argsstart < self.user_stack):
+                    argsstart += 1
+                args.append(arg)
+            else:
+                # Only add this string if its not a duplicate of the first
+                if str(arg) != str(args[0]):
+                    args.append(arg)
+                            
+            argc -= 1            
+
+        return " ".join([str(s) for s in args])
 
 class rtentry(obj.CType):
 

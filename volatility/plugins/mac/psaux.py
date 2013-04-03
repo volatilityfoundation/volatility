@@ -24,8 +24,23 @@
 import volatility.plugins.mac.pstasks as pstasks
 
 class mac_psaux(pstasks.mac_tasks):
-    """ Prints processes with arguments in userland (**argv) """
+    """ Prints processes with arguments in user land (**argv) """
 
     def render_text(self, outfd, data):
+
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Bits", "16"),
+                                  ("Stack", "#018x"),
+                                  ("Length", "8"),
+                                  ("Argc", "8"),
+                                  ("Arguments", "")])
         for proc in data:
-            outfd.write("{0} | {1}\n".format(proc.p_pid, proc.get_task_name()))
+            self.table_row(outfd, 
+                           proc.p_pid, 
+                           proc.p_comm, 
+                           str(proc.task.map.pmap.pm_task_map)[9:],
+                           proc.user_stack,
+                           proc.p_argslen,
+                           proc.p_argc,
+                           proc.get_arguments())

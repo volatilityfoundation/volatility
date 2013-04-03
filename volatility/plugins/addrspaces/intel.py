@@ -57,7 +57,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
     paging_address_space = True
     checkname = 'IA32ValidAS'
 
-    def __init__(self, base, config, dtb = 0, *args, **kwargs):
+    def __init__(self, base, config, dtb = 0, skip_as_check = False, *args, **kwargs):
         ## We must be stacked on someone else:
         self.as_assert(base, "No base Address Space")
 
@@ -82,7 +82,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
             self._cache_values()
 
         volmag = obj.VolMagic(self)
-        if hasattr(volmag, self.checkname):
+        if not skip_as_check and hasattr(volmag, self.checkname):
             self.as_assert(getattr(volmag, self.checkname).v(), "Failed valid Address Space check")
 
         # Reserved for future use
@@ -90,7 +90,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         self.name = 'Kernel AS'
 
     def is_valid_profile(self, profile):
-        return profile.metadata.get('memory_model', '32bit') == '32bit'
+        return profile.metadata.get('memory_model', '32bit') == '32bit' or profile.metadata.get('os', 'Unknown').lower() == 'mac'
 
     @staticmethod
     def register_options(config):
