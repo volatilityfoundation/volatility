@@ -77,7 +77,7 @@ class mac_pslist(common.AbstractMacCommand):
                 continue
 
             # Strip the "TASK_MAP_" prefix from the enumeration 
-            bit_string = str(proc.task.map.pmap.pm_task_map)[9:]
+            bit_string = str(proc.task.map.pmap.pm_task_map or '')[9:]
 
             self.table_row(outfd, proc.v(),
                                   proc.p_comm,
