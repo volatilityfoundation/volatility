@@ -42,7 +42,6 @@ class mac_check_sysctl(common.AbstractMacCommand):
             name = sysctl.oid_name.dereference()
 
             if len(name) == 0:
-                #sysctl = sysctl.oid_link.sle_next
                 break
 
             ctltype = sysctl.get_ctltype()
@@ -89,6 +88,9 @@ class mac_check_sysctl(common.AbstractMacCommand):
                                   ("Value", "")])
 
         for (sysctl, name, val, is_known) in data:
+            if val == "INVALID -1":
+                continue
+
             if is_known:
                 status = "OK"
             else:

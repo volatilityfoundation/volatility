@@ -303,7 +303,7 @@ class sysctl_oid(obj.CType):
         try:
             return types[ctltype]
         except KeyError:
-            return "UNKNOWN CTLTYPE: {0}".format(ctltype)
+            return "INVALID -1"
 
 class OSString(obj.CType):
 
