@@ -577,7 +577,11 @@ def MacProfileFactory(profpkg):
                 mod = symtable[module]
 
                 for (name, addrs) in mod.items():
-                    ret.append([name, addrs[0][0]])
+                    addr = addrs[0][0]
+                    if self.shift_address and addr:
+                        addr = addr + self.shift_address
+
+                    ret.append([name, addr])
             else:
                 debug.info("All symbols  requested for non-existent module %s" % module)
 
@@ -605,7 +609,7 @@ def MacProfileFactory(profpkg):
             for (name, addrs) in mod.items():
 
                 for (addr, addr_type) in addrs:
-                    if sym_address == addr:
+                    if sym_address == addr or sym_address == self.shift_address + addr:
                         ret = name
                         break
 
@@ -808,13 +812,3 @@ mac_overlay = {
         }], 
 }
 
-mac_vtypes = {
-    'mach_trap'     : [ 16, {'mach_trap_function': [4, ['pointer', ['void']]]}]
-}
-
-class MacVTypes(obj.ProfileModification):
-    conditions = {'os': lambda x: x == 'mac'}
-    before = ['BasicObjectClasses']
-
-    def modification(self, profile):
-        profile.vtypes.update(mac_vtypes)
