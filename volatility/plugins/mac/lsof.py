@@ -43,6 +43,9 @@ class mac_lsof(pstasks.mac_tasks):
     def render_text(self, outfd, data):
         
         for i, f in data:
+            ## FIXME after 2.3 replace this explicit int field with the following line:
+            ##    if str(f.f_fglob.fg_type) == 'DTYPE_VNODE':
+            ## Its not needed for profiles generated with convert.py after r3290 
             fg_type = obj.Object("int", f.f_fglob.fg_type.obj_offset, vm = self.addr_space)
             if fg_type == 1: # VNODE
                 vnode = f.f_fglob.fg_data.dereference_as("vnode")
