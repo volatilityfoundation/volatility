@@ -22,7 +22,6 @@ import sys, os
 import zipfile
 import struct
 import time
-import string
 import volatility.plugins as plugins
 import volatility.debug as debug
 import volatility.obj as obj
