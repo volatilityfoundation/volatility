@@ -160,7 +160,7 @@ class proc(obj.CType):
     def get_process_address_space(self):
 
         cr3 = self.task.map.pmap.pm_cr3
-        map_val = str(self.task.map.pmap.pm_task_map)
+        map_val = str(self.task.map.pmap.pm_task_map or '')
 
         # if the machine is 64 bit capable
         x86_64_flag_addr = self.obj_vm.profile.get_symbol("_x86_64_flag")
@@ -259,6 +259,9 @@ class proc(obj.CType):
         while argc > 0:
             arg = obj.Object("String", offset = argsstart, vm = proc_as, length = 256)
                 
+            if not arg:
+                break
+
             # Initial address of the next string
             argsstart += len(str(arg)) + 1
 
