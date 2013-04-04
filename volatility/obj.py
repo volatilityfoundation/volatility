@@ -950,15 +950,14 @@ class Profile(object):
             if name not in self.types:
                 self.types[name] = Curry(self.object_classes[name], name)
 
-    @classproperty
-    @classmethod
-    def metadata(cls):
+    @property
+    def metadata(self):
         """ Returns a read-only dictionary copy of the metadata associated with a profile """
         prefix = '_md_'
         result = {}
-        for i in dir(cls):
+        for i in dir(self):
             if i.startswith(prefix):
-                result[i[len(prefix):]] = getattr(cls, i)
+                result[i[len(prefix):]] = getattr(self, i)
         return result
 
     def _get_subclasses(self, cls):

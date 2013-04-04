@@ -626,7 +626,7 @@ def convert_file(mac_file, outfile):
 
 def main():
 
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 3:
 
         print "converting file"
         mac_file = open(sys.argv[1], "r")
