@@ -39,7 +39,7 @@ class mac_psaux(pstasks.mac_tasks):
             self.table_row(outfd, 
                            proc.p_pid, 
                            proc.p_comm, 
-                           str(proc.task.map.pmap.pm_task_map)[9:],
+                           str(proc.task.map.pmap.pm_task_map or '')[9:],
                            proc.user_stack,
                            proc.p_argslen,
                            proc.p_argc,
