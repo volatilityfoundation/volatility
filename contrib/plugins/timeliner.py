@@ -77,9 +77,9 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassi
         config.remove_option("UNSAFE")
 
         config.add_option('HIVE', short_option = 'H',
-                          help = 'Registry Hive', type = 'str')
+                          help = 'Gather Timestamps from a Particular Registry Hive', type = 'str')
         config.add_option('USER', short_option = 'U',
-                          help = 'User Hive', type = 'str')
+                          help = 'Gather Timestamps from a Particular User\'s Hive(s)', type = 'str')
         config.add_option("REGISTRY", short_option = "R", default = False, action = 'store_true',
                           help = 'Adds registry keys/dates to timeline')
 
@@ -107,6 +107,9 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassi
             debug.error("You must install OpenPyxl for xlsx format:\n\thttps://bitbucket.org/ericgazoni/openpyxl/wiki/Home")
         elif self._config.OUTPUT == "xlsx" and not self._config.OUTPUT_FILE:
             debug.error("You must specify an output *.xlsx file!\n\t(Example: --output-file=OUTPUT.xlsx)")
+
+        if (self._config.HIVE or self._config.USER) and not (self._config.REGISTRY):
+            debug.error("You must use -R/--registry in conjuction with -H/--hive and/or -U/--user")
 
         addr_space = utils.load_as(self._config)
         version = (addr_space.profile.metadata.get('major', 0), 
