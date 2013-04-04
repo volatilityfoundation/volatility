@@ -105,25 +105,16 @@ class VolatilityDTB(obj.VolatilityMagic):
         
         yield ret
 
+# the intel check, simply checks for the static paging of init_task
 class VolatilityMacIntelValidAS(obj.VolatilityMagic):
     """An object to check that an address space is a valid Mac Intel Paged space"""
-
-    def _set_profile_metadata(self, version):
-
-        start = version[len("Darwin Kernel Version "):]
-        idx = start.find(":")
-        (major, minor, _) = [int(x) for x in start[:idx].split(".")]
-
-        setattr(self.obj_vm.profile, '_md_major', major)
-        setattr(self.obj_vm.profile, '_md_minor', minor)
 
     def generate_suggestions(self):
         version_addr = self.obj_vm.profile.get_symbol("_version")
 
-        string = self.obj_vm.read(version_addr, 60)
+        string = self.obj_vm.read(version_addr, 6)
 
-        if string.startswith("Darwin"):
-            self._set_profile_metadata(string)
+        if string == "Darwin":
             yield True
         else:
             yield False

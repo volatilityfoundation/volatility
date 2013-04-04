@@ -27,45 +27,8 @@ import volatility.plugins.mac.common as common
 class mac_check_trap_table(common.AbstractMacCommand):
     """ Checks to see if system call table entries are hooked """
 
-    def _set_vtypes(self):
-        x86_10_vtypes = { 
-            'mach_trap' : [ 16, {
-                'mach_trap_function': [ 4, ['pointer', ['void']]]
-                }]}
-        x86_other_vtypes = { 
-            'mach_trap' : [ 8, {
-                'mach_trap_function': [ 4, ['pointer', ['void']]]
-                }]}
-        x64_10_vtypes = { 
-            'mach_trap' : [ 40, {
-                'mach_trap_function': [ 8, ['pointer', ['void']]]
-                }]}
-        x64_other_vtypes = { 
-            'mach_trap' : [ 16, {
-                'mach_trap_function': [ 8, ['pointer', ['void']]]
-                }]}
-
-        arch  = self.addr_space.profile.metadata.get('memory_model', '32bit')
-        major = self.addr_space.profile.metadata.get('major', 0)
-
-        if arch == "32bit":
-            if major == 10:
-                vtypes = x86_10_vtypes
-            else:
-                vtypes = x86_other_vtypes
-        else:
-            if major == 10:
-                vtypes = x64_10_vtypes
-            else:
-                vtypes = x64_other_vtypes
-
-        self.addr_space.profile.vtypes.update(vtypes)
-        self.addr_space.profile.compile()
-
     def calculate(self):
         common.set_plugin_members(self)
-
-        self._set_vtypes()
 
         sym_addrs = self.profile.get_all_addresses()
 
