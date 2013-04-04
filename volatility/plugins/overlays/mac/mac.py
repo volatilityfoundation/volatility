@@ -162,16 +162,20 @@ class proc(obj.CType):
         cr3 = self.task.map.pmap.pm_cr3
         map_val = str(self.task.map.pmap.pm_task_map)
 
-        if (map_val == "TASK_MAP_32BIT" and 
-                self.obj_vm.profile.metadata.get('memory_model', '64bit') == "64bit"):
-            
+        # if the machine is 64 bit capable
+        x86_64_flag_addr = self.obj_vm.profile.get_symbol("_x86_64_flag")
+        x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = self.obj_vm)
+
+        is_64bit_cap = x86_64_flag == 1
+
+        if map_val == "TASK_MAP_32BIT" and is_64bit_cap: 
             # A 32 bit process on a 64 bit system, requires 64 bit paging
 
             # Catch exceptions when trying to get a process AS for kernel_task
             # which isn't really even a process. It needs to use the default cr3
             try:
                 proc_as = amd64.AMD64PagedMemory(self.obj_vm.base, 
-                                                 self.obj_vm.get_config(), dtb = cr3)
+                                                 self.obj_vm.get_config(), dtb = cr3, skip_as_check = True)
             except IOError:
                 proc_as = self.obj_vm
 
