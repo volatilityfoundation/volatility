@@ -159,6 +159,9 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
         else:
             self.as_assert(0, "MachO Header signature invalid")
 
+        # get the segments
+        self.segs = []
+
         self.addr_cache = {}
         self.parse_macho()
 
@@ -168,22 +171,20 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
 
         return object
 
-    def get_base_object(self, object, offset):
-        return obj.Object(object, offset, vm = self.base)
+    def get_available_addresses(self):
+        for seg in self.segs:
+            yield seg.vmaddr, seg.vmsize
 
     def parse_macho(self):
         header_name = self.get_object_name("mach_header")
         header_size = self.profile.get_obj_size(header_name)
 
-        header = self.get_base_object(header_name, 0)
+        header = obj.Object(header_name, 0, self.base)
         offset = header_size
-
-        # get the segments
-        self.segs = []
 
         for i in xrange(0, header.ncmds):
             structname = self.get_object_name("segment_command")
-            seg = self.get_base_object(structname, offset)
+            seg = obj.Object(structname, offset, self.base)
             self.segs.append(seg)           
             offset = offset + seg.cmdsize
 
@@ -203,5 +204,8 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
                 return ret 
 
         return None
+
+    def zread(self, addr, length):
+        return self.read(addr, length) or "\x00" * length
 
 
