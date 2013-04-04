@@ -24,12 +24,10 @@ import volatility.obj as obj
 import volatility.addrspace as addrspace
 
 macho_types = {
- 
  'fat_header': [ 0x8, {
     'magic': [0x0, ['unsigned int']],
     'nfat_arch': [0x4, ['unsigned int']],
 }],
-
  'fat_arch': [ 0x14, {
     'cputype': [0x0, ['int']],
     'cpusubtype': [0x4, ['int']],
@@ -37,7 +35,6 @@ macho_types = {
     'size': [0xc, ['unsigned int']],
     'align': [0x10, ['unsigned int']],
 }],
-
  'mach_header_64': [ 0x20, {
     'magic': [0x0, ['unsigned int']],
     'cputype': [0x4, ['int']],
@@ -48,7 +45,6 @@ macho_types = {
     'flags': [0x18, ['unsigned int']],
     'reserved': [0x1c, ['unsigned int']],
 }],
- 
  'mach_header': [ 0x1c, {
     'magic': [0x0, ['unsigned int']],
     'cputype': [0x4, ['int']],
@@ -58,7 +54,6 @@ macho_types = {
     'sizeofcmds': [0x14, ['unsigned int']],
     'flags': [0x18, ['unsigned int']],
 }],
- 
  'symtab_command': [ 0x18, {
     'cmd': [0x0, ['unsigned int']],
     'cmdsize': [0x4, ['unsigned int']],
@@ -67,12 +62,10 @@ macho_types = {
     'stroff': [0x10, ['unsigned int']],
     'strsize': [0x14, ['unsigned int']],
 }],
-
 'load_command': [ 0x8, {
     'cmd': [0x0, ['unsigned int']],
     'cmdsize': [0x4, ['unsigned int']],
 }],
-
 'segment_command': [ 0x38, {
     'cmd': [0x0, ['unsigned int']],
     'cmdsize': [0x4, ['unsigned int']],
@@ -86,7 +79,6 @@ macho_types = {
     'nsects': [0x30, ['unsigned int']],
     'flags': [0x34, ['unsigned int']],
 }],
-
 'segment_command_64': [ 0x48, {
     'cmd': [0x0, ['unsigned int']],
     'cmdsize': [0x4, ['unsigned int']],
@@ -100,7 +92,6 @@ macho_types = {
     'nsects': [0x40, ['unsigned int']],
     'flags': [0x44, ['unsigned int']],
 }],
-
 'symtab_command': [ 0x18, {
     'cmd': [0x0, ['unsigned int']],
     'cmdsize': [0x4, ['unsigned int']],
@@ -109,7 +100,6 @@ macho_types = {
     'stroff': [0x10, ['unsigned int']],
     'strsize': [0x14, ['unsigned int']],
 }],
-
  'section_64': [ 0x50, {
     'sectname': [0x0, ['array', 16, ['char']]],
     'segname': [0x10, ['array', 16, ['char']]],
@@ -124,7 +114,6 @@ macho_types = {
     'reserved2': [0x48, ['unsigned int']],
     'reserved3': [0x4c, ['unsigned int']],
 }],
-
 'section': [ 0x44, {
     'sectname': [0x0, ['array', 16, ['char']]],
     'segname': [0x10, ['array', 16, ['char']]],
@@ -138,8 +127,6 @@ macho_types = {
     'reserved1': [0x3c, ['unsigned int']],
     'reserved2': [0x40, ['unsigned int']],
 }],
-
-
 }
 
 class MachoTypes(obj.ProfileModification):
@@ -167,14 +154,12 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
 
         if sig == '\xce\xfa\xed\xfe':
             self.bits = 32
-                    
         elif sig == '\xcf\xfa\xed\xfe':
             self.bits = 64
         else:
             self.as_assert(0, "MachO Header signature invalid")
 
         self.addr_cache = {}
-
         self.parse_macho()
 
     def get_object_name(self, object):
@@ -184,17 +169,13 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
         return object
 
     def get_base_object(self, object, offset):
-        return obj.Object(object, offset, vm=self.base)
-
-    def sizeOf(self, name):
-        return self.profile.get_obj_size(name)
+        return obj.Object(object, offset, vm = self.base)
 
     def parse_macho(self):
-        header_name   = self.get_object_name("mach_header")
-        header_size   = self.sizeOf(header_name)
+        header_name = self.get_object_name("mach_header")
+        header_size = self.profile.get_obj_size(header_name)
 
         header = self.get_base_object(header_name, 0)
-        
         offset = header_size
 
         # get the segments
@@ -202,11 +183,8 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
 
         for i in xrange(0, header.ncmds):
             structname = self.get_object_name("segment_command")
-
             seg = self.get_base_object(structname, offset)
-
             self.segs.append(seg)           
-
             offset = offset + seg.cmdsize
 
     def read(self, addr, length):
@@ -219,13 +197,9 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
             if seg.vmaddr <= addr < seg.vmaddr + seg.vmsize:
                 # find offset into seg and return place inside file
                 vaddr = addr - seg.vmaddr.v()
-
                 where = vaddr + seg.fileoff.v()
-
-                ret   = self.base.read(where, length)
-
+                ret = self.base.read(where, length)
                 self.addr_cache[key] = ret      
-
                 return ret 
 
         return None
