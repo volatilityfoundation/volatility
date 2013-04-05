@@ -756,6 +756,7 @@ class MacObjectClasses(obj.ProfileModification):
             'proc' : proc,
             'zone' : zone,
             'OSString' : OSString,
+            'OSString_class' : OSString,
             'sysctl_oid' : sysctl_oid,
             'IpAddress': basic.IpAddress,
             'Ipv6Address': basic.Ipv6Address,

@@ -258,6 +258,24 @@ class DWARFParser(object):
 
             self.vtypes[parent_name][1][name] = [off, memb_tp]
 
+        elif kind == 'TAG_member' and parent_kind == 'TAG_class_type':
+            name = data.get('AT_name', "__unnamed_%s" % statement_id)
+            off = int(data['AT_data_member_location'])
+
+            if 'AT_bit_size' in data and 'AT_bit_offset' in data:
+                full_size = int(data['AT_byte_size'])*8
+                stbit = int(data['AT_bit_offset'])
+                edbit = stbit + int(data['AT_bit_size'])
+                stbit = full_size - stbit
+                edbit = full_size - edbit
+                stbit, edbit = edbit, stbit
+                assert stbit < edbit
+                memb_tp = ['BitField', dict(start_bit = stbit, end_bit = edbit)]
+            else:
+                memb_tp = data['AT_type']
+
+            self.vtypes[parent_name][1][name] = [off, memb_tp]
+
         elif kind == 'TAG_member' and parent_kind == 'TAG_union_type':
             name = data.get('AT_name', "__unnamed_%s" % statement_id)
             self.vtypes[parent_name][1][name] = [0, data['AT_type']]

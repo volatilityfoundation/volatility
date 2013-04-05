@@ -28,14 +28,30 @@ import volatility.plugins.mac.lsmod as lsmod
 class mac_notifiers(lsmod.mac_lsmod):
     """ Detects rootkits that add hooks into I/O Kit (e.g. LogKext) """
 
+    def _struct_or_class(self, type_name):
+        """Return the name of a structure or class. 
+
+        More recent versions of OSX define some types as 
+        classes instead of structures, so the naming is
+        a little different.   
+        """
+        if self.addr_space.profile.vtypes.has_key(type_name):
+            return type_type
+        else:
+            return type_name + "_class"
+
     def calculate(self):
         common.set_plugin_members(self)
 
         (kernel_symbol_addresses, kmods) = common.get_kernel_addrs(self)
         gnotify_addr = common.get_cpp_sym("gNotifications", self.addr_space.profile)
-        gnotify_ptr = obj.Object("Pointer", offset = gnotify_addr, vm = self.addr_space)
-        gnotifications = gnotify_ptr.dereference_as("OSDictionary")
-        ents = obj.Object('Array', offset = gnotifications.dictionary, vm = self.addr_space, targetType = 'dictEntry', count = gnotifications.count)
+        p = obj.Object("Pointer", offset = gnotify_addr, vm = self.addr_space)
+        gnotifications = p.dereference_as(self._struct_or_class("OSDictionary"))
+
+        ents = obj.Object('Array', offset = gnotifications.dictionary, 
+                          vm = self.addr_space, 
+                          targetType = self._struct_or_class("dictEntry"), 
+                          count = gnotifications.count)
 
         # walk the current set of notifications
         for ent in ents:
@@ -43,14 +59,18 @@ class mac_notifiers(lsmod.mac_lsmod):
             if ent == None:
                 continue
 
-            key = str(ent.key.dereference_as("OSString"))
+            key = str(ent.key.dereference_as(self._struct_or_class("OSString")))
 
             # get the value
-            valset = ent.value.dereference_as("OSOrderedSet")
-            notifiers_ptrs = obj.Object('Array', offset = valset.array, vm = self.addr_space, targetType = 'Pointer', count = valset.count)
+            valset = ent.value.dereference_as(self._struct_or_class("OSOrderedSet"))
+
+            notifiers_ptrs = obj.Object('Array', offset = valset.array, 
+                                        vm = self.addr_space, 
+                                        targetType = 'Pointer', 
+                                        count = valset.count)
             
             for ptr in notifiers_ptrs:
-                notifier = ptr.dereference_as("_IOServiceNotifier") 
+                notifier = ptr.dereference_as(self._struct_or_class("_IOServiceNotifier"))
 
                 if notifier == None:
                     continue
@@ -58,7 +78,8 @@ class mac_notifiers(lsmod.mac_lsmod):
                 matches = self.get_matching(notifier)
 
                 # this is the function that handles whatever the notification is for
-                # this should be only in the kernel or in one of the known IOKit drivers for the specific kernel
+                # this should be only in the kernel or in one of the known IOKit 
+                # drivers for the specific kernel
                 handler = notifier.handler
 
                 good = common.is_known_address(handler, kernel_symbol_addresses, kmods)
@@ -68,14 +89,16 @@ class mac_notifiers(lsmod.mac_lsmod):
     def get_matching(self, notifier):
         matches = []
     
-        matching = notifier.matching
-        ents = obj.Object('Array', offset = matching.dictionary, vm = self.addr_space, targetType = 'dictEntry', count = matching.count)
+        ents = obj.Object('Array', offset = notifier.matching.dictionary, 
+                          vm = self.addr_space, 
+                          targetType = self._struct_or_class("dictEntry"), 
+                          count = notifier.matching.count)
 
         for ent in ents:
             if ent == None:
                 continue
 
-            match = ent.value.dereference_as("OSString")            
+            match = ent.value.dereference_as(self._struct_or_class("OSString"))        
             matches.append(str(match))
 
         return ",".join(matches)
