@@ -50,25 +50,20 @@ class AbstractMacCommand(commands.Command):
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'mac'
 
-def is_known_address(handler, kernel_symbol_addresses, kmods, printme = 0):
+def is_known_address(handler, kernel_symbol_addresses, kmods):
     # see if this handler is in a known location
     good = 0 
 
     handler = handler.v()
 
     if handler in kernel_symbol_addresses:
-        if printme:
-            print " in kernel ",
         good = 1     
     else:
         # see if the address fits in any of the known modules
         for (start, end, name) in kmods:
             if start <= handler <= end:
-                if printme:
-                    print " in module %s ".format(name),
                 good = 1
                 break
-
     return good
 
 def get_kernel_addrs(obj_ref):
