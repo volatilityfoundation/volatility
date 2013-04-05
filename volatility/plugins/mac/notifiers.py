@@ -43,7 +43,7 @@ class mac_notifiers(lsmod.mac_lsmod):
             if ent == None:
                 continue
 
-            key = ent.key.dereference_as("OSString") 
+            key = str(ent.key.dereference_as("OSString"))
 
             # get the value
             valset = ent.value.dereference_as("OSOrderedSet")
