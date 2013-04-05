@@ -348,8 +348,7 @@ class zone(obj.CType):
 
         nxt = obj.Object("zone_free_element", offset = self.free_elements, vm = self.obj_vm)
 
-        i = 0
-        while 1:
+        while nxt:
             o = nxt.obj_offset
 
             val = obj.Object(elem_type, offset = o, vm = self.obj_vm)
@@ -357,10 +356,6 @@ class zone(obj.CType):
  
             nxt = nxt.m("next")
         
-            i = i + 1
-            if i == 100:
-                break
-
         return ret
 
 class sysctl_oid(obj.CType):
