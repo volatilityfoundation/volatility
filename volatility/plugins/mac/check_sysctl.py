@@ -29,8 +29,9 @@ class mac_check_sysctl(common.AbstractMacCommand):
     """ Checks for unknown sysctl handlers """
 
     def _process_sysctl_list(self, sysctl_list, r = 0):
+
         if type(sysctl_list) == obj.Pointer:
-            sysctl_list = obj.Object("sysctl_oid_list", offset = sysctl_list.dereference(), vm = self.addr_space)
+            sysctl_list = sysctl_list.dereference_as("sysctl_oid_list")
 
         sysctl = sysctl_list.slh_first
         
