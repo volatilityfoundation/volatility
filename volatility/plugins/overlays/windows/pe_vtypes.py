@@ -306,11 +306,11 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
 
         # Make sure the directory exists 
         if data_dir.VirtualAddress == 0 or data_dir.Size == 0:
-            raise ValueError('No export directory')
+            raise ValueError('No directory index {0}'.format(dir_index))
 
         # Make sure the directory VA and Size are sane 
         if data_dir.VirtualAddress + data_dir.Size > nt_header.OptionalHeader.SizeOfImage:
-            raise ValueError('Invalid Export directory')
+            raise ValueError('Invalid directory for index {0}'.format(dir_index))
 
         return data_dir
 
@@ -321,6 +321,22 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
     def import_dir(self):
         """Return the IMAGE_DATA_DIRECTORY for imports"""
         return self._directory(1) # DIRECTORY_ENTRY_IMPORT
+
+    def debug_dir(self):
+        """Return the IMAGE_DEBUG_DIRECTORY for debug info"""
+        return self._directory(6) # IMAGE_DEBUG_DIRECTORY
+
+    def get_debug_directory(self):
+        """Return the debug directory object for this PE"""
+        
+        try:
+            data_dir = self.debug_dir()
+        except ValueError, why:
+            return NoneObject(str(why))
+
+        return obj.Object("_IMAGE_DEBUG_DIRECTORY", 
+                          offset = self.DllBase + data_dir.VirtualAddress, 
+                          vm = self.obj_native_vm)
 
     def getprocaddress(self, func):
         """Return the RVA of func"""
