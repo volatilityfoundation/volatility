@@ -69,7 +69,7 @@ macho_types = {
 'segment_command': [ 0x38, {
     'cmd': [0x0, ['unsigned int']],
     'cmdsize': [0x4, ['unsigned int']],
-    'segname': [0x8, ['array', 16, ['char']]],
+    'segname': [0x8, ['String', dict(length = 16)]],
     'vmaddr': [0x18, ['unsigned int']],
     'vmsize': [0x1c, ['unsigned int']],
     'fileoff': [0x20, ['unsigned int']],
@@ -82,7 +82,7 @@ macho_types = {
 'segment_command_64': [ 0x48, {
     'cmd': [0x0, ['unsigned int']],
     'cmdsize': [0x4, ['unsigned int']],
-    'segname': [0x8, ['array', 16, ['char']]],
+    'segname': [0x8, ['String', dict(length = 16)]],
     'vmaddr': [0x18, ['unsigned long long']],
     'vmsize': [0x20, ['unsigned long long']],
     'fileoff': [0x28, ['unsigned long long']],
@@ -162,6 +162,8 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
         # get the segments
         self.segs = []
 
+        self.header = None
+
         self.addr_cache = {}
         self.parse_macho()
 
@@ -175,14 +177,17 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
         for seg in self.segs:
             yield seg.vmaddr, seg.vmsize
 
+    def get_header(self):
+        return self.header
+
     def parse_macho(self):
         header_name = self.get_object_name("mach_header")
         header_size = self.profile.get_obj_size(header_name)
 
-        header = obj.Object(header_name, 0, self.base)
+        self.header = obj.Object(header_name, 0, self.base)
         offset = header_size
 
-        for i in xrange(0, header.ncmds):
+        for i in xrange(0, self.header.ncmds):
             structname = self.get_object_name("segment_command")
             seg = obj.Object(structname, offset, self.base)
             self.segs.append(seg)           
