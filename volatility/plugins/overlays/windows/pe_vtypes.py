@@ -332,7 +332,7 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
         try:
             data_dir = self.debug_dir()
         except ValueError, why:
-            return NoneObject(str(why))
+            return obj.NoneObject(str(why))
 
         return obj.Object("_IMAGE_DEBUG_DIRECTORY", 
                           offset = self.DllBase + data_dir.VirtualAddress, 
