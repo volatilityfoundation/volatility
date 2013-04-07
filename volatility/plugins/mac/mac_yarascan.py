@@ -44,7 +44,7 @@ class MapYaraScanner(malfind.BaseYaraScanner):
                 yield match
 
 class mac_yarascan(malfind.YaraScan):
-    """A shell in the mac memory image"""
+    """Scan memory for yara signatures"""
 
     @staticmethod
     def is_valid_profile(profile):
