@@ -90,9 +90,11 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
                           help = "Enable write support", callback = write_callback)
 
     def fread(self, length):
+        length = int(length)
         return self.fhandle.read(length)
 
     def read(self, addr, length):
+        addr, length = int(addr), int(length)
         self.fhandle.seek(addr)
         return self.fhandle.read(length)
 
