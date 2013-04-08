@@ -25,7 +25,7 @@ import volatility.obj as obj
 import volatility.plugins.mac.common as common
 
 class mac_check_trap_table(common.AbstractMacCommand):
-    """ Checks to see if system call table entries are hooked """
+    """ Checks to see if mach trap table entries are hooked """
 
     def _set_vtypes(self):
         x86_10_vtypes = { 
