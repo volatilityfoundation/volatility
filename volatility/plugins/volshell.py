@@ -68,6 +68,9 @@ class volshell(common.AbstractWindowsCommand):
     def getpidlist(self):
         return win32.tasks.pslist(self.addrspace)
 
+    def getmodules(self):
+        return win32.modules.lsmod(self.addrspace)
+
     def context_display(self):
         print "Current context: process {0}, pid={1}, ppid={2} DTB={3:#x}".format(self.proc.ImageFileName,
                                                                                   self.proc.UniqueProcessId.v(),
@@ -81,6 +84,16 @@ class volshell(common.AbstractWindowsCommand):
                                                        eproc.UniqueProcessId.v(),
                                                        eproc.InheritedFromUniqueProcessId.v(),
                                                        eproc.obj_offset)
+
+    def modules(self, modules = None):
+        if self.addrspace.profile.metadata.get('memory_model', '32bit') == '32bit':
+            print "{0:10} {1:10} {2}".format("Offset", "Base", "Name")
+        else:
+            print "{0:18} {1:18} {2}".format("Offset", "Base", "Name")
+        for module in modules or self.getmodules():
+            print "{0:#08x} {1:#08x} {2}".format(module.obj_offset, 
+                                                 module.DllBase,
+                                                 module.FullDllName or module.BaseDllName or '')
 
     def set_context(self, offset = None, pid = None, name = None):
         if pid is not None:
@@ -246,6 +259,20 @@ class volshell(common.AbstractWindowsCommand):
             """
             self.ps()
 
+        def modules():
+            """Print a module listing.
+
+            Prints a module listing with base, offset, name etc
+            """
+            self.modules()
+
+        def sc():
+            """Prints the current context.
+            
+            Prints the current process information.
+            """
+            self.context_display()
+
         def list_entry(head, objname, offset = -1, fieldname = None, forward = True):
             """Traverse a _LIST_ENTRY.
 
@@ -374,19 +401,23 @@ class volshell(common.AbstractWindowsCommand):
             for (offset, _size, instruction, hexdump) in iterable:
                 print "{0:<#8x} {1:<32} {2}".format(offset, hexdump, instruction)
 
-        shell_funcs = { 'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis, 'dq': dq}
+        shell_funcs = {'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis, 'dq': dq, 'modules': modules, 'sc': sc,}
         def hh(cmd = None):
             """Get help on a command."""
             shell_funcs['hh'] = hh
             import pydoc
             from inspect import getargspec, formatargspec
             if not cmd:
-                for f in shell_funcs:
+                print "\nUse self.addrspace for Kernel/Virtual AS"
+                print "Use self.addrspace.base for Physical AS"
+                print "Use self.proc to get the current _EPROCESS object"
+                print "  and self.proc.get_process_address_space() for the current process AS"
+                print "  and self.proc.get_load_modules() for the current process DLLs\n"
+                for f in sorted(shell_funcs):
                     doc = pydoc.getdoc(shell_funcs[f])
                     synop, _full = pydoc.splitdoc(doc)
                     print "{0:40} : {1}".format(f + formatargspec(*getargspec(shell_funcs[f])), synop)
-                print
-                print "For help on a specific command, type 'hh(<command>)'"
+                print "\nFor help on a specific command, type 'hh(<command>)'"
             elif type(cmd) == str:
                 try:
                     doc = pydoc.getdoc(shell_funcs[cmd])
