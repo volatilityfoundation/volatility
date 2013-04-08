@@ -41,7 +41,7 @@ class ImageCopy(common.AbstractWindowsCommand):
 
         for s, l in addr_space.get_available_addresses():
             for i in range(s, s + l, blocksize):
-                yield i, addr_space.read(i, min(blocksize, s + l - i))
+                yield i, addr_space.zread(i, min(blocksize, s + l - i))
 
     def human_readable(self, value):
         for i in ['B', 'KB', 'MB', 'GB']:

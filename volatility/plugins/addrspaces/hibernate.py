@@ -131,6 +131,7 @@ class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
                 start = i.StartPage.v()
                 end = i.EndPage.v()
                 LocalPageCnt = end - start
+                self.as_assert((LocalPageCnt > 0), "Negative Page Count Range")
 
                 if end > self.HighestPage:
                     self.HighestPage = end
@@ -286,7 +287,7 @@ class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
 
         return data[offset:offset + available]
 
-    def read(self, addr, length):
+    def read(self, addr, length, zread = False):
         result = ''
         while length > 0:
             data = self._partial_read(addr, length)
@@ -298,44 +299,14 @@ class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
             result += data
 
         if result == '':
+            if zread:
+                return ('\0' * length)
             result = obj.NoneObject("Unable to read data at " + str(addr) + " for length " + str(length))
 
         return result
 
     def zread(self, addr, length):
-        first_block = 0x1000 - addr % 0x1000
-        full_blocks = ((length + (addr % 0x1000)) / 0x1000) - 1
-        left_over = (length + addr) % 0x1000
-
-        self.check_address_range(addr)
-
-        ImageXpressHeader = self.get_addr(addr)
-        if ImageXpressHeader == None:
-            if length < first_block:
-                return ('\0' * length)
-            stuff_read = ('\0' * first_block)
-        else:
-            if length < first_block:
-                return self.read(addr, length)
-            stuff_read = self.read(addr, first_block)
-
-        new_addr = addr + first_block
-
-        for _i in range(0, full_blocks):
-            ImageXpressHeader = self.get_addr(new_addr)
-            if ImageXpressHeader == None:
-                stuff_read = stuff_read + ('\0' * 0x1000)
-            else:
-                stuff_read = stuff_read + self.read(new_addr, 0x1000)
-            new_addr = new_addr + 0x1000
-
-        if left_over > 0:
-            ImageXpressHeader = self.get_addr(new_addr)
-            if ImageXpressHeader == None:
-                stuff_read = stuff_read + ('\0' * left_over)
-            else:
-                stuff_read = stuff_read + self.read(new_addr, left_over)
-
+        stuff_read = self.read(addr, length, zread = True)
         return stuff_read
 
     def read_long(self, addr):
