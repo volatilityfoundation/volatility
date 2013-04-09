@@ -61,16 +61,15 @@ class mac_proc_maps(pstasks.mac_tasks):
             return "sub_map" 
 
         # find_vnode_object
-        object = hdr.object.vm_object 
+        vnode_object = hdr.object.vm_object 
 
-        while object.shadow.dereference() != None:
-            object = object.shadow.dereference()
+        while vnode_object.shadow.dereference() != None:
+            vnode_object = vnode_object.shadow.dereference()
 
-        ops = object.pager.mo_pager_ops.v()
+        ops = vnode_object.pager.mo_pager_ops.v()
 
         if ops == self.addr_space.profile.get_symbol("_vnode_pager_ops"):
-            vpager = obj.Object("vnode_pager", offset = object.pager, vm = self.addr_space)
-            
+            vpager = obj.Object("vnode_pager", offset = vnode_object.pager, vm = self.addr_space)
             ret = vpager.vnode_handle
         else:
             ret = None
