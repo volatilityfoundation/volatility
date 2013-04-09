@@ -125,3 +125,12 @@ def inet_ntop(address_family, packed_ip):
     elif address_family == socket.AF_INET6:
         return inet_ntop6(packed_ip)
     raise socket.error("[Errno 97] Address family not supported by protocol")
+
+def iterfind(data, string):
+    """This function is called by the search_process_memory() 
+    method of windows, linux, and mac process objects"""
+
+    offset = data.find(string, 0)
+    while offset >= 0:
+        yield offset
+        offset = data.find(string, offset + len(string))

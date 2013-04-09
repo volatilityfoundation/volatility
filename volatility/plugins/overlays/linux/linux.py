@@ -38,6 +38,7 @@ import volatility.dwarf as dwarf
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.flags as linux_flags
 import volatility.addrspace as addrspace
+import volatility.utils as utils
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
 
@@ -658,11 +659,6 @@ class task_struct(obj.CType):
             yield vma
     
     def search_process_memory(self, s, heap_only = False):
-        def iterfind(data, string):
-            offset = data.find(string, 0)
-            while offset >= 0:
-                yield offset
-                offset = data.find(string, offset + len(string))
 
         # Allow for some overlap in case objects are 
         # right on page boundaries 
@@ -691,7 +687,7 @@ class task_struct(obj.CType):
                 if not data:
                     break
                 for x in s:
-                    for hit in iterfind(data, x):
+                    for hit in utils.iterfind(data, x):
                         yield offset + hit
                 offset += min(to_read, scan_blk_sz)
 

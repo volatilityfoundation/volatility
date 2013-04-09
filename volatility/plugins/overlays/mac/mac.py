@@ -31,6 +31,7 @@ import volatility.scan as scan
 import volatility.plugins.addrspaces.amd64 as amd64
 import volatility.plugins.addrspaces.intel as intel
 import volatility.plugins.overlays.native_types as native_types
+import volatility.utils as utils
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
 
@@ -244,12 +245,6 @@ class proc(obj.CType):
         @param s: a list of strings like ["one", "two"]
         """
 
-        def iterfind(data, string):
-            offset = data.find(string, 0)
-            while offset >= 0:
-                yield offset
-                offset = data.find(string, offset + len(string))
-
         # Allow for some overlap in case objects are 
         # right on page boundaries 
         overlap = 1024
@@ -267,7 +262,7 @@ class proc(obj.CType):
                 if not data:
                     break
                 for x in s:
-                    for hit in iterfind(data, x):
+                    for hit in utils.iterfind(data, x):
                         yield offset + hit
                 offset += min(to_read, scan_blk_sz)
 
