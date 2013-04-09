@@ -68,7 +68,12 @@ class mac_yarascan(malfind.YaraScan):
         if self._config.KERNEL:
             ## http://fxr.watson.org/fxr/source/osfmk/mach/i386/vm_param.h?v=xnu-2050.18.24
             if self.addr_space.profile.metadata.get('memory_model', '32bit') == "32bit":
-                kernel_start = 0xc0000000
+                x86_64_flag_addr = self.addr_space.profile.get_symbol("_x86_64_flag")
+                x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = self.addr_space)
+                if x86_64_flag == 0:
+                    kernel_start = 0
+                else:
+                    kernel_start = 0xc0000000
             else:
                 kernel_start = 0xffffff8000000000
 
