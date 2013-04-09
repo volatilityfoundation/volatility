@@ -41,6 +41,7 @@ windows_overlay = {
     'KPCR' : [ 0x0, ['VolatilityMagic', dict(value = 0xffdff000, configname = "KPCR")]],
     'KDBG' : [ 0x0, ['VolatilityKDBG', dict(configname = "KDBG")]],
     'IA32ValidAS': [ 0x0, ['VolatilityIA32ValidAS']],
+    'AMD64ValidAS': [ 0x0, ['VolatilityAMD64ValidAS']],
     # Pool allocations are aligned to this many bytes.
     'PoolAlignment': [0x0, ['VolatilityMagic', dict(value = 8)]],
     #hibrfil.sys values
@@ -785,6 +786,17 @@ class VolatilityIA32ValidAS(obj.VolatilityMagic):
 
         yield False
 
+class VolatilityAMD64ValidAS(obj.VolatilityMagic):
+    def generate_suggestions(self):
+        if self.obj_vm.vtop(0xFFFFF78000000000) != None:
+            if (self.obj_vm.vtop(0xFFFFF78000000000)) == (self.obj_vm.vtop(0x7FFE0000)):
+                yield True
+                raise StopIteration
+            if obj.Object("_KUSER_SHARED_DATA", offset = 0xFFFFF78000000000, vm = self.obj_vm).Reserved1 == 0x7FFEFFFF:
+                yield True
+                raise StopIteration
+        yield False
+
 class _IMAGE_DOS_HEADER(obj.CType):
     """DOS header"""
 
@@ -923,6 +935,7 @@ class WindowsObjectClasses(obj.ProfileModification):
             'VolatilityKPCR': VolatilityKPCR,
             'VolatilityKDBG': VolatilityKDBG,
             'VolatilityIA32ValidAS': VolatilityIA32ValidAS,
+            'VolatilityAMD64ValidAS': VolatilityAMD64ValidAS,
             'VolatilityMaxAddress': VolatilityMaxAddress,
             '_IMAGE_DOS_HEADER': _IMAGE_DOS_HEADER,
             '_IMAGE_NT_HEADERS': _IMAGE_NT_HEADERS,

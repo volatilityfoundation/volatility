@@ -84,6 +84,8 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         volmag = obj.VolMagic(self)
         if not skip_as_check and hasattr(volmag, self.checkname):
             self.as_assert(getattr(volmag, self.checkname).v(), "Failed valid Address Space check")
+        else:
+            self.as_assert(False, "Profile does not have valid Address Space check")
 
         # Reserved for future use
         #self.pagefile = config.PAGEFILE
