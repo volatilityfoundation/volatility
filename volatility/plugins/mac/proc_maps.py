@@ -51,53 +51,6 @@ class mac_proc_maps(pstasks.mac_tasks):
                            map.links.start, 
                            map.links.end, 
                            map.get_perms(), 
-                           self._get_path_for_map(map))
+                           map.get_path())
 
-    def _get_vnode_for_map(self, map):
-        hdr = map.dereference()
-
-        # TODO 
-        if hdr.is_sub_map.v() == 1:
-            return "sub_map" 
-
-        # find_vnode_object
-        vnode_object = hdr.object.vm_object 
-
-        while vnode_object.shadow.dereference() != None:
-            vnode_object = vnode_object.shadow.dereference()
-
-        ops = vnode_object.pager.mo_pager_ops.v()
-
-        if ops == self.addr_space.profile.get_symbol("_vnode_pager_ops"):
-            vpager = obj.Object("vnode_pager", offset = vnode_object.pager, vm = self.addr_space)
-            ret = vpager.vnode_handle
-        else:
-            ret = None
-
-        return ret
-
-    def _get_path_for_map(self, map):
-        
-        ## FIXME: we should move this code to an object class 
-        ## like vm_map_entry.get_path_name() however the subfunction        
-        ## calls self.addr_space.profile.get_symbol() which is a method of
-        ## the plugin class. 
-
-        vnode = self._get_vnode_for_map(map)
-    
-        if type(vnode) == str and vnode == "sub_map":
-            ret = vnode  
-        elif vnode:
-            path = []
-
-            while vnode:
-                path.append(str(vnode.v_name.dereference() or ''))
-                vnode = vnode.v_parent
-
-            path.reverse()
-            ret = "/".join(path)
-        else:
-            ret = ""
-                
-        return ret
 

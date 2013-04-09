@@ -446,6 +446,45 @@ class vm_map_entry(obj.CType):
 
         return perms
 
+    def get_path(self):
+
+        vnode = self._get_vnode()
+    
+        if type(vnode) == str and vnode == "sub_map":
+            ret = vnode  
+        elif vnode:
+            path = []
+            while vnode:
+                path.append(str(vnode.v_name.dereference() or ''))
+                vnode = vnode.v_parent
+            path.reverse()
+            ret = "/".join(path)
+        else:
+            ret = ""
+                
+        return ret
+
+    def _get_vnode(self):
+
+        if self.is_sub_map == 1:
+            return "sub_map" 
+
+        # find_vnode_object
+        vnode_object = self.object.vm_object 
+
+        while vnode_object.shadow.dereference() != None:
+            vnode_object = vnode_object.shadow.dereference()
+
+        ops = vnode_object.pager.mo_pager_ops.v()
+
+        if ops == self.obj_vm.profile.get_symbol("_vnode_pager_ops"):
+            vpager = obj.Object("vnode_pager", offset = vnode_object.pager, vm = self.obj_vm)
+            ret = vpager.vnode_handle
+        else:
+            ret = None
+
+        return ret
+
 class sockaddr_dl(obj.CType):
 
     def v(self):
