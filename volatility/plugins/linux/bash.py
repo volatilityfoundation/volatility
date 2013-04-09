@@ -91,6 +91,7 @@ class _hist_entry(obj.CType):
         return time_obj
 
 class BashTypes(obj.ProfileModification):
+    conditions = {"os" : lambda x : x in ["linux", "mac"]}
 
     def modification(self, profile):
         
