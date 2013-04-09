@@ -154,7 +154,8 @@ class _IMAGE_EXPORT_DIRECTORY(obj.CType):
             if (func_rva >= exp_dir.VirtualAddress and
                     func_rva < exp_dir.VirtualAddress + exp_dir.Size):
                 n = self._name(func_rva)
-                f = obj.NoneObject("This function is forwarded")
+                f = obj.NoneObject("Ordinal function {0} in module {1} forwards to {2}".format(
+                                   ordinal, self.obj_parent.BaseDllName, n))
             else:
                 n = self._name(name_rva)
                 f = func_rva
