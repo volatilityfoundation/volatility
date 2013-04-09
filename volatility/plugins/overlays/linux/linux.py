@@ -86,10 +86,6 @@ linux_overlay = {
     'dentry' : [None, {
         'd_u'      : [ None , ['list_head', {}]],
     }],
-    'cpuinfo_x86' : [None, {
-        'x86_model_id'  : [ None , ['String', dict(length = 64)]],
-        'x86_vendor_id' : [ None, ['String', dict(length = 16)]],
-        }],
     'VOLATILITY_MAGIC': [None, {
         'DTB'           : [ 0x0, ['VolatilityDTB', dict(configname = "DTB")]],
         'ArmValidAS'   :  [ 0x0, ['VolatilityLinuxARMValidAS']],
@@ -103,12 +99,20 @@ linux_overlay = {
         }],
     }
 
+intel_overlay = {
+    'cpuinfo_x86' : [None, {
+    'x86_model_id' : [ None , ['String', dict(length = 64)]],
+    'x86_vendor_id' : [ None, ['String', dict(length = 16)]],
+    }],
+}
+
 def parse_system_map(data, module):
     """Parse the symbol file."""
     sys_map = {}
     sys_map[module] = {}
 
-    arch = None
+    mem_model = None
+    arch = "x86"    
 
     # get the system map
     for line in data.splitlines():
@@ -120,14 +124,20 @@ def parse_system_map(data, module):
         except ValueError:
             continue
 
+        if symbol == "arm_syscall":
+            arch = "ARM"
+
         if not symbol in sys_map[module]:
             sys_map[module][symbol] = []
 
         sys_map[module][symbol].append([sym_addr, symbol_type])
 
-    arch = str(len(str_addr) * 4) + "bit"
-
-    return arch, sys_map
+    mem_model = str(len(str_addr) * 4) + "bit"
+   
+    if mem_model == "64bit" and arch == "x86":
+        arch = "x64"
+ 
+    return arch, mem_model, sys_map
 
 def LinuxProfileFactory(profpkg):
     """ Takes in a zip file, spits out a LinuxProfile class
@@ -142,6 +152,7 @@ def LinuxProfileFactory(profpkg):
     dwarfdata = None
     sysmapdata = None
 
+    #  XXX Do we want to initialize this
     memmodel, arch = "32bit", "x86"
     profilename = os.path.splitext(os.path.basename(profpkg.filename))[0]
 
@@ -150,8 +161,7 @@ def LinuxProfileFactory(profpkg):
             dwarfdata = profpkg.read(f.filename)
         elif 'system.map' in f.filename.lower():
             sysmapdata = profpkg.read(f.filename)
-            (address, _a, _b) = sysmapdata.splitlines()[0].strip().split()
-            memmodel = str(len(address) * 4) + "bit"
+            arch, memmodel, sysmap = parse_system_map(profpkg.read(f.filename), "kernel")
 
     if memmodel == "64bit":
         arch = "x64"
@@ -164,6 +174,7 @@ def LinuxProfileFactory(profpkg):
         __doc__ = "A Profile for Linux " + profilename + " " + arch
         _md_os = "linux"
         _md_memory_model = memmodel
+        _md_arch = arch
         # Override 64-bit native_types
         native_mapping = {'32bit': native_types.x86_native_types,
                           '64bit': x64_native_types}
@@ -225,7 +236,7 @@ def LinuxProfileFactory(profpkg):
 
         def load_sysmap(self):
             """Loads up the system map data"""
-            _memmodel, sysmapvar = parse_system_map(sysmapdata, "kernel")
+            arch, _memmodel, sysmapvar = parse_system_map(sysmapdata, "kernel")
             debug.debug("{2}: Found system file {0} with {1} symbols".format(f.filename, len(sysmapvar.keys()), profilename))
 
             self.sys_map.update(sysmapvar)
@@ -935,6 +946,14 @@ class LinuxOverlay(obj.ProfileModification):
 
     def modification(self, profile):
         profile.merge_overlay(linux_overlay)
+
+class LinuxIntelOverlay(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'linux',
+                  'arch' : lambda x: x == 'x86' or x == 'x64'}
+    before = ['BasicObjectClasses'] # , 'LinuxVTypes']
+
+    def modification(self, profile):
+        profile.merge_overlay(intel_overlay)
 
 class page(obj.CType):
 
