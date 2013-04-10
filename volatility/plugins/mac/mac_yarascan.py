@@ -19,6 +19,7 @@ import volatility.plugins.mac.pstasks as pstasks
 import volatility.plugins.mac.common as common
 import volatility.utils as utils 
 import volatility.debug as debug
+import volatility.obj as obj
 
 try:
     import yara
