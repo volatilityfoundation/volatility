@@ -38,11 +38,15 @@ class mac_lsof(pstasks.mac_tasks):
             for i, fd in enumerate(fds):
                 f = fd.dereference_as("fileproc")
                 if f:
-                    yield i, f              
+                    yield proc, i, f
  
     def render_text(self, outfd, data):
-        
-        for i, f in data:
+        self.table_header(outfd, [("PID","8"),
+                                  ("File Descriptor", "6"),
+                                  ("File Path", ""),
+                                 ])
+ 
+        for proc, i, f in data:
             ## FIXME after 2.3 replace this explicit int field with the following line:
             ##    if str(f.f_fglob.fg_type) == 'DTYPE_VNODE':
             ## Its not needed for profiles generated with convert.py after r3290 
@@ -50,7 +54,7 @@ class mac_lsof(pstasks.mac_tasks):
             if fg_type == 1: # VNODE
                 vnode = f.f_fglob.fg_data.dereference_as("vnode")
                 path = self.calc_full_path(vnode)
-                outfd.write("{0:d} -> {1:s}\n".format(i, path))
+                self.table_row(outfd, proc.p_pid, i, path)
 
     def do_calc_path(self, ret, vnode, vname):
 
