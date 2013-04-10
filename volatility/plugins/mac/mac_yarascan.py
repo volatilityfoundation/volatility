@@ -62,16 +62,11 @@ class mac_yarascan(malfind.YaraScan):
             
         ## set the linux plugin address spaces 
         common.set_plugin_members(self)
-    
-        ## FIXME: this may not handle all address spaces properly, especially
-        ## the 32bit ones without a split space for user/kernel 
 
         if self._config.KERNEL:
             ## http://fxr.watson.org/fxr/source/osfmk/mach/i386/vm_param.h?v=xnu-2050.18.24
             if self.addr_space.profile.metadata.get('memory_model', '32bit') == "32bit":
-                x86_64_flag_addr = self.addr_space.profile.get_symbol("_x86_64_flag")
-                x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = self.addr_space)
-                if x86_64_flag == 0:
+                if not common.is_64bit_capable(self.addr_space):
                     kernel_start = 0
                 else:
                     kernel_start = 0xc0000000

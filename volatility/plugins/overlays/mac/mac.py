@@ -32,6 +32,7 @@ import volatility.plugins.addrspaces.amd64 as amd64
 import volatility.plugins.addrspaces.intel as intel
 import volatility.plugins.overlays.native_types as native_types
 import volatility.utils as utils
+import volatility.plugins.mac.common as common
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
 
@@ -164,10 +165,7 @@ class proc(obj.CType):
         map_val = str(self.task.map.pmap.pm_task_map or '')
 
         # if the machine is 64 bit capable
-        x86_64_flag_addr = self.obj_vm.profile.get_symbol("_x86_64_flag")
-        x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = self.obj_vm)
-
-        is_64bit_cap = x86_64_flag == 1
+        is_64bit_cap = common.is_64bit_capable(self.obj_vm)
 
         if map_val == "TASK_MAP_32BIT" and is_64bit_cap: 
             # A 32 bit process on a 64 bit system, requires 64 bit paging

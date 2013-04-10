@@ -66,6 +66,15 @@ def is_known_address(handler, kernel_symbol_addresses, kmods):
                 break
     return good
 
+def is_64bit_capable(addr_space):
+    """Test if the AS is capable of doing 64-bits. 
+
+    @returns True if 64-bit capable. 
+    """
+    x86_64_flag_addr = addr_space.profile.get_symbol("_x86_64_flag")
+    x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = addr_space)
+    return x86_64_flag == 1
+
 def get_kernel_addrs(obj_ref):
     import volatility.plugins.mac.lsmod as lsmod
     # all the known addresses in the kernel
