@@ -25,7 +25,7 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 
-class linux_check_evt_arm(linux_common.AbstractLinuxCommand):
+class linux_check_evt_arm(linux_common.AbstractLinuxARMCommand):
     ''' Checks the Exception Vector Table to look for syscall table hooking '''
 
     VECTOR_BASE = 0xffff0000

@@ -39,6 +39,9 @@ class vol_timespec:
 def set_plugin_members(obj_ref):
     obj_ref.addr_space = utils.load_as(obj_ref._config)
 
+    if not obj_ref.is_valid_profile(obj_ref.addr_space.profile):
+        debug.error("This command does not support the selected profile.")
+
 class AbstractLinuxCommand(commands.Command):
     def __init__(self, *args, **kwargs):
         self.addr_space = None
@@ -88,7 +91,20 @@ class AbstractLinuxCommand(commands.Command):
                 
                 if known == 0:
                     yield (check, addr)
-                    
+
+class AbstractLinuxIntelCommand(AbstractLinuxCommand):
+    @staticmethod
+    def is_valid_profile(profile):
+        return AbstractLinuxCommand.is_valid_profile(profile) \
+        and (profile.metadata.get('arch').lower() == 'x86' \
+        or profile.metadata.get('arch').lower() == 'x64')
+
+class AbstractLinuxARMCommand(AbstractLinuxCommand):
+    @staticmethod
+    def is_valid_profile(profile):
+        return AbstractLinuxCommand.is_valid_profile(profile) \
+        and (profile.metadata.get('arch').lower() == 'arm')                   
+ 
 def walk_internal_list(struct_name, list_member, list_start, addr_space = None):
     if not addr_space:
         addr_space = list_start.obj_vm

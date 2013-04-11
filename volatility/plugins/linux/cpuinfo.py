@@ -24,7 +24,7 @@
 import volatility.plugins.linux.common as linux_common
 import volatility.obj as obj
 
-class linux_cpuinfo(linux_common.AbstractLinuxCommand):
+class linux_cpuinfo(linux_common.AbstractLinuxIntelCommand):
     """Prints info about each active processor"""
 
     def calculate(self):

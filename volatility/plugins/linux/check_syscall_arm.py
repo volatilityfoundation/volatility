@@ -25,7 +25,7 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 
-class linux_check_syscall_arm(linux_common.AbstractLinuxCommand):
+class linux_check_syscall_arm(linux_common.AbstractLinuxARMCommand):
     """ Checks if the system call table has been altered """
     
     def _get_syscall_table_size(self):
