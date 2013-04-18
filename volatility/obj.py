@@ -1082,7 +1082,7 @@ class Profile(object):
             before, after = mod.dependencies(self)
             data[mod.__class__.__name__] = data.get(mod.__class__.__name__, set([])).union(set(before))
             for a in after:
-                data[a] = data.get(a, set([])).union(set(mod.__class__.__name__))
+                data[a] = data.get(a, set([])).union(set([mod.__class__.__name__]))
 
         # Ignore self dependencies
         for k, v in data.items():
