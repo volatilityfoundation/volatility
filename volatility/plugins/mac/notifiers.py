@@ -36,7 +36,7 @@ class mac_notifiers(lsmod.mac_lsmod):
         a little different.   
         """
         if self.addr_space.profile.vtypes.has_key(type_name):
-            return type_type
+            return type_name
         else:
             return type_name + "_class"
 
