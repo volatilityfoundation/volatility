@@ -275,9 +275,9 @@ class volshell(common.AbstractWindowsCommand):
             self.modules()
 
         def sc():
-            """Prints the current context.
+            """Show the current context.
             
-            Prints the current process information.
+            Show the current process information.
             """
             self.context_display()
 
