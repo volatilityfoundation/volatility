@@ -56,7 +56,7 @@ class volshell(common.AbstractWindowsCommand):
                           help = 'EPROCESS Offset (in hex) in kernel address space',
                           action = 'store', type = 'int')
         config.add_option('IMNAME', short_option = 'n', default = None,
-                          help = 'Operate on these Process IDs (comma-separated)',
+                          help = 'Operate on this Process name',
                           action = 'store', type = 'str')
         config.add_option('PID', short_option = 'p', default = None,
                           help = 'Operate on these Process IDs (comma-separated)',
