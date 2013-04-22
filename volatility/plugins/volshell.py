@@ -59,8 +59,8 @@ class volshell(common.AbstractWindowsCommand):
                           help = 'Operate on this Process name',
                           action = 'store', type = 'str')
         config.add_option('PID', short_option = 'p', default = None,
-                          help = 'Operate on these Process IDs (comma-separated)',
-                          action = 'store', type = 'str')
+                          help = 'Operate on this Process ID',
+                          action = 'store', type = 'int')
 
         self.addrspace = None
         self.proc = None
