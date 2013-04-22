@@ -143,7 +143,15 @@ class volshell(common.AbstractWindowsCommand):
             self.context_display()
 
         elif self._config.PID is not None:
-            self.set_context(pid = self._config.PID)
+            # FIXME: volshell is really not intended to switch into multiple
+            # process contexts at once, so it doesn't make sense to use a csv
+            # pid list. However, the linux and mac volshell call the respective
+            # linux_pslist and mac_pslist which require a csv pidlist. After 
+            # the 2.3 release we should close this along with issue 375. 
+            pidlist = [int(p) for p in self._config.PID.split(',')]
+            for p in pidlist:
+                self.set_context(pid = p)
+                break
         elif self._config.IMNAME is not None:
             self.set_context(name = self._config.IMNAME)
         else:
