@@ -28,7 +28,7 @@ class DWARFParser(object):
     dwarf_key_val_regex = re.compile(
         '\s*(?P<keyname>\w+)<(?P<val>[^>]*)>')
 
-    dwarf_header_regex2 = re.compile(r'<(?P<level>\d+)><(?P<statement_id>0x[0-9a-fA-F]+)><(?P<kind>\w+)>')
+    dwarf_header_regex2 = re.compile(r'<(?P<level>\d+)><(?P<statement_id>0x[0-9a-fA-F]+([+]0x[0-9a-fA-F]+)?)><(?P<kind>\w+)>')
 
     sz2tp = {8: 'long long', 4: 'int', 2: 'short', 1: 'char'}
     tp2vol = {
@@ -251,12 +251,12 @@ class DWARFParser(object):
             try:
                 off = int(data['DW_AT_data_member_location'].split()[1])
             except:
-                d   = data['DW_AT_data_member_location']
+                d = data['DW_AT_data_member_location']
                 idx = d.find("(")
-            
+
                 if idx != -1:
                     d = d[:idx]
-                
+
                 off = int(d)
 
             if 'DW_AT_bit_size' in data and 'DW_AT_bit_offset' in data:
@@ -375,3 +375,8 @@ class DWARFParser(object):
         for v in sorted(self.all_vars, key = lambda v: self.all_vars[v][0]):
             print "  '%s': [%#010x, %s]," % (v, self.all_vars[v][0], self.all_vars[v][1])
         print "}"
+
+if __name__ == '__main__':
+    import sys
+    dp = DWARFParser(open(sys.argv[1], "rb").read())
+    dp.print_output()
