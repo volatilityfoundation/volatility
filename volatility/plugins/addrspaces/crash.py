@@ -2,7 +2,7 @@
 # Copyright (C) 2007,2008 Volatile Systems
 # Copyright (C) 2005,2006,2007 4tphi Research
 #
-# Authors: 
+# Authors:
 # {npetroni,awalters}@4tphi.net (Nick Petroni and AAron Walters)
 #
 # This program is free software; you can redistribute it and/or modify
@@ -13,11 +13,11 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details. 
+# General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
 """ An AS for processing crash dumps """
@@ -29,28 +29,31 @@ import volatility.addrspace as addrspace
 
 page_shift = 12
 
-class WindowsCrashDumpSpace32(addrspace.BaseAddressSpace):
+class WindowsCrashDumpSpace32(addrspace.AbstractRunBasedMemory):
     """ This AS supports windows Crash Dump format """
     order = 30
     dumpsig = 'PAGEDUMP'
     headertype = "_DMP_HEADER"
+    headerpages = 1
 
     def __init__(self, base, config, **kwargs):
         ## We must have an AS below us
         self.as_assert(base, "No base Address Space")
 
-        addrspace.BaseAddressSpace.__init__(self, base, config, **kwargs)
+        addrspace.AbstractRunBasedMemory.__init__(self, base, config, **kwargs)
 
         ## Must start with the magic PAGEDUMP
         self.as_assert((base.read(0, 8) == self.dumpsig), "Header signature invalid")
 
-        self.runs = []
-
         self.as_assert(self.profile.has_type(self.headertype), self.headertype + " not available in profile")
         self.header = obj.Object(self.headertype, 0, base)
 
-        self.runs = [ (x.BasePage.v(), x.PageCount.v())
-                      for x in self.header.PhysicalMemoryBlockBuffer.Run ]
+        offset = self.headerpages
+        for x in self.header.PhysicalMemoryBlockBuffer.Run:
+            self.runs.append((x.BasePage.v() * 0x1000,
+                              offset * 0x1000,
+                              x.PageCount.v() * 0x1000))
+            offset += x.PageCount.v()
 
         self.dtb = self.header.DirectoryTableBase.v()
 
@@ -60,140 +63,33 @@ class WindowsCrashDumpSpace32(addrspace.BaseAddressSpace):
     def get_base(self):
         return self.base
 
-    def get_addr(self, addr):
-        page_offset = (addr & 0x00000FFF)
-        page = addr >> page_shift
-
-        # This is the offset to account for the header file
-        offset = 1
-        for run in self.runs:
-            if ((page >= run[0]) and (page < (run[0] + run[1]))):
-                run_offset = page - run[0]
-                offset = offset + run_offset
-                baseoffset = (offset * 0x1000) + page_offset
-                return baseoffset
-            offset += run[1]
-        return None
-
     def write(self, phys_addr, buf):
         """This is mostly for support of raw2dmp so that 
         it can modify the kernel CONTEXT after the crash
         dump has been written to disk"""
 
         if not self._config.WRITE:
-            return False 
+            return False
 
-        file_addr = self.get_addr(phys_addr)
+        file_addr = self.translate(phys_addr)
 
         if file_addr is None:
             return False
 
         return self.base.write(file_addr, buf)
 
-    def is_valid_address(self, addr):
-        return self.get_addr(addr) != None
-
-    def read(self, addr, length):
-        first_block = 0x1000 - addr % 0x1000
-        full_blocks = ((length + (addr % 0x1000)) / 0x1000) - 1
-        left_over = (length + addr) % 0x1000
-
-        baddr = self.get_addr(addr)
-        if baddr == None:
-            return obj.NoneObject("Could not get base address at " + str(addr))
-
-        if length < first_block:
-            stuff_read = self.base.read(baddr, length)
-            return stuff_read
-
-        stuff_read = self.base.read(baddr, first_block)
-        new_addr = addr + first_block
-        for _i in range(0, full_blocks):
-            baddr = self.get_addr(new_addr)
-            if baddr == None:
-                return obj.NoneObject("Could not get base address at " + str(new_addr))
-            stuff_read = stuff_read + self.base.read(baddr, 0x1000)
-            new_addr = new_addr + 0x1000
-
-        if left_over > 0:
-            baddr = self.get_addr(new_addr)
-            if baddr == None:
-                return obj.NoneObject("Could not get base address at " + str(new_addr))
-            stuff_read = stuff_read + self.base.read(baddr, left_over)
-
-        return stuff_read
-
-    def zread(self, addr, length):
-        first_block = 0x1000 - addr % 0x1000
-        full_blocks = ((length + (addr % 0x1000)) / 0x1000) - 1
-        left_over = (length + addr) % 0x1000
-
-        self.check_address_range(addr)
-
-        baddr = self.get_addr(addr)
-
-        if baddr == None:
-            if length < first_block:
-                return ('\0' * length)
-            stuff_read = ('\0' * first_block)
-        else:
-            if length < first_block:
-                return self.base.read(baddr, length)
-            stuff_read = self.base.read(baddr, first_block)
-
-        new_addr = addr + first_block
-        for _i in range(0, full_blocks):
-            baddr = self.get_addr(new_addr)
-            if baddr == None:
-                stuff_read = stuff_read + ('\0' * 0x1000)
-            else:
-                stuff_read = stuff_read + self.base.read(baddr, 0x1000)
-
-            new_addr = new_addr + 0x1000
-
-        if left_over > 0:
-            baddr = self.get_addr(new_addr)
-            if baddr == None:
-                stuff_read = stuff_read + ('\0' * left_over)
-            else:
-                stuff_read = stuff_read + self.base.read(baddr, left_over)
-        return stuff_read
-
     def read_long(self, addr):
-        _baseaddr = self.get_addr(addr)
+        _baseaddr = self.translate(addr)
         string = self.read(addr, 4)
         if not string:
             return obj.NoneObject("Could not read data at " + str(addr))
         (longval,) = struct.unpack('=I', string)
         return longval
 
-    def get_available_pages(self):
-        page_list = []
-        for run in self.runs:
-            start = run[0]
-            for page in range(start, start + run[1]):
-                page_list.append([page * 0x1000, 0x1000])
-        return page_list
-
-    def get_address_range(self):
-        """ This relates to the logical address range that is indexable """
-        run = self.runs[-1]
-        size = run[0] * 0x1000 + run[1] * 0x1000
-        return [0, size]
-
     def get_available_addresses(self):
         """ This returns the ranges  of valid addresses """
         for run in self.runs:
-            yield (run[0] * 0x1000, run[1] * 0x1000)
-
-    def get_runs(self):
-        """This returns the crashdump runs"""
-        return self.runs
-
-    def check_address_range(self, addr):
-        memrange = self.get_address_range()
-        if addr < memrange[0] or addr > memrange[1]:
-            raise IOError
+            yield (run[0], run[2])
 
     def close(self):
         self.base.close()
@@ -203,19 +99,4 @@ class WindowsCrashDumpSpace64(WindowsCrashDumpSpace32):
     order = 30
     dumpsig = 'PAGEDU64'
     headertype = "_DMP_HEADER64"
-
-    def get_addr(self, addr):
-        page_offset = (addr & 0x00000FFF)
-        page = addr >> page_shift
-
-        # This is the offset to account for the header file
-        #offset = 1
-        offset = 2
-        for run in self.runs:
-            if ((page >= run[0]) and (page < (run[0] + run[1]))):
-                run_offset = page - run[0]
-                offset = offset + run_offset
-                baseoffset = (offset * 0x1000) + page_offset
-                return baseoffset
-            offset += run[1]
-        return None
+    headerpages = 2

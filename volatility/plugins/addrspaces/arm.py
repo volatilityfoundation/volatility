@@ -12,28 +12,26 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details. 
+# General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
 import struct
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
-import volatility.plugins.addrspaces.intel as intel
+import volatility.plugins.addrspaces.paged as paged
 
-class ArmAddressSpace(intel.JKIA32PagedMemory):
+class ArmAddressSpace(paged.AbstractWritablePagedMemory):
     order = 800
     cache = False
     pae = False
     paging_address_space = True
     checkname = 'ArmValidAS'
-
-    @staticmethod
-    def register_options(config):
-        intel.JKIA32PagedMemory.register_options(config)
+    minimum_size = 0x1000
+    alignment_gcd = 0x1000
 
     def _cache_values(self):
         '''
@@ -47,6 +45,20 @@ class ArmAddressSpace(intel.JKIA32PagedMemory):
         #print "skipping cache"
         pass
 
+    def read_long_phys(self, addr):
+        '''
+        Returns an unsigned 32-bit integer from the address addr in
+        physical memory. If unable to read from that location, returns None.
+        '''
+        try:
+            string = self.base.read(addr, 4)
+        except IOError:
+            string = None
+        if not string:
+            return obj.NoneObject("Could not read_long_phys at offset " + hex(addr))
+        (longval,) = struct.unpack('<I', string)
+        return longval
+
     def page_table_present(self, entry):
         if entry:
             return True # TODO FIXME
@@ -59,7 +71,7 @@ class ArmAddressSpace(intel.JKIA32PagedMemory):
     # 1st Level Descriptor
     def pde_value(self, vaddr):
         return self.read_long_phys(self.dtb | (self.pde_index(vaddr) << 2))
-    
+
     # 2nd Level Page Table Index (Course Pages)
     def pde2_index(self, vaddr):
         return ((vaddr >> 12) & 0x0FF)
@@ -77,13 +89,13 @@ class ArmAddressSpace(intel.JKIA32PagedMemory):
         return self.read_long_phys((pde & 0xFFFFF000) | (self.pde2_index_fine(vaddr) << 2))
 
 
-    def get_pte(self, vaddr, pde_value):        
+    def get_pte(self, vaddr, pde_value):
         # page table
         if (pde_value & 0b11) == 0b00:
-            # If bits[1:0] == 0b00, the associated modified virtual addresses are unmapped, 
+            # If bits[1:0] == 0b00, the associated modified virtual addresses are unmapped,
             # and attempts to access them generate a translation fault
 
-            debug.warning("get_pte: invalid pde_value {0:x}".format(pde_value))            
+            debug.warning("get_pte: invalid pde_value {0:x}".format(pde_value))
             return None
 
         elif (pde_value & 0b11) == 0b10:
@@ -98,10 +110,10 @@ class ArmAddressSpace(intel.JKIA32PagedMemory):
                 return None
             else:
                 return ((pde_value & 0xFFE00000) | (vaddr & 0x1FFFFF))
-  
+
         elif (pde_value & 0b11) == 0b01:
             # If bits[1:0] == 0b01, the entry gives the physical address of a coarse second-level table, that specifies
-            # how the associated 1MB modified virtual address range is mapped. 
+            # how the associated 1MB modified virtual address range is mapped.
             pde2_value = self.pde2_value(vaddr, pde_value)
 
             if not pde2_value:
@@ -114,10 +126,10 @@ class ArmAddressSpace(intel.JKIA32PagedMemory):
             elif (pde2_value & 0b11) == 0b10 or (pde2_value & 0b11) == 0b11:
                 # 4K small pages
                 return ((pde2_value & 0xFFFFF000) | (vaddr & 0x00000FFF))
-            else:			
+            else:
                 debug.warning("get_pte: invalid course pde2_value {0:x}".format(pde2_value))
                 return None
-            
+
         elif (pde_value & 0b11) == 0b11:
             # If bits[1:0] == 0b11, the entry gives the physical address of a fine second-level table. A fine
             # second-level page table specifies how the associated 1MB modified virtual address range is mapped.
@@ -137,13 +149,9 @@ class ArmAddressSpace(intel.JKIA32PagedMemory):
             elif (pde2_value & 0b11) == 0b11:
                 #1k tiny pages
                 return ((pde2_value & 0xFFFFFC00) | (vaddr & 0x3FF))
-            else:			
+            else:
                 debug.warning("get_pte: invalid fine pde2_value {0:x}".format(pde2_value))
                 return None
-
-            
-            
-
 
     def vtop(self, vaddr):
         debug.debug("\n--vtop start: {0:x}".format(vaddr), 4)
@@ -167,6 +175,4 @@ class ArmAddressSpace(intel.JKIA32PagedMemory):
 
         for i in xrange(0, (2 ** 32) - 1, 4096):
             yield (i, 0x1000)
-
-
 

@@ -96,7 +96,10 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
     def read(self, addr, length):
         addr, length = int(addr), int(length)
         self.fhandle.seek(addr)
-        return self.fhandle.read(length)
+        data = self.fhandle.read(length)
+        if len(data) == 0:
+            return None
+        return data
 
     def zread(self, addr, length):
         data = self.read(addr, length)
@@ -135,97 +138,3 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.base == other.base and hasattr(other, "fname") and self.fname == other.fname
 
-
-
-class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
-    """ Class to handle all the associated details of a paged address space
-        
-    Note: Pages can be of any size
-    """
-    def vtop(self, addr):
-        """Abstract function that converts virtual (paged) addresses to physical addresses"""
-        pass
-
-    def get_available_pages(self):
-        """A generator that returns (addr, size) for each of the virtual addresses present, sorted by offset"""
-        pass
-
-    def get_available_addresses(self):
-        """A generator that returns (addr, size) for each valid address block"""
-        runLength = None
-        currentOffset = None
-        for (offset, size) in self.get_available_pages():
-            if (runLength == None):
-                runLength = size
-                currentOffset = offset
-            else:
-                if (offset <= (currentOffset + runLength)):
-                    runLength += (currentOffset + runLength - offset) + size
-                else:
-                    yield (currentOffset, runLength)
-                    runLength = size
-                    currentOffset = offset
-        if (runLength != None and currentOffset != None):
-            yield (currentOffset, runLength)
-        raise StopIteration
-
-    def is_valid_address(self, vaddr):
-        """Returns whether a virtual address is valid"""
-        if vaddr == None:
-            return False
-        try:
-            paddr = self.vtop(vaddr)
-        except BaseException:
-            return False
-        if paddr == None:
-            return False
-        return self.base.is_valid_address(paddr)
-
-
-class AbstractWritablePagedMemory(AbstractPagedMemory):
-    """
-    Mixin class that can be used to add write functionality
-    to any standard address space that supports write() and
-    vtop().
-    """
-    def write(self, vaddr, buf):
-        if not self._config.WRITE:
-            return False
-
-        length = len(buf)
-        first_block = 0x1000 - vaddr % 0x1000
-        full_blocks = ((length + (vaddr % 0x1000)) / 0x1000) - 1
-        left_over = (length + vaddr) % 0x1000
-
-        paddr = self.vtop(vaddr)
-        if paddr == None:
-            return False
-
-        if length < first_block:
-            return self.base.write(paddr, buf)
-
-        self.base.write(paddr, buf[:first_block])
-        buf = buf[first_block:]
-
-        new_vaddr = vaddr + first_block
-        for _i in range(0, full_blocks):
-            paddr = self.vtop(new_vaddr)
-            if paddr == None:
-                raise Exception("Failed to write to page at {0:#x}".format(new_vaddr))
-            if not self.base.write(paddr, buf[:0x1000]):
-                return False
-            new_vaddr = new_vaddr + 0x1000
-            buf = buf[0x1000:]
-
-        if left_over > 0:
-            paddr = self.vtop(new_vaddr)
-            if paddr == None:
-                raise Exception("Failed to write to page at {0:#x}".format(new_vaddr))
-            assert len(buf) == left_over
-            return self.base.write(paddr, buf)
-
-    def write_long_phys(self, addr, val):
-        if not self._config.WRITE:
-            return False
-        buf = struct.pack('=I', val)
-        return self.base.write(addr, buf)

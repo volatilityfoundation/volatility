@@ -12,24 +12,24 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details. 
+# General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
 """ This is Jesse Kornblum's patch to clean up the standard AS's.
 """
 import struct
-import volatility.plugins.addrspaces.standard as standard
-import volatility.addrspace as addrspace
+import volatility.plugins.addrspaces.paged as paged
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 
 # WritablePagedMemory must be BEFORE base address, since it adds the concrete method get_available_addresses
 # If it's second, BaseAddressSpace's abstract version will take priority
-class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddressSpace):
+class JKIA32PagedMemory(paged.AbstractWritablePagedMemory):
+
     """ Standard x86 32 bit non PAE address space.
     
     Provides an address space for IA32 paged memory, aka the x86 
@@ -56,6 +56,9 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
     pae = False
     paging_address_space = True
     checkname = 'IA32ValidAS'
+    # Hardcoded page info to avoid expensive recalculation
+    minimum_size = 0x1000
+    alignment_gcd = 0x1000
 
     def __init__(self, base, config, dtb = 0, skip_as_check = False, *args, **kwargs):
         ## We must be stacked on someone else:
@@ -64,50 +67,10 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         ## We allow users to disable us in favour of the old legacy
         ## modules.
         self.as_assert(not config.USE_OLD_AS, "Module disabled")
-        standard.AbstractWritablePagedMemory.__init__(self, base, config, *args, **kwargs)
-        addrspace.BaseAddressSpace.__init__(self, base, config, *args, **kwargs)
-
-        ## We can not stack on someone with a dtb
-        self.as_assert(not (hasattr(base, 'paging_address_space') and base.paging_address_space), "Can not stack over another paging address space")
-
-        self.dtb = dtb or self.load_dtb()
-        # No need to set the base, it's already been by the inherited class
-
-        self.as_assert(self.dtb != None, "No valid DTB found")
-
-        # The caching code must be in a separate function to allow the
-        # PAE code, which inherits us, to have its own code.
-        self.cache = config.CACHE_DTB
-        if self.cache:
-            self._cache_values()
-
-        volmag = obj.VolMagic(self)
-        if not skip_as_check:
-            if hasattr(volmag, self.checkname):
-                self.as_assert(getattr(volmag, self.checkname).v(), "Failed valid Address Space check")
-            else:
-                self.as_assert(False, "Profile does not have valid Address Space check")
-
-        # Reserved for future use
-        #self.pagefile = config.PAGEFILE
-        self.name = 'Kernel AS'
+        paged.AbstractWritablePagedMemory.__init__(self, base, config, dtb = dtb, skip_as_check = skip_as_check, *args, **kwargs)
 
     def is_valid_profile(self, profile):
         return profile.metadata.get('memory_model', '32bit') == '32bit' or profile.metadata.get('os', 'Unknown').lower() == 'mac'
-
-    @staticmethod
-    def register_options(config):
-        config.add_option("DTB", type = 'int', default = 0,
-                          help = "DTB Address")
-
-        config.add_option("CACHE-DTB", action = "store_false", default = True,
-                          help = "Cache virtual to physical mappings")
-
-    def __getstate__(self):
-        result = addrspace.BaseAddressSpace.__getstate__(self)
-        result['dtb'] = self.dtb
-
-        return result
 
     def _cache_values(self):
         '''
@@ -121,25 +84,6 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
         else:
             self.cache = False
 
-    def load_dtb(self):
-        """Loads the DTB as quickly as possible from the config, then the base, then searching for it"""
-        try:
-            # If the user has manually specified one, then shortcircuit to that one
-            if self._config.DTB:
-                raise AttributeError
-
-            ## Try to be lazy and see if someone else found dtb for
-            ## us:
-            return self.base.dtb
-        except AttributeError:
-            ## Ok so we need to find our dtb ourselves:
-            dtb = obj.VolMagic(self.base).DTB.v()
-            if dtb:
-                ## Make sure to save dtb for other AS's
-                ## Will this have an effect on following ASes attempts if this fails?
-                self.base.dtb = dtb
-                return dtb
-
     def entry_present(self, entry):
         '''
         Returns whether or not the 'P' (Present) flag is on 
@@ -149,7 +93,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
             if (entry & 1):
                 return True
 
-            # The page is in transition and not a prototype. 
+            # The page is in transition and not a prototype.
             # Thus, we will treat it as present.
             if (entry & (1 << 11)) and not (entry & (1 << 10)):
                 return True
@@ -239,68 +183,6 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
 
         return self.get_phys_addr(vaddr, pte_value)
 
-    def __read_chunk(self, vaddr, length):
-        """
-        Read 'length' bytes from the virtual address 'vaddr'.
-        If vaddr does not have a valid mapping, return None.
-
-        This function should not be called from outside this class
-        as it doesn't take page breaks into account. That is,
-        the bytes at virtual addresses 0x1fff and 0x2000 are not
-        guarenteed to be contigious. Calling functions are responsible
-        for determining contiguious blocks.
-        """
-        paddr = self.vtop(vaddr)
-        if paddr is None:
-            return None
-
-        if not self.base.is_valid_address(paddr):
-            return None
-
-        return self.base.read(paddr, length)
-
-
-    def __read_bytes(self, vaddr, length, pad):
-        """
-        Read 'length' bytes from the virtual address 'vaddr'.
-        The 'pad' parameter controls whether unavailable bytes 
-        are padded with zeros.
-        """
-        vaddr, length = int(vaddr), int(length)
-
-        ret = ''
-
-        while length > 0:
-            chunk_len = min(length, 0x1000 - (vaddr % 0x1000))
-
-            buf = self.__read_chunk(vaddr, chunk_len)
-            if not buf:
-                if pad:
-                    buf = '\x00' * chunk_len
-                else:
-                    return obj.NoneObject("Could not read_chunks from addr " + hex(vaddr) + " of size " + hex(chunk_len))
-
-            ret += buf
-            vaddr += chunk_len
-            length -= chunk_len
-
-        return ret
-
-
-    def read(self, vaddr, length):
-        '''
-        Read and return 'length' bytes from the virtual address 'vaddr'. 
-        If any part of that block is unavailable, return None.
-        '''
-        return self.__read_bytes(vaddr, length, pad = False)
-
-    def zread(self, vaddr, length):
-        '''
-        Read and return 'length' bytes from the virtual address 'vaddr'. 
-        If any part of that block is unavailable, pad it with zeros.
-        '''
-        return self.__read_bytes(vaddr, length, pad = True)
-
     def read_long_phys(self, addr):
         '''
         Returns an unsigned 32-bit integer from the address addr in
@@ -314,6 +196,7 @@ class JKIA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddr
             return obj.NoneObject("Could not read_long_phys at offset " + hex(addr))
         (longval,) = struct.unpack('<I', string)
         return longval
+
 
     def get_available_pages(self):
         '''

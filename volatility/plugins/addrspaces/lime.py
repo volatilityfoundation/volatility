@@ -11,11 +11,11 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details. 
+# General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 import volatility.obj as obj
 import volatility.addrspace as addrspace
@@ -25,7 +25,7 @@ class LimeTypes(obj.ProfileModification):
 
     def modification(self, profile):
 
-        profile.vtypes.update({ 
+        profile.vtypes.update({
             'lime_header': [ 0x20, {
                 'magic':     [0x0, ['unsigned int']],
                 'version':   [0x4, ['unsigned int']],
@@ -35,15 +35,7 @@ class LimeTypes(obj.ProfileModification):
                 }],
             })
 
-class segment(object):
-
-    def __init__(self, start, end, offset):
-
-        self.start  = start
-        self.end    = end
-        self.offset = offset
-
-class LimeAddressSpace(addrspace.BaseAddressSpace):
+class LimeAddressSpace(addrspace.AbstractRunBasedMemory):
     """ 
     Address space for Lime 
     """
@@ -52,24 +44,22 @@ class LimeAddressSpace(addrspace.BaseAddressSpace):
     def __init__(self, base, config, *args, **kwargs):
         self.as_assert(base, "lime: need base")
 
-        addrspace.BaseAddressSpace.__init__(self, base, config, *args, **kwargs)
+        addrspace.AbstractRunBasedMemory.__init__(self, base, config, *args, **kwargs)
 
         sig = base.read(0, 4)
 
         ## ARM processors are bi-endian, but little is the default and currently
-        ## the only mode we support; unless it comes a common request. 
+        ## the only mode we support; unless it comes a common request.
         if sig == '\x4c\x69\x4d\x45':
             debug.debug("Big-endian ARM not supported, please submit a feature request")
-        
+
         self.as_assert(sig == '\x45\x4D\x69\x4c', "Invalid Lime header signature")
-        
+
         self.addr_cache = {}
-        self.segs = []
         self.parse_lime()
 
     def parse_lime(self):
-        # get the segments
-        self.segs = []
+        self.runs = []
 
         offset = 0
 
@@ -78,70 +68,22 @@ class LimeAddressSpace(addrspace.BaseAddressSpace):
         while header.magic.v() == 0x4c694d45:
 
             #print "new segment at %x end %x size: %d offset %d | %x" % (header.start, header.end, header.end - header.start, offset, offset)
-            seg = segment(header.start, header.end, offset + self.profile.get_obj_size("lime_header"))
-            self.segs.append(seg)
 
-            seglength = header.end - header.start
+            # Since these values will be used a lot, make sure they aren't reread (ie, no objects in the runs list)
+            seg = (int(header.start), offset + self.profile.get_obj_size("lime_header"), header.end - header.start + 1)
+            self.runs.append(seg)
 
-            offset = offset + seglength + 1 + self.profile.get_obj_size("lime_header")
+            offset = offset + seg[2] + self.profile.get_obj_size("lime_header")
 
             header = obj.Object("lime_header", offset = offset, vm = self.base)
 
-    def read(self, addr, length):
-        return self.__read_bytes(addr, length)
-
-    def zread(self, addr, length):
-        return self.__read_bytes(addr, length, True)
-    
-    def __read_bytes(self, addr, length, pad = False):
-        firstram = self.segs[0].start
+    def translate(self, addr):
+        """Find the offset in the file where a memory address can be found.
+        @param addr: a memory address
+        """
+        firstram = self.runs[0][0]
 
         if addr < firstram:
             addr = firstram + addr
 
-        key = "{0:d}:{1:d}".format(addr, length)
-
-        if key in self.addr_cache:
-            return self.addr_cache[key]
-
-        offset = self.__get_offset(addr)
-
-        if offset: 
-            (_, where) = offset
-            ret = self.base.read(where, length)
-            self.addr_cache[key] = ret
-        
-        elif pad:
-            ret = "\x00" * length
-        else:
-            ret = None
-        
-        return ret        
-
-    def __get_offset(self, addr):
-        for seg in self.segs:
-            if seg.start <= addr <= seg.end:
-
-                delta = addr - seg.start
-
-                where = seg.offset + delta
-
-                # find offset into seg and return place inside file
-                ret = [addr, where]
-                
-                return ret
-
-        return None
-
-    # returns a tuple of (start of segment, size of segment) for each segment
-    # we do not need special logic to ensure multiple tuples aren't contiguos
-    # because lime only creates segments for non-contig RAM sections
-    def get_available_addresses(self):
-        for seg in self.segs:
-
-            seglength = seg.end - seg.start
-
-            yield (seg.start, seglength)
-
-    def is_valid_address(self, addr):
-        return self.__get_offset(addr) != None
+        return addrspace.AbstractRunBasedMemory.translate(self, addr)

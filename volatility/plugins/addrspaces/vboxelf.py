@@ -64,7 +64,7 @@ class VirtualBoxModification(obj.ProfileModification):
             }]})
         profile.object_classes.update({'DBGFCOREDESCRIPTOR': DBGFCOREDESCRIPTOR})
 
-class VirtualBoxCoreDumpElf64(addrspace.BaseAddressSpace):
+class VirtualBoxCoreDumpElf64(addrspace.AbstractRunBasedMemory):
     """ This AS supports VirtualBox ELF64 coredump format """
 
     order = 30
@@ -72,7 +72,7 @@ class VirtualBoxCoreDumpElf64(addrspace.BaseAddressSpace):
     def __init__(self, base, config, **kwargs):
         ## We must have an AS below us
         self.as_assert(base, "No base Address Space")
-        addrspace.BaseAddressSpace.__init__(self, base, config, **kwargs)
+        addrspace.AbstractRunBasedMemory.__init__(self, base, config, **kwargs)
 
         ## Quick test (before instantiating an object) 
         ## for ELF64, little-endian - ELFCLASS64 and ELFDATA2LSB
@@ -116,145 +116,3 @@ class VirtualBoxCoreDumpElf64(addrspace.BaseAddressSpace):
         self.as_assert(self.header.u32Magic == DBGFCORE_MAGIC, 'Could not find VBox core magic signature')
         self.as_assert(self.header.u32FmtVersion == DBGFCORE_FMT_VERSION, 'Unknown VBox core format version')
         self.as_assert(self.runs, 'ELF error: did not find any LOAD segment with main RAM')
-
-    #===============================================================
-    ## FIXME: everything below can be abstract - shared with vmware
-    #===============================================================
-
-    def get_header(self):
-        """Get the DBGFCOREDESCRIPTOR, used by vboxinfo plugin"""
-        return self.header
-
-    def get_runs(self):
-        """Get the memory block info, used by vboxinfo plugin"""
-        return self.runs
-
-    def get_addr(self, addr):
-        """Find the offset in the ELF64 file were a physical 
-        memory address can be found.
-        
-        @param addr: a physical address
-        """
-        for phys_addr, file_offset, length in self.runs:
-            if addr >= phys_addr and addr < phys_addr + length:
-                return file_offset + (addr - phys_addr)
-
-        return None
-
-    def is_valid_address(self, phys_addr):
-        """Check if a physical address is in the file.
-        
-        @param phys_addr: a physical address
-        """
-        return self.get_addr(phys_addr) is not None
-
-    def get_available_pages(self):
-        page_list = []
-        for phys_addr, length in self.get_available_addresses():
-            start = phys_addr
-            for page in range(start, start + length):
-                page_list.append([page * 0x1000, 0x1000])
-        return page_list
-
-    def get_available_addresses(self):
-        """Get a list of physical memory runs"""
-        
-        ## The first (and possibly the only) main memory run 
-        first_run_addr, _, first_run_size = self.runs[0]
-        yield (first_run_addr, first_run_size)
-        
-        ## If a system has more than 3.5 GB RAM, it will be 
-        ## split into multiple runs due to the VGA device mem
-        ## constant VBE_DISPI_LFB_PHYSICAL_ADDRESS 0xE0000000. 
-        if first_run_size == 0xE0000000:
-            for run_addr, _, run_size in self.runs[1:]:
-                ## not all segments above 0xE0000000 are main 
-                ## memory, try to skip those that are not. 
-                if run_addr >= 0x100000000:
-                    yield (run_addr, run_size)
-
-    def get_address_range(self):
-        """ This relates to the logical address range that is indexable """
-        (physical_address, _, length) = self.runs[-1]
-        size = physical_address + length
-        return [0, size]
-
-    #===============================================================
-    ## FIXME: everything below can be abstract - copied from crash
-    #===============================================================
-
-    def read(self, addr, length):
-        """Read data. 
-        
-        @param addr: the physical memory base address
-        @param length: number of bytes to read from phys_addr
-        """
-        first_block = 0x1000 - addr % 0x1000
-        full_blocks = ((length + (addr % 0x1000)) / 0x1000) - 1
-        left_over = (length + addr) % 0x1000
-
-        baddr = self.get_addr(addr)
-        if baddr == None:
-            return obj.NoneObject("Could not get base address at " + str(addr))
-
-        if length < first_block:
-            stuff_read = self.base.read(baddr, length)
-            return stuff_read
-
-        stuff_read = self.base.read(baddr, first_block)
-        new_addr = addr + first_block
-        for _i in range(0, full_blocks):
-            baddr = self.get_addr(new_addr)
-            if baddr == None:
-                return obj.NoneObject("Could not get base address at " + str(new_addr))
-            stuff_read = stuff_read + self.base.read(baddr, 0x1000)
-            new_addr = new_addr + 0x1000
-
-        if left_over > 0:
-            baddr = self.get_addr(new_addr)
-            if baddr == None:
-                return obj.NoneObject("Could not get base address at " + str(new_addr))
-            stuff_read = stuff_read + self.base.read(baddr, left_over)
-
-        return stuff_read
-
-    def check_address_range(self, addr):
-        memrange = self.get_address_range()
-        if addr < memrange[0] or addr > memrange[1]:
-            raise IOError
-
-    def zread(self, addr, length):
-        first_block = 0x1000 - addr % 0x1000
-        full_blocks = ((length + (addr % 0x1000)) / 0x1000) - 1
-        left_over = (length + addr) % 0x1000
-
-        self.check_address_range(addr)
-
-        baddr = self.get_addr(addr)
-
-        if baddr == None:
-            if length < first_block:
-                return ('\0' * length)
-            stuff_read = ('\0' * first_block)
-        else:
-            if length < first_block:
-                return self.base.read(baddr, length)
-            stuff_read = self.base.read(baddr, first_block)
-
-        new_addr = addr + first_block
-        for _i in range(0, full_blocks):
-            baddr = self.get_addr(new_addr)
-            if baddr == None:
-                stuff_read = stuff_read + ('\0' * 0x1000)
-            else:
-                stuff_read = stuff_read + self.base.read(baddr, 0x1000)
-
-            new_addr = new_addr + 0x1000
-
-        if left_over > 0:
-            baddr = self.get_addr(new_addr)
-            if baddr == None:
-                stuff_read = stuff_read + ('\0' * left_over)
-            else:
-                stuff_read = stuff_read + self.base.read(baddr, left_over)
-        return stuff_read

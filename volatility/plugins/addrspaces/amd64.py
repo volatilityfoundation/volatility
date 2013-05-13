@@ -11,21 +11,21 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details. 
+# General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
-""" This is based on Jesse Kornblum's patch to clean up the standard AS's.
-"""
-import volatility.plugins.addrspaces.intel as intel
+import volatility.plugins.addrspaces.paged as paged
+import volatility.obj as obj
 import struct
 
 # WritablePagedMemory must be BEFORE base address, since it adds the concrete method get_available_addresses
 # If it's second, BaseAddressSpace's abstract version will take priority
-class AMD64PagedMemory(intel.JKIA32PagedMemoryPae):
+
+class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     """ Standard AMD 64-bit address space.
     
     Provides an address space for AMD64 paged memory, aka the x86_64 
@@ -52,6 +52,8 @@ class AMD64PagedMemory(intel.JKIA32PagedMemoryPae):
     pae = True
     checkname = 'AMD64ValidAS'
     paging_address_space = True
+    minimum_size = 0x1000
+    alignment_gcd = 0x1000
 
     def _cache_values(self):
         '''
@@ -65,6 +67,41 @@ class AMD64PagedMemory(intel.JKIA32PagedMemoryPae):
             self.pml4e_cache = struct.unpack('<' + 'Q' * 0x200, buf)
         else:
             self.cache = False
+
+    def entry_present(self, entry):
+        '''
+        Returns whether or not the 'P' (Present) flag is on
+        in the given entry
+        '''
+        if entry:
+            if (entry & 1):
+                return True
+
+            # The page is in transition and not a prototype.
+            # Thus, we will treat it as present.
+            if (entry & (1 << 11)) and not (entry & (1 << 10)):
+                return True
+
+        return False
+
+    def page_size_flag(self, entry):
+        '''
+        Returns whether or not the 'PS' (Page Size) flag is on
+        in the given entry
+        '''
+        if entry:
+            return (entry & (1 << 7)) == (1 << 7)
+        return False
+
+    def get_two_meg_paddr(self, vaddr, pde):
+        '''
+        Return the offset in a 2MB memory page from the given virtual
+        address and Page Directory Entry.
+
+        Bits 51:21 are from the PDE
+        Bits 20:0 are from the original linear address
+        '''
+        return (pde & 0xfffffffe00000) | (vaddr & 0x1fffff)
 
     def is_valid_profile(self, profile):
         return profile.metadata.get('memory_model', '32bit') == '64bit' or profile.metadata.get('os', 'Unknown').lower() == 'mac'
@@ -147,6 +184,54 @@ class AMD64PagedMemory(intel.JKIA32PagedMemoryPae):
             return None
 
         return self.get_phys_addr(vaddr, pte)
+
+    def _read_long_long_phys(self, addr):
+        '''
+        Returns an unsigned 64-bit integer from the address addr in
+        physical memory. If unable to read from that location, returns None.
+        '''
+        try:
+            string = self.base.read(addr, 8)
+        except IOError:
+            string = None
+        if not string:
+            return obj.NoneObject("Unable to read_long_long_phys at " + hex(addr))
+        (longlongval,) = struct.unpack('<Q', string)
+        return longlongval
+
+    def get_pde(self, vaddr, pdpte):
+        '''
+        Return the Page Directory Entry for the given virtual address
+        and Page Directory Pointer Table Entry.
+
+        Bits 51:12 are from the PDPTE
+        Bits 11:3 are bits 29:21 of the linear address
+        Bits 2:0 are 0
+        '''
+        pde_addr = (pdpte & 0xffffffffff000) | ((vaddr & 0x3fe00000) >> 18)
+        return self._read_long_long_phys(pde_addr)
+
+    def get_pte(self, vaddr, pde):
+        '''
+        Return the Page Table Entry for the given virtual address
+        and Page Directory Entry.
+
+        Bits 51:12 are from the PDE
+        Bits 11:3 are bits 20:12 of the original linear address
+        Bits 2:0 are 0
+        '''
+        pte_addr = (pde & 0xffffffffff000) | ((vaddr & 0x1ff000) >> 9)
+        return self._read_long_long_phys(pte_addr)
+
+    def get_phys_addr(self, vaddr, pte):
+        '''
+        Return the offset in a 4KB memory page from the given virtual
+        address and Page Table Entry.
+
+        Bits 51:12 are from the PTE
+        Bits 11:0 are from the original linear address
+        '''
+        return (pte & 0xffffffffff000) | (vaddr & 0xfff)
 
     def get_available_pages(self):
         '''

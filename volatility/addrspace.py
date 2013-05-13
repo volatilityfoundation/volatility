@@ -13,11 +13,11 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details. 
+# General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
 """
@@ -32,6 +32,7 @@
 
 #pylint: disable-msg=C0111
 
+import fractions
 import volatility.obj as obj
 import volatility.registry as registry
 import volatility.debug as debug
@@ -99,7 +100,7 @@ class BaseAddressSpace(object):
             raise ASAssertionError, "Incompatible profile " + profile_name + " selected"
         return ret
 
-    def is_valid_profile(self, profile):
+    def is_valid_profile(self, profile): #pylint: disable-msg=W0613
         """Determines whether a selected profile is compatible with this address space"""
         return True
 
@@ -167,14 +168,180 @@ class BaseAddressSpace(object):
         """Compare two addresses and returns True if they're the same, or False if they're not"""
         return cls.address_compare(a, b) == 0
 
-class AbstractVirtualAddressSpace(BaseAddressSpace):
+class AbstractDiscreteAllocMemory(BaseAddressSpace):
+    """A class based on memory stored as discrete allocations.
+    """
+    minimum_size = None
+    alignment_gcd = None
+
+    def __init__(self, base, config, *args, **kwargs):
+        BaseAddressSpace.__init__(self, base, config, *args, **kwargs)
+
+    def translate(self, vaddr):
+        raise NotImplementedError("This is an abstract method and should not be referenced directly")
+
+    def get_available_allocs(self):
+        """A generator that returns (addr, size) for each of the virtual addresses present, sorted by offset"""
+        raise NotImplementedError("This is an abstract method and should not be referenced directly")
+
+    def calculate_alloc_stats(self):
+        """Calculates the minimum_size and alignment_gcd to determine "virtual allocs" when read lengths of data
+           It's particularly important to cast all numbers to ints, since they're used a lot and object take effort to reread.
+        """
+        available_allocs = list(self.get_available_allocs())
+
+        self.minimum_size = int(min([size for _, size in available_allocs]))
+        accumulator = self.minimum_size
+        for start, _ in available_allocs:
+            if accumulator is None and start > 1:
+                accumulator = start
+            if accumulator and start > 0:
+                accumulator = fractions.gcd(accumulator, start)
+        self.alignment_gcd = int(accumulator)
+        # Pick an arbitrary cut-off that'll lead to too many reads
+        if self.alignment_gcd < 0x4:
+            debug.warning("Alignment of " + self.__class__.__name__ + " is too small, plugins will be extremely slow")
+
+    def _read(self, addr, length, pad = False):
+        """Reads length bytes at the address addr
+
+           If pad is False, this can return None if some of the address space is empty
+           If pad is True, any read errors result in "\x00" bytes filling the missing read locations
+        """
+
+        if not self.alignment_gcd or not self.minimum_size:
+            self.calculate_alloc_stats()
+
+        position = addr
+        remaining = length
+        buff = ""
+        read = self.base.zread if pad else self.base.read
+
+        # For each allocation...
+        while remaining > 0:
+            # Determine whether we're within an alloc or not
+            alloc_remaining = (self.alignment_gcd - (addr % self.alignment_gcd))
+            # Try to jump out early
+            paddr = self.translate(position)
+            datalen = min(remaining, alloc_remaining)
+            if paddr is None:
+                if not pad:
+                    return None
+                buff += "\x00" * datalen
+            else:
+                # This accounts for a special edge case
+                # when the address is valid in this address space
+                # but not in the underlying (base) address space.
+                # We have seen this happen with IA32/FileAddr
+
+                if self.base.is_valid_address(paddr):
+                    data = read(paddr, datalen)
+                else:
+                    data = None
+
+                #if not self.base.is_valid_address(paddr):
+                #    return obj.NoneObject("Could not read_chunks from addr " + hex(position) + " of size " + hex(datalen))
+
+                #data = read(paddr, datalen)
+                # Do we really want to return None
+                # or would we want to padd.
+                if data is None:
+                    if not pad:
+                        return obj.NoneObject("Could not read_chunks from addr " + hex(position) + " of size " + hex(datalen))
+                    data = "\x00" * datalen
+                buff += data
+            position += datalen
+            remaining -= datalen
+            assert (addr + length == position + remaining), "Address + length != position + remaining (" + hex(addr + length) + " != " + hex(position + remaining) + ") in " + self.base.__class__.__name__
+            assert (position - addr == len(buff)), "Position - address != len(buff) (" + str(position - addr) + " != " + str(len(buff)) + ") in " + self.base.__class__.__name__
+        return buff
+
+    def read(self, addr, length):
+        '''
+        Read and return 'length' bytes from the 'addr'.
+        If any part of that block is unavailable, return None.
+        '''
+        return self._read(addr, length, False)
+
+    def zread(self, addr, length):
+        '''
+        Read and return 'length' bytes from the 'addr'.
+        If any part of that block is unavailable, pad it with zeros.
+        '''
+        return self._read(addr, length, True)
+
+class AbstractRunBasedMemory(AbstractDiscreteAllocMemory):
+    """A class based on memory stored as separate segments.
+
+       @var runs: Stores an ordered list of the segments or runs
+                  A run is a tuple of (input/domain/virtual address, output/range/physical address, size of segment)
+    """
+
+    def __init__(self, base, config, *args, **kwargs):
+        AbstractDiscreteAllocMemory.__init__(self, base, config, *args, **kwargs)
+        self.runs = []
+        self.header = None
+
+    def get_runs(self):
+        """Get the memory block info"""
+        return self.runs
+
+    def get_header(self):
+        """Get the header info"""
+        return self.header
+
+    def translate(self, addr):
+        """Find the offset in the file where a memory address can be found.
+
+        @param addr: a memory address
+        """
+        for input_addr, output_addr, length in self.runs:
+            if addr >= input_addr and addr < input_addr + length:
+                return output_addr + (addr - input_addr)
+            # Since runs are in order, we can bail out early if we're
+            # looking for something before the start of the current one
+            if addr < input_addr:
+                return None
+
+        return None
+
+    def get_available_allocs(self):
+        """Get a list of accessible physical memory regions"""
+        for input_addr, _, length in self.runs:
+            yield input_addr, length
+
+    def get_available_addresses(self):
+        """Get a list of physical memory runs"""
+        # Since runs are in order and not contiguous
+        # we can reuse the output from available_allocs
+        return self.get_available_allocs()
+
+    def is_valid_address(self, phys_addr):
+        """Check if a physical address is in the file.
+
+        @param phys_addr: a physical address
+        """
+        return self.translate(phys_addr) is not None
+
+    def get_address_range(self):
+        """ This relates to the logical address range that is indexable """
+        # Runs must not be empty
+        (input_address, _, length) = self.runs[-1]
+        size = input_address + length
+        (start, _, _) = self.runs[0]
+        return [start, size]
+
+class AbstractVirtualAddressSpace(AbstractDiscreteAllocMemory):
     """Base Ancestor for all Virtual address spaces, as determined by astype"""
     def __init__(self, base, config, astype = 'virtual', *args, **kwargs):
-        BaseAddressSpace.__init__(self, base, config, astype = astype, *args, **kwargs)
+        AbstractDiscreteAllocMemory.__init__(self, base, config, astype = astype, *args, **kwargs)
         self.as_assert(astype == 'virtual' or astype == 'any', "User requested non-virtual AS")
 
     def vtop(self, vaddr):
-        raise NotImplementedError("This is a virtual class and should not be referenced directly")
+        raise NotImplementedError("This is an abstract method and should not be referenced directly")
+
+    def translate(self, vaddr):
+        return self.vtop(vaddr)
 
 ## This is a specialised AS for use internally - Its used to provide
 ## transparent support for a string buffer so types can be

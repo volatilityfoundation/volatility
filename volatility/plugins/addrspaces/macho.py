@@ -133,7 +133,7 @@ class MachoTypes(obj.ProfileModification):
     def modification(self, profile):
         profile.vtypes.update(macho_types)
 
-class MachOAddressSpace(addrspace.BaseAddressSpace):
+class MachOAddressSpace(addrspace.AbstractRunBasedMemory):
     """ 
     Address space for mach-o files to support atc-ny memory reader
 
@@ -148,7 +148,7 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
     def __init__(self, base, config, *args, **kwargs):
         self.as_assert(base, "mac: need base")
 
-        addrspace.BaseAddressSpace.__init__(self, base, config, *args, **kwargs)
+        addrspace.AbstractRunBasedMemory.__init__(self, base, config, *args, **kwargs)
 
         sig = base.read(0, 4) 
 
@@ -159,8 +159,7 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
         else:
             self.as_assert(0, "MachO Header signature invalid")
 
-        # get the segments
-        self.segs = []
+        self.runs = []
 
         self.header = None
 
@@ -174,43 +173,28 @@ class MachOAddressSpace(addrspace.BaseAddressSpace):
         return object
 
     def get_available_addresses(self):
-        for seg in self.segs:
-            yield seg.vmaddr, seg.vmsize
+        for vmaddr, _, vmsize in self.runs:
+            yield vmaddr, vmsize
 
     def get_header(self):
         return self.header
 
     def parse_macho(self):
+        self.runs = []
+ 
         header_name = self.get_object_name("mach_header")
         header_size = self.profile.get_obj_size(header_name)
 
         self.header = obj.Object(header_name, 0, self.base)
         offset = header_size
 
+        self.segs = []
+
         for i in xrange(0, self.header.ncmds):
             structname = self.get_object_name("segment_command")
             seg = obj.Object(structname, offset, self.base)
-            self.segs.append(seg)           
+            self.segs.append(seg)
+            # Since these values will be used a lot, make sure they aren't reread (ie, no objects in the runs list)
+            run = (int(seg.vmaddr), int(seg.fileoff), int(seg.vmsize))
+            self.runs.append(run)
             offset = offset + seg.cmdsize
-
-    def read(self, addr, length):
-        key = "%d:%d" % (addr, length)
-
-        if key in self.addr_cache:
-            return self.addr_cache[key]
-
-        for seg in self.segs:
-            if seg.vmaddr <= addr < seg.vmaddr + seg.vmsize:
-                # find offset into seg and return place inside file
-                vaddr = addr - seg.vmaddr.v()
-                where = vaddr + seg.fileoff.v()
-                ret = self.base.read(where, length)
-                self.addr_cache[key] = ret      
-                return ret 
-
-        return None
-
-    def zread(self, addr, length):
-        return self.read(addr, length) or "\x00" * length
-
-

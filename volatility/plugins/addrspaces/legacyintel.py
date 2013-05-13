@@ -15,16 +15,15 @@
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details. 
+# General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
 import struct
-import volatility.plugins.addrspaces.standard as standard
-import volatility.addrspace as addrspace
+import volatility.plugins.addrspaces.paged as paged
 import volatility.obj as obj
 
 ## This stuff needs to go in the profile
@@ -43,7 +42,7 @@ pde_shift = 21
 ptrs_per_pde = 512
 ptrs_page = 2048
 
-class IA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddressSpace):
+class IA32PagedMemory(paged.AbstractWritablePagedMemory):
     """ Legacy x86 non PAE address space (to use specify --use_old_as)
 
     We accept an optional arg called dtb to force us to use a
@@ -55,8 +54,7 @@ class IA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddres
     def __init__(self, base, config, dtb = 0, *args, **kwargs):
         self.as_assert(config.USE_OLD_AS, "Module disabled")
 
-        standard.AbstractWritablePagedMemory.__init__(self, base, config, *args, **kwargs)
-        addrspace.BaseAddressSpace.__init__(self, base, config, *args, **kwargs)
+        paged.AbstractWritablePagedMemory.__init__(self, base, config, *args, **kwargs)
 
         ## We must be stacked on someone else:
         self.as_assert(base, "No base Address Space")
@@ -147,85 +145,6 @@ class IA32PagedMemory(standard.AbstractWritablePagedMemory, addrspace.BaseAddres
                 if self.entry_present(pte):
                     retVal = self.get_paddr(vaddr, pte)
         return retVal
-
-    def read(self, vaddr, length):
-        length = int(length)
-        vaddr = int(vaddr)
-
-        first_block = 0x1000 - vaddr % 0x1000
-        full_blocks = ((length + (vaddr % 0x1000)) / 0x1000) - 1
-        left_over = (length + vaddr) % 0x1000
-
-        paddr = self.vtop(vaddr)
-        if paddr == None:
-            return obj.NoneObject("No physical address found for vaddr " + hex(vaddr))
-
-        if length < first_block:
-            stuff_read = self.base.read(paddr, length)
-            if stuff_read == None:
-                return obj.NoneObject("Base.read returned None for paddr " + hex(paddr))
-            return stuff_read
-
-        stuff_read = self.base.read(paddr, first_block)
-        if stuff_read == None:
-            return obj.NoneObject("Base.read returned None for paddr " + hex(paddr))
-
-        new_vaddr = vaddr + first_block
-        for _i in range(0, full_blocks):
-            paddr = self.vtop(new_vaddr)
-            if paddr is None:
-                return obj.NoneObject("No physical address found for vaddr " + hex(new_vaddr))
-            new_stuff = self.base.read(paddr, 0x1000)
-            if new_stuff is None:
-                return obj.NoneObject("Base.read returned None for paddr " + hex(paddr))
-            stuff_read = stuff_read + new_stuff
-            new_vaddr = new_vaddr + 0x1000
-
-        if left_over > 0:
-            paddr = self.vtop(new_vaddr)
-            if paddr is None:
-                return obj.NoneObject("No physical address found for vaddr " + hex(new_vaddr))
-            new_stuff = self.base.read(paddr, left_over)
-            if new_stuff is None:
-                return obj.NoneObject("Base.read returned None for paddr " + hex(paddr))
-            stuff_read = stuff_read + new_stuff
-        return stuff_read
-
-    def zread(self, vaddr, length):
-        length = int(length)
-        vaddr = int(vaddr)
-        first_block = 0x1000 - vaddr % 0x1000
-        full_blocks = ((length + (vaddr % 0x1000)) / 0x1000) - 1
-        left_over = (length + vaddr) % 0x1000
-
-        paddr = self.vtop(vaddr)
-
-        if paddr is None:
-            if length < first_block:
-                return ('\0' * length)
-            stuff_read = ('\0' * first_block)
-        else:
-            if length < first_block:
-                return self.base.zread(paddr, length)
-            stuff_read = self.base.zread(paddr, first_block)
-
-        new_vaddr = vaddr + first_block
-        for _i in range(0, full_blocks):
-            paddr = self.vtop(new_vaddr)
-            if paddr is None:
-                stuff_read = stuff_read + ('\0' * 0x1000)
-            else:
-                stuff_read = stuff_read + self.base.zread(paddr, 0x1000)
-
-            new_vaddr = new_vaddr + 0x1000
-
-        if left_over > 0:
-            paddr = self.vtop(new_vaddr)
-            if paddr is None:
-                stuff_read = stuff_read + ('\0' * left_over)
-            else:
-                stuff_read = stuff_read + self.base.zread(paddr, left_over)
-        return stuff_read
 
     def read_long_virt(self, addr):
         string = self.read(addr, 4)

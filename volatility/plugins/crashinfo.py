@@ -126,6 +126,6 @@ class CrashInfo(common.AbstractWindowsCommand):
         ## for MHL or AW to fix it. 
 
         for run in data.get_runs():
-            outfd.write("{0:08x}      {1:08x}         {2:08x}\n".format(foffset, run[0] * 0x1000, run[1] * 0x1000))
-            foffset += (run[1] * 0x1000)
-        outfd.write("{0:08x}      {1:08x}\n".format(foffset - 0x1000, ((run[0] + run[1] - 1) * 0x1000)))
+            outfd.write("{0:08x}      {1:08x}         {2:08x}\n".format(foffset, run[0], run[2]))
+            foffset += (run[2])
+        outfd.write("{0:08x}      {1:08x}\n".format(foffset - 0x1000, (run[0] + run[2] - 0x1000)))
