@@ -37,6 +37,15 @@ Windows:
 Linux: 
 * 32-bit Linux kernels 2.6.11 to 3.5
 * 64-bit Linux kernels 2.6.11 to 3.5
+* OpenSuSE, Ubuntu, Debian, CentOS, Fedora, Mandriva, etc
+
+Mac OSX:
+* 32-bit 10.5.x Leopard (the only 64-bit 10.5 is Server, which isn't supported)
+* 32-bit 10.6.x Snow Leopard
+* 64-bit 10.6.x Snow Leopard
+* 32-bit 10.7.x Lion
+* 64-bit 10.7.x Lion
+* 64-bit 10.8.x Mountain Lion (there is no 32-bit version)
 
 Volatility does not provide memory sample acquisition
 capabilities. For acquisition, there are both free and commercial
@@ -45,93 +54,28 @@ acquisition solutions, please contact us at:
 
 volatility (at) volatilesystems (dot) com
 
-Volatility currently provides the following extraction capabilities for 
-memory samples:
-
-Windows Basic
-    Current date, time, CPU count, CPU speed, service pack
-    Current thread and idle thread
-    Addresses of the KDBG, KPCR, DTB, PsActiveProcessHead, PsLoadedModuleList, etc
-Processes
-    List active processes (column or tree view)
-    Scan for hidden or terminated _EPROCESS objects (using pool tags or _DISPATCHER_HEADER)
-    Enumerate DLLs in the PEB LDR lists
-    Rebuild/extract DLLs or EXEs to disk based on name, base address, or physical offset
-    Print open handles to files, registry keys, mutexes, threads, processes, etc
-    List security identifiers (SIDs) for processes
-    Scan for cmd.exe command history and full console input/output buffers
-    List process environment variables
-    Print PE version information from processes or DLLs (file version, company name, etc)
-    Enumerate imported and exported API functions anywhere in process or kernel memory
-    Show a list of virtual and physical mappings of all pages available to a process
-    Dump process address space to disk as a single file
-    Analyze Virtual Address Descriptor (VAD) nodes, show page protection, flags, and mapped files
-    Represent the VAD in tree form or Graphviz .dot graphs
-    Dump each VAD range to disk for inspecting with external tools
-    Parse XP/2003 event log records
-Kernel Memory
-    List loaded kernel modules and scan for hidden/unloaded module structures
-    Extract PE files including drivers from anywhere in kernel memory
-    Dump the SSDT for all 32- and 64-bit windows systems
-    Scan for driver objects, print IRP major function tables
-    Show devices and device tree layout
-    Scan for file objects (can show deleted files, closed handles, etc)
-    Scan for threads, mutex objects and symbolic links
-GUI Memory
-    Analyze logon sessions and the processes and mapped images belonging to the session
-    Scan for window stations and clipboard artifacts (clipboard snooping malware)
-    Scan for desktops, analyze desktop heaps and attached GUI threads
-    Locate and parse atom tables (class names, DLL injection paths, etc)
-    Extract the contents of the windows clipboard
-    Analyze message hooks and event hooks, show the injected DLL and function address
-    Dump all USER object types, pool tags, and flags from the gahti
-    Print all open USER handles, associated threads or processes, and object offsets
-    Display details on all windows, such as coordiates, window title, class, procedure address, etc
-    Take screen shots from memory dumps (requires PIL)
-Malware Analysis
-    Find injected code and DLLs, unpacker stubs, and decrypted configurations, etc
-    Scan process or kernel memory for any string, regular expression, byte pattern, URL, etc
-    Analyze services, their status (running, stopped, etc) and associated process or driver
-    Cross-reference memory mapped executable files with PEB lists to find injected code
-    Scan for imported functions in process or kernel memory (without using import tables)
-    Detect API hooks (Inline, IAT, EAT), hooked winsock tables, syscall hooks, etc
-    Analyze the IDT and GDT for each CPU, alert on hooks and disassemble code
-    Dump details of threads, such as hardware breakpoints, context registers, etc
-    Enumerate kernel callbacks for process creation, thread creation, and image loading
-    Display FS registration, registry, shutdown, bugcheck, and debug print callbacks
-    Detect hidden processes with alternate process listings (6+ sources)
-    Analyze kernel timers and their DPC routine functions
-Networking
-    Walk the list of connection and socket objects for XP/2003 systems
-    Scan physical memory for network information (recover closed/terminated artifacts)
-    Determine if listening sockets are IPv4, IPv6, etc and link to their owning processes
-Registry
-    Scan for registry hives in memory
-    Parse and print any value or key cached in kernel memory, with timestamps
-    Dump an entire registry hive recursively
-    Extract cached domain credentials from the registry
-    Locate and decrypt NT/NTLM hashes and LSA secrets
-    Analyze user assist keys, the shimcache, and shellbags
-    Crash Dumps, Hibernation, Conversion
-    Print crash dump and hibernation file header information
-    Run any plugin on a crash dump or hibernation file (hiberfil.sys)
-    Convert a raw memory dump to a crash dump for opening in !WinDBG
-    Convert a crash dump or hibernation file to a raw memory dump
-Miscellaneous
-    Link strings found at physical offsets to their owning kernel address or process
-    Interactive shell with disassembly, type display, hexdumps, etc
-
-Volatility also supports a variety of sample file formats and the
+Volatility supports a variety of sample file formats and the
 ability to convert between these formats:
 
   - Raw linear sample (dd)
   - Hibernation file
   - Crash dump file
+  - VirtualBox ELF64 core dump
+  - VMware saved state and snapshot files
+  - EWF format (E01) 
+  - LiME (Linux Memory Extractor) format
+  - Firewire 
+  - HPAK (FDPro)
 
 For a more detailed list of capabilities, see the following:
 
-    http://code.google.com/p/volatility/wiki/FeaturesByPlugin23
-    http://code.google.com/p/volatility/wiki/CommandReference23
+    https://code.google.com/p/volatility/wiki/Release23
+    https://code.google.com/p/volatility/wiki/CommandReference23
+    https://code.google.com/p/volatility/wiki/CommandReferenceGui23
+    https://code.google.com/p/volatility/wiki/CommandReferenceMal23
+    https://code.google.com/p/volatility/wiki/CommandReferenceRegistryApi23
+    https://code.google.com/p/volatility/wiki/LinuxCommandReference23
+    https://code.google.com/p/volatility/wiki/MacCommandReference23
 
 Example Data
 ============
@@ -143,7 +87,7 @@ data hosted by NIST at the following url:
 
 Links to other public memory images can be found at the following url:
 
-    http://code.google.com/p/volatility/wiki/PublicMemoryImages
+    https://code.google.com/p/volatility/wiki/SampleMemoryImages
 
 Mailing Lists
 =============
@@ -166,12 +110,14 @@ Email: volatility (at) volatilesystems (dot) com
 
 IRC: #volatility on freenode
 
+Twitter: @volatility 
+
 Requirements
 ============
 - Python 2.6 or later, but not 3.0. http://www.python.org
 
 Some plugins may have other requirements which can be found at: 
-    http://code.google.com/p/volatility/wiki/Release23
+    https://code.google.com/p/volatility/wiki/VolatilityInstallation
 
 Quick Start
 ===========
@@ -183,20 +129,20 @@ Quick Start
 
    Example:
 
-> python vol.py -h 
-Volatile Systems Volatility Framework 2.1_rc3
+$ python vol.py -h
+Volatile Systems Volatility Framework 2.3_beta
 Usage: Volatility - A memory forensics analysis platform.
 
 Options:
   -h, --help            list all available options and their default values.
                         Default values may be set in the configuration file
                         (/etc/volatilityrc)
-  --conf-file=/Users/Michael/.volatilityrc
+  --conf-file=/Users/michaelligh/.volatilityrc
                         User based configuration file
   -d, --debug           Debug volatility
   --plugins=PLUGINS     Additional plugin directories to use (colon separated)
   --info                Print information about all registered objects
-  --cache-directory=/Users/Michael/.cache/volatility
+  --cache-directory=/Users/michaelligh/.cache/volatility
                         Directory where cache files are stored
   --cache               Use caching
   --tz=TZ               Sets the timezone for displaying timestamps
@@ -209,81 +155,235 @@ Options:
   -w, --write           Enable write support
   --dtb=DTB             DTB Address
   --cache-dtb           Cache virtual to physical mappings
-  --use-old-as          Use the legacy address spaces
   --output=text         Output in this format (format support is module
                         specific)
   --output-file=OUTPUT_FILE
                         write output in this file
   -v, --verbose         Verbose information
-  -k KPCR, --kpcr=KPCR  Specify a specific KPCR address
+  --shift=SHIFT         Mac KASLR shift address
   -g KDBG, --kdbg=KDBG  Specify a specific KDBG virtual address
+  -k KPCR, --kpcr=KPCR  Specify a specific KPCR address
 
-	Supported Plugin Commands:
+$ python vol.py --info
+Volatile Systems Volatility Framework 2.3_beta
 
-		apihooks       	Detect API hooks in process and kernel memory
-		bioskbd        	Reads the keyboard buffer from Real Mode memory
-		callbacks      	Print system-wide notification routines
-		cmdscan        	Extract command history by scanning for _COMMAND_HISTORY
-		connections    	Print list of open connections [Windows XP and 2003 Only]
-		connscan       	Scan Physical memory for _TCPT_OBJECT objects (tcp connections)
-		consoles       	Extract command history by scanning for _CONSOLE_INFORMATION
-		crashinfo      	Dump crash-dump information
-		devicetree     	Show device tree
-		dlldump        	Dump DLLs from a process address space
-		dlllist        	Print list of loaded dlls for each process
-		driverirp      	Driver IRP hook detection
-		driverscan     	Scan for driver objects _DRIVER_OBJECT 
-		envars         	Display process environment variables
-		filescan       	Scan Physical memory for _FILE_OBJECT pool allocations
-		gdt            	Display Global Descriptor Table
-		getsids        	Print the SIDs owning each process
-		handles        	Print list of open handles for each process
-		hashdump       	Dumps passwords hashes (LM/NTLM) from memory
-		hibinfo        	Dump hibernation file information
-		hivedump       	Prints out a hive
-		hivelist       	Print list of registry hives.
-		hivescan       	Scan Physical memory for _CMHIVE objects (registry hives)
-		idt            	Display Interrupt Descriptor Table
-		imagecopy      	Copies a physical address space out as a raw DD image
-		imageinfo      	Identify information for the image 
-		impscan        	Scan for calls to imported functions
-		kdbgscan       	Search for and dump potential KDBG values
-		kpcrscan       	Search for and dump potential KPCR values
-		ldrmodules     	Detect unlinked DLLs
-		lsadump        	Dump (decrypted) LSA secrets from the registry
-		malfind        	Find hidden and injected code
-		memdump        	Dump the addressable memory for a process
-		memmap         	Print the memory map
-		moddump        	Dump a kernel driver to an executable file sample
-		modscan        	Scan Physical memory for _LDR_DATA_TABLE_ENTRY objects
-		modules        	Print list of loaded modules
-		mutantscan     	Scan for mutant objects _KMUTANT 
-		patcher        	Patches memory based on page scans
-		printkey       	Print a registry key, and its subkeys and values
-		procexedump    	Dump a process to an executable file sample
-		procmemdump    	Dump a process to an executable memory sample
-		pslist         	print all running processes by following the EPROCESS lists 
-		psscan         	Scan Physical memory for _EPROCESS pool allocations
-		pstree         	Print process list as a tree
-		psxview        	Find hidden processes with various process listings
-		raw2dmp        	Converts a physical memory sample to a windbg crash dump
-		shimcache      	Parses the Application Compatibility Shim Cache registry key
-		sockets        	Print list of open sockets
-		sockscan       	Scan Physical memory for _ADDRESS_OBJECT objects (tcp sockets)
-		ssdt           	Display SSDT entries
-		strings        	Match physical offsets to virtual addresses (may take a while, VERY verbose)
-		svcscan        	Scan for Windows services
-		symlinkscan    	Scan for symbolic link objects 
-		thrdscan       	Scan physical memory for _ETHREAD objects
-		threads        	Investigate _ETHREAD and _KTHREADs
-		timers         	Print kernel timers and associated module DPCs
-		userassist     	Print userassist registry keys and information
-		vaddump        	Dumps out the vad sections to a file
-		vadinfo        	Dump the VAD info
-		vadtree        	Walk the VAD tree and display in tree format
-		vadwalk        	Walk the VAD tree
-		volshell       	Shell in the memory image
-		yarascan       	Scan process or kernel memory with Yara signatures
+Profiles
+--------
+VistaSP0x64     - A Profile for Windows Vista SP0 x64
+VistaSP0x86     - A Profile for Windows Vista SP0 x86
+VistaSP1x64     - A Profile for Windows Vista SP1 x64
+VistaSP1x86     - A Profile for Windows Vista SP1 x86
+VistaSP2x64     - A Profile for Windows Vista SP2 x64
+VistaSP2x86     - A Profile for Windows Vista SP2 x86
+Win2003SP0x86   - A Profile for Windows 2003 SP0 x86
+Win2003SP1x64   - A Profile for Windows 2003 SP1 x64
+Win2003SP1x86   - A Profile for Windows 2003 SP1 x86
+Win2003SP2x64   - A Profile for Windows 2003 SP2 x64
+Win2003SP2x86   - A Profile for Windows 2003 SP2 x86
+Win2008R2SP0x64 - A Profile for Windows 2008 R2 SP0 x64
+Win2008R2SP1x64 - A Profile for Windows 2008 R2 SP1 x64
+Win2008SP1x64   - A Profile for Windows 2008 SP1 x64
+Win2008SP1x86   - A Profile for Windows 2008 SP1 x86
+Win2008SP2x64   - A Profile for Windows 2008 SP2 x64
+Win2008SP2x86   - A Profile for Windows 2008 SP2 x86
+Win7SP0x64      - A Profile for Windows 7 SP0 x64
+Win7SP0x86      - A Profile for Windows 7 SP0 x86
+Win7SP1x64      - A Profile for Windows 7 SP1 x64
+Win7SP1x86      - A Profile for Windows 7 SP1 x86
+WinXPSP1x64     - A Profile for Windows XP SP1 x64
+WinXPSP2x64     - A Profile for Windows XP SP2 x64
+WinXPSP2x86     - A Profile for Windows XP SP2 x86
+WinXPSP3x86     - A Profile for Windows XP SP3 x86
+
+Address Spaces
+--------------
+AMD64PagedMemory        - Standard AMD 64-bit address space.
+ArmAddressSpace         - No docs        
+FileAddressSpace        - This is a direct file AS.
+HPAKAddressSpace        - This AS supports the HPAK format
+IA32PagedMemory         - Standard IA-32 paging address space.
+IA32PagedMemoryPae      - This class implements the IA-32 PAE paging address space. It is responsible
+LimeAddressSpace        - Address space for Lime
+MachOAddressSpace       - Address space for mach-o files to support atc-ny memory reader
+VMWareSnapshotFile      - This AS supports VMware snapshot files
+VirtualBoxCoreDumpElf64 - This AS supports VirtualBox ELF64 coredump format
+WindowsCrashDumpSpace32 - This AS supports windows Crash Dump format
+WindowsCrashDumpSpace64 - This AS supports windows Crash Dump format
+WindowsHiberFileSpace32 - This is a hibernate address space for windows hibernation files.
+
+Plugins
+-------
+apihooks                - Detect API hooks in process and kernel memory
+atoms                   - Print session and window station atom tables
+atomscan                - Pool scanner for _RTL_ATOM_TABLE
+bioskbd                 - Reads the keyboard buffer from Real Mode memory
+callbacks               - Print system-wide notification routines
+chkas                   - Regression test for Windows address spaces
+chkaslin                - Regression test for Linux (LiME/ARM) address spaces
+chkasmac                - Regression test for Mac (Mach-O) address spaces
+clipboard               - Extract the contents of the windows clipboard
+cmdscan                 - Extract command history by scanning for _COMMAND_HISTORY
+connections             - Print list of open connections [Windows XP and 2003 Only]
+connscan                - Scan Physical memory for _TCPT_OBJECT objects (tcp connections)
+consoles                - Extract command history by scanning for _CONSOLE_INFORMATION
+crashinfo               - Dump crash-dump information
+deskscan                - Poolscaner for tagDESKTOP (desktops)
+devicetree              - Show device tree
+dlldump                 - Dump DLLs from a process address space
+dlllist                 - Print list of loaded dlls for each process
+driverirp               - Driver IRP hook detection
+driverscan              - Scan for driver objects _DRIVER_OBJECT
+dumpcerts               - Dump RSA private and public SSL keys
+envars                  - Display process environment variables
+eventhooks              - Print details on windows event hooks
+evtlogs                 - Extract Windows Event Logs (XP/2003 only)
+filescan                - Scan Physical memory for _FILE_OBJECT pool allocations
+gahti                   - Dump the USER handle type information
+gditimers               - Print installed GDI timers and callbacks
+gdt                     - Display Global Descriptor Table
+getservicesids          - Get the names of services in the Registry and return Calculated SID
+getsids                 - Print the SIDs owning each process
+handles                 - Print list of open handles for each process
+hashdump                - Dumps passwords hashes (LM/NTLM) from memory
+hibinfo                 - Dump hibernation file information
+hivedump                - Prints out a hive
+hivelist                - Print list of registry hives.
+hivescan                - Scan Physical memory for _CMHIVE objects (registry hives)
+hpakextract             - Extract physical memory from an HPAK file
+hpakinfo                - Info on an HPAK file
+idt                     - Display Interrupt Descriptor Table
+iehistory               - Reconstruct Internet Explorer cache / history
+imagecopy               - Copies a physical address space out as a raw DD image
+imageinfo               - Identify information for the image
+impscan                 - Scan for calls to imported functions
+kdbgscan                - Search for and dump potential KDBG values
+kpcrscan                - Search for and dump potential KPCR values
+ldrmodules              - Detect unlinked DLLs
+linux_arp               - Print the ARP table
+linux_bash              - Recover bash history from bash process memory
+linux_check_afinfo      - Verifies the operation function pointers of network protocols
+linux_check_creds       - Checks if any processes are sharing credential structures
+linux_check_evt_arm     - Checks the Exception Vector Table to look for syscall table hooking
+linux_check_fop         - Check file operation structures for rootkit modifications
+linux_check_idt         - Checks if the IDT has been altered
+linux_check_modules     - Compares module list to sysfs info, if available
+linux_check_syscall     - Checks if the system call table has been altered
+linux_check_syscall_arm - Checks if the system call table has been altered
+linux_check_tty         - Checks tty devices for hooks
+linux_cpuinfo           - Prints info about each active processor
+linux_dentry_cache      - Gather files from the dentry cache
+linux_dmesg             - Gather dmesg buffer
+linux_dump_map          - Writes selected memory mappings to disk
+linux_find_file         - Recovers tmpfs filesystems from memory
+linux_ifconfig          - Gathers active interfaces
+linux_iomem             - Provides output similar to /proc/iomem
+linux_keyboard_notifier - Parses the keyboard notifier call chain
+linux_lsmod             - Gather loaded kernel modules
+linux_lsof              - Lists open files
+linux_memmap            - Dumps the memory map for linux tasks
+linux_moddump           - Extract loaded kernel modules
+linux_mount             - Gather mounted fs/devices
+linux_mount_cache       - Gather mounted fs/devices from kmem_cache
+linux_netstat           - Lists open sockets
+linux_pidhashtable      - Enumerates processes through the PID hash table
+linux_pkt_queues        - Writes per-process packet queues out to disk
+linux_proc_maps         - Gathers process maps for linux
+linux_psaux             - Gathers processes along with full command line and start time
+linux_pslist            - Gather active tasks by walking the task_struct->task list
+linux_pslist_cache      - Gather tasks from the kmem_cache
+linux_pstree            - Shows the parent/child relationship between processes
+linux_psxview           - Find hidden processes with various process listings
+linux_route_cache       - Recovers the routing cache from memory
+linux_sk_buff_cache     - Recovers packets from the sk_buff kmem_cache
+linux_slabinfo          - Mimics /proc/slabinfo on a running machine
+linux_tmpfs             - Recovers tmpfs filesystems from memory
+linux_vma_cache         - Gather VMAs from the vm_area_struct cache
+linux_volshell          - Shell in the memory image
+linux_yarascan          - A shell in the Linux memory image
+lsadump                 - Dump (decrypted) LSA secrets from the registry
+mac_arp                 - Prints the arp table
+mac_check_syscalls      - Checks to see if system call table entries are hooked
+mac_check_sysctl        - Checks for unknown sysctl handlers
+mac_check_trap_table    - Checks to see if mach trap table entries are hooked
+mac_dead_procs          - Prints terminated/de-allocated processes
+mac_dmesg               - Prints the kernel debug buffer
+mac_dump_maps           - Dumps memory ranges of processes
+mac_find_aslr_shift     - Find the ASLR shift value for 10.8+ images
+mac_ifconfig            - Lists network interface information for all devices
+mac_ip_filters          - Reports any hooked IP filters
+mac_list_sessions       - Enumerates sessions
+mac_list_zones          - Prints active zones
+mac_lsmod               - Lists loaded kernel modules
+mac_lsof                - Lists per-process opened files
+mac_machine_info        - Prints machine information about the sample
+mac_mount               - Prints mounted device information
+mac_netstat             - Lists active per-process network connections
+mac_notifiers           - Detects rootkits that add hooks into I/O Kit (e.g. LogKext)
+mac_pgrp_hash_table     - Walks the process group hash table
+mac_pid_hash_table      - Walks the pid hash table
+mac_print_boot_cmdline  - Prints kernel boot arguments
+mac_proc_maps           - Gets memory maps of processes
+mac_psaux               - Prints processes with arguments in user land (**argv)
+mac_pslist              - List Running Processes
+mac_pstree              - Show parent/child relationship of processes
+mac_psxview             - Find hidden processes with various process listings
+mac_route               - Prints the routing table
+mac_tasks               - List Active Tasks
+mac_trustedbsd          - Lists malicious trustedbsd policies
+mac_version             - Prints the Mac version
+mac_volshell            - Shell in the memory image
+mac_yarascan            - Scan memory for yara signatures
+machoinfo               - Dump Mach-O file format information
+malfind                 - Find hidden and injected code
+mbrparser               - Scans for and parses potential Master Boot Records (MBRs)
+memdump                 - Dump the addressable memory for a process
+memmap                  - Print the memory map
+messagehooks            - List desktop and thread window message hooks
+mftparser               - Scans for and parses potential MFT entries
+moddump                 - Dump a kernel driver to an executable file sample
+modscan                 - Scan Physical memory for _LDR_DATA_TABLE_ENTRY objects
+modules                 - Print list of loaded modules
+mutantscan              - Scan for mutant objects _KMUTANT
+netscan                 - Scan a Vista, 2008 or Windows 7 image for connections and sockets
+patcher                 - Patches memory based on page scans
+printkey                - Print a registry key, and its subkeys and values
+privs                   - Display process privileges
+procexedump             - Dump a process to an executable file sample
+procmemdump             - Dump a process to an executable memory sample
+pslist                  - Print all running processes by following the EPROCESS lists
+psscan                  - Scan Physical memory for _EPROCESS pool allocations
+pstree                  - Print process list as a tree
+psxview                 - Find hidden processes with various process listings
+raw2dmp                 - Converts a physical memory sample to a windbg crash dump
+screenshot              - Save a pseudo-screenshot based on GDI windows
+sessions                - List details on _MM_SESSION_SPACE (user logon sessions)
+shellbags               - Prints ShellBags info
+shimcache               - Parses the Application Compatibility Shim Cache registry key
+sockets                 - Print list of open sockets
+sockscan                - Scan Physical memory for _ADDRESS_OBJECT objects (tcp sockets)
+ssdt                    - Display SSDT entries
+strings                 - Match physical offsets to virtual addresses (may take a while, VERY verbose)
+suse32test              - No docs        
+svcscan                 - Scan for Windows services
+symlinkscan             - Scan for symbolic link objects
+thrdscan                - Scan physical memory for _ETHREAD objects
+threads                 - Investigate _ETHREAD and _KTHREADs
+timers                  - Print kernel timers and associated module DPCs
+ubuntu64test            - No docs        
+unloadedmodules         - Print list of unloaded modules
+userassist              - Print userassist registry keys and information
+userhandles             - Dump the USER handle tables
+vaddump                 - Dumps out the vad sections to a file
+vadinfo                 - Dump the VAD info
+vadtree                 - Walk the VAD tree and display in tree format
+vadwalk                 - Walk the VAD tree
+vboxinfo                - Dump virtualbox information
+vmwareinfo              - Dump VMware VMSS/VMSN information
+volshell                - Shell in the memory image
+windows                 - Print Desktop Windows (verbose details)
+wintree                 - Print Z-Order Desktop Windows Tree
+wndscan                 - Pool scanner for tagWINDOWSTATION (window stations)
+yarascan                - Scan process or kernel memory with Yara signatures
 
 3. To get more information on a sample and to make sure Volatility
    supports that sample type, run 'python vol.py imageinfo -f <imagename>'
@@ -291,7 +391,7 @@ Options:
    Example:
    
     > python vol.py imageinfo -f WIN-II7VOJTUNGL-20120324-193051.raw 
-    Volatile Systems Volatility Framework 2.1_rc3
+    Volatile Systems Volatility Framework 2.3_beta
     Determining profile based on KDBG search...
     
               Suggested Profile(s) : Win2008R2SP0x64, Win7SP1x64, Win7SP0x64, Win2008R2SP1x64 (Instantiated with Win7SP0x64)
@@ -318,7 +418,6 @@ Options:
 
         http://code.google.com/p/volatility/wiki/VolatilityUsage23
 
-
 Licensing and Copyright
 =======================
 
@@ -340,7 +439,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
 02111-1307, USA.
-
 
 Bugs and Support
 ================
@@ -381,7 +479,6 @@ incorrectness of output from Volatility including, but not
 limited to, malicious modifications to the operating system,
 incomplete information due to swapping, and information corruption on
 image acquisition. 
-
 
 Command Reference 
 ====================

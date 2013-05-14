@@ -14,12 +14,15 @@ intentional. Please bring it to our attention!
 
 Volatility 2.3:
 
-Cem Gurkok
-Nir Izraeli
-Andreas Schuster
-Joe Sylve
-Philippe Teuwen
-Santiago Vicente
+Cem Gurkok for his work on the privileges plugin for Windows
+Nir Izraeli for his work on the VMware snapshot address space (see also the vmsnparser project)
+@osxmem of the volafox project (Mac OS X & BSD Memory Analysis Toolkit)
+@osxreverser of reverse.put.as for his help with OSX memory analysis
+Carl Pulley for numerous bug reports, example patches, and plugin testing
+Andreas Schuster for his work on poison ivy plugins for Windows
+Joe Sylve for his work on the ARM address space and significant contributions to linux and mac capabilities
+Philippe Teuwen for his work on the virtual box address space
+Santiago Vicente for his work on the citadel plugins for Windows
 
 Volatility 2.2:
 ------------
