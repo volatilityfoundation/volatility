@@ -64,7 +64,6 @@ Jon Evans
 Robert Guess
 Christian Herndler
 jeremie0
-Jesse Kornblum
 Eugene Libster
 Erik Ligda
 Robert Lowe

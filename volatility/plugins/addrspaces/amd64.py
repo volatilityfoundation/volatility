@@ -1,4 +1,5 @@
 # Volatility
+# Copyright (C) 2013 Volatility Foundation
 #
 # Authors:
 # Mike Auty
@@ -22,30 +23,35 @@ import volatility.plugins.addrspaces.paged as paged
 import volatility.obj as obj
 import struct
 
-# WritablePagedMemory must be BEFORE base address, since it adds the concrete method get_available_addresses
-# If it's second, BaseAddressSpace's abstract version will take priority
-
 class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     """ Standard AMD 64-bit address space.
-    
-    Provides an address space for AMD64 paged memory, aka the x86_64 
-    architecture, which is laid out similarly to Physical Address 
-    Extensions (PAE). Allows callers to map virtual address to 
-    offsets in physical memory.
+   
+    This class implements the AMD64/IA-32E paging address space. It is responsible
+    for translating each virtual (linear) address to a physical address.
+    This is accomplished using hierachical paging structures.
+    Every paging structure is 4096 bytes and is composed of entries.
+    Each entry is 64 bits.  The first paging structure is located at the
+    physical address found in CR3 (dtb).
 
-    Create a new AMD64 address space to sit on top of the base address 
-    space and a Directory Table Base (CR3 value) of 'dtb'.
+    The 'cache' parameter is used to cache intermediate structures
+    within the paging hierarchy. This option is not recommended when
+    the address space is being used on live systems as it could result
+    in stale data.
 
-    If the 'cache' parameter is true, will cache the Page Directory Entries
-    for extra performance. The cache option requires an additional 4KB of
-    space.
-
-    Comments in this class mostly come from the Intel(R) 64 and IA-32 
-    Architectures Software Developer's Manual Volume 3A: System Programming 
-    Guide, Part 1, revision 031, pages 4-8 to 4-15. This book is available
-    for free at http://www.intel.com/products/processor/manuals/index.htm.
-    Similar information is also available from Advanced Micro Devices (AMD) 
-    at http://support.amd.com/us/Processor_TechDocs/24593.pdf.
+    Additional Resources:
+     - Intel(R) 64 and IA-32 Architectures Software Developer's Manual
+       Volume 3A: System Programming Guide. Section 4.3
+       http://www.intel.com/products/processor/manuals/index.htm
+     - AMD64 Architecture Programmer's Manual Volume 2: System Programming
+       http://support.amd.com/us/Processor_TechDocs/24593_APM_v2.pdf
+     - N. Petroni, A. Walters, T. Fraser, and W. Arbaugh, "FATKit: A Framework
+       for the Extraction and Analysis of Digital Forensic Data from Volatile
+       System Memory" ,Digital Investigation Journal 3(4):197-210, December 2006.
+       (submitted February 2006)
+     - N. P. Maclean, "Acquisition and Analysis of Windows Memory,"
+       University of Strathclyde, Glasgow, April 2006.
+     - Russinovich, M., & Solomon, D., & Ionescu, A.
+       "Windows Internals, 5th Edition", Microsoft Press, 2009.
     """
     order = 60
     cache = False
@@ -70,8 +76,8 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
 
     def entry_present(self, entry):
         '''
-        Returns whether or not the 'P' (Present) flag is on
-        in the given entry
+        Checks if the entry's 'P' flag (bit 0) is set or
+        if the entry represents data in transition.
         '''
         if entry:
             if (entry & 1):
@@ -86,109 +92,152 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
 
     def page_size_flag(self, entry):
         '''
-        Returns whether or not the 'PS' (Page Size) flag is on
-        in the given entry
+        Checks if the entry's 'PS' Page Size (bit 7) is set
         '''
         if entry:
             return (entry & (1 << 7)) == (1 << 7)
         return False
 
-    def get_two_meg_paddr(self, vaddr, pde):
+    def get_2MB_paddr(self, vaddr, pde):
         '''
-        Return the offset in a 2MB memory page from the given virtual
-        address and Page Directory Entry.
+        If the Page Directory Entry represents a 2-MByte
+        page, this method extracts the physical address
+        of the page.
 
-        Bits 51:21 are from the PDE
-        Bits 20:0 are from the original linear address
+        "Bits 51:21 are from the PDE" [Intel]
+        "Bits 20:0 are from the original linear address" [Intel]
         '''
-        return (pde & 0xfffffffe00000) | (vaddr & 0x1fffff)
+        return (vaddr & 0x1fffff) | (pde & 0xfffffffe00000)
 
     def is_valid_profile(self, profile):
+        '''
+        This method checks to make sure the address space is being
+        used with a supported profile. 
+        '''
         return profile.metadata.get('memory_model', '32bit') == '64bit' or profile.metadata.get('os', 'Unknown').lower() == 'mac'
 
     def pml4e_index(self, vaddr):
         ''' 
-        Returns the Page Map Level 4 Entry Index number from the given
-        virtual address. The index number is in bits 47:39.
+        This method returns the Page Map Level 4 Entry Index 
+        number from the given  virtual address. The index number is
+        in bits 47:39.
         '''
         return (vaddr & 0xff8000000000) >> 39
 
     def get_pml4e(self, vaddr):
         '''
-        Return the Page Map Level 4 Entry for the given virtual address.
-        If caching
+        This method returns the Page Map Level 4 (PML4) entry for the 
+        virtual address. Bits 47:39 are used to the select the
+        appropriate 8 byte entry in the Page Map Level 4 Table.
 
-        Bits 51:12 are from CR3
-        Bits 11:3 are bits 47:39 of the linear address
-        Bits 2:0 are 0.
+        "Bits 51:12 are from CR3" [Intel]
+        "Bits 11:3 are bits 47:39 of the linear address" [Intel]
+        "Bits 2:0 are 0" [Intel]
         '''
         if self.cache:
             return self.pml4e_cache[self.pml4e_index(vaddr)]
 
-        pml4e_addr = (self.dtb & 0xffffffffff000) | ((vaddr & 0xff8000000000) >> 36)
-        return self._read_long_long_phys(pml4e_addr)
+        pml4e_paddr = (self.dtb & 0xffffffffff000) | ((vaddr & 0xff8000000000) >> 36)
+        return self.read_long_long_phys(pml4e_paddr)
 
     def get_pdpte(self, vaddr, pml4e):
         '''
-        Return the Page Directory Pointer Table Entry for the given virtual address.
+        This method returns the Page Directory Pointer entry for the
+        virtual address. Bits 32:30 are used to select the appropriate
+        8 byte entry in the Page Directory Pointer table.
         
-        Bits 51:12 are from the PML4E
-        Bits 11:3 are bits 38:30 of the linear address
-        Bits 2:0 are all 0
+        "Bits 51:12 are from the PML4E" [Intel]
+        "Bits 11:3 are bits 38:30 of the linear address" [Intel]
+        "Bits 2:0 are all 0" [Intel]
         '''
-        pdpte_addr = (pml4e & 0xffffffffff000) | ((vaddr & 0x7FC0000000) >> 27)
-        return self._read_long_long_phys(pdpte_addr)
+        pdpte_paddr = (pml4e & 0xffffffffff000) | ((vaddr & 0x7FC0000000) >> 27)
+        return self.read_long_long_phys(pdpte_paddr)
 
-    def get_one_gig_paddr(self, vaddr, pdpte):
+    def get_1GB_paddr(self, vaddr, pdpte):
         '''
-        Return the offset in a 1GB memory page from the given virtual
-        address and Page Directory Pointer Table Entry.
+        If the Page Directory Pointer Table entry represents a 1-GByte
+        page, this method extracts the physical address of the page.
 
-        Bits 51:30 are from the PDE
-        Bits 29:0 are from the original linear address
+        "Bits 51:30 are from the PDPTE" [Intel]
+        "Bits 29:0 are from the original linear address" [Intel]
         '''
         return (pdpte & 0xfffffc0000000) | (vaddr & 0x3fffffff)
 
+    def get_pde(self, vaddr, pdpte):
+        '''
+        This method returns the Page Directory entry obtained by using
+        bits (51:12) from PDPTE with bits (11:3) from the linear address.
+
+        "Bits 51:12 are from the PDPTE" [Intel]
+        "Bits 11:3 are bits 29:21 of the linear address" [Intel]
+        "Bits 2:0 are 0" [Intel]
+        '''
+        pde_paddr = ((vaddr & 0x3fe00000) >> 18) | (pdpte & 0xffffffffff000)
+        return self.read_long_long_phys(pde_paddr)
+
+    def get_pte(self, vaddr, pde):
+        '''
+        This method returns the Page Table entry obtained by using the
+        Table bits (20:12) from the linear address to specify the entry
+        offset from the supplied Page Directory entry (51:12).
+
+        "Bits 11:3 are bits 20:12 of the original linear address" [Intel]
+        "Bits 51:12 are from the PDE" [Intel]
+        '''
+        pte_paddr = ((vaddr & 0x1ff000) >> 9) | (pde & 0xffffffffff000)
+        return self.read_long_long_phys(pte_paddr)
+
+    def get_paddr(self, vaddr, pte):
+        '''
+        This method returns the physical address of a 4-KByte page
+        obtained by combining  bits (51:12) from the Page Table entry with
+        bits (11:0) from th linear address.
+
+        "Bits 11:0 are from the original linear address" [Intel]
+        "Bits 51:12 are from the PTE" [Intel]
+        '''
+        return (vaddr & 0xfff) | (pte & 0xffffffffff000)
+
     def vtop(self, vaddr):
         '''
-        Translates virtual addresses into physical offsets.
-        The function returns either None (no valid mapping)
-        or the offset in physical memory where the address maps.
+        This method translates an address in the virtual
+        address space to its associated physical address.
+        Invalid entries should be handled with operating
+        system abstractions.
         '''
         vaddr = long(vaddr)
         pml4e = self.get_pml4e(vaddr)
         if not self.entry_present(pml4e):
-            # Add support for paged out PML4E
             return None
 
         pdpte = self.get_pdpte(vaddr, pml4e)
         if not self.entry_present(pdpte):
-            # Add support for paged out PDPTE
-            # Insert buffalo here!
             return None
 
         if self.page_size_flag(pdpte):
-            return self.get_one_gig_paddr(vaddr, pdpte)
+            return self.get_1GB_paddr(vaddr, pdpte)
 
         pde = self.get_pde(vaddr, pdpte)
         if not self.entry_present(pde):
-            # Add support for paged out PDE
             return None
 
         if self.page_size_flag(pde):
-            return self.get_two_meg_paddr(vaddr, pde)
+            return self.get_2MB_paddr(vaddr, pde)
 
         pte = self.get_pte(vaddr, pde)
         if not self.entry_present(pte):
-            # Add support for paged out PTE
             return None
 
-        return self.get_phys_addr(vaddr, pte)
+        return self.get_paddr(vaddr, pte)
 
-    def _read_long_long_phys(self, addr):
+    def read_long_long_phys(self, addr):
         '''
-        Returns an unsigned 64-bit integer from the address addr in
-        physical memory. If unable to read from that location, returns None.
+        This method returns a 64-bit little endian
+        unsigned integer from the specified address in the
+        physical address space. If the address cannot be accessed,
+        then the method returns None.
+
+        This code was derived directly from legacyintel.py
         '''
         try:
             string = self.base.read(addr, 8)
@@ -199,45 +248,16 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
         (longlongval,) = struct.unpack('<Q', string)
         return longlongval
 
-    def get_pde(self, vaddr, pdpte):
-        '''
-        Return the Page Directory Entry for the given virtual address
-        and Page Directory Pointer Table Entry.
-
-        Bits 51:12 are from the PDPTE
-        Bits 11:3 are bits 29:21 of the linear address
-        Bits 2:0 are 0
-        '''
-        pde_addr = (pdpte & 0xffffffffff000) | ((vaddr & 0x3fe00000) >> 18)
-        return self._read_long_long_phys(pde_addr)
-
-    def get_pte(self, vaddr, pde):
-        '''
-        Return the Page Table Entry for the given virtual address
-        and Page Directory Entry.
-
-        Bits 51:12 are from the PDE
-        Bits 11:3 are bits 20:12 of the original linear address
-        Bits 2:0 are 0
-        '''
-        pte_addr = (pde & 0xffffffffff000) | ((vaddr & 0x1ff000) >> 9)
-        return self._read_long_long_phys(pte_addr)
-
-    def get_phys_addr(self, vaddr, pte):
-        '''
-        Return the offset in a 4KB memory page from the given virtual
-        address and Page Table Entry.
-
-        Bits 51:12 are from the PTE
-        Bits 11:0 are from the original linear address
-        '''
-        return (pte & 0xffffffffff000) | (vaddr & 0xfff)
-
     def get_available_pages(self):
         '''
-        Return a list of lists of available memory pages.
-        Each entry in the list is the starting virtual address 
-        and the size of the memory page.
+        This method generates a list of pages that are
+        available within the address space. The entries in
+        list are composed of the virtual address of the page
+        and the size of the particular page (address, size).
+        It walks the 0x1000/0x8  entries in each Page Directory and
+        Page Table to determine which pages are accessible.
+
+        This code was derived directly from legacyintel.py.
         '''
 
         # Pages that hold PDEs and PTEs are 0x1000 bytes each.

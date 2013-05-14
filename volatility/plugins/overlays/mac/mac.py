@@ -183,7 +183,7 @@ class proc(obj.CType):
             # A 32 bit process on a 32 bit system need 
             # bypass b/c no sharing of address space
 
-            proc_as = intel.JKIA32PagedMemoryPae(self.obj_vm.base, 
+            proc_as = intel.IA32PagedMemoryPae(self.obj_vm.base, 
                                                  self.obj_vm.get_config(), dtb = cr3, 
                                                  skip_as_check = True)
 

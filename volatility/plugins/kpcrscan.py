@@ -132,7 +132,7 @@ class KPCRScannerCheck(scan.ScannerCheck):
             self.Prcb_offset = kpcr.CurrentPrcb.obj_offset
             # The nested _KPRCB in Prcb on x64
             self.PrcbData_offset = kpcr.Prcb.obj_offset
-            self.address_equality = intel.JKIA32PagedMemory.address_equality
+            self.address_equality = intel.IA32PagedMemory.address_equality
         self.KPCR = None
 
     def check(self, offset):
