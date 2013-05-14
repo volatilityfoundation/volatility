@@ -68,7 +68,8 @@ opts['packages'] = ["volatility",
                     "volatility.plugins.gui.vtypes",
                     "volatility.plugins.linux",
                     "volatility.plugins.registry",
-                    "volatility.plugins.malware"]
+                    "volatility.plugins.malware", 
+                    "volatility.plugins.mac"]
 opts['data_files'] = find_files(['contrib'], py = True) + find_files(['tools'])
 
 if py2exe_available:
