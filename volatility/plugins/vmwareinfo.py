@@ -16,6 +16,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
+import os
 import volatility.plugins.crashinfo as crashinfo
 import volatility.utils as utils
 
@@ -23,6 +24,11 @@ class VMwareInfo(crashinfo.CrashInfo):
     """Dump VMware VMSS/VMSN information"""
     
     target_as = ['VMWareSnapshotFile']
+
+    def __init__(self, config, *args, **kwargs):
+        crashinfo.CrashInfo.__init__(self, config, *args, **kwargs)
+        config.add_option('DUMP-DIR', short_option = 'D', default = None,
+                          help = 'Directory in which to dump the screenshot (if available)')
         
     def render_text(self, outfd, data):
     
@@ -35,7 +41,7 @@ class VMwareInfo(crashinfo.CrashInfo):
         ## Now let's print the runs 
         self.table_header(outfd, [("File Offset", "#018x"), 
                                   ("PhysMem Offset", "#018x"),
-                                  ("Size", "[addr]")])
+                                  ("Size", "#018x")])
         
         for memory_offset, file_offset, length in data.get_runs():
             self.table_row(outfd, file_offset, memory_offset, length)
@@ -44,7 +50,7 @@ class VMwareInfo(crashinfo.CrashInfo):
         
         ## Go through and print the groups and tags
         self.table_header(outfd, [("DataOffset", "#018x"), 
-                                  ("DataSize", "[addr]"), 
+                                  ("DataSize", "#018x"), 
                                   ("Name", "50"), 
                                   ("Value", "")])
     
@@ -89,11 +95,14 @@ class VMwareInfo(crashinfo.CrashInfo):
                                 for o, h, c in utils.Hexdump(data)
                                 ]))
                      
-                    ## If we alter the plugin later to accept an output directory, we can 
-                    ## extract the snapshot thumbnail image using the code below. 
-                    #if str(group.Name) == "MKSVMX" and str(tag.Name) == "imageData":
-                    #    f = open("test.png", "wb")
-                    #    f.write(data)
-                    #    f.close()
+                    ## If an output directory was supplied, extract the 
+                    ## snapshot thumbnail image using the code below. 
+                    if (self._config.DUMP_DIR and 
+                                str(group.Name) == "MKSVMX" and 
+                                str(tag.Name) == "imageData"):
+                        full_path = os.path.join(self._config.DUMP_DIR, "screenshot.png")
+                        with open(full_path, "wb") as fh:
+                            fh.write(data)
+                            outfd.write("Wrote screenshot to: {0}\n".format(full_path))
                     
                     
