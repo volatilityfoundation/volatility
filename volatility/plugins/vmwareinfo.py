@@ -33,9 +33,9 @@ class VMwareInfo(crashinfo.CrashInfo):
         outfd.write("Group count: {0:#x}\n".format(header.GroupCount))
         
         ## Now let's print the runs 
-        self.table_header(outfd, [("File Offset", "[addrpad]"), 
-                                  ("PhysMem Offset", "[addrpad]"),
-                                  ("Size", "[addrpad]")])
+        self.table_header(outfd, [("File Offset", "#018x"), 
+                                  ("PhysMem Offset", "#018x"),
+                                  ("Size", "[addr]")])
         
         for memory_offset, file_offset, length in data.get_runs():
             self.table_row(outfd, file_offset, memory_offset, length)
@@ -43,7 +43,7 @@ class VMwareInfo(crashinfo.CrashInfo):
         outfd.write("\n")
         
         ## Go through and print the groups and tags
-        self.table_header(outfd, [("DataOffset", "[addrpad]"), 
+        self.table_header(outfd, [("DataOffset", "#018x"), 
                                   ("DataSize", "[addr]"), 
                                   ("Name", "50"), 
                                   ("Value", "")])
@@ -77,15 +77,13 @@ class VMwareInfo(crashinfo.CrashInfo):
                                value)
                                
                 ## In verbose mode, when we're *not* dealing with memory segments, 
-                ## print a hexdump of 
+                ## print a hexdump of the data 
                 if (self._config.VERBOSE and tag.DataMemSize > 0 
                         and str(group.Name) != "memory" and value == ""):
                         
                     ## When we read, it must be done via the AS base (FileAddressSpace)
                     addr = tag.RealDataOffset
-                    ## FIXME: FileAddressSpace.read doesn't handle NativeType so we have to case. 
-                    ## Remove the cast after Issue #350 is fixed. 
-                    data = tag.obj_vm.read(addr, int(tag.DataMemSize)) 
+                    data = tag.obj_vm.read(addr, tag.DataMemSize)
                     
                     outfd.write("".join(["{0:#010x}  {1:<48}  {2}\n".format(addr + o, h, ''.join(c))
                                 for o, h, c in utils.Hexdump(data)
