@@ -81,20 +81,14 @@ class Strings(taskmods.DllList):
         if self._config.VERBOSE:
             verbfd = outfd
 
-        # Before we bother to start parsing the image, check to make sure the strings
-        # are specified correctly
-        parsedStrings = []
+        reverse_map = self.get_reverse_map(addr_space, tasks, verbfd)
+
         for stringLine in stringlist:
             (offsetString, string) = self.parse_line(stringLine)
             try:
                 offset = int(offsetString)
             except ValueError:
                 debug.error("String file format invalid.")
-            parsedStrings.append((offset, string))
-
-        reverse_map = self.get_reverse_map(addr_space, tasks, verbfd)
-
-        for (offset, string) in parsedStrings:
             if reverse_map.has_key(offset & 0xFFFFF000):
                 outfd.write("{0:08x} [".format(offset))
                 outfd.write(' '.join(["{0}:{1:08x}".format(pid[0], pid[1] | (offset & 0xFFF)) for pid in reverse_map[offset & 0xFFFFF000][1:]]))
