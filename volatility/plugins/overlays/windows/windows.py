@@ -764,7 +764,7 @@ class VolatilityIA32ValidAS(obj.VolatilityMagic):
         try:
             if self.obj_vm.pae:
                 pde_base = 0xc0600000
-                pd = self.obj_vm.get_pdpte(0) & 0xffffffffff000
+                pd = self.obj_vm.get_pdpi(0) & 0xffffffffff000
             else:
                 pde_base = 0xc0300000
                 pd = self.obj_vm.dtb

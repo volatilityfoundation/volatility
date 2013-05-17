@@ -239,12 +239,6 @@ class AbstractDiscreteAllocMemory(BaseAddressSpace):
                 else:
                     data = None
 
-                #if not self.base.is_valid_address(paddr):
-                #    return obj.NoneObject("Could not read_chunks from addr " + hex(position) + " of size " + hex(datalen))
-
-                #data = read(paddr, datalen)
-                # Do we really want to return None
-                # or would we want to padd.
                 if data is None:
                     if not pad:
                         return obj.NoneObject("Could not read_chunks from addr " + hex(position) + " of size " + hex(datalen))
@@ -258,15 +252,15 @@ class AbstractDiscreteAllocMemory(BaseAddressSpace):
 
     def read(self, addr, length):
         '''
-        Read and return 'length' bytes from the 'addr'.
-        If any part of that block is unavailable, return None.
+        This method reads 'length' bytes from the specified 'addr'.
+        If any range is unavailable it returns None.
         '''
         return self._read(addr, length, False)
 
     def zread(self, addr, length):
         '''
-        Read and return 'length' bytes from the 'addr'.
-        If any part of that block is unavailable, pad it with zeros.
+        This method reads 'length' bytes from the specified 'addr'.
+        If any range is unavailable it pads the region with zeros.
         '''
         return self._read(addr, length, True)
 
