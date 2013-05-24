@@ -63,8 +63,7 @@ class mac_trustedbsd(mac_lsmod):
                 ptr = ops.__getattr__(check)
                
                 if ptr != 0:
-                    # make the last parameter 1 to see the names of known modules that load policies
-                    good = common.is_known_address(ptr, kernel_symbol_addresses, kmods, 0) 
+                    good = common.is_known_address(ptr, kernel_symbol_addresses, kmods) 
 
                     yield (good, check, name, ptr)
 
