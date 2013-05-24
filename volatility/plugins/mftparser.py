@@ -175,12 +175,10 @@ class RESIDENT_ATTRIBUTE(obj.CType):
 
 class STANDARD_INFORMATION(obj.CType):
     # XXX need a better check than this
-    # we return valid if we any timestamp other than Null
+    # we return valid if we have _any_ timestamp other than Null
     def is_valid(self):
-        return "1970-01-01 00:00:00" != str(self.ModifiedTime).strip() or \
-               "1970-01-01 00:00:00" != str(self.MFTAlteredTime).strip() or \
-               "1970-01-01 00:00:00" != str(self.FileAccessedTime).strip() or \
-               "1970-01-01 00:00:00" != str(self.CreationTime).strip()
+        return obj.CType.is_valid(self) and (self.ModifiedTime.v() != 0 or self.MFTAlteredTime.v() != 0 or \
+                self.FileAccessedTime.v() != 0 or self.CreationTime.v() != 0) 
 
     def get_type_short(self):
         if self.Flags == None:
@@ -251,10 +249,10 @@ class FILE_NAME(STANDARD_INFORMATION):
         return ''.join([c for c in str if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
 
     # XXX need a better check than this
-    # we return valid if we any timestamp other than Null
+    # we return valid if we have _any_ timestamp other than Null
     # filename must also be a non-empty string
     def is_valid(self):
-        return (self.ModifiedTime.v() != 0 or self.MFTAlteredTime.v() != 0 or \
+        return obj.CType.is_valid(self) and (self.ModifiedTime.v() != 0 or self.MFTAlteredTime.v() != 0 or \
                 self.FileAccessedTime.v() != 0 or self.CreationTime.v() != 0) and \
                 self.remove_unprintable(self.get_name()) != ""
 
