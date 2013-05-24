@@ -581,7 +581,11 @@ class MFTParser(common.AbstractWindowsCommand):
                     else:
                         start = next_attr.obj_offset + next_attr.ContentOffset
                         theend = min(start + next_attr.ContentSize, end)
-                        contents = mft_buff[start:theend]
+                        try:
+                            contents = mft_buff[start:theend]
+                        except TypeError:
+                            next_attr = None
+                            continue
                         thedata = "\n".join(["{0:010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(contents)])
                         if len(thedata) == 0:
                             thedata = "(Empty)"
