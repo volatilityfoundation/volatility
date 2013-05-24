@@ -265,7 +265,7 @@ class WinTimeStamp(obj.NativeType):
         @rtype  Integer
         @return  UNIX time
         """
-        if(windows_time == 0):
+        if windows_time == None or windows_time == 0:
             unix_time = 0
         else:
             unix_time = windows_time / 10000000
