@@ -157,6 +157,7 @@ class AbstractWritablePagedMemory(AbstractPagedMemory):
             self.calculate_alloc_stats()
 
         position = vaddr
+        length = len(buf)
         remaining = len(buf)
 
         # For each allocation...
@@ -174,5 +175,5 @@ class AbstractWritablePagedMemory(AbstractPagedMemory):
             buf = buf[datalen:]
             position += datalen
             remaining -= datalen
-            assert (vaddr + len(buf) == position + remaining), "Address + length != position + remaining (" + hex(vaddr + len(buf)) + " != " + hex(position + remaining) + ") in " + self.base.__class__.__name__
+            assert (vaddr + length == position + remaining), "Address + length != position + remaining (" + hex(vaddr + length) + " != " + hex(position + remaining) + ") in " + self.base.__class__.__name__
         return True
