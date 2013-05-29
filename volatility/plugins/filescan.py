@@ -237,7 +237,7 @@ class SymLinkScan(FileScan):
         self.table_header(outfd, [('Offset(P)', '[addrpad]'),
                                   ('#Ptr', '>6'),
                                   ('#Hnd', '>6'),
-                                  ('Creation time', '24'),
+                                  ('Creation time', '30'),
                                   ('From', '<20'),
                                   ('To', '60'),
                                   ])
