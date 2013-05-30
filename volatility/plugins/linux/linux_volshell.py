@@ -17,6 +17,7 @@
 #
 
 import volatility.plugins.linux.pslist as pslist
+import volatility.plugins.linux.lsmod as lsmod
 import volatility.plugins.volshell as volshell
 import volatility.obj as obj
 
@@ -26,6 +27,12 @@ class linux_volshell(volshell.volshell):
     @staticmethod
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'linux'
+
+    def modules(self):
+        mods = lsmod.linux_lsmod(self._config).calculate()
+
+        for (module, _, __) in mods:
+            print "{0:24} {1:d}".format(module.name, module.init_size + module.core_size)
 
     def getpidlist(self):
         return pslist.linux_pslist(self._config).calculate()
