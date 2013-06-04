@@ -387,7 +387,7 @@ class volshell(common.AbstractWindowsCommand):
             Note: This feature requires distorm, available at
                 http://www.ragestorm.net/distorm/
 
-            The mode is '32bit' or '64bit'. If not supplied, the disasm
+            The mode is '16bit', '32bit' or '64bit'. If not supplied, the disasm
             mode is taken from the profile. 
             """
             if not sys.modules.has_key("distorm3"):
@@ -396,13 +396,17 @@ class volshell(common.AbstractWindowsCommand):
             if not space:
                 space = self.proc.get_process_address_space()
 
-            if not mode:
+            if mode == None:
                 mode = space.profile.metadata.get('memory_model', '32bit')
-
-            if mode == '32bit':
-                distorm_mode = distorm3.Decode32Bits
-            else:
-                distorm_mode = distorm3.Decode64Bits
+            # we'll actually allow the possiblility that someone passed a correct mode
+            if mode not in [distorm3.Decode16Bits, distorm3.Decode32Bits, distorm3.Decode64Bits]:
+                if mode == '16bit':
+                    mode = distorm3.Decode16Bits
+                elif mode == '32bit':
+                    mode = distorm3.Decode32Bits
+                else:
+                    mode = distorm3.Decode64Bits
+            distorm_mode = mode
 
             data = space.read(address, length)
             iterable = distorm3.DecodeGenerator(address, data, distorm_mode)
