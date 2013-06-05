@@ -30,7 +30,7 @@ class mac_lsof(pstasks.mac_tasks):
     def calculate(self):
         common.set_plugin_members(self)
 
-        procs = pstasks.mac_tasks.calculate(self)
+        procs = pstasks.mac_tasks(self._config).calculate()
 
         for proc in procs:
             fds = obj.Object('Array', offset = proc.p_fd.fd_ofiles, vm = self.addr_space, targetType = 'Pointer', count = proc.p_fd.fd_lastfile)
