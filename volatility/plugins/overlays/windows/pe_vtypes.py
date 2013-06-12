@@ -301,9 +301,14 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
 
     def _directory(self, dir_index):
         """Return the requested IMAGE_DATA_DIRECTORY"""
+
         nt_header = self._nt_header()
+        if nt_header == None:
+            raise ValueError('No directory index {0}'.format(dir_index))
 
         data_dir = nt_header.OptionalHeader.DataDirectory[dir_index]
+        if data_dir == None:
+            raise ValueError('No directory index {0}'.format(dir_index))
 
         # Make sure the directory exists 
         if data_dir.VirtualAddress == 0 or data_dir.Size == 0:

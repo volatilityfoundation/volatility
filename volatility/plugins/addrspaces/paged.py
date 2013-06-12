@@ -130,7 +130,7 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
 
     def is_valid_address(self, vaddr):
         """Returns whether a virtual address is valid"""
-        if vaddr == None:
+        if vaddr == None or vaddr < 0:
             return False
         try:
             paddr = self.vtop(vaddr)

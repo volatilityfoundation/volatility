@@ -120,7 +120,7 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
     def is_valid_address(self, addr):
         if addr == None:
             return False
-        return addr < self.fsize
+        return 0 <= addr < self.fsize
 
     def close(self):
         self.fhandle.close()
