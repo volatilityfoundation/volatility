@@ -178,6 +178,8 @@ def value_data(val):
         valdata = val.obj_vm.read(val.Data, val.DataLength)
 
     valtype = VALUE_TYPES.get(val.Type.v(), "REG_UNKNOWN")
+    if valdata == None:
+        return (valtype, obj.NoneObject("Value data is unreadable"))
     if valtype in ["REG_DWORD", "REG_DWORD_BIG_ENDIAN", "REG_QWORD"]:
         if len(valdata) != struct.calcsize(value_formats[valtype]):
             return (valtype, obj.NoneObject("Value data did not match the expected data size for a {0}".format(valtype)))
