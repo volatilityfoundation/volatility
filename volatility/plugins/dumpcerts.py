@@ -23,6 +23,7 @@
 
 import os, sys, subprocess
 import volatility.obj as obj
+import volatility.debug as debug
 import volatility.plugins.procdump as procdump
 import volatility.utils as utils
 import volatility.win32.tasks as tasks
