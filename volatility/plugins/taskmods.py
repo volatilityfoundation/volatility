@@ -84,7 +84,8 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
             
         return [t for t in tasks if t.UniqueProcessId in pidlist]
 
-    def virtual_process_from_physical_offset(self, addr_space, offset):
+    @staticmethod
+    def virtual_process_from_physical_offset(addr_space, offset):
         """ Returns a virtual process from a physical offset in memory """
         # Since this is a physical offset, we find the process
         flat_addr_space = utils.load_as(addr_space.get_config(), astype = 'physical')
