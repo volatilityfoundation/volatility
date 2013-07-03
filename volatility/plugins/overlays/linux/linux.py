@@ -777,6 +777,26 @@ class task_struct(obj.CType):
 
         return dt
 
+    def get_commandline(self):
+
+        if self.mm:
+            # set the as with our new dtb so we can read from userland
+            proc_as = self.get_process_address_space()
+
+            # read argv from userland
+            start = self.mm.arg_start.v()
+
+            argv = proc_as.read(start, self.mm.arg_end - self.mm.arg_start)
+
+            # split the \x00 buffer into args
+            name = " ".join(argv.split("\x00"))
+
+        else:
+            # kernel thread
+            name = "[" + self.comm + "]"
+
+        return name
+
 class linux_fs_struct(obj.CType):
 
     def get_root_dentry(self):

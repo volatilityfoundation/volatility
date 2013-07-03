@@ -26,36 +26,9 @@ import volatility.plugins.linux.pslist as linux_pslist
 class linux_psaux(linux_pslist.linux_pslist):
     '''Gathers processes along with full command line and start time'''
 
-    def calculate(self):
-
-        tasks = linux_pslist.linux_pslist.calculate(self)
-        for task in tasks:
-            name = self.get_task_name(task)
-            yield task, name
-
     def render_text(self, outfd, data):
 
         outfd.write("{1:6s} {2:6s} {3:6s} {0:64s}\n".format("Arguments", "Pid", "Uid", "Gid"))
 
-        for task, name in data:
-            outfd.write("{1:6s} {2:6s} {3:6s} {0:64s}\n".format(name, str(task.pid), str(task.uid), str(task.gid)))
-
-    def get_task_name(self, task):
-
-        if task.mm:
-            # set the as with our new dtb so we can read from userland
-            proc_as = task.get_process_address_space()
-
-            # read argv from userland
-            start = task.mm.arg_start.v()
-
-            argv = proc_as.read(start, task.mm.arg_end - task.mm.arg_start)
-
-            # split the \x00 buffer into args
-            name = " ".join(argv.split("\x00"))
-
-        else:
-            # kernel thread
-            name = "[" + task.comm + "]"
-
-        return name
+        for task in data:
+            outfd.write("{1:6s} {2:6s} {3:6s} {0:64s}\n".format(task.get_commandline(), str(task.pid), str(task.uid), str(task.gid)))
