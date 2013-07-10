@@ -49,10 +49,10 @@ class Modules(common.AbstractWindowsCommand):
                 offset = module.obj_vm.vtop(module.obj_offset)
             self.table_row(outfd,
                          offset,
-                         module.BaseDllName,
+                         str(module.BaseDllName  or ''),
                          module.DllBase,
                          module.SizeOfImage,
-                         module.FullDllName)
+                         str(module.FullDllName or ''))
 
 
     @cache.CacheDecorator("tests/lsmod")
