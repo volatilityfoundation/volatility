@@ -62,6 +62,18 @@ class LinuxPermissionFlags(basic.Flags):
 
         return ''.join(result)
 
+    def is_flag(self, flag):
+        return self.v() & (1 << self.bitmap[flag])
+    
+    def is_executable(self):
+        return self.is_flag('x')
+
+    def is_readable(self):
+        return self.is_flag('r')
+
+    def is_writable(self):
+        return self.is_flag('w')
+
 linux_overlay = {
     'task_struct' : [None, {
         'comm'          : [ None , ['String', dict(length = 16)]],
