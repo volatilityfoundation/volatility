@@ -21,14 +21,10 @@
 @organization: Digital Forensics Solutions
 """
 
+import socket
 import volatility.obj as obj
-import volatility.protos as protos
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsof as linux_lsof
-import volatility.plugins.linux.flags as linux_flags
-
-import socket
-
 import volatility.plugins.linux.pslist as linux_pslist
 
 class linux_netstat(linux_pslist.linux_pslist):
@@ -61,11 +57,9 @@ class linux_netstat(linux_pslist.linux_pslist):
 
         for task, _fd, inet_sock in data:
 
-            proto = self.get_proto_str(inet_sock)
+            if inet_sock.protocol in ("TCP", "UDP", "IP", "HOPOPT"): #hopopt is where unix sockets end up on linux
 
-            if proto in ("TCP", "UDP", "IP", "HOPOPT"): #hopopt is where unix sockets end up on linux
-
-                state = self.get_state_str(inet_sock) if proto == "TCP" else ""
+                state = inet_sock.state if inet_sock.protocol == "TCP" else ""
                 family = inet_sock.sk.__sk_common.skc_family #pylint: disable-msg=W0212
 
                 if family == socket.AF_UNIX:
@@ -86,61 +80,15 @@ class linux_netstat(linux_pslist.linux_pslist):
 
                 elif family in (socket.AF_INET, socket.AF_INET6):
 
-                    if family == socket.AF_INET:
-                        (daddr, saddr) = self.format_ipv4(inet_sock)
-                        (dport, sport) = self.format_port(inet_sock)
+                    sport = inet_sock.src_port 
+                    dport = inet_sock.dst_port 
+                    saddr = inet_sock.src_addr
+                    daddr = inet_sock.dst_addr
 
-                    elif family == socket.AF_INET6:
-                        (daddr, saddr) = self.format_ipv6(inet_sock)
-                        (dport, sport) = self.format_port(inet_sock)
-
-                    outfd.write("{0:8s} {1}:{2:<5} {3}:{4:<5} {5:s} {6:>17s}/{7:<5d}\n".format(proto, saddr, sport, daddr, dport, state, task.comm, task.pid))
+                    outfd.write("{0:8s} {1}:{2:<5} {3}:{4:<5} {5:s} {6:>17s}/{7:<5d}\n".format(inet_sock.protocol, saddr, sport, daddr, dport, state, task.comm, task.pid))
 
                 #else:
                 #    print "unknown family: %d" % family
-
-    def format_ipv6(self, inet_sock):
-        daddr = inet_sock.pinet6.daddr
-        saddr = inet_sock.pinet6.saddr
-
-        return (daddr.cast('Ipv6Address'), saddr.cast('Ipv6Address'))
-
-    # formats an ipv4 address
-    def format_ipv4(self, inet_sock):
-        # FIXME: Consider using kernel version metadata rather than checking hasattr
-        if hasattr(inet_sock, 'daddr') and inet_sock.daddr:
-            daddr = inet_sock.daddr
-            saddr = inet_sock.rcv_saddr
-        elif hasattr(inet_sock, 'inet_daddr') and inet_sock.inet_daddr:
-            daddr = inet_sock.inet_daddr
-            saddr = inet_sock.inet_rcv_saddr
-        else:
-            daddr = inet_sock.sk.__sk_common.skc_daddr
-            saddr = inet_sock.sk.__sk_common.skc_rcv_saddr
-
-        return (daddr.cast('IpAddress'), saddr.cast('IpAddress').v())
-
-    def format_port(self, inet_sock):
-        if hasattr(inet_sock, 'dport'):
-            dport = socket.htons(inet_sock.dport)
-            sport = socket.htons(inet_sock.sport)
-        else:
-            dport = socket.htons(inet_sock.inet_dport)
-            sport = socket.htons(inet_sock.inet_sport)
-
-        return (dport, sport)
-
-    def get_state_str(self, inet_sock):
-
-        state = inet_sock.sk.__sk_common.skc_state #pylint: disable-msg=W0212
-
-        return linux_flags.tcp_states[state]
-
-    def get_proto_str(self, inet_sock):
-
-        proto = inet_sock.sk.sk_protocol.v()
-
-        return protos.protos.get(proto, 'UNKNOWN')
 
     # has to get the struct socket given an inode (see SOCKET_I in sock.h)
     def SOCKET_I(self, inode):

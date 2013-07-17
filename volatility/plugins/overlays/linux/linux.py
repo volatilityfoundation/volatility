@@ -24,7 +24,7 @@
 @organization: Georgia Institute of Technology
 """
 
-import os, struct
+import os, struct, socket
 import copy
 import zipfile
 
@@ -39,6 +39,7 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.flags as linux_flags
 import volatility.addrspace as addrspace
 import volatility.utils as utils
+import volatility.protos as protos
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
 
@@ -592,6 +593,71 @@ class module_sect_attr(obj.CType):
 
         return name         
 
+class inet_sock(obj.CType):
+    """Class for an internet socket object"""
+
+    @property
+    def protocol(self):
+        """Return the protocol string (i.e. IPv4, IPv6)"""
+        return protos.protos.get(self.sk.sk_protocol.v(), "UNKNOWN")
+
+    @property
+    def state(self):
+        state = self.sk.__sk_common.skc_state #pylint: disable-msg=W0212
+        return linux_flags.tcp_states[state]
+    
+    @property
+    def src_port(self):
+        if hasattr(self, "sport"):
+            return socket.htons(self.sport)
+        elif hasattr(self, "inet_sport"):
+            return socket.htons(self.inet_sport)
+        else:
+            return None
+
+    @property
+    def dst_port(self):
+        if hasattr(self, "dport"):
+            return socket.htons(self.dport)
+        elif hasattr(self, "inet_dport"):
+            return socket.htons(self.inet_dport)
+        elif hasattr(self, "sk") and hasattr(self.sk, "__sk_common") and hasattr(self.sk.__sk_common, "skc_dport"):
+            return self.sk.__sk_common.skc_dport
+        else:
+            return None
+
+    @property
+    def src_addr(self):
+
+        if self.sk.__sk_common.skc_family == socket.AF_INET:
+            # FIXME: Consider using kernel version metadata rather than checking hasattr
+            if hasattr(self, "rcv_saddr"):
+                saddr = self.rcv_saddr
+            elif hasattr(self, "inet_rcv_saddr"):
+                saddr = self.inet_rcv_saddr
+            else:
+                saddr = self.sk.__sk_common.skc_rcv_saddr
+
+            return saddr.cast("IpAddress")
+        else:
+            return self.pinet6.saddr.cast("Ipv6Address")
+
+    @property
+    def dst_addr(self):
+
+        if self.sk.__sk_common.skc_family == socket.AF_INET:
+            # FIXME: Consider using kernel version metadata rather than checking hasattr
+            if hasattr(self, "daddr") and self.daddr:
+                daddr = self.daddr
+            elif hasattr(self, "inet_daddr") and self.inet_daddr:
+                daddr = self.inet_daddr
+            else:
+                daddr = self.sk.__sk_common.skc_daddr
+
+            return daddr.cast("IpAddress")
+        else:
+            return self.pinet6.daddr.cast("Ipv6Address")
+    
 class tty_ldisc(obj.CType):
 
     @property
@@ -966,6 +1032,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'inode' : inode,
             'dentry' : dentry,
             'timespec' : timespec,
+            'inet_sock' : inet_sock,
             })
 
 class LinuxOverlay(obj.ProfileModification):
