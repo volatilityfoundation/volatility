@@ -130,7 +130,7 @@ Quick Start
    Example:
 
 $ python vol.py -h
-Volatile Systems Volatility Framework 2.3_beta
+Volatile Systems Volatility Framework 2.3
 Usage: Volatility - A memory forensics analysis platform.
 
 Options:
@@ -165,35 +165,35 @@ Options:
   -k KPCR, --kpcr=KPCR  Specify a specific KPCR address
 
 $ python vol.py --info
-Volatile Systems Volatility Framework 2.3_beta
+Volatile Systems Volatility Framework 2.3
 
 Profiles
 --------
-VistaSP0x64     - A Profile for Windows Vista SP0 x64
-VistaSP0x86     - A Profile for Windows Vista SP0 x86
-VistaSP1x64     - A Profile for Windows Vista SP1 x64
-VistaSP1x86     - A Profile for Windows Vista SP1 x86
-VistaSP2x64     - A Profile for Windows Vista SP2 x64
-VistaSP2x86     - A Profile for Windows Vista SP2 x86
-Win2003SP0x86   - A Profile for Windows 2003 SP0 x86
-Win2003SP1x64   - A Profile for Windows 2003 SP1 x64
-Win2003SP1x86   - A Profile for Windows 2003 SP1 x86
-Win2003SP2x64   - A Profile for Windows 2003 SP2 x64
-Win2003SP2x86   - A Profile for Windows 2003 SP2 x86
-Win2008R2SP0x64 - A Profile for Windows 2008 R2 SP0 x64
-Win2008R2SP1x64 - A Profile for Windows 2008 R2 SP1 x64
-Win2008SP1x64   - A Profile for Windows 2008 SP1 x64
-Win2008SP1x86   - A Profile for Windows 2008 SP1 x86
-Win2008SP2x64   - A Profile for Windows 2008 SP2 x64
-Win2008SP2x86   - A Profile for Windows 2008 SP2 x86
-Win7SP0x64      - A Profile for Windows 7 SP0 x64
-Win7SP0x86      - A Profile for Windows 7 SP0 x86
-Win7SP1x64      - A Profile for Windows 7 SP1 x64
-Win7SP1x86      - A Profile for Windows 7 SP1 x86
-WinXPSP1x64     - A Profile for Windows XP SP1 x64
-WinXPSP2x64     - A Profile for Windows XP SP2 x64
-WinXPSP2x86     - A Profile for Windows XP SP2 x86
-WinXPSP3x86     - A Profile for Windows XP SP3 x86
+VistaSP0x64        - A Profile for Windows Vista SP0 x64
+VistaSP0x86        - A Profile for Windows Vista SP0 x86
+VistaSP1x64        - A Profile for Windows Vista SP1 x64
+VistaSP1x86        - A Profile for Windows Vista SP1 x86
+VistaSP2x64        - A Profile for Windows Vista SP2 x64
+VistaSP2x86        - A Profile for Windows Vista SP2 x86
+Win2003SP0x86      - A Profile for Windows 2003 SP0 x86
+Win2003SP1x64      - A Profile for Windows 2003 SP1 x64
+Win2003SP1x86      - A Profile for Windows 2003 SP1 x86
+Win2003SP2x64      - A Profile for Windows 2003 SP2 x64
+Win2003SP2x86      - A Profile for Windows 2003 SP2 x86
+Win2008R2SP0x64    - A Profile for Windows 2008 R2 SP0 x64
+Win2008R2SP1x64    - A Profile for Windows 2008 R2 SP1 x64
+Win2008SP1x64      - A Profile for Windows 2008 SP1 x64
+Win2008SP1x86      - A Profile for Windows 2008 SP1 x86
+Win2008SP2x64      - A Profile for Windows 2008 SP2 x64
+Win2008SP2x86      - A Profile for Windows 2008 SP2 x86
+Win7SP0x64         - A Profile for Windows 7 SP0 x64
+Win7SP0x86         - A Profile for Windows 7 SP0 x86
+Win7SP1x64         - A Profile for Windows 7 SP1 x64
+Win7SP1x86         - A Profile for Windows 7 SP1 x86
+WinXPSP1x64        - A Profile for Windows XP SP1 x64
+WinXPSP2x64        - A Profile for Windows XP SP2 x64
+WinXPSP2x86        - A Profile for Windows XP SP2 x86
+WinXPSP3x86        - A Profile for Windows XP SP3 x86
 
 Address Spaces
 --------------
@@ -218,9 +218,6 @@ atoms                   - Print session and window station atom tables
 atomscan                - Pool scanner for _RTL_ATOM_TABLE
 bioskbd                 - Reads the keyboard buffer from Real Mode memory
 callbacks               - Print system-wide notification routines
-chkas                   - Regression test for Windows address spaces
-chkaslin                - Regression test for Linux (LiME/ARM) address spaces
-chkasmac                - Regression test for Mac (Mach-O) address spaces
 clipboard               - Extract the contents of the windows clipboard
 cmdscan                 - Extract command history by scanning for _COMMAND_HISTORY
 connections             - Print list of open connections [Windows XP and 2003 Only]
@@ -234,6 +231,7 @@ dlllist                 - Print list of loaded dlls for each process
 driverirp               - Driver IRP hook detection
 driverscan              - Scan for driver objects _DRIVER_OBJECT
 dumpcerts               - Dump RSA private and public SSL keys
+dumpfiles               - Extract memory mapped and cached files
 envars                  - Display process environment variables
 eventhooks              - Print details on windows event hooks
 evtlogs                 - Extract Windows Event Logs (XP/2003 only)
@@ -363,13 +361,12 @@ sockets                 - Print list of open sockets
 sockscan                - Scan Physical memory for _ADDRESS_OBJECT objects (tcp sockets)
 ssdt                    - Display SSDT entries
 strings                 - Match physical offsets to virtual addresses (may take a while, VERY verbose)
-suse32test              - No docs        
 svcscan                 - Scan for Windows services
 symlinkscan             - Scan for symbolic link objects
 thrdscan                - Scan physical memory for _ETHREAD objects
 threads                 - Investigate _ETHREAD and _KTHREADs
+timeliner               - Creates a timeline from various artifacts in memory
 timers                  - Print kernel timers and associated module DPCs
-ubuntu64test            - No docs        
 unloadedmodules         - Print list of unloaded modules
 userassist              - Print userassist registry keys and information
 userhandles             - Dump the USER handle tables
@@ -385,13 +382,27 @@ wintree                 - Print Z-Order Desktop Windows Tree
 wndscan                 - Pool scanner for tagWINDOWSTATION (window stations)
 yarascan                - Scan process or kernel memory with Yara signatures
 
+Scanner Checks
+--------------
+CheckHiveSig           - Check for a registry hive signature
+CheckPoolIndex         - Checks the pool index
+CheckPoolSize          - Check pool block size
+CheckPoolType          - Check the pool type
+CheckProcess           - Check sanity of _EPROCESS
+CheckSocketCreateTime  - Check that _ADDRESS_OBJECT.CreateTime makes sense
+CheckThreads           - Check sanity of _ETHREAD
+KPCRScannerCheck       - Checks the self referential pointers to find KPCRs
+MultiPrefixFinderCheck - Checks for multiple strings per page, finishing at the offset
+MultiStringFinderCheck - Checks for multiple strings per page
+PoolTagCheck           - This scanner checks for the occurance of a pool tag
+
 3. To get more information on a sample and to make sure Volatility
    supports that sample type, run 'python vol.py imageinfo -f <imagename>'
 
    Example:
    
     > python vol.py imageinfo -f WIN-II7VOJTUNGL-20120324-193051.raw 
-    Volatile Systems Volatility Framework 2.3_beta
+    Volatile Systems Volatility Framework 2.3
     Determining profile based on KDBG search...
     
               Suggested Profile(s) : Win2008R2SP0x64, Win7SP1x64, Win7SP0x64, Win2008R2SP1x64 (Instantiated with Win7SP0x64)
