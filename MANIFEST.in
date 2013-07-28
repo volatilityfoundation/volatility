@@ -9,6 +9,8 @@ include contrib/plugins/*.py
 include contrib/plugins/aspaces/*.py
 include tools/*.py
 include tools/linux/*
+include tools/linux/pmem/*
+include tools/mac/*.py
 include vol.py
 include Makefile
-include volatility.spec
+include pyinstaller.spec
