@@ -11,8 +11,7 @@ exeext = ".exe" if 'win' in sys.platform else ""
 a = Analysis([os.path.join(projpath, 'vol.py')],
               pathex = [HOMEPATH],
               hookspath = [os.path.join(projpath, 'pyinstaller')])
-pyz = PYZ(a.pure,
-          name = os.path.join(BUILDPATH, 'vol.pkz'))
+pyz = PYZ(a.pure)
 plugins = Tree(os.path.join(projpath, 'volatility', 'plugins'),
                os.path.join('plugins'))
 exe = EXE(pyz,
