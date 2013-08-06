@@ -104,10 +104,9 @@ class _KDDEBUGGER_DATA64(obj.CType):
 
         for p in cpu_array:
 
-            # A null pointer indicates the end of the CPU list. Since 
-            # the 0 page is not valid in kernel AS, this single check       
-            # should match both NoneObject and null pointers.  
-            if not p:
+            # Terminate the loop if an item in the array is 
+            # invalid (ie paged) or if the pointer is NULL. 
+            if p == None or p == 0:
                 break
 
             kpcrb = p.dereference_as("_KPRCB")
