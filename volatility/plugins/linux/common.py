@@ -45,7 +45,7 @@ def set_plugin_members(obj_ref):
 class AbstractLinuxCommand(commands.Command):
     def __init__(self, *args, **kwargs):
         self.addr_space = None
-        self.known_addrs = []
+        self.known_addrs = {}
         commands.Command.__init__(self, *args, **kwargs)
 
     @property
