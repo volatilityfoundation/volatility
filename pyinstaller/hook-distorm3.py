@@ -5,6 +5,7 @@
 #
 # This also requires the distorm3 module to be modified with the following patch:
 
+# import sys
 # if hasattr(sys, '_MEIPASS'):
 #     _distorm_path = sys._MEIPASS
 
