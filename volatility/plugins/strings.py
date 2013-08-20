@@ -167,7 +167,8 @@ class Strings(taskmods.DllList):
         verbfd.write("\n")
         return reverse_map
 
-    def parse_line(self, stringLine):
+    @staticmethod
+    def parse_line(stringLine):
         """Parses a line of strings"""
         # Remove any leading spaces to handle nasty strings output
         stringLine = stringLine.lstrip()
