@@ -94,7 +94,8 @@ class Strings(taskmods.DllList):
                 outfd.write(' '.join(["{0}:{1:08x}".format(pid[0], pid[1] | (offset & 0xFFF)) for pid in reverse_map[offset & 0xFFFFF000][1:]]))
                 outfd.write("] {0}\n".format(string.strip()))
 
-    def get_reverse_map(self, addr_space, tasks, verbfd = None):
+    @staticmethod
+    def get_reverse_map(addr_space, tasks, verbfd = None):
         """Generates a reverse mapping from physical addresses to the kernel and/or tasks
         
            Returns:
