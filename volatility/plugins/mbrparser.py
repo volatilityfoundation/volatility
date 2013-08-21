@@ -310,10 +310,10 @@ class MBRParser(commands.Command):
         ret = ""  
         self.code_data = boot_code
         for (offset, size, instruction, hexdump) in iterable:
-            ret += "0x{0:08x}: {1:<32} {2}\n".format(offset + start, hexdump, instruction)
+            ret += "{0:010x}: {1:<32} {2}\n".format(offset + start, hexdump, instruction)
             if instruction == "RET":
                 self.code_data = boot_code[0:offset + size]
-                hexstuff = "\n" + "\n".join(["{0:#010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code[offset + size:], offset + start + size)])
+                hexstuff = "\n" + "\n".join(["{0:010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code[offset + size:], offset + start + size)])
                 ret += hexstuff
                 break
         return ret
@@ -346,7 +346,7 @@ class MBRParser(commands.Command):
                     continue
                 boot_code_output = "Disassembly of Bootable Code:\n{0}\n\n".format(disasm)
             else:
-                hexstuff = "\n" + "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code, start)])
+                hexstuff = "\n" + "\n".join(["{0:010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(boot_code, start)])
                 boot_code_output = "Bootable code: \n{0} \n\n".format(hexstuff)
                 
             h = hashlib.md5()
