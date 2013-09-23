@@ -103,7 +103,9 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
 
     def zread(self, addr, length):
         data = self.read(addr, length)
-        if data is None or len(data) != length:
+        if data is None:
+            data = "\x00" * length
+        elif len(data) != length:
             data += "\x00" * (length - len(data))
         return data
 
