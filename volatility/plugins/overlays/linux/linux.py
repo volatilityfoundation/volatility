@@ -866,9 +866,11 @@ class task_struct(obj.CType):
 
             argv = proc_as.read(start, self.mm.arg_end - self.mm.arg_start)
 
-            # split the \x00 buffer into args
-            name = " ".join(argv.split("\x00"))
-
+            if argv:
+                # split the \x00 buffer into args
+                name = " ".join(argv.split("\x00"))
+            else:
+                name = ""
         else:
             # kernel thread
             name = "[" + self.comm + "]"
