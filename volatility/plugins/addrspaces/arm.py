@@ -95,7 +95,7 @@ class ArmAddressSpace(paged.AbstractWritablePagedMemory):
             # If bits[1:0] == 0b00, the associated modified virtual addresses are unmapped,
             # and attempts to access them generate a translation fault
 
-            debug.warning("get_pte: invalid pde_value {0:x}".format(pde_value))
+            debug.debug("get_pte: invalid pde_value {0:x}".format(pde_value))
             return None
 
         elif (pde_value & 0b11) == 0b10:
