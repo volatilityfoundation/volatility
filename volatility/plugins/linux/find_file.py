@@ -38,16 +38,15 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         self._config.add_option('INODE', short_option = 'i', default = None, help = 'inode to write to disk', action = 'store', type = 'int')
         self._config.add_option('OUTFILE', short_option = 'O', default = None, help = 'output file path', action = 'store', type = 'str')
 
-    def walk_sb(self, dentry, find_file, last_dentry, recursive = 0, parent = ""):
-        if last_dentry == None or last_dentry != dentry.v():
-            last_dentry = dentry
+    def _walk_sb(self, dentry_param, last_dentry, parent):
+        if last_dentry == None or last_dentry != dentry_param.v():
+            last_dentry = dentry_param
         else:
-            return None
+            return
 
         ret = None
 
-        for dentry in dentry.d_subdirs.list_of_type("dentry", "d_u"):
-
+        for dentry in dentry_param.d_subdirs.list_of_type("dentry", "d_u"):
             if not dentry.d_name.name.is_valid():
                 continue
 
@@ -58,18 +57,13 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             # this allows us to have consistent paths from the user
             new_file = parent + "/" + name
 
-            if new_file == find_file:
-                ret = dentry                
-                break
+            yield new_file, dentry
 
             if inode and inode.is_dir():
-                ret = self.walk_sb(dentry, find_file, last_dentry, 1, new_file)
-                if ret:
-                    break
+                for new_file, dentry in self._walk_sb(dentry, last_dentry, new_file):
+                    yield new_file, dentry
     
-        return ret
-                    
-    def get_sbs(self):
+    def _get_sbs(self):
         ret = []
         mnts = linux_mount.linux_mount(self._config).calculate()
 
@@ -78,29 +72,21 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
         return ret
 
-    def walk_sbs(self, find_file):
+    def walk_sbs(self):
         ret = None
-        sbs = self.get_sbs()
+        sbs = self._get_sbs()
 
-        first_dir = "/".join(find_file.split("/")[:2])
-        
-        for (sb, path) in sbs:
-
-            if len(path) > 1 and not path.startswith(first_dir):
-                continue
-
-            if path != "/":
-                parent = path
+        for (sb, sb_path) in sbs:
+            if sb_path != "/":
+                parent = sb_path
             else:
                 parent = ""
 
-            ret = self.walk_sb(sb.s_root, find_file, None, parent = parent)
+            for vals in self._walk_sb(sb.s_root, None, parent):
+                if vals:
+                    (file_path, file_dentry) = vals
+                    yield (sb, sb_path, file_path, file_dentry)
             
-            if ret:
-                break
-
-        return ret
-
     def calculate(self):
         linux_common.set_plugin_members(self)
 
@@ -109,14 +95,12 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         outfile    = self._config.outfile
 
         if find_file and len(find_file):
-
-            wanted_dentry = self.walk_sbs(find_file)
-
-            if wanted_dentry:
-                yield wanted_dentry
+            for (_, _, file_path, file_dentry) in self.walk_sbs():
+                if file_path == find_file:
+                    yield file_dentry
+                    break
 
         elif inode_addr and inode_addr > 0 and outfile and len(outfile) > 0:
-        
             inode = obj.Object("inode", offset = inode_addr, vm = self.addr_space)
             
             contents = self.get_file_contents(inode)
