@@ -63,14 +63,15 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
 
                 idt_addr = ent.Address
 
-                if idt_addr != 0 and not idt_addr in sym_addrs:
-                    hooked = 1
-                    sym_name = "HOOKED"
-                else:
-                    hooked = 0
-                    sym_name = self.profile.get_symbol_by_address("kernel", idt_addr)
-                    
-                yield(i, idt_addr, sym_name, hooked)
+                if idt_addr != 0:
+                    if not idt_addr in sym_addrs:
+                        hooked = 1
+                        sym_name = "HOOKED"
+                    else:
+                        hooked = 0
+                        sym_name = self.profile.get_symbol_by_address("kernel", idt_addr)
+
+                    yield(i, idt_addr, sym_name, hooked)
 
     def render_text(self, outfd, data):
 
