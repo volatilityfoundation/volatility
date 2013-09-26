@@ -39,6 +39,8 @@ class linux_check_tty(linux_common.AbstractLinuxCommand):
                         
         drivers = obj.Object("list_head", offset = tty_addr, vm = self.addr_space)
         
+        sym_cache = {}
+
         for tty in drivers.list_of_type("tty_driver", "tty_drivers"):
             name = tty.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
             
@@ -51,20 +53,22 @@ class linux_check_tty(linux_common.AbstractLinuxCommand):
                 name = tty_dev.name
                 recv_buf = tty_dev.ldisc.ops.receive_buf
                 
-                yield (name, recv_buf)
+                if recv_buf in sym_cache:
+                    sym_name = sym_cache[recv_buf]
+                else:
+                    sym_name = self.profile.get_symbol_by_address("kernel", recv_buf)
 
-    def render_text(self, outfd, data):
-        symbol_cache = {}
-        self.table_header(outfd, [("Name", "<16"), ("Address", "[addrpad]"), ("Symbol", "<30")])
-        for name, call_addr in data:
-        
-            if symbol_cache.has_key(call_addr):
-                sym_name = symbol_cache[call_addr]
-            else:
-                sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
                 if not sym_name:
                     sym_name = "HOOKED"
-                    
-                symbol_cache[call_addr] = sym_name
+                    hooked = 1
+                else:
+                    hooked = 0
+                
+                sym_cache[recv_buf] = sym_name
+                
+                yield (name, recv_buf, sym_name, hooked)
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Name", "<16"), ("Address", "[addrpad]"), ("Symbol", "<30")])
+        for name, call_addr, sym_name, _hooked in data: 
             self.table_row(outfd, name, call_addr, sym_name)
