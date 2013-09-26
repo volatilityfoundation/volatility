@@ -148,19 +148,17 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                 call_addr = int(call_addr)
 
                 if not call_addr in sym_addrs:
-                    yield(table_name, i, call_addr, 1)
+                    hooked = 1
+                    sym_name = "HOOKED"
                 else:
-                    yield(table_name, i, call_addr, 0)
+                    hooked = 0 
+                    sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
+                
+                yield(table_name, i, call_addr, sym_name, hooked)
     
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Table Name", "6"), ("Index", "[addr]"), ("Address", "[addrpad]"), ("Symbol", "<30")])
-        for (table_name, i, call_addr, hooked) in data:
-
-            if hooked == 0:
-                sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
-            else:
-                sym_name = "HOOKED"
-
+        for (table_name, i, call_addr, sym_name, hooked) in data:
             self.table_row(outfd, table_name, i, call_addr, sym_name)
 
 
