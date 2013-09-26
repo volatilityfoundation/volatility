@@ -926,8 +926,7 @@ class inode(obj.CType):
 class timespec(obj.CType):
 
     def as_timestamp(self):
-    
-        time_val = struct.pack("<I", self.tv_sec + 18000)
+        time_val = struct.pack("<I", self.tv_sec)
         time_buf = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = time_val)
         time_obj = obj.Object("UnixTimeStamp", offset = 0, vm = time_buf, is_utc = True)
         
