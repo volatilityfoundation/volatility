@@ -64,21 +64,19 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
                 idt_addr = ent.Address
 
                 if idt_addr != 0 and not idt_addr in sym_addrs:
-                    yield(i, idt_addr, 1)
+                    hooked = 1
+                    sym_name = "HOOKED"
                 else:
-                    yield(i, idt_addr, 0)
+                    hooked = 0
+                    sym_name = self.profile.get_symbol_by_address("kernel", idt_addr)
+                    
+                yield(i, idt_addr, sym_name, hooked)
 
     def render_text(self, outfd, data):
 
         self.table_header(outfd, [("Index", "[addr]"), ("Address", "[addrpad]"), ("Symbol", "<30")])
 
-        for (i, idt_addr, hooked) in data:
-
-            if hooked == 0:
-                sym_name = self.profile.get_symbol_by_address("kernel", idt_addr)
-            else:
-                sym_name = "HOOKED"
-
+        for (i, idt_addr, sym_name, hooked) in data:
             self.table_row(outfd, i, idt_addr, sym_name)
 
 
