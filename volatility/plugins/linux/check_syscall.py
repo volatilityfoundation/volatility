@@ -154,11 +154,11 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                     hooked = 0 
                     sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
                 
-                yield(table_name, i, call_addr, sym_name, hooked)
+                yield(tableaddr, table_name, i, call_addr, sym_name, hooked)
     
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Table Name", "6"), ("Index", "[addr]"), ("Address", "[addrpad]"), ("Symbol", "<30")])
-        for (table_name, i, call_addr, sym_name, hooked) in data:
+        for (tableaddr, table_name, i, call_addr, sym_name, hooked) in data:
             self.table_row(outfd, table_name, i, call_addr, sym_name)
 
 
