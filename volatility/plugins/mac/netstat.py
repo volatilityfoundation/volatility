@@ -41,7 +41,7 @@ class mac_netstat(lsof.mac_lsof):
     """ Lists active per-process network connections """
 
     def render_text(self, outfd, data):
-        for _proc, i, fd in data:
+        for _proc, i, fd, _path in data:
             if str(fd.f_fglob.fg_type or '') == 'DTYPE_SOCKET':
                 socket = fd.f_fglob.fg_data.dereference_as("socket") 
                 family = socket.so_proto.pr_domain.dom_family

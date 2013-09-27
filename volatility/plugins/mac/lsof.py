@@ -38,7 +38,15 @@ class mac_lsof(pstasks.mac_tasks):
             for i, fd in enumerate(fds):
                 f = fd.dereference_as("fileproc")
                 if f:
-                    yield proc, i, f
+                    ## FIXME after 2.3 replace this explicit int field with the following line:
+                    ##    if str(f.f_fglob.fg_type) == 'DTYPE_VNODE':
+                    ## Its not needed for profiles generated with convert.py after r3290 
+                    fg_type = obj.Object("int", f.f_fglob.fg_type.obj_offset, vm = self.addr_space)
+                    if fg_type == 1: # VNODE
+                        vnode = f.f_fglob.fg_data.dereference_as("vnode")
+                        path = vnode.full_path()
+                  
+                        yield proc, i, f, path
  
     def render_text(self, outfd, data):
         self.table_header(outfd, [("PID","8"),
@@ -46,46 +54,7 @@ class mac_lsof(pstasks.mac_tasks):
                                   ("File Path", ""),
                                  ])
  
-        for proc, i, f in data:
-            ## FIXME after 2.3 replace this explicit int field with the following line:
-            ##    if str(f.f_fglob.fg_type) == 'DTYPE_VNODE':
-            ## Its not needed for profiles generated with convert.py after r3290 
-            fg_type = obj.Object("int", f.f_fglob.fg_type.obj_offset, vm = self.addr_space)
-            if fg_type == 1: # VNODE
-                vnode = f.f_fglob.fg_data.dereference_as("vnode")
-                path = self.calc_full_path(vnode)
-                self.table_row(outfd, proc.p_pid, i, path)
+        for proc, i, f, path in data:
+            self.table_row(outfd, proc.p_pid, i, path)
 
-    def do_calc_path(self, ret, vnode, vname):
-
-        if vnode == None:
-            return 
-
-        if vname:
-            ret.append(vname)
-
-        if vnode.v_flag.v() & 0x000001 != 0 and vnode.v_mount.v() != 0: 
-            if vnode.v_mount.mnt_vnodecovered.v() != 0:
-                self.do_calc_path(ret, vnode.v_mount.mnt_vnodecovered, vnode.v_mount.mnt_vnodecovered.v_name)
-        else:  
-            self.do_calc_path(ret, vnode.v_parent, vnode.v_parent.v_name)
-                
-    def calc_full_path(self, vnode):
-    
-        if vnode.v_flag.v() & 0x000001 != 0 and vnode.v_mount.v() != 0 and vnode.v_mount.mnt_flag.v() & 0x00004000 != 0:
-            ret = "/"
-        else: 
-            elements = []
-            files = []
-
-            self.do_calc_path(elements, vnode, vnode.v_name)
-            elements.reverse()
-
-            for e in elements:
-                files.append(str(e.dereference()))
-
-            ret = "/".join(files)                
-            if ret:
-                ret = "/" + ret
-
-        return ret
+   
