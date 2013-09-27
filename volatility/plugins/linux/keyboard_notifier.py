@@ -36,27 +36,27 @@ class linux_keyboard_notifier(linux_common.AbstractLinuxCommand):
         if not knl_addr:
             debug.error("Symbol keyboard_notifier_list not found in kernel")
             
-            
         knl = obj.Object("atomic_notifier_head", offset = knl_addr, vm = self.addr_space)
         
-        for callback in linux_common.walk_internal_list("notifier_block", "next", knl.head):
-            yield callback.notifier_call
-
-    def render_text(self, outfd, data):
         symbol_cache = {}
-        self.table_header(outfd, [("Address", "[addrpad]"), ("Symbol", "<30")])
-        for call_addr in data:
+        
+        for callback in linux_common.walk_internal_list("notifier_block", "next", knl.head):
+            if symbol_cache.has_key(callback):
+                sym_name = symbol_cache[callback]
+                hooked = 0
 
-            if symbol_cache.has_key(call_addr):
-                sym_name = symbol_cache[call_addr]
-                
             else:
-
-                sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
-            
+                sym_name = self.profile.get_symbol_by_address("kernel", callback)
                 if not sym_name:
                     sym_name = "HOOKED"
-                    
-                symbol_cache[call_addr] = sym_name
 
+                hooked = 1            
+        
+            symbol_cache[callback] = sym_name
+
+            yield callback.notifier_call, sym_name, hooked
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Address", "[addrpad]"), ("Symbol", "<30")])
+        for call_addr, sym_name, _ in data:
             self.table_row(outfd, call_addr, sym_name)
