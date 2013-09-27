@@ -45,8 +45,10 @@ class mac_lsof(pstasks.mac_tasks):
                     if fg_type == 1: # VNODE
                         vnode = f.f_fglob.fg_data.dereference_as("vnode")
                         path = vnode.full_path()
-                  
-                        yield proc, i, f, path
+                    else:
+                        path = ""
+                                        
+                    yield proc, i, f, path
  
     def render_text(self, outfd, data):
         self.table_header(outfd, [("PID","8"),
@@ -55,6 +57,7 @@ class mac_lsof(pstasks.mac_tasks):
                                  ])
  
         for proc, i, f, path in data:
-            self.table_row(outfd, proc.p_pid, i, path)
+            if path:
+                self.table_row(outfd, proc.p_pid, i, path)
 
    
