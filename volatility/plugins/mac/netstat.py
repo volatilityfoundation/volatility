@@ -24,73 +24,35 @@
 import volatility.obj as obj
 import volatility.plugins.mac.lsof as lsof
 
-tcp_states = ("",
-              "ESTABLISHED",
-              "SYN_SENT",
-              "SYN_RECV",
-              "FIN_WAIT1",
-              "FIN_WAIT2",
-              "TIME_WAIT",
-              "CLOSE",
-              "CLOSE_WAIT",
-              "LAST_ACK",
-              "LISTEN",
-              "CLOSING")
-
 class mac_netstat(lsof.mac_lsof):
     """ Lists active per-process network connections """
 
     def render_text(self, outfd, data):
-        for _proc, i, fd, _path in data:
+        
+        self.table_header(outfd, [("Proto", "6"),
+                                  ("Local IP", "20"),
+                                  ("Local Port", "6"),
+                                  ("Remote IP", "20"),
+                                  ("Remote Port", "6"),
+                                  ("State", "10"),
+                                  ("Process", "24")])
+        
+        for proc, i, fd, _path in data:
             if str(fd.f_fglob.fg_type or '') == 'DTYPE_SOCKET':
                 socket = fd.f_fglob.fg_data.dereference_as("socket") 
-                family = socket.so_proto.pr_domain.dom_family
+                family = socket.family
     
-                (lip, lport, rip, rport) = ("", "", "", "")
-
                 if family == 1:
                     upcb = socket.so_pcb.dereference_as("unpcb")
                     path = upcb.unp_addr.sun_path
                     outfd.write("UNIX {0}\n".format(path))
                 elif family in [2, 30]:
-                    ipcb = socket.so_pcb.dereference_as("inpcb")
-                    (proto, state) = self.get_proto(socket.so_proto.pr_protocol)
-                    if family == 2:
-                        (lip, lport, rip, rport) = self.parse_ipv4(socket, ipcb, proto)
-                        outfd.write("{0} {1}:{2} {3}:{4} {5}\n".format(proto, lip, lport, rip, rport, state))
-                    else:
-                        (lip, lport, rip, rport) = self.parse_ipv6(socket, ipcb, proto) 
-                        outfd.write("{0} {1}:{2} {3}:{4} {5}\n".format(proto, lip, lport, rip, rport, state))
+                    proto = socket.protocol
+                    state = socket.state
+                   
+                    (lip, lport, rip, rport) = socket.get_connection_info()
+ 
+                    self.table_row(outfd, proto, lip, lport, rip, rport, state, "{}/{}".format(proc.p_comm, proc.p_pid))
+                    
 
-    def get_tcp_state(self, state):
-        return tcp_states[state]
-
-    def get_proto(self, proto):
-        if proto == 6:
-            ret = ("TCP", self.get_tcp_state(proto))
-
-        elif proto ==  17:
-            ret = ("UDP", "")
-
-        else:
-            ret = ("", "")
-
-        return ret
-
-    def parse_ipv4(self, socket, pcb, proto):
-        lip = pcb.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v()    
-        lport = pcb.inp_lport 
-
-        rip = pcb.inp_dependfaddr.inp46_foreign.ia46_addr4.s_addr.v()
-        rport = pcb.inp_fport 
-        
-        return (lip, lport, rip, rport)
-
-    def parse_ipv6(self, socket, pcb, proto):
-        lip = pcb.inp_dependladdr.inp6_local.__u6_addr.v()
-        lport = pcb.inp_lport 
-
-        rip = pcb.inp_dependfaddr.inp6_foreign.__u6_addr.v() 
-        rport = pcb.inp_fport 
-
-        return (lip, lport, rip, rport)
+  

@@ -516,6 +516,80 @@ class vm_map_entry(obj.CType):
 
         return ret
 
+class socket(obj.CType):
+    @property
+    def family(self):
+        return self.so_proto.pr_domain.dom_family
+
+    @property
+    def protocol(self):
+        proto = self.so_proto.pr_protocol
+       
+        if proto == 6:
+            ret = "TCP"
+        elif proto == 17:
+            ret = "UDP"
+        else:
+            ret = ""             
+ 
+        return ret
+
+    def _get_tcp_state(self):
+        tcp_states = (
+              "CLOSED",
+              "LISTEN",
+              "SYN_SENT",
+              "SYN_RECV",
+              "ESTABLISHED",
+              "CLOSE_WAIT",
+              "FIN_WAIT1",
+              "CLOSING",
+              "LAST_ACK",
+              "FIN_WAIT2",
+              "TIME_WAIT")
+
+        inpcb = self.so_pcb.dereference_as("inpcb")
+        tcpcb = inpcb.inp_ppcb.dereference_as("tcpcb")
+
+        return tcp_states[tcpcb.t_state]
+
+    @property
+    def state(self):
+        if self.so_proto.pr_protocol == 6:
+            ret = self._get_tcp_state()
+        else:
+            ret = ""
+        
+        return ret
+        
+    def _parse_ipv4(self, pcb):
+        lip = pcb.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v()    
+        lport = pcb.inp_lport 
+
+        rip = pcb.inp_dependfaddr.inp46_foreign.ia46_addr4.s_addr.v()
+        rport = pcb.inp_fport 
+    
+        return [lip, lport, rip, rport]
+
+    def _parse_ipv6(self, pcb):
+        lip = pcb.inp_dependladdr.inp6_local.__u6_addr.v()
+        lport = pcb.inp_lport 
+
+        rip = pcb.inp_dependfaddr.inp6_foreign.__u6_addr.v() 
+        rport = pcb.inp_fport 
+
+        return [lip, lport, rip, rport]
+
+    def get_connection_info(self):
+        ipcb = self.so_pcb.dereference_as("inpcb")
+        
+        if self.family == 2:
+            ret = self._parse_ipv4(ipcb)
+        else:
+            ret = self._parse_ipv6(ipcb)
+
+        return ret
+
 class sockaddr_dl(obj.CType):
 
     def v(self):
@@ -848,6 +922,7 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc'  : proc,
             'vnode' : vnode,
+            'socket' : socket,
             'zone' : zone,
             'OSString' : OSString,
             'OSString_class' : OSString,
