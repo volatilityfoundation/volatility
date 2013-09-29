@@ -39,16 +39,16 @@ class mac_check_syscalls(common.AbstractMacCommand):
             ent_addr = sysent.sy_call.v()
             hooked  = ent_addr not in sym_addrs
 
-            yield ("SyscallTable", i, ent_addr, hooked)
- 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Table Name", "15"), ("Index", "6"), ("Address", "[addrpad]"), ("Symbol", "<30")])
-        for (table_name, i, call_addr, hooked) in data:
             if hooked == False:
-                sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
+                sym_name = self.profile.get_symbol_by_address("kernel", ent_addr)
             else:
                 sym_name = "HOOKED"
 
+            yield ("SyscallTable", i, ent_addr, hooked, sym_name)
+ 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Table Name", "15"), ("Index", "6"), ("Address", "[addrpad]"), ("Symbol", "<30")])
+        for (table_name, i, call_addr, hooked, sym_name) in data:
             self.table_row(outfd, table_name, i, call_addr, sym_name)
 
 
