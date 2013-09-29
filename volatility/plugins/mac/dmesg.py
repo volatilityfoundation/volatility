@@ -48,6 +48,10 @@ class mac_dmesg(common.AbstractMacCommand):
             buf = bufc[bufx:bufx + size]
             buf = buf + bufc[0:bufx]
 
+        # strip leading NULLs
+        while ord(buf[0]) == 0x00:
+            buf = buf[1:]
+
         yield buf
 
     def render_text(self, outfd, data):
