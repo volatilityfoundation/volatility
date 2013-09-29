@@ -32,8 +32,10 @@ class mac_check_syscalls(common.AbstractMacCommand):
 
         sym_addrs = self.profile.get_all_addresses()
 
+        table_addr = self.addr_space.profile.get_symbol("_sysent")
+
         nsysent = obj.Object("int", offset = self.addr_space.profile.get_symbol("_nsysent"), vm = self.addr_space)
-        sysents = obj.Object(theType = "Array", offset = self.addr_space.profile.get_symbol("_sysent"), vm = self.addr_space, count = nsysent, targetType = "sysent")
+        sysents = obj.Object(theType = "Array", offset = table_addr, vm = self.addr_space, count = nsysent, targetType = "sysent")
 
         for (i, sysent) in enumerate(sysents):
             ent_addr = sysent.sy_call.v()
@@ -44,11 +46,11 @@ class mac_check_syscalls(common.AbstractMacCommand):
             else:
                 sym_name = "HOOKED"
 
-            yield ("SyscallTable", i, ent_addr, hooked, sym_name)
+            yield (table_addr, "SyscallTable", i, ent_addr, hooked, sym_name)
  
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Table Name", "15"), ("Index", "6"), ("Address", "[addrpad]"), ("Symbol", "<30")])
-        for (table_name, i, call_addr, hooked, sym_name) in data:
+        for (_, table_name, i, call_addr, hooked, sym_name) in data:
             self.table_row(outfd, table_name, i, call_addr, sym_name)
 
 
