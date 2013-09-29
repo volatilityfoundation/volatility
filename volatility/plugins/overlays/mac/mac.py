@@ -351,6 +351,53 @@ class rtentry(obj.CType):
 
         return dt
 
+    @property
+    def sent(self):
+        if hasattr(self, "rt_stats"):
+            ret = self.rt_stats.nstat_txpackets
+        else:
+            ret = "N/A"
+
+        return ret
+
+    @property
+    def rx(self):
+        if hasattr(self, "rt_stats"):
+            ret = self.rt_expire
+        else:
+            ret = "N/A"
+
+    @property
+    def delta(self):
+        if self.rt_expire == 0:
+            ret = 0
+        else:
+            ret = self.rt_expire - self.base_uptime
+
+        return ret
+
+    @property
+    def name(self):
+       return "{}{}".format(self.rt_ifp.if_name.dereference(), self.rt_ifp.if_unit)    
+    
+    @property
+    def source_ip(self):
+        return self.rt_nodes[0].rn_u.rn_leaf.rn_Key.dereference_as("sockaddr").get_address()
+
+    @property
+    def dest_ip(self):
+        return self.rt_gateway.get_address()
+
+
+
+
+
+
+ 
+
+
+    
+
 class queue_entry(obj.CType):
 
     def walk_list(self, list_head):

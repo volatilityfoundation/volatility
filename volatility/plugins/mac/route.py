@@ -27,7 +27,7 @@ import volatility.plugins.mac.common as common
 class mac_route(common.AbstractMacCommand):
     """ Prints the routing table """
 
-    def get_table(self, tbl):
+    def _get_table(self, tbl):
         rnh = tbl #obj.Object("radix_node", offset=tbl.v(), vm=self.addr_space)
         rn = rnh.rnh_treetop
         
@@ -78,7 +78,7 @@ class mac_route(common.AbstractMacCommand):
 
         ipv4table = obj.Object("radix_node_head", offset = ents[2], vm = self.addr_space)
 
-        rts = self.get_table(ipv4table)
+        rts = self._get_table(ipv4table)
 
         for rt in rts:
             yield rt
@@ -95,34 +95,12 @@ class mac_route(common.AbstractMacCommand):
                                   ("Delta", "")])
 
         for rt in data:
-
-            if hasattr(rt, "rt_stats"):
-                sent = rt.rt_stats.nstat_txpackets
-                rx = rt.rt_stats.nstat_rxpackets
-            else:
-                sent = "N/A"
-                rx = "N/A"
-        
-            if hasattr(rt, "rt_expire"):
-                exp = rt.rt_expire
-                if exp == 0:
-                    delta = 0
-                else:
-                    delta = exp - rt.base_uptime
-            else:
-                exp = "N/A"
-                delta = "N/A"
-        
-            name = "{0}{1}".format(rt.rt_ifp.if_name.dereference(), rt.rt_ifp.if_unit)
-            source_ip = rt.rt_nodes[0].rn_u.rn_leaf.rn_Key.dereference_as("sockaddr").get_address()
-            dest_ip = rt.rt_gateway.get_address()
-
             self.table_row(outfd, 
-                           source_ip, 
-                           dest_ip,
-                           name,
-                           sent, rx, 
+                           rt.source_ip, 
+                           rt.dest_ip,
+                           rt.name,
+                           rt.sent, rt.rx, 
                            rt.get_time(), 
-                           exp, 
-                           delta)
+                           rt.rt_expire, 
+                           rt.delta)
                         
