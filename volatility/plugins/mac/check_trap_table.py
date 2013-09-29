@@ -72,7 +72,7 @@ class mac_check_trap_table(common.AbstractMacCommand):
         table_addr = self.addr_space.profile.get_symbol("_mach_trap_table")
 
         ntraps = obj.Object("int", offset = self.addr_space.profile.get_symbol("_mach_trap_count"), vm = self.addr_space)
-        traps = obj.Object(theType = "Array", offset = trap_table_addr, table_addr, vm = self.addr_space, count = ntraps, targetType = "mach_trap")
+        traps = obj.Object(theType = "Array", offset = table_addr, vm = self.addr_space, count = ntraps, targetType = "mach_trap")
 
         for (i, trap) in enumerate(traps):
             ent_addr = trap.mach_trap_function.v()
