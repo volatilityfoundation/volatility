@@ -76,8 +76,17 @@ class mac_check_sysctl(common.AbstractMacCommand):
         sysctl_list = obj.Object("sysctl_oid_list", offset = sysctl_children_addr, vm = self.addr_space)
 
         for (sysctl, name, val) in self._process_sysctl_list(sysctl_list):
+            if val == "INVALID -1":
+                continue
+
             is_known = common.is_known_address(sysctl.oid_handler, kernel_symbol_addresses, kmods)
-            yield (sysctl, name, val, is_known)
+            
+            if is_known:
+                status = "OK"
+            else:
+                status = "UNKNOWN"
+
+            yield (sysctl, name, val, is_known, status)
 
     def render_text(self, outfd, data):
 
@@ -88,17 +97,10 @@ class mac_check_sysctl(common.AbstractMacCommand):
                                   ("Status", "10"),
                                   ("Value", "")])
 
-        for (sysctl, name, val, is_known) in data:
-            if val == "INVALID -1":
-                continue
-
-            if is_known:
-                status = "OK"
-            else:
-                status = "UNKNOWN"
-
+        for (sysctl, name, val, is_known, status) in data:
             self.table_row(outfd, name, 
-                           sysctl.oid_number, 
-                           sysctl.get_perms(),
-                           sysctl.oid_handler, 
-                           status, val)
+               sysctl.oid_number, 
+               sysctl.get_perms(),
+               sysctl.oid_handler, 
+               status, val)
+
