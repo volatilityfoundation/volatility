@@ -28,34 +28,14 @@ import volatility.obj as obj
 class linux_ifconfig(linux_common.AbstractLinuxCommand):
     """Gathers active interfaces"""
 
-    def calculate(self):
-        linux_common.set_plugin_members(self)
-
-        # newer kernels
-        if self.addr_space.profile.get_symbol("net_namespace_list"):
-            for (net_dev, in_dev) in self.get_devs_namespace():
-                yield (net_dev, in_dev)
-
-        elif self.addr_space.profile.get_symbol("dev_base"):
-            for (net_dev, in_dev) in self.get_devs_base():
-                yield (net_dev, in_dev)
-
-        else:
-            debug.error("Unable to determine ifconfig information")
-
-    def get_devs_base(self):
-
+    def _get_devs_base(self):
         net_device_ptr = obj.Object("Pointer", offset = self.addr_space.profile.get_symbol("dev_base"), vm = self.addr_space)
         net_device = net_device_ptr.dereference_as("net_device")
 
         for net_dev in linux_common.walk_internal_list("net_device", "next", net_device):
+            yield net_dev
 
-            in_dev = obj.Object("in_device", offset = net_dev.ip_ptr, vm = self.addr_space)
-
-            yield net_dev, in_dev
-
-    def get_devs_namespace(self):
-
+    def _get_devs_namespace(self):
         nslist_addr = self.addr_space.profile.get_symbol("net_namespace_list")
         nethead = obj.Object("list_head", offset = nslist_addr, vm = self.addr_space)
 
@@ -65,11 +45,36 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
 
             # walk each device in the current namespace
             for net_dev in net.dev_base_head.list_of_type("net_device", "dev_list"):
+                yield net_dev
 
-                in_dev = obj.Object("in_device", offset = net_dev.ip_ptr, vm = self.addr_space)
+    def _gather_net_dev_info(self, net_dev):
+        mac_addr = net_dev.mac_addr
+        promisc  = str(net_dev.promisc)
 
-                yield net_dev, in_dev
+        in_dev = obj.Object("in_device", offset = net_dev.ip_ptr, vm = self.addr_space)
+        
+        for dev in in_dev.devices():
+            ip_addr = dev.ifa_address.cast('IpAddress')
+            name    = dev.ifa_label
+            yield (name, ip_addr, mac_addr, promisc)
 
+    def calculate(self):
+        linux_common.set_plugin_members(self)
+
+        # newer kernels
+        if self.addr_space.profile.get_symbol("net_namespace_list"):
+            for net_dev in self._get_devs_namespace():
+                for ip_addr_info in self._gather_net_dev_info(net_dev):
+                    yield ip_addr_info
+
+        elif self.addr_space.profile.get_symbol("dev_base"):
+            for net_dev in self._get_devs_base():
+                for ip_addr_info in self._gather_net_dev_info(net_dev):
+                    yield ip_addr_info
+        
+        else:
+            debug.error("Unable to determine ifconfig information")
+        
     def render_text(self, outfd, data):
 
         self.table_header(outfd, [("Interface", "16"),
@@ -77,20 +82,6 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
                                   ("MAC Address", "18"),
                                   ("Promiscous Mode", "5")])
 
-        for net_dev, in_dev in data:
-
-            # for interfaces w/o an ip address (dummy/bond)
-            if in_dev.ifa_list:
-                ip = in_dev.ifa_list.ifa_address.cast('IpAddress')
-            else:
-                ip = "0.0.0.0"
-
-            if self.profile.obj_has_member("net_device", "perm_addr"):
-                hwaddr = net_dev.perm_addr
-            else:
-                hwaddr = net_dev.dev_addr
-
-            mac_addr = ":".join(["{0:02x}".format(x) for x in hwaddr][:6])
-
-            self.table_row(outfd, net_dev.name, ip, mac_addr, str(net_dev.promisc))
+        for (name, ip_addr, mac_addr, promisc) in data:
+            self.table_row(outfd, name, ip_addr, mac_addr, promisc)
 

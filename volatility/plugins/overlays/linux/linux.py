@@ -79,6 +79,9 @@ linux_overlay = {
     'task_struct' : [None, {
         'comm'          : [ None , ['String', dict(length = 16)]],
         }],
+    'in_ifaddr' : [None, {
+        'ifa_label'     : [ None , ['String', dict(length = 16)]],
+        }],
     'module'      : [None, {
         'name'          : [ None , ['String', dict(length = 60)]],
         }],
@@ -670,6 +673,32 @@ class tty_ldisc(obj.CType):
 
         return ret
 
+class in_device(obj.CType):
+    
+    def devices(self):
+        cur = self.ifa_list
+        while cur != None and cur.is_valid():
+            yield cur
+            cur = cur.ifa_next
+
+class net_device(obj.CType):
+    
+    @property
+    def mac_addr(self):
+
+        if self.members.has_key("perm_addr"):
+            hwaddr = self.perm_addr
+        else:
+            hwaddr = self.dev_addr
+
+        macaddr = ":".join(["{0:02x}".format(x) for x in hwaddr][:6])
+
+        return macaddr
+
+    @property
+    def promisc(self):
+        return self.flags & 0x100 == 0x100 # IFF_PROMISC
+
 class task_struct(obj.CType):
     def is_valid_task(self):
 
@@ -897,12 +926,6 @@ class linux_fs_struct(obj.CType):
 
         return ret
 
-class net_device(obj.CType):
-
-    @property
-    def promisc(self):
-        return self.flags & 0x100 == 0x100 # IFF_PROMISC
-
 class super_block(obj.CType):
 
     @property
@@ -1015,6 +1038,8 @@ class LinuxObjectClasses(obj.ProfileModification):
             'hlist_node': hlist_node,
             'files_struct': files_struct,
             'task_struct': task_struct,
+            'net_device' : net_device,
+            'in_device'  : in_device,
             'tty_ldisc' : tty_ldisc,
             'module_sect_attr' : module_sect_attr,
             'VolatilityDTB': VolatilityDTB,
@@ -1027,7 +1052,6 @@ class LinuxObjectClasses(obj.ProfileModification):
             'gate_struct64' : gate_struct64,
             'desc_struct' : desc_struct,
             'page': page,
-            'net_device': net_device,
             'LinuxPermissionFlags': LinuxPermissionFlags,
             'super_block' : super_block, 
             'inode' : inode,
