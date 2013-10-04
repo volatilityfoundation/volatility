@@ -94,6 +94,10 @@ class _MM_SESSION_SPACE(obj.CType):
                 ## This catches PE header parsing exceptions 
                 pass
                 
+        ## Don't try to read an address that doesn't exist
+        if not self.Win32KBase:
+            return []
+
         ## In the rare case when win32k.sys PE header is paged or corrupted
         ## thus preventing us from parsing the sections, use the fallback
         ## mechanism of just reading 5 MB (max size of win32k.sys) from the 
