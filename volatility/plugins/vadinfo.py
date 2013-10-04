@@ -244,6 +244,9 @@ class VADDump(VADInfo):
         config.add_option('DUMP-DIR', short_option = 'D', default = None,
                           cache_invalidator = False,
                           help = 'Directory in which to dump the VAD files')
+        config.add_option('BASE', short_option = 'b', default = None,
+                          help = 'Dump VAD with BASE address (in hex)',
+                          action = 'store', type = 'int')
 
     def dump_vad(self, path, vad, address_space):
         """
@@ -307,6 +310,9 @@ class VADDump(VADInfo):
 
             for vad in task.VadRoot.traverse():
                 if not vad.is_valid():
+                    continue
+
+                if self._config.BASE and vad.Start != self._config.BASE:
                     continue
 
                 # Open the file and initialize the data
