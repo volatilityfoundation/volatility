@@ -95,7 +95,10 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
 
     def read(self, addr, length):
         addr, length = int(addr), int(length)
-        self.fhandle.seek(addr)
+        try:
+            self.fhandle.seek(addr)
+        except (IOError, OverflowError):
+            return None
         data = self.fhandle.read(length)
         if len(data) == 0:
             return None
