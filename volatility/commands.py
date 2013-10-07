@@ -1,28 +1,24 @@
 # Volatility
-# Copyright (C) 2008-2013 Volatility Foundation
+# Copyright (C) 2008 Volatile Systems
 #
-# This file is part of Volatility.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
 #
-# Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License Version 2 as
-# published by the Free Software Foundation.  You may not use, modify or
-# distribute this program under any other version of the GNU General
-# Public License.
-#
-# Volatility is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details. 
 #
 # You should have received a copy of the GNU General Public License
-# along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
 import sys, textwrap
 import volatility.debug as debug
 import volatility.fmtspec as fmtspec
-import volatility.obj as obj
-import volatility.registry as registry
 import volatility.addrspace as addrspace
 
 class Command(object):
@@ -87,14 +83,7 @@ class Command(object):
 
     def execute(self):
         """ Executes the plugin command."""
-        # Check we can support the plugins
-        profs = registry.get_plugin_classes(obj.Profile)
-        if self._config.PROFILE not in profs:
-            debug.error("Invalid profile " + self._config.PROFILE + " selected")
-        if not self.is_valid_profile(profs[self._config.PROFILE]()):
-            debug.error("This command does not support the profile " + self._config.PROFILE)
-
-        # # Executing plugins is done in two stages - first we calculate
+        ## Executing plugins is done in two stages - first we calculate
         data = self.calculate()
 
         ## Then we render the result in some way based on the

@@ -1,29 +1,27 @@
 # Volatility
-# Copyright (C) 2008-2013 Volatility Foundation
+# Copyright (C) 2008-2011 Volatile Systems
 # Copyright (C) 2011 Jamie Levy (Gleeda) <jamie.levy@gmail.com>
 #
-# This file is part of Volatility.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
 #
-# Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License Version 2 as
-# published by the Free Software Foundation.  You may not use, modify or
-# distribute this program under any other version of the GNU General
-# Public License.
-#
-# Volatility is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details. 
 #
 # You should have received a copy of the GNU General Public License
-# along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
 """
 @author:       Jamie Levy (gleeda)
-@license:      GNU General Public License 2.0
+@license:      GNU General Public License 2.0 or later
 @contact:      jamie.levy@gmail.com
-@organization: Volatility Foundation
+@organization: Volatile Systems
 """
 
 import volatility.plugins.registry.registryapi as registryapi
@@ -59,10 +57,11 @@ try:
 except ImportError:
     has_openpyxl = False
 
-class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
+class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassist.UserAssist):
     """ Creates a timeline from various artifacts in memory """
 
     def __init__(self, config, *args):  
+        evtlogs.EvtLogs.__init__(self, config, *args)
         config.remove_option("SAVE-EVT")
         userassist.UserAssist.__init__(self, config, *args)
         config.remove_option("HIVE-OFFSET")
@@ -180,10 +179,9 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
                             sock.obj_offset)
                 yield line
 
-            evt = evtlogs.EvtLogs(self._config)
-            stuff = evt.calculate()
+            stuff = evtlogs.EvtLogs.calculate(self)
             for name, buf in stuff:
-                for fields in evt.parse_evt_info(name, buf, rawtime = True):
+                for fields in self.parse_evt_info(name, buf, rawtime = True):
                     if not body:
                         line = '{0} |[EVT LOG]|{1}|{2}|{3}|{4}|{5}|{6}|{7}\n'.format(
                             fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6], fields[7])
@@ -241,7 +239,6 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
         data = moddump.ModDump(self._config).calculate()
 
         for addr_space, procs, mod_base, mod_name in data:
-            mod_name = str(mod_name or '')
             space = tasks.find_space(addr_space, procs, mod_base)
             if space != None:
                 try:
@@ -328,7 +325,6 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
                 dlls = []
             for proc, ps_ad, base, basename in dlls:
                 if ps_ad.is_valid_address(base):
-                    basename = str(basename or '')
                     if basename == task.ImageFileName:
                         continue
                     try:

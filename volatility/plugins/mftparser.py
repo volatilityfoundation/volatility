@@ -1,29 +1,27 @@
 # Volatility
-# Copyright (C) 2008-2013 Volatility Foundation
+# Copyright (C) 2008-2011 Volatile Systems
 # Copyright (C) 2011 Jamie Levy (Gleeda) <jamie.levy@gmail.com>
 #
-# This file is part of Volatility.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
 #
-# Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License Version 2 as
-# published by the Free Software Foundation.  You may not use, modify or
-# distribute this program under any other version of the GNU General
-# Public License.
-#
-# Volatility is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details. 
 #
 # You should have received a copy of the GNU General Public License
-# along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 #
 
 """
 @author:       Jamie Levy (gleeda)
-@license:      GNU General Public License 2.0
+@license:      GNU General Public License 2.0 or later
 @contact:      jamie.levy@gmail.com
-@organization: Volatility Foundation
+@organization: Volatile Systems
 """
 
 # Information for this script taken heavily from File System Forensic Analysis by Brian Carrier
@@ -522,24 +520,20 @@ class MFTParser(common.AbstractWindowsCommand):
         config.add_option('CHECK', short_option = 'C', default = False,
                           help = 'Only print entries w/o null timestamps',
                           action = "store_true")
-
-        config.add_option("ENTRYSIZE", short_option = "E", default = 1024,
-                          help = "MFT Entry Size",
-                          action = "store", type = "int")
     def calculate(self):
         address_space = utils.load_as(self._config, astype = 'physical')
         scanner = MFTScanner(needles = ['FILE', 'BAAD'])
         mft_entries = []
         print "Scanning for MFT entries and building directory, this can take a while"
         for offset in scanner.scan(address_space):
-            mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
+            mft_buff = address_space.read(offset, 1024)
             bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
             mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
                                offset = 0)
             next_attr = mft_entry.ResidentAttributes
             end = mft_buff.find("\xff\xff\xff\xff")
             if end == -1:
-                end = self._config.ENTRYSIZE
+                end = 1024
             attributes = []
             while next_attr != None and next_attr.obj_offset <= end:
                 try:
@@ -580,11 +574,11 @@ class MFTParser(common.AbstractWindowsCommand):
                         continue
                     next_attr = self.advance_one(next_off, mft_buff, end)
                 elif attr == "DATA":
-                    start = next_attr.obj_offset + next_attr.ContentOffset
-                    theend = min(start + next_attr.ContentSize, end)
                     if next_attr.Header.NonResidentFlag == 1:
                         thedata = "Non-Resident"
                     else:
+                        start = next_attr.obj_offset + next_attr.ContentOffset
+                        theend = min(start + next_attr.ContentSize, end)
                         try:
                             contents = mft_buff[start:theend]
                         except TypeError:
@@ -594,11 +588,7 @@ class MFTParser(common.AbstractWindowsCommand):
                         if len(thedata) == 0:
                             thedata = "(Empty)"
                     attributes.append((attr, thedata))
-                    next_off = theend 
-                    if next_off == start: 
-                        next_attr = None
-                        continue
-                    next_attr = self.advance_one(next_off, mft_buff, end)
+                    next_attr = None 
                 elif attr == "ATTRIBUTE_LIST":
                     if next_attr.Header.NonResidentFlag == 1:
                         attributes.append((attr, "Non-Resident"))

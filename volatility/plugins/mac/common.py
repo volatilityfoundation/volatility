@@ -1,26 +1,22 @@
 # Volatility
-# Copyright (C) 2007-2013 Volatility Foundation
 #
-# This file is part of Volatility.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
 #
-# Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License Version 2 as
-# published by the Free Software Foundation.  You may not use, modify or
-# distribute this program under any other version of the GNU General
-# Public License.
-#
-# Volatility is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details. 
 #
 # You should have received a copy of the GNU General Public License
-# along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
-#
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
 
 """
 @author:       Andrew Case
-@license:      GNU General Public License 2.0
+@license:      GNU General Public License 2.0 or later
 @contact:      atcuno@gmail.com
 @organization: 
 """
@@ -76,16 +72,8 @@ def is_64bit_capable(addr_space):
     @returns True if 64-bit capable. 
     """
     x86_64_flag_addr = addr_space.profile.get_symbol("_x86_64_flag")
-    
-    # this symbol no longer exists in 10.9 / Mavericks
-    # this is most likely b/c all Macs are 64 bit by 10.9
-    if x86_64_flag_addr:
-        x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = addr_space)
-        ret = x86_64_flag == 1
-    else:
-        ret = True
-
-    return ret
+    x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = addr_space)
+    return x86_64_flag == 1
 
 def get_kernel_addrs(obj_ref):
     import volatility.plugins.mac.lsmod as lsmod

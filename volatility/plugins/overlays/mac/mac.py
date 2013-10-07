@@ -2,21 +2,19 @@
 # Copyright (C) 2010 Brendan Dolan-Gavitt
 # Copyright (c) 2011 Michael Cohen <scudette@gmail.com>
 #
-# This file is part of Volatility.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
 #
-# Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License Version 2 as
-# published by the Free Software Foundation.  You may not use, modify or
-# distribute this program under any other version of the GNU General
-# Public License.
-#
-# Volatility is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
 import re,copy
@@ -126,7 +124,7 @@ class VolatilityMacIntelValidAS(obj.VolatilityMagic):
 
         string = self.obj_vm.read(version_addr, 60)
 
-        if string and string.startswith("Darwin"):
+        if string.startswith("Darwin"):
             self._set_profile_metadata(string)
             yield True
         else:
@@ -163,19 +161,6 @@ class vnode(obj.CType):
             if ret:
                 ret = "/" + ret
 
-        return ret
-
-class fileglob(obj.CType):
-    
-    @property
-    def fg_type(self):
-        ret = self.members.get("fg_type")
-        if ret:
-            ret = self.m("fg_type")
-        else:    
-            ret = self.fg_ops.fo_type
-
-        ret = str(ret)
         return ret
         
 class proc(obj.CType):   
@@ -983,7 +968,6 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc'  : proc,
-            'fileglob' : fileglob,
             'vnode' : vnode,
             'socket' : socket,
             'zone' : zone,
