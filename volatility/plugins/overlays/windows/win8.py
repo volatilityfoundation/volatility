@@ -7,6 +7,7 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.addrspace as addrspace
 import volatility.plugins.malware.malfind as malfind
 import volatility.plugins.overlays.windows.pe_vtypes as pe_vtypes
+import volatility.plugins.overlays.windows.ssdt_vtypes as ssdt_vtypes
 import volatility.plugins.overlays.windows.win7 as win7
 import volatility.plugins.overlays.windows.vista as vista
 
@@ -210,6 +211,20 @@ class Win8x86DTB(obj.ProfileModification):
             'VOLATILITY_MAGIC': [ None, {
             'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\x28\x00")]],
             }]})
+
+class Win8x86SyscallVTypes(obj.ProfileModification):
+    """Applying the SSDT structures for Win 8 32-bit"""
+
+    before = ['WindowsVTypes']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 2}
+
+    def modification(self, profile):
+        # Same as 2003, which basically just means there are
+        # only two SSDT tables by default. 
+        profile.vtypes.update(ssdt_vtypes.ssdt_vtypes_2003)
 
 class Win8ObjectClasses(obj.ProfileModification):
     #before = ['WindowsOverlay', 'Win2003MMVad']
