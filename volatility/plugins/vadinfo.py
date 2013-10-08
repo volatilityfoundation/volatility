@@ -91,7 +91,7 @@ class VADInfo(taskmods.DllList):
         for task in data:
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
-            for vad in task.VadRoot.traverse():
+            for vad in task.RealVadRoot.traverse():
                 if vad == None:
                     outfd.write("Error: {0}".format(vad))
                 else:
@@ -127,20 +127,20 @@ class VADInfo(taskmods.DllList):
                               vad.End,
                               "Tag",
                               vad.Tag)
-        outfd.write("Flags: {0}\n".format(str(vad.u.VadFlags)))
+        outfd.write("Flags: {0}\n".format(str(vad.VadFlags)))
         # although the numeric value of Protection is printed above with VadFlags,
         # let's show the user a human-readable translation of the protection 
-        outfd.write("Protection: {0}\n".format(PROTECT_FLAGS.get(vad.u.VadFlags.Protection.v(), hex(vad.u.VadFlags.Protection))))
+        outfd.write("Protection: {0}\n".format(PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), hex(vad.VadFlags.Protection))))
         # translate the vad type if its available (> XP)
-        if hasattr(vad.u.VadFlags, "VadType"):
-            outfd.write("Vad Type: {0}\n".format(MI_VAD_TYPE.get(vad.u.VadFlags.VadType.v(), hex(vad.u.VadFlags.VadType))))
+        if hasattr(vad.VadFlags, "VadType"):
+            outfd.write("Vad Type: {0}\n".format(MI_VAD_TYPE.get(vad.VadFlags.VadType.v(), hex(vad.VadFlags.VadType))))
 
     def write_vad_control(self, outfd, vad):
         """Renders a text version of a (non-short) Vad's control information"""
 
         # even if the ControlArea is not NULL, it is only meaningful 
         # for shared (non private) memory sections. 
-        if vad.u.VadFlags.PrivateMemory == 1:
+        if vad.VadFlags.PrivateMemory == 1:
             return
 
         control_area = vad.ControlArea
@@ -148,10 +148,8 @@ class VADInfo(taskmods.DllList):
             return
 
         outfd.write("ControlArea @{0:08x} Segment {1:08x}\n".format(control_area.dereference().obj_offset, control_area.Segment))
-        outfd.write("Dereference list: Flink {0:08x}, Blink {1:08x}\n".format(control_area.DereferenceList.Flink, control_area.DereferenceList.Blink))
         outfd.write("NumberOfSectionReferences: {0:10} NumberOfPfnReferences:  {1:10}\n".format(control_area.NumberOfSectionReferences, control_area.NumberOfPfnReferences))
         outfd.write("NumberOfMappedViews:       {0:10} NumberOfUserReferences: {1:10}\n".format(control_area.NumberOfMappedViews, control_area.NumberOfUserReferences))
-        outfd.write("WaitingForDeletion Event:  {0:08x}\n".format(control_area.WaitingForDeletion))
         outfd.write("Control Flags: {0}\n".format(str(control_area.u.Flags)))
 
         file_object = vad.FileObject
@@ -178,9 +176,9 @@ class VADTree(VADInfo):
                                ("-", "1"),
                                ("End", "[addrpad]")
                               ])
-            for vad in task.VadRoot.traverse():
+            for vad in task.RealVadRoot.traverse():
                 if vad:
-                    level = levels.get(vad.Parent.obj_offset, -1) + 1
+                    level = levels.get(vad.Subsection.Parent.obj_offset, -1) + 1
                     levels[vad.obj_offset] = level
                     self.table_row(outfd,
                                    " " * level,
@@ -194,7 +192,7 @@ class VADTree(VADInfo):
             outfd.write("/* Pid: {0:6} */\n".format(task.UniqueProcessId))
             outfd.write("digraph processtree {\n")
             outfd.write("graph [rankdir = \"TB\"];\n")
-            for vad in task.VadRoot.traverse():
+            for vad in task.RealVadRoot.traverse():
                 if vad:
                     if vad.Parent:
                         outfd.write("vad_{0:08x} -> vad_{1:08x}\n".format(vad.Parent.obj_offset or 0, vad.obj_offset))
@@ -223,7 +221,7 @@ class VADWalk(VADInfo):
                                ("End", "[addrpad]"),
                                ("Tag", "4"),
                                ])
-            for vad in task.VadRoot.traverse():
+            for vad in task.RealVadRoot.traverse():
                 # Ignore Vads with bad tags (which we explicitly include as None)
                 if vad:
                     self.table_row(outfd,
@@ -307,7 +305,7 @@ class VADDump(VADInfo):
 
             offset = task_space.vtop(task.obj_offset)
 
-            for vad in task.VadRoot.traverse():
+            for vad in task.RealVadRoot.traverse():
                 if not vad.is_valid():
                     continue
 
@@ -323,7 +321,7 @@ class VADDump(VADInfo):
                     self._config.DUMP_DIR, "{0}.{1:x}.{2}-{3}.dmp".format(
                     task.ImageFileName, offset, vad_start, vad_end))
 
-                if (task.IsWow64 and vad.u.VadFlags.CommitCharge == 0x7ffffffffffff and 
+                if (task.IsWow64 and vad.VadFlags.CommitCharge == 0x7ffffffffffff and 
                         vad.End > 0x7fffffff):
                     result = "Skipping Wow64 MM_MAX_COMMIT range"
                 else:

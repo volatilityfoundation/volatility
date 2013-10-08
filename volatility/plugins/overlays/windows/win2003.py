@@ -28,39 +28,11 @@ This file provides support for Windows 2003.
 
 #pylint: disable-msg=C0111
 
-import windows
+import volatility.plugins.overlays.windows.windows as windows
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.obj as obj
 
-class _MM_AVL_TABLE(obj.CType):
-    def traverse(self):
-        """
-        This is a hack to get around the fact that _MM_AVL_TABLE.BalancedRoot (an _MMADDRESS_NODE) doesn't
-        work the same way as the other _MMADDRESS_NODEs. In particular, we want _MMADDRESS_NODE to behave
-        like _MMVAD, and all other _MMADDRESS_NODEs have a Vad, VadS, Vadl tag etc, but _MM_AVL_TABLE.BalancedRoot
-        does not. So we can't reference self.BalancedRoot.RightChild here because self.BalancedRoot will be None
-        due to the fact that there is not a valid VAD tag at self.BalancedRoot.obj_offset - 4 (as _MMVAD expects).
-
-        We want to start traversing from self.BalancedRoot.RightChild. The self.BalancedRoot.LeftChild member
-        will always be 0. However, we can't call get_obj_offset("_MMADDRESS_NODE", "RightChild") or it will 
-        result in a TypeError: __new__() takes exactly 5 non-keyword arguments (4 given). Therefore, we hard-code
-        the offset to the RightChild and treat it as a pointer to the first real _MMADDRESS_NODE. 
-
-        Update: hard-coding the offset to RightChild breaks x64 (since the offset is 8 on x86 and 16 on x64). 
-        Thus to fix the vad plugins for x64 we assume that the offset of RightChild in _MMVAD_SHORT is the 
-        same as the offset of RightChild in _MMADDRESS_NODE. We can call get_obj_offset on _MMVAD_SHORT since
-        it isn't in the _MMVAD factory like _MMADDRESS_NODE; and we won't get the above TypeError. 
-        """
-        right_child_offset = self.obj_vm.profile.get_obj_offset("_MMVAD_SHORT", "RightChild")
-
-        rc = obj.Object("Pointer", vm = self.obj_vm, offset = self.obj_offset + right_child_offset)
-
-        node = obj.Object('_MMADDRESS_NODE', vm = self.obj_vm, offset = rc.v(), parent = self.obj_parent)
-
-        for c in node.traverse():
-            yield c
-
-class _MMVAD_SHORT(windows._MMVAD_SHORT):
+class _MMVAD(windows._MMVAD):
 
     @property
     def Parent(self):
@@ -78,7 +50,7 @@ class _MMVAD_SHORT(windows._MMVAD_SHORT):
                     offset = self.u1.Parent.v() & ~0x3, 
                     parent = self.obj_parent)
 
-class _MMVAD_LONG(_MMVAD_SHORT):
+class _MMVAD_LONG(_MMVAD):
     pass
 
 class Win2003MMVad(obj.ProfileModification):
@@ -90,10 +62,16 @@ class Win2003MMVad(obj.ProfileModification):
                 (m.get('major') > 5 or (m.get('major') == 5 and m.get('minor') >= 2)))
 
     def modification(self, profile):
-        profile.object_classes.update({'_MM_AVL_TABLE': _MM_AVL_TABLE,
-                                       '_MMADDRESS_NODE': windows._MMVAD,
-                                       '_MMVAD_SHORT': _MMVAD_SHORT,
+        profile.object_classes.update({'_MMADDRESS_NODE': _MMVAD,
+                                       '_MMVAD_SHORT': _MMVAD,
                                        '_MMVAD_LONG': _MMVAD_LONG})
+
+        overlay = {
+            '_EPROCESS': [ None, {
+                'RealVadRoot' : lambda x : x.VadRoot.BalancedRoot,
+                    }],
+                }
+        profile.merge_overlay(overlay)
 
 class Win2003x86Hiber(obj.ProfileModification):
     before = ['WindowsOverlay']

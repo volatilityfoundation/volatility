@@ -33,7 +33,7 @@ import windows
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.obj as obj
 
-class _MMVAD_SHORT(windows._MMVAD_SHORT):
+class _MMVAD(windows._MMVAD):
 
     @property
     def Parent(self):
@@ -49,7 +49,7 @@ class _MMVAD_SHORT(windows._MMVAD_SHORT):
     def FileObject(self):
         return self.Subsection.ControlArea.FilePointer.dereference_as("_FILE_OBJECT")
 
-class _MMVAD_LONG(_MMVAD_SHORT):
+class _MMVAD_LONG(_MMVAD):
     pass
 
 class _ETHREAD(windows._ETHREAD):
@@ -131,8 +131,9 @@ class VistaMMVAD(obj.ProfileModification):
                   }
 
     def modification(self, profile):
-        profile.object_classes.update({'_MMVAD_SHORT': _MMVAD_SHORT,
+        profile.object_classes.update({'_MMVAD_SHORT': _MMVAD,
                                        '_MMVAD_LONG' : _MMVAD_LONG,
+                                       '_MMVAD': _MMVAD,
                                        '_ETHREAD'    : _ETHREAD, 
                                        '_POOL_HEADER': _POOL_HEADER, 
                                         '_TOKEN': _TOKEN})

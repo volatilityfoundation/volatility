@@ -65,7 +65,16 @@ class Windows64Overlay(obj.ProfileModification):
                                   }],
                                '_MMVAD_LONG' : [None, {
                                     'Tag' : [-12, None],
-                                                       }]
+                                  }],
+                               '_MMVAD' : [None, {
+                                    'Tag' : [-12, None],
+                                  }],
+                               '_MM_AVL_NODE' : [None, {
+                                    'Tag' : [-12, None],
+                                  }],
+                               '_MMADDRESS_NODE' : [None, {
+                                    'Tag' : [-12, None],
+                                  }]
                                })
         profile.vtypes["_IMAGE_NT_HEADERS"] = profile.vtypes["_IMAGE_NT_HEADERS64"]
 
