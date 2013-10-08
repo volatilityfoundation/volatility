@@ -45,9 +45,7 @@ def get_kdbg(addr_space):
     OwnerTag even in that case. 
     """
 
-    kdbgo = obj.VolMagic(addr_space).KDBG.v()
-
-    kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = kdbgo, vm = addr_space)
+    kdbg = obj.VolMagic(addr_space).KDBG.v()
 
     if kdbg.is_valid():
         return kdbg

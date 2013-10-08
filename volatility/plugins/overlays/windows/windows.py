@@ -752,6 +752,7 @@ class VolatilityKDBG(obj.VolatilityMagic):
         """Generates a list of possible KDBG structure locations"""
         scanner = kdbg.KDBGScanner(needles = [obj.VolMagic(self.obj_vm).KDBGHeader.v()])
         for val in scanner.scan(self.obj_vm):
+            val = obj.Object("_KDDEBUGGER_DATA64", offset = val, vm = self.obj_vm)
             yield val
 
 class VolatilityIA32ValidAS(obj.VolatilityMagic):

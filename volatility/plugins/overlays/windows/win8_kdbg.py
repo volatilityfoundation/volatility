@@ -1,0 +1,188 @@
+import struct
+import volatility.obj as obj
+import volatility.addrspace as addrspace
+import volatility.constants as constants
+import volatility.utils as utils
+import volatility.plugins.overlays.windows.win8 as win8
+
+try:
+    import distorm3
+    has_distorm = True
+except ImportError:
+    has_distorm = False
+
+class VolatilityKDBG(obj.VolatilityMagic):
+    """A Scanner for KDBG data within an address space. 
+
+    This implementation is specific for Windows 8 / 2012 
+    64-bit versions because the KDBG block is encoded. We 
+    have to find it a special way and then perform the 
+    decoding routine before Volatility plugins can run. 
+    """
+
+    def rol(self, value, count):
+        """A rotate-left instruction in Python"""
+        
+        for y in range(count):
+            value *= 2
+            if (value > 0xFFFFFFFFFFFFFFFF):
+                value -= 0x10000000000000000
+                value += 1
+        return value
+
+    def bswap(self, value):
+        """A byte-swap instruction in Python"""
+
+        hi, lo = struct.unpack(">II", struct.pack("<Q", value))
+        return (hi << 32) | lo 
+
+    def decode_kdbg(self, vals):
+        """Decoder the KDBG block using the provided 
+        magic values and the algorithm reversed from 
+        the Windows kernel file."""
+
+        block_encoded, kdbg_block, wait_never, wait_always = vals
+        kdbg_size = win8.Win8KDBG.kdbgsize
+        buffer = ""
+
+        entries = obj.Object("Array", 
+                            targetType = "unsigned long long", 
+                            count = kdbg_size / 8, 
+                            offset = kdbg_block, vm = self.obj_vm)
+
+        for entry in entries: 
+            low_byte = (wait_never & 0xFFFFFFFF) & 0xFF
+            entry = self.rol(entry ^ wait_never, low_byte)
+            swap_xor = block_encoded.obj_offset | 0xFFFF000000000000
+            entry = self.bswap(entry ^ swap_xor)
+            buffer += struct.pack("Q", entry ^ wait_always) 
+
+        return buffer
+
+    def generate_suggestions(self):
+        """Generates a list of possible KDBG structure locations"""
+
+        if not has_distorm:
+            raise StopIteration("The distorm3 Python library is required")
+
+        kdbg_size = win8.Win8KDBG.kdbgsize
+        size_str = struct.pack("I", kdbg_size)
+        overlap = 20
+        alignment = 8 
+        offset = 0 
+        current_offset = offset
+        addr_space = self.obj_vm
+        bits = distorm3.Decode64Bits
+        
+        addresses = sorted(addr_space.get_available_addresses())
+        for (range_start, range_size) in addresses:
+            # Jump to the next available point to scan from
+            current_offset = max(range_start, current_offset)
+            range_end = range_start + range_size
+
+            while (current_offset < range_end):
+                # Figure out how much data to read
+                l = min(constants.SCAN_BLOCKSIZE + overlap, range_end - current_offset)
+
+                data = addr_space.zread(current_offset, l)
+                
+                for addr in utils.iterfind(data, "\x80\x3D"):
+                    full_addr = addr + current_offset 
+
+                    # nt!KdCopyDataBlock is about 100 bytes, we don't want to read
+                    # too little and truncate the function, but too much will reach
+                    # into other function's space
+                    code = addr_space.read(full_addr, 100)
+
+                    if (code.find(struct.pack("I", kdbg_size / alignment)) == -1 or 
+                                    code.find(size_str) == -1):
+                        continue
+
+                    ops = list(distorm3.Decompose(full_addr, code, bits))
+
+                    # nt!KdDebuggerDataBlock
+                    kdbg_block = None
+                    # nt!KiWaitNever
+                    wait_never = None
+                    # nt!KiWaitAlways
+                    wait_always = None
+                    # nt!KdpDataBlockEncoded
+                    block_encoded = None
+
+                    for op in ops:
+                        # cmp cs:KdpDataBlockEncoded, 0
+                        if (not block_encoded and op.mnemonic == "CMP" and 
+                                    op.operands[0].type == "AbsoluteMemory" and 
+                                    op.operands[1].type == "Immediate" and 
+                                    op.operands[1].value == 0):
+                            # an x64 RIP turned absolute 
+                            offset = op.address + op.size + op.operands[0].disp
+                            block_encoded = obj.Object("unsigned char", 
+                                                    offset = offset,
+                                                    vm = addr_space)
+                        # lea rdx, KdDebuggerDataBlock
+                        elif (not kdbg_block and op.mnemonic == "LEA" and 
+                                    op.operands[0].type == "Register" and 
+                                    op.operands[0].size == 64 and 
+                                    op.operands[1].type == "AbsoluteMemory" and 
+                                    op.operands[1].dispSize == 32):
+                            kdbg_block = op.address + op.size + op.operands[1].disp 
+                        # mov r10, cs:KiWaitNever
+                        elif (not wait_never and op.mnemonic == "MOV" and 
+                                    op.operands[0].type == "Register" and 
+                                    op.operands[0].size == 64 and 
+                                    op.operands[1].type == "AbsoluteMemory" and 
+                                    op.operands[1].dispSize == 32):
+                            offset = op.address + op.size + op.operands[1].disp
+                            wait_never = obj.Object("unsigned long long", 
+                                                    offset = offset, 
+                                                    vm = addr_space)
+                        # mov r11, cs:KiWaitAlways
+                        elif (not wait_always and op.mnemonic == "MOV" and 
+                                    op.operands[0].type == "Register" and 
+                                    op.operands[0].size == 64 and 
+                                    op.operands[1].type == "AbsoluteMemory" and 
+                                    op.operands[1].dispSize == 32):
+                            offset = op.address + op.size + op.operands[1].disp
+                            wait_always = obj.Object("unsigned long long", 
+                                                    offset = offset,
+                                                    vm = addr_space)
+                            break
+
+                    # check if we've found all the required offsets 
+                    if (block_encoded != None 
+                                and kdbg_block != None 
+                                and wait_never != None 
+                                and wait_always != None):
+                        
+                        if block_encoded == 1:
+                            vals = block_encoded, kdbg_block, wait_never, wait_always
+                            data = self.decode_kdbg(vals)
+                            buff = addrspace.BufferAddressSpace(
+                                        config = addr_space.get_config(),
+                                        base_offset = kdbg_block,
+                                        data = data)
+                            kdbg = obj.Object("_KDDEBUGGER_DATA64", 
+                                        offset = kdbg_block, 
+                                        vm = buff, 
+                                        native_vm = addr_space)
+                        else:
+                            kdbg = obj.Object("_KDDEBUGGER_DATA64", 
+                                        offset = kdbg_block, 
+                                        vm = addr_space)
+
+                        yield kdbg
+
+                current_offset += min(constants.SCAN_BLOCKSIZE, l)
+
+class Win8x64VolatilityKDBG(obj.ProfileModification):
+    """Apply the KDBG finder for x64"""
+
+    before = ['WindowsOverlay', 'WindowsObjectClasses']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 2, 
+                  'memory_model': lambda x: x == "64bit"}
+    
+    def modification(self, profile):
+        profile.object_classes.update({"VolatilityKDBG": VolatilityKDBG})

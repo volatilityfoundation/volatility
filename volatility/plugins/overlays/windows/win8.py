@@ -47,7 +47,7 @@ class _HANDLE_TABLE32(windows._HANDLE_TABLE):
                           parent = entry, 
                           handle_value = handle_value)
 
-class _HANDLE_TABLE64(windows._HANDLE_TABLE):
+class _HANDLE_TABLE64(_HANDLE_TABLE32):
     """A class for 64-bit Windows 8 / 2012 handle tables"""   
 
     def decode_pointer(self, value):
@@ -210,6 +210,22 @@ class Win8x86DTB(obj.ProfileModification):
         profile.merge_overlay({
             'VOLATILITY_MAGIC': [ None, {
             'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\x28\x00")]],
+            }]})
+
+class Win8x64DTB(obj.ProfileModification):
+    """The Windows 8 32-bit DTB signature"""
+
+    before = ['WindowsOverlay', 'Windows64Overlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 2,
+                  'memory_model': lambda x: x == '64bit',
+                  }
+
+    def modification(self, profile):
+        profile.merge_overlay({
+            'VOLATILITY_MAGIC': [ None, {
+            'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\xb2\x00")]],
             }]})
 
 class Win8x86SyscallVTypes(obj.ProfileModification):
