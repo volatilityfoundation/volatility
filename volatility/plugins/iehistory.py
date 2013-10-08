@@ -25,6 +25,7 @@ import volatility.obj as obj
 import volatility.plugins.taskmods as taskmods
 import volatility.utils as utils
 import volatility.win32.tasks as tasks
+import volatility.debug as debug
 
 class _URL_RECORD(obj.CType):
     """A class for URL and LEAK records"""
@@ -87,9 +88,17 @@ class IEHistory(taskmods.DllList):
                         default = False, action = 'store_true',
                         help = 'Find REDR records (redirected)')
 
+    @staticmethod
+    def is_valid_profile(profile):
+        return not (profile.metadata.get('major', 0) == 6 
+                and profile.metadata.get('minor', 0) == 2)
+
     def calculate(self):
         kernel_space = utils.load_as(self._config)
         
+        if not self.is_valid_profile(kernel_space.profile):
+            debug.error("The IEHistory plugin does not run on Win 8 / Server 2012")
+
         ## Select the tags to scan for. Always find visited URLs,
         ## but make freed and redirected records optional. 
         tags = ["URL "]
