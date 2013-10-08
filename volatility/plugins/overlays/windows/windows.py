@@ -948,6 +948,49 @@ class WindowsObjectClasses(obj.ProfileModification):
             '_POOL_HEADER': _POOL_HEADER,
             })
 
+class VolMagicPoolTag(obj.VolatilityMagic):
+    """The pool tag for a specific data structure on a given OS"""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('value', None)
+        self.protected = kwargs.get("protected", False)
+        self.tag = kwargs.get("tag", None)
+        obj.VolatilityMagic.__init__(self, *args, **kwargs)
+
+    def generate_suggestions(self):
+        """Return the tag value, setting the protected bit if necessary"""
+
+        tag = struct.unpack("I", self.tag)[0]
+        if self.protected:
+            tag |= 0x80000000
+        yield struct.pack("I", tag)
+
+class PoolTagModification(obj.ProfileModification):
+    """A modification for variable pool tags across Windows versions"""
+
+    conditions = {'os': lambda x: x == 'windows'}
+
+    def modification(self, profile):
+        profile.object_classes.update({'VolMagicPoolTag': VolMagicPoolTag})
+
+        # win8 / 2012 pool tags are not protected 
+        if (profile.metadata.get('major', 0) == 6 and 
+                    profile.metadata.get('minor', 0) >= 2):
+            protected = False
+        else:
+            protected = True
+
+        profile.merge_overlay({
+            'VOLATILITY_MAGIC': [ None, { 
+            'ProcessPoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "Proc", protected = protected)]],
+            'MutexPoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "Muta", protected = protected)]],
+            'SymlinkPoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "Symb", protected = protected)]],
+            'DriverPoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "Driv", protected = protected)]],
+            'FilePoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "File", protected = protected)]],
+            'WindPoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "Wind", protected = protected)]],
+            'ThreadPoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "Thre", protected = protected)]],
+            }]})
+
 class AbstractKDBGMod(obj.ProfileModification):
     kdbgsize = 0x290
 
