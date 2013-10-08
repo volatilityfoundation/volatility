@@ -67,7 +67,7 @@ class UserAssistWin7VTypes(obj.ProfileModification):
     before = ['UserAssistVTypes']
     conditions = {'os': lambda x : x == 'windows',
                   'major': lambda x : x == 6,
-                  'minor': lambda x : x == 1}
+                  'minor': lambda x : x >= 1}
     def modification(self, profile):
         profile.vtypes.update(ua_win7_vtypes)
 
@@ -187,7 +187,7 @@ class UserAssist(printkey.PrintKey, hivelist.HiveList):
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
-        win7 = addr_space.profile.metadata.get('major', 0) == 6 and addr_space.profile.metadata.get('minor', 0) == 1
+        win7 = addr_space.profile.metadata.get('major', 0) == 6 and addr_space.profile.metadata.get('minor', 0) >= 1
 
         if not self._config.HIVE_OFFSET:
             hive_offsets = [(self.hive_name(h), h.obj_offset) for h in hivelist.HiveList.calculate(self)]

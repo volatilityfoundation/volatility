@@ -775,7 +775,7 @@ class ShellBagsTypesWin7(obj.ProfileModification):
     before = ['WindowsObjectClasses']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6, 
-                  'minor': lambda x: x == 1}
+                  'minor': lambda x: x >= 1}
     def modification(self, profile):
         profile.object_classes.update({
             'NullString': NullString,
