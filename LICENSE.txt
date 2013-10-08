@@ -2,7 +2,7 @@
 		       Version 2, June 1991
 
  Copyright (C) 1989, 1991 Free Software Foundation, Inc.
- 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
 
@@ -278,3 +278,14 @@ PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGES.
 
 		     END OF TERMS AND CONDITIONS
+
+Notwithstanding any rights to use the Software granted by the foregoing, 
+if entities or individuals have received a Cease & Desist letter from 
+the Volatility Project, the Volatility Foundation, or its copyright holders 
+for violating the terms of the GPL version 2, those entities (their employees,
+subcontractors, independent contractors, and affiliates) and / or persons 
+are granted no such rights and any use by any one or more of them is 
+expressly prohibited, in accordance with Section 4 of the GPL version 2. 
+Any rights granted to such entities and / or persons by earlier license
+agreements have been previously terminated as to them. 
+

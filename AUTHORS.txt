@@ -18,7 +18,7 @@ AAron Walters
 Volatility 1.3:
 ------------
 
-AAron Walters <awalters@volatilesystems.com>
+AAron Walters <awalters@4tphi.net>
 Volatile Systems LLC
 
 Brendan Dolan-Gavitt <bdolangavitt@wesleyan.edu>

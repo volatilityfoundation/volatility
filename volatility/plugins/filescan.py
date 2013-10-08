@@ -1,27 +1,27 @@
-#!/usr/bin/env python
+# fileobjscan.py
+# Copyright 2009 Andreas Schuster <a.schuster@yendor.net>
+# Copyright (C) 2009-2013 Volatility Foundation
+# 
+# This file is part of Volatility.
 #
-#       fileobjscan.py
-#       Copyright 2009 Andreas Schuster <a.schuster@yendor.net>
-#       Copyright (C) 2009-2011 Volatile Systems
-#       
-#       This program is free software; you can redistribute it and/or modify
-#       it under the terms of the GNU General Public License as published by
-#       the Free Software Foundation; either version 2 of the License, or
-#       (at your option) any later version.
-#       
-#       This program is distributed in the hope that it will be useful,
-#       but WITHOUT ANY WARRANTY; without even the implied warranty of
-#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#       GNU General Public License for more details.
-#       
-#       You should have received a copy of the GNU General Public License
-#       along with this program; if not, write to the Free Software
-#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#       MA 02110-1301, USA.
+# Volatility is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
+#
+# Volatility is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
+#
 
 """
 @author:       Andreas Schuster
-@license:      GNU General Public License 2.0 or later
+@license:      GNU General Public License 2.0
 @contact:      a.schuster@forensikblog.de
 @organization: http://computer.forensikblog.de/en/
 """
@@ -48,7 +48,7 @@ class FileScan(common.AbstractWindowsCommand):
     meta_info['author'] = 'Andreas Schuster'
     meta_info['copyright'] = 'Copyright (c) 2009 Andreas Schuster'
     meta_info['contact'] = 'a.schuster@forensikblog.de'
-    meta_info['license'] = 'GNU General Public License 2.0 or later'
+    meta_info['license'] = 'GNU General Public License 2.0'
     meta_info['url'] = 'http://computer.forensikblog.de/en/'
     meta_info['os'] = 'WIN_32_XP_SP2'
     meta_info['version'] = '0.1'
@@ -409,10 +409,10 @@ class PSScan(common.AbstractWindowsCommand):
     # Declare meta information associated with this plugin
     meta_info = {}
     meta_info['author'] = 'AAron Walters'
-    meta_info['copyright'] = 'Copyright (c) 2011 Volatile Systems'
-    meta_info['contact'] = 'awalters@volatilesystems.com'
-    meta_info['license'] = 'GNU General Public License 2.0 or later'
-    meta_info['url'] = 'https://www.volatilesystems.com/'
+    meta_info['copyright'] = 'Copyright (c) 2011 Volatility Foundation'
+    meta_info['contact'] = 'awalters@4tphi.net'
+    meta_info['license'] = 'GNU General Public License 2.0'
+    meta_info['url'] = 'https://www.volatilityfoundation.org/'
     meta_info['os'] = ['Win7SP0x86', 'WinXPSP3x86']
     meta_info['version'] = '0.1'
 

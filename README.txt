@@ -13,7 +13,6 @@ from volatile memory samples and provide a platform for further work into
 this exciting area of research.
 
 The Volatility distribution is available from: 
-https://www.volatilesystems.com/default/volatility or 
 http://code.google.com/p/volatility/downloads/list
 
 Volatility should run on any platform that supports 
@@ -52,7 +51,7 @@ capabilities. For acquisition, there are both free and commercial
 solutions available. If you would like suggestions about suitable 
 acquisition solutions, please contact us at:
 
-volatility (at) volatilesystems (dot) com
+volatility (at) volatilityfoundation (dot) org
 
 Volatility supports a variety of sample file formats and the
 ability to convert between these formats:
@@ -101,12 +100,12 @@ Contact
 =======
 For information or requests, contact:
 
-Volatile Systems
+Volatility Foundation
 
-Web: http://www.volatilesystems.com/
+Web: http://www.volatilityfoundation.org/
      http://volatility.tumblr.com/
      
-Email: volatility (at) volatilesystems (dot) com
+Email: volatility (at) volatilityfoundation (dot) org
 
 IRC: #volatility on freenode
 
@@ -122,7 +121,6 @@ Some plugins may have other requirements which can be found at:
 Quick Start
 ===========
 1. Unpack the latest version of Volatility from
-   https://www.volatilesystems.com/default/volatility or 
    http://code.google.com/p/volatility/downloads/list
    
 2. To see available options, run "python vol.py -h"  
@@ -130,7 +128,7 @@ Quick Start
    Example:
 
 $ python vol.py -h
-Volatile Systems Volatility Framework 2.3
+Volatility Foundation Volatility Framework 2.3
 Usage: Volatility - A memory forensics analysis platform.
 
 Options:
@@ -165,7 +163,7 @@ Options:
   -k KPCR, --kpcr=KPCR  Specify a specific KPCR address
 
 $ python vol.py --info
-Volatile Systems Volatility Framework 2.3
+Volatility Foundation Volatility Framework 2.3
 
 Profiles
 --------
@@ -402,7 +400,7 @@ PoolTagCheck           - This scanner checks for the occurance of a pool tag
    Example:
    
     > python vol.py imageinfo -f WIN-II7VOJTUNGL-20120324-193051.raw 
-    Volatile Systems Volatility Framework 2.3
+    Volatility Foundation Volatility Framework 2.3
     Determining profile based on KDBG search...
     
               Suggested Profile(s) : Win2008R2SP0x64, Win7SP1x64, Win7SP0x64, Win2008R2SP1x64 (Instantiated with Win7SP0x64)
@@ -432,24 +430,23 @@ PoolTagCheck           - This scanner checks for the occurance of a pool tag
 Licensing and Copyright
 =======================
 
-Copyright (C) 2007-2011 Volatile Systems
+Copyright (C) 2007-2013 Volatility Foundation
 
 All Rights Reserved
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+Volatility is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License Version 2 as
+published by the Free Software Foundation.  You may not use, modify or
+distribute this program under any other version of the GNU General
+Public License.
 
-This program is distributed in the hope that it will be useful,
+Volatility is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
-02111-1307, USA.
+along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 
 Bugs and Support
 ================
@@ -484,7 +481,7 @@ Other options for communicaton can be found at:
 
 Missing or Truncated Information
 ================================
-Volatile Systems makes no claims about the validity or correctness of the
+Volatility Foundation makes no claims about the validity or correctness of the
 output of Volatility. Many factors may contribute to the
 incorrectness of output from Volatility including, but not
 limited to, malicious modifications to the operating system,
