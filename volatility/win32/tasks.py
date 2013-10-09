@@ -46,6 +46,9 @@ def get_kdbg(addr_space):
 
     kdbg = obj.VolMagic(addr_space).KDBG.v()
 
+    if type(kdbg) == int:
+        kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = kdbg, vm = addr_space)
+
     if kdbg.is_valid():
         return kdbg
 
