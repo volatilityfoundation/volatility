@@ -90,10 +90,11 @@ class ImageInfo(kdbgscan.KDBGScan):
 
         volmagic = obj.VolMagic(addr_space)
         if hasattr(addr_space, "dtb"):
-            kdbgoffset = volmagic.KDBG.v()
-            if kdbgoffset:
-                yield ('KDBG', hex(kdbgoffset))
-                kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = kdbgoffset, vm = addr_space)
+            kdbg = volmagic.KDBG.v()
+            if type(kdbg) == int:
+                kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = kdbg, vm = addr_space)
+            if kdbg.is_valid():
+                yield ('KDBG', hex(kdbg.obj_offset))
                 kpcr_list = list(kdbg.kpcrs())
                 yield ('Number of Processors', len(kpcr_list))
                 yield ('Image Type (Service Pack)', kdbg.ServicePack)
