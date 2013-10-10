@@ -84,6 +84,8 @@ def find_tables(start_addr, vm):
             if op.mnemonic == 'CMP' and op.size == 9 and op.operands[0].dispSize == 32 and op.operands[0].value == 0:
                 # The displacement is the RVA we want 
                 service_tables.append(op.operands[0].disp)
+            elif op.mnemonic == 'LEA' and op.size == 7 and op.operands[1].dispSize == 32 and op.operands[1].disp > 0:
+                service_tables.append(op.operands[1].disp)
     else:
         vm.profile.add_types({
             '_INSTRUCTION' : [ 9, {
@@ -99,6 +101,7 @@ def find_tables(start_addr, vm):
             "\x4B\x83\xBC", # r10, r11
             "\x48\x83\xBC", # rax, rcx
             "\x4A\x83\xBC", # rax, r8
+            "\x48\x8D\x8B", # win8x64 LEA RCX, [EBX+??????]
         ]
         for i in range(function_size):
             op = obj.Object("_INSTRUCTION", offset = start_addr + i, vm = vm)
