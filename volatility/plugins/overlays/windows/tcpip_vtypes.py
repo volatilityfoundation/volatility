@@ -242,6 +242,17 @@ tcpip_vtypes_vista_64 = {
     }],
 }
 
+class _ADDRESS_OBJECT(obj.CType):
+
+    def is_valid(self):
+        return obj.CType.is_valid(self) and self.CreateTime.v() > 0
+
+class WinXP2003AddressObject(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x : x == 5}
+    def modification(self, profile):
+        profile.object_classes.update({'_ADDRESS_OBJECT': _ADDRESS_OBJECT})
+
 class WinXP2003Tcpipx64(obj.ProfileModification):
     before = ['WindowsVTypes']
     conditions = {'os': lambda x: x == 'windows',

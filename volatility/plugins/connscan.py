@@ -30,29 +30,28 @@ This module implements the fast connection scanning
 
 #pylint: disable-msg=C0111
 
-import volatility.scan as scan
+import volatility.poolscan as poolscan
 import volatility.plugins.common as common
-import volatility.cache as cache
-import volatility.utils as utils
-import volatility.obj as obj
-import volatility.debug as debug #pylint: disable-msg=W0611
 
-class PoolScanConnFast(scan.PoolScanner):
+class PoolScanConn(poolscan.PoolScanner):
+    """Pool scanner for tcp connections"""
 
-    def object_offset(self, found, address_space):
-        """ Return the offset of _TCPT_OBJECT """
-        return found + (address_space.profile.get_obj_size("_POOL_HEADER") -
-                        address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
+    def __init__(self, address_space):
+        poolscan.PoolScanner.__init__(self, address_space)
 
-    checks = [ ('PoolTagCheck', dict(tag = "TCPT")),
-               ('CheckPoolSize', dict(condition = lambda x: x >= 0x198)),
-               ('CheckPoolType', dict(non_paged = True, free = True)),
-               ('CheckPoolIndex', dict(value = 0)),
-               ]
+        self.struct_name = "_TCPT_OBJECT"
+        self.pooltag = "TCPT"
 
-class ConnScan(common.AbstractWindowsCommand):
-    """ Scan Physical memory for _TCPT_OBJECT objects (tcp connections)
-    """
+        self.checks = [ ('CheckPoolSize', dict(condition = lambda x: x >= 0x198)),
+                   ('CheckPoolType', dict(non_paged = True, free = True)),
+                   ('CheckPoolIndex', dict(value = 0)),
+                   ]
+
+class ConnScan(common.AbstractScanCommand):
+    """Pool scanner for tcp connections"""
+
+    scanners = [PoolScanConn]
+
     meta_info = dict(
         author = 'Brendan Dolan-Gavitt',
         copyright = 'Copyright (c) 2007,2008 Brendan Dolan-Gavitt',
@@ -67,21 +66,6 @@ class ConnScan(common.AbstractWindowsCommand):
     def is_valid_profile(profile):
         return (profile.metadata.get('os', 'unknown') == 'windows' and
                 profile.metadata.get('major', 0) == 5)
-
-    @cache.CacheDecorator("scans/connscan2")
-    def calculate(self):
-        ## Just grab the AS and scan it using our scanner
-        address_space = utils.load_as(self._config, astype = 'physical')
-
-        if not self.is_valid_profile(address_space.profile):
-            debug.error("This command does not support the selected profile.")
-
-        scanner = PoolScanConnFast()
-        for offset in scanner.scan(address_space):
-            ## This yields the pool offsets - we want the actual object
-            tcp_obj = obj.Object('_TCPT_OBJECT', vm = address_space,
-                                offset = offset)
-            yield tcp_obj
 
     def render_text(self, outfd, data):
         self.table_header(outfd,

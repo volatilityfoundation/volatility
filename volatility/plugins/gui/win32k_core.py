@@ -309,7 +309,7 @@ class _HANDLEENTRY(obj.CType):
                         ppi.Process.dereference()
         return obj.NoneObject("Cannot find process")
 
-class tagWINDOWSTATION(obj.CType):
+class tagWINDOWSTATION(obj.CType, windows.ExecutiveObjectMixin):
     """A class for Windowstation objects"""
 
     def is_valid(self):

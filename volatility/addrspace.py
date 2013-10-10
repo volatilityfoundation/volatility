@@ -170,6 +170,21 @@ class BaseAddressSpace(object):
         """Compare two addresses and returns True if they're the same, or False if they're not"""
         return cls.address_compare(a, b) == 0
 
+    def physical_space(self):
+        """Return the underlying physical layer, if there is one. 
+
+        This cycles through the base address spaces and returns 
+        the first one that's not an ancestor of a virtual space. 
+        """
+        b = self.base
+
+        while b:
+            if not isinstance(b, AbstractVirtualAddressSpace):
+                return b
+            b = b.base
+
+        return self
+
 class AbstractDiscreteAllocMemory(BaseAddressSpace):
     """A class based on memory stored as discrete allocations.
     """

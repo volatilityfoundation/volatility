@@ -30,8 +30,19 @@ import volatility.plugins.gui.constants as consts
 class Clipboard(common.AbstractWindowsCommand, sessions.SessionsMixin):
     """Extract the contents of the windows clipboard"""
 
+    @staticmethod
+    def is_valid_profile(profile):
+        version = (profile.metadata.get('major', 0), 
+                   profile.metadata.get('minor', 0))
+
+        return (profile.metadata.get('os', '') == 'windows' and
+                version < (6, 2))
+
     def calculate(self):
         kernel_space = utils.load_as(self._config)
+
+        if not self.is_valid_profile(kernel_space.profile):
+            debug.error("This command does not support the selected profile.")
 
         # Dictionary of MM_SESSION_SPACEs by ID
         sesses = dict((int(session.SessionId), session)

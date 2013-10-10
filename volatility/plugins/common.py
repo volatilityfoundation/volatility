@@ -21,8 +21,8 @@
 #
 
 """ This plugin contains CORE classes used by lots of other plugins """
-import volatility.scan as scan
-import volatility.obj as obj
+import volatility.poolscan as poolscan
+import volatility.utils as utils
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.commands as commands
 
@@ -32,6 +32,49 @@ class AbstractWindowsCommand(commands.Command):
     @staticmethod
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'unknown') == 'windows'
+
+class AbstractScanCommand(AbstractWindowsCommand):
+    """A command built to provide the common options that
+    should be available to Volatility's various scanning 
+    plugins."""    
+
+    # This is a list of scanners to use 
+    scanners = []
+
+    def __init__(self, config, *args, **kwargs):
+        AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
+        config.add_option("VIRTUAL", short_option = "V", default = False,
+                          action = "store_true", 
+                          help = "Scan virtual space instead of physical")
+        config.add_option("SHOW-UNALLOCATED", short_option = "W", default = False,
+                          action = "store_true", 
+                          help = "Skip unallocated objects (e.g. 0xbad0b0b0)")
+        config.add_option("START", short_option = "A", default = None, 
+                          action = "store", type = "int", 
+                          help = "The starting address to begin scanning")
+        config.add_option("LENGTH", short_option = "G", default = None, 
+                          action = "store", type = "int", 
+                          help = "Length (in bytes) to scan from the starting address")
+
+    def calculate(self):
+        addr_space = utils.load_as(self._config)
+        if not self.is_valid_profile(addr_space.profile):
+            debug.error("This command does not support the selected profile.")
+        return self.scan_results(addr_space)
+
+    def scan_results(self, addr_space):
+        use_top_down = (addr_space.profile.metadata.get("major", 0) == 6 
+                        and addr_space.profile.metadata.get("minor") == 2)
+
+        multiscan = poolscan.MultiScanInterface(config = self._config, 
+                                scanners = self.scanners,
+                                scan_virtual = self._config.VIRTUAL, 
+                                show_unalloc = self._config.SHOW_UNALLOCATED,
+                                use_top_down = use_top_down,
+                                start_offset = self._config.START, 
+                                max_length = self._config.LENGTH)
+
+        return multiscan.scan()
 
 def pool_align(vm, object_name, align):
     """Returns the size of the object accounting for pool alignment."""
@@ -43,68 +86,3 @@ def pool_align(vm, object_name, align):
         size_of_obj += align - extra
 
     return size_of_obj
-
-## The following are checks for pool scanners.
-
-class PoolTagCheck(scan.ScannerCheck):
-    """ This scanner checks for the occurance of a pool tag """
-    def __init__(self, address_space, tag = None, **kwargs):
-        scan.ScannerCheck.__init__(self, address_space, **kwargs)
-        self.tag = tag
-
-    def skip(self, data, offset):
-        try:
-            nextval = data.index(self.tag, offset + 1)
-            return nextval - offset
-        except ValueError:
-            ## Substring is not found - skip to the end of this data buffer
-            return len(data) - offset
-
-    def check(self, offset):
-        data = self.address_space.read(offset, len(self.tag))
-        return data == self.tag
-
-class CheckPoolSize(scan.ScannerCheck):
-    """ Check pool block size """
-    def __init__(self, address_space, condition = (lambda x: x == 8), **kwargs):
-        scan.ScannerCheck.__init__(self, address_space, **kwargs)
-        self.condition = condition
-
-    def check(self, offset):
-        pool_hdr = obj.Object('_POOL_HEADER', vm = self.address_space,
-                             offset = offset - 4)
-
-        block_size = pool_hdr.BlockSize.v()
-
-        pool_alignment = obj.VolMagic(self.address_space).PoolAlignment.v()
-
-        return self.condition(block_size * pool_alignment)
-
-class CheckPoolType(scan.ScannerCheck):
-    """ Check the pool type """
-    def __init__(self, address_space, paged = False,
-                 non_paged = False, free = False, **kwargs):
-        scan.ScannerCheck.__init__(self, address_space, **kwargs)
-        self.non_paged = non_paged
-        self.paged = paged
-        self.free = free
-
-    def check(self, offset):
-        pool_hdr = obj.Object('_POOL_HEADER', vm = self.address_space,
-                             offset = offset - 4)
-
-        return ((self.non_paged and pool_hdr.NonPagedPool) or
-               (self.free and pool_hdr.FreePool) or
-               (self.paged and pool_hdr.PagedPool))
-
-class CheckPoolIndex(scan.ScannerCheck):
-    """ Checks the pool index """
-    def __init__(self, address_space, value = 0, **kwargs):
-        scan.ScannerCheck.__init__(self, address_space, **kwargs)
-        self.value = value
-
-    def check(self, offset):
-        pool_hdr = obj.Object('_POOL_HEADER', vm = self.address_space,
-                             offset = offset - 4)
-
-        return pool_hdr.PoolIndex == self.value

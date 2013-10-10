@@ -19,12 +19,27 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import volatility.utils as utils
+import volatility.debug as debug
 import volatility.plugins.gui.sessions as sessions
 
 class EventHooks(sessions.Sessions):
     """Print details on windows event hooks"""
 
+    @staticmethod
+    def is_valid_profile(profile):
+        version = (profile.metadata.get('major', 0), 
+                   profile.metadata.get('minor', 0))
+
+        return (profile.metadata.get('os', '') == 'windows' and
+                version < (6, 2))
+
     def render_text(self, outfd, data):
+
+        space = utils.load_as(self._config, astype = 'physical')
+        
+        if not self.is_valid_profile(space.profile):
+            debug.error("This command does not support the selected profile.")
 
         for session in data:
             shared_info = session.find_shared_info()

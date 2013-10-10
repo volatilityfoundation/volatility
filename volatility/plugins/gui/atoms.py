@@ -20,20 +20,25 @@
 #
 
 import volatility.obj as obj
+import volatility.debug as debug
 import volatility.utils as utils
-import volatility.scan as scan
+import volatility.poolscan as poolscan
 import volatility.plugins.common as common
 import volatility.plugins.gui.windowstations as windowstations
 
-class PoolScanAtom(scan.PoolScanner):
+class PoolScanAtom(poolscan.PoolScanner):
     """Pool scanner for atom tables"""
 
-    def object_offset(self, found, address_space):
-        """ This returns the offset of the object contained within
-        this pool allocation.
-        """
-        pool_base = found - \
-                self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
+    def __init__(self, address_space):
+        poolscan.PoolScanner.__init__(self, address_space)
+
+        self.pooltag = "AtmT"
+        self.struct_name = "_RTL_ATOM_TABLE"
+
+        self.checks = [ 
+               ('CheckPoolSize', dict(condition = lambda x: x >= 200)),
+               ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
+               ]
 
         ## Note: all OS after XP, there are an extra 8 bytes (for 32-bit)
         ## or 16 bytes (for 64-bit) between the _POOL_HEADER and _RTL_ATOM_TABLE. 
@@ -41,46 +46,36 @@ class PoolScanAtom(scan.PoolScanner):
         ## approach as we do with other object scanners - because the size of an
         ## _RTL_ATOM_TABLE differs depending on the number of hash buckets. 
 
-        build = (self.buffer.profile.metadata.get('major', 0),
-                 self.buffer.profile.metadata.get('minor', 0))
+        profile = self.address_space.profile
 
-        if self.buffer.profile.metadata.get('memory_model', '32bit') == '32bit':
+        build = (profile.metadata.get('major', 0),
+                 profile.metadata.get('minor', 0))
+
+        if profile.metadata.get('memory_model', '32bit') == '32bit':
             fixup = 8 if build > (5, 1) else 0
         else:
             fixup = 16 if build > (5, 1) else 0
 
-        return pool_base + self.buffer.profile.get_obj_size('_POOL_HEADER') + fixup
+        self.padding = fixup
 
-    checks = [ ('PoolTagCheck', dict(tag = "AtmT")),
-               ('CheckPoolSize', dict(condition = lambda x: x >= 200)),
-               ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
-               ]
+class AtomScan(common.AbstractScanCommand):
+    """Pool scanner for atom tables"""
 
-class AtomScan(common.AbstractWindowsCommand):
-    """Pool scanner for _RTL_ATOM_TABLE"""
+    scanners = [PoolScanAtom]
 
     def __init__(self, config, *args, **kwargs):
-        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
-
-        config.add_option("SORT-BY", short_option = 'S', type = "choice",
+        common.AbstractScanCommand.__init__(self, config, *args, **kwargs)
+        config.add_option("SORT-BY", short_option = 's', type = "choice",
                           choices = ["atom", "refcount", "offset"], default = "offset",
                           help = "Sort by [offset | atom | refcount]", action = "store")
 
-    def calculate(self):
-        flat_space = utils.load_as(self._config, astype = 'physical')
-        kernel_space = utils.load_as(self._config)
+    @staticmethod
+    def is_valid_profile(profile):
+        version = (profile.metadata.get('major', 0), 
+                   profile.metadata.get('minor', 0))
 
-        # Scan for atom tables
-        for offset in PoolScanAtom().scan(flat_space):
-
-            # There's no way to tell which session or window station 
-            # owns an atom table by *just* looking at the atom table, 
-            # so we have to instantiate it from the default kernel AS. 
-            atom_table = obj.Object('_RTL_ATOM_TABLE', offset = offset,
-                    vm = flat_space, native_vm = kernel_space)
-
-            if atom_table.is_valid():
-                yield atom_table
+        return (profile.metadata.get('os', '') == 'windows' and
+                version < (6, 2))
 
     def render_text(self, outfd, data):
 
@@ -120,7 +115,20 @@ class AtomScan(common.AbstractWindowsCommand):
 class Atoms(common.AbstractWindowsCommand):
     """Print session and window station atom tables"""
 
+    @staticmethod
+    def is_valid_profile(profile):
+        version = (profile.metadata.get('major', 0), 
+                   profile.metadata.get('minor', 0))
+
+        return (profile.metadata.get('os', '') == 'windows' and
+                version < (6, 2))
+
     def calculate(self):
+        addr_space = utils.load_as(self._config)
+        
+        if not self.is_valid_profile(addr_space.profile):
+            debug.error("This command does not support the selected profile.")
+
         seen = []
 
         # Find the atom tables that belong to each window station 

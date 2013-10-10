@@ -32,26 +32,28 @@ This module implements the fast module scanning
 
 import common
 import volatility.plugins.filescan as filescan
-import volatility.scan as scan
-import volatility.utils as utils
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
+import volatility.poolscan as poolscan
 
-class PoolScanModuleFast(scan.PoolScanner):
+class PoolScanModule(poolscan.PoolScanner):
+    """Pool scanner for kernel modules"""
 
-    def object_offset(self, found, address_space):
-        return found + (address_space.profile.get_obj_size("_POOL_HEADER") -
-                        address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
-
-    checks = [ ('PoolTagCheck', dict(tag = 'MmLd')),
-               ('CheckPoolSize', dict(condition = lambda x: x > 0x4c)),
-               ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
+    def __init__(self, address_space):
+        poolscan.PoolScanner.__init__(self, address_space)
+        
+        self.struct_name = "_LDR_DATA_TABLE_ENTRY"
+        self.pooltag = "MmLd"
+        self.checks = [ 
+               ('CheckPoolSize', dict(condition = lambda x: x >= 0x4C)),
+               ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
-class ModScan(filescan.FileScan):
-    """ Scan Physical memory for _LDR_DATA_TABLE_ENTRY objects
-    """
+class ModScan(common.AbstractScanCommand):
+    """Pool scanner for kernel modules"""
+
+    scanners = [PoolScanModule]
 
     # Declare meta information associated with this plugin    
     meta_info = dict(
@@ -63,19 +65,6 @@ class ModScan(filescan.FileScan):
         os = 'WIN_32_XP_SP2',
         version = '1.0',
         )
-
-    def calculate(self):
-        ## Here we scan the physical address space
-        address_space = utils.load_as(self._config, astype = 'physical')
-
-        ## We need the kernel_address_space later
-        kernel_as = utils.load_as(self._config)
-
-        scanner = PoolScanModuleFast()
-        for offset in scanner.scan(address_space):
-            ldr_entry = obj.Object('_LDR_DATA_TABLE_ENTRY', vm = address_space,
-                                  offset = offset, native_vm = kernel_as)
-            yield ldr_entry
 
     def render_text(self, outfd, data):
         self.table_header(outfd,
@@ -93,89 +82,29 @@ class ModScan(filescan.FileScan):
                          ldr_entry.SizeOfImage,
                          str(ldr_entry.FullDllName or ''))
 
-class CheckThreads(scan.ScannerCheck):
-    """ Check sanity of _ETHREAD """
-    kernel = 0x80000000
+class PoolScanThread(poolscan.PoolScanner):
+    """Pool scanner for thread objects"""
 
-    def check(self, found):
+    def __init__(self, address_space):
+        poolscan.PoolScanner.__init__(self, address_space)
 
-        pool_base = found - self.address_space.profile.get_obj_offset(
-            '_POOL_HEADER', 'PoolTag')
+        self.struct_name = "_ETHREAD"
+        self.object_type = "Thread"
+        # this allows us to find terminated threads 
+        self.skip_type_check = True
+        self.pooltag = obj.VolMagic(address_space).ThreadPoolTag.v()
+        size = 0x278 # self.address_space.profile.get_obj_size("_ETHREAD")
 
-        pool_obj = obj.Object("_POOL_HEADER", vm = self.address_space,
-                              offset = pool_base)
-
-        ## We work out the _ETHREAD from the end of the
-        ## allocation (bottom up).
-        pool_alignment = obj.VolMagic(self.address_space).PoolAlignment.v()
-        thread = obj.Object("_ETHREAD", vm = self.address_space,
-                  offset = pool_base + pool_obj.BlockSize * pool_alignment -
-                  common.pool_align(self.address_space, '_ETHREAD', pool_alignment))
-
-        #if (thread.Cid.UniqueProcess.v() != 0 and 
-        #    thread.ThreadsProcess.v() <= self.kernel):
-        #    return False
-
-        ## check the start address
-        if thread.Cid.UniqueProcess.v() != 0 and thread.StartAddress == 0:
-            return False
-
-        ## Check the Semaphores
-        if (thread.Tcb.SuspendSemaphore.Header.Size != 0x05 and
-               thread.Tcb.SuspendSemaphore.Header.Type != 0x05):
-            return False
-
-        if (thread.KeyedWaitSemaphore.Header.Size != 0x05 and
-               thread.KeyedWaitSemaphore.Header.Type != 0x05):
-            return False
-
-        return True
-
-class PoolScanThreadFast(scan.PoolScanner):
-    """ Carve out thread objects using the pool tag """
-
-    def object_offset(self, found, address_space):
-        """ This returns the offset of the object contained within
-        this pool allocation.
-        """
-
-        ## The offset of the object is determined by subtracting the offset
-        ## of the PoolTag member to get the start of Pool Object 
-
-        pool_base = found - self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
-
-        pool_obj = obj.Object("_POOL_HEADER", vm = address_space,
-                                 offset = pool_base)
-
-        ## We work out the _ETHREAD from the end of the
-        ## allocation (bottom up).
-        pool_alignment = obj.VolMagic(address_space).PoolAlignment.v()
-
-        object_base = (pool_base + pool_obj.BlockSize * pool_alignment -
-                       common.pool_align(address_space, '_ETHREAD', pool_alignment))
-
-        return object_base
-
-    checks = [ ('PoolTagCheck', dict(tag = '\x54\x68\x72\xe5')),
-               ('CheckPoolSize', dict(condition = lambda x: x >= 0x278)),
-               ('CheckPoolType', dict(paged = True, non_paged = True, free = True)),
+        self.checks = [ 
+               ('CheckPoolSize', dict(condition = lambda x: x >= size)),
+               ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
                ('CheckPoolIndex', dict(value = 0)),
-               ('CheckThreads', {}),
                ]
 
-class ThrdScan(ModScan):
-    """Scan physical memory for _ETHREAD objects"""
-    def calculate(self):
-        ## Here we scan the physical address space
-        address_space = utils.load_as(self._config, astype = 'physical')
-        kernel_as = utils.load_as(self._config)
+class ThrdScan(common.AbstractScanCommand):
+    """Pool scanner for thread objects"""
 
-        scanner = PoolScanThreadFast()
-        for found in scanner.scan(address_space):
-            thread = obj.Object('_ETHREAD', vm = address_space,
-                               native_vm = kernel_as, offset = found)
-
-            yield thread
+    scanners = [PoolScanThread]
 
     def render_text(self, outfd, data):
         self.table_header(outfd,

@@ -81,8 +81,7 @@ class HiveList(hs.HiveScan):
         ## then read the Flink of the list to locate the address of
         ## the first hive in virtual address space. hmm I wish we
         ## could go from physical to virtual memory easier.
-        for offset in hives:
-            hive = obj.Object("_CMHIVE", int(offset), flat, native_vm = addr_space)
+        for hive in hives:
             if hive.HiveList.Flink.v():
                 start_hive_offset = hive.HiveList.Flink.v() - addr_space.profile.get_obj_offset('_CMHIVE', 'HiveList')
 

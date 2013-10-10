@@ -30,53 +30,30 @@ This module implements the fast socket scanning
 
 #pylint: disable-msg=C0111
 
-import volatility.scan as scan
+import volatility.poolscan as poolscan
 import volatility.plugins.common as common
-import volatility.utils as utils
-import volatility.obj as obj
-import volatility.debug as debug #pylint: disable-msg=W0611
-import volatility.cache as cache
 import volatility.protos as protos
 
-class CheckSocketCreateTime(scan.ScannerCheck):
-    """ Check that _ADDRESS_OBJECT.CreateTime makes sense """
-    def __init__(self, address_space, condition = lambda x: x, *args, **kwargs):
-        scan.ScannerCheck.__init__(self, address_space, *args, **kwargs)
-        self.condition = condition
+class PoolScanSocket(poolscan.PoolScanner):
+    """Pool scanner for tcp socket objects"""
 
-    def check(self, offset):
-        """ The offset parameter here is the start of PoolTag as yielded   
-        by BaseScanner.scan. Unlike other objects, _ADDRESS_OBJECT do not
-        have an _OBJECT_HEADER or any optional headers. Thus to find the 
-        _ADDRESS_OBJECT from the PoolTag we just have to calculate the 
-        distance from PoolTag to the end of _POOL_HEADER.
-        """
-        start_of_object = (self.address_space.profile.get_obj_size("_POOL_HEADER") -
-                          self.address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
-        address_obj = obj.Object('_ADDRESS_OBJECT', vm = self.address_space,
-                                offset = offset + start_of_object)
+    def __init__(self, address_space):
+        poolscan.PoolScanner.__init__(self, address_space)
 
-        return self.condition(address_obj.CreateTime.v())
+        self.struct_name = "_ADDRESS_OBJECT"
+        self.pooltag = "TCPA"
 
-class PoolScanSockFast(scan.PoolScanner):
+        self.checks = [('CheckPoolSize', dict(condition = lambda x: x >= 0x15C)),
+                   ('CheckPoolType', dict(non_paged = True, free = True)),
+                   ## Valid sockets have time > 0
+                   #('CheckSocketCreateTime', dict(condition = lambda x: x > 0)),
+                   ('CheckPoolIndex', dict(value = 0))
+                   ]
 
-    def object_offset(self, found, address_space):
-        """ Return the offset of _ADDRESS_OBJECT """
-        return found + (address_space.profile.get_obj_size("_POOL_HEADER") -
-                        address_space.profile.get_obj_offset("_POOL_HEADER", "PoolTag"))
+class SockScan(common.AbstractScanCommand):
+    """Pool scanner for tcp socket objects"""
 
-    checks = [ ('PoolTagCheck', dict(tag = "TCPA")),
-               ('CheckPoolSize', dict(condition = lambda x: x >= 0x15C)),
-               ('CheckPoolType', dict(non_paged = True, free = True)),
-               ## Valid sockets have time > 0
-               ('CheckSocketCreateTime', dict(condition = lambda x: x > 0)),
-               ('CheckPoolIndex', dict(value = 0))
-               ]
-
-class SockScan(common.AbstractWindowsCommand):
-    """ Scan Physical memory for _ADDRESS_OBJECT objects (tcp sockets)
-    """
-
+    scanners = [PoolScanSocket]
     # Declare meta information associated with this plugin
 
     meta_info = dict(
@@ -93,16 +70,6 @@ class SockScan(common.AbstractWindowsCommand):
     def is_valid_profile(profile):
         return (profile.metadata.get('os', 'unknown') == 'windows' and
                 profile.metadata.get('major', 0) == 5)
-
-    @cache.CacheDecorator("tests/sockscan")
-    def calculate(self):
-        ## Just grab the AS and scan it using our scanner
-        address_space = utils.load_as(self._config, astype = 'physical')
-        if not self.is_valid_profile(address_space.profile):
-            debug.error("This command does not support the selected profile.")
-        scanner = PoolScanSockFast()
-        for offset in scanner.scan(address_space):
-            yield obj.Object('_ADDRESS_OBJECT', vm = address_space, offset = offset)
 
     def render_text(self, outfd, data):
 

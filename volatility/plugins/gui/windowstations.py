@@ -20,87 +20,82 @@
 #
 
 import volatility.obj as obj
-import volatility.scan as scan
 import volatility.utils as utils
-import volatility.plugins.filescan as filescan
+import volatility.debug as debug
+import volatility.poolscan as poolscan
 import volatility.plugins.common as common
 import volatility.plugins.gui.sessions as sessions
 
-class PoolScanWind(scan.PoolScanner):
+class PoolScanWind(poolscan.PoolScanner):
     """PoolScanner for window station objects"""
 
-    def object_offset(self, found, address_space):
-        """ This returns the offset of the object contained within
-        this pool allocation.
-        """
-        pool_base = found - \
-                self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
+    def __init__(self, address_space):
+        poolscan.PoolScanner.__init__(self, address_space)
 
-        pool_obj = obj.Object("_POOL_HEADER", vm = address_space,
-                                 offset = pool_base)
+        self.struct_name = "tagWINDOWSTATION"
+        self.object_type = "WindowStation"
+        self.pooltag = obj.VolMagic(address_space).WindPoolTag.v()
+        size = 0x90 # self.address_space.profile.get_obj_size("tagWINDOWSTATION")
 
-        pool_alignment = obj.VolMagic(address_space).PoolAlignment.v()
-
-        object_base = (pool_base + pool_obj.BlockSize * pool_alignment -
-                       common.pool_align(address_space,
-                      'tagWINDOWSTATION', pool_alignment))
-
-        return object_base
-
-    checks = [ ('PoolTagCheck', dict(tag = "Win\xe4")),
+        self.checks = [
                # seen as 0x98 on xpsp2 and xpsp3, 0x90 on w2k3*, 0xa0 on w7sp0
-               ('CheckPoolSize', dict(condition = lambda x: x >= 0x90)),
+               ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                # only look in non-paged or free pools
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
                ('CheckPoolIndex', dict(value = 0)),
                ]
 
-class WndScan(filescan.FileScan, sessions.SessionsMixin):
-    """Pool scanner for tagWINDOWSTATION (window stations)"""
+class WndScan(common.AbstractScanCommand, sessions.SessionsMixin):
+    """Pool scanner for window stations"""
+
+    scanners = [PoolScanWind]
+
+    @staticmethod
+    def is_valid_profile(profile):
+        version = (profile.metadata.get('major', 0), 
+                   profile.metadata.get('minor', 0))
+
+        return (profile.metadata.get('os', '') == 'windows' and
+                version < (6, 2))
 
     def calculate(self):
-        flat_space = utils.load_as(self._config, astype = 'physical')
-        kernel_space = utils.load_as(self._config)
+        addr_space = utils.load_as(self._config)
 
-        # Scan for window station objects 
-        for offset in PoolScanWind().scan(flat_space):
+        if not self.is_valid_profile(addr_space.profile):
+            debug.error("This command does not support the selected profile.")
 
-            window_station = obj.Object("tagWINDOWSTATION",
-                offset = offset, vm = flat_space)
+        seen = []
 
-            # Basic sanity checks are included here 
-            if not window_station.is_valid():
-                continue
-
+        for wind in self.scan_results(addr_space):
+            
             # Find an address space for this window station's session  
             session = self.find_session_space(
-                kernel_space, window_station.dwSessionId)
+                addr_space, wind.dwSessionId)
 
             if not session:
                 continue
 
             # Reset the object's native VM so pointers are
             # dereferenced in session space 
-            window_station.set_native_vm(session.obj_vm)
+            wind.set_native_vm(session.obj_vm)
 
-            for winsta in window_station.traverse():
+            for winsta in wind.traverse():
                 if winsta.is_valid():
+
+                    offset = winsta.PhysicalAddress
+                    if offset in seen:
+                        continue
+                    seen.append(offset)
+
                     yield winsta
 
     def render_text(self, outfd, data):
 
-        seen = []
-
         for window_station in data:
-
-            offset = window_station.PhysicalAddress
-            if offset in seen:
-                continue
-            seen.append(offset)
 
             outfd.write("*" * 50 + "\n")
             outfd.write("WindowStation: {0:#x}, Name: {1}, Next: {2:#x}\n".format(
-                offset,
+                window_station.PhysicalAddress,
                 window_station.Name,
                 window_station.rpwinstaNext.v(),
                 ))

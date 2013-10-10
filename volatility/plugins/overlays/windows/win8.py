@@ -78,6 +78,12 @@ class _HANDLE_TABLE64(_HANDLE_TABLE32):
                           parent = entry, 
                           handle_value = handle_value)
 
+class _PSP_CID_TABLE32(_HANDLE_TABLE32):
+    """PspCidTable for 32-bit Windows 8"""
+
+class _PSP_CID_TABLE64(_HANDLE_TABLE64):
+    """PspCidTable for 64-bit Windows 8 and Server 2012"""
+
 class _LDR_DATA_TABLE_ENTRY(pe_vtypes._LDR_DATA_TABLE_ENTRY):
     """A class for DLL modules"""
     
@@ -290,7 +296,7 @@ class Win8x86SyscallVTypes(obj.ProfileModification):
         profile.vtypes.update(ssdt_vtypes.ssdt_vtypes_2003)
 
 class Win8ObjectClasses(obj.ProfileModification):
-    before = ["WindowsObjectClasses", "Win7ObjectClasses", "WinPEObjectClasses", "Win2003MMVad"]
+    before = ["WindowsObjectClasses", "Win7ObjectClasses", "WinPEObjectClasses", "Win2003MMVad", "MalwarePspCid"]
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
                   'minor': lambda x: x >= 2}
@@ -299,8 +305,10 @@ class Win8ObjectClasses(obj.ProfileModification):
 
         if profile.metadata.get("memory_model", "32bit") == "32bit":
             handletable = _HANDLE_TABLE32
+            pspcidtable = _PSP_CID_TABLE32
         else:
             handletable = _HANDLE_TABLE64
+            pspcidtable = _PSP_CID_TABLE64
 
         profile.object_classes.update({
                 #"_EPROCESS": _EPROCESS, 
@@ -310,6 +318,7 @@ class Win8ObjectClasses(obj.ProfileModification):
                 #"_POOL_HEADER": _POOL_HEADER,
                 "_MM_AVL_NODE": _MM_AVL_NODE,
                 "_MMVAD": _MM_AVL_NODE,
+                "_PSP_CID_TABLE": pspcidtable,
                 })
 
 class Win8SP0x64(obj.Profile):
