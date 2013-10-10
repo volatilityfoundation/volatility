@@ -440,11 +440,13 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         if not process_space:
             return
 
+        max_commit = obj.VolMagic(process_space).MM_MAX_COMMIT.v()
+
         for vad in self.RealVadRoot.traverse():
             if not vad.is_valid():
                 continue
             # Skip Wow64 MM_MAX_COMMIT range
-            if (skip_max_commit and self.IsWow64 and vad.VadFlags.CommitCharge == 0x7ffffffffffff and 
+            if (skip_max_commit and self.IsWow64 and vad.CommitCharge == max_commit and 
                     vad.End > 0x7fffffff):
                 continue
             # Apply the meta filter if one is supplied
@@ -941,6 +943,11 @@ class _MMVAD(VadTraverser):
     def VadFlags(self):
         """Return the primary vad flags"""
         return self.u.VadFlags 
+
+    @property
+    def CommitCharge(self):
+        """Return the commit charge"""
+        return self.VadFlags.CommitCharge
 
 class _EX_FAST_REF(obj.CType):
 

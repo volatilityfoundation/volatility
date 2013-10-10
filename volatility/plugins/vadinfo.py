@@ -27,6 +27,7 @@
 # "The VAD Tree: A Process-Eye View of Physical Memory," Brendan Dolan-Gavitt
 
 import os.path
+import volatility.obj as obj
 import volatility.plugins.taskmods as taskmods
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.constants as constants
@@ -303,6 +304,7 @@ class VADDump(VADInfo):
                 outfd.write("Unable to get process AS for {0}\n".format(task.UniqueProcessId))
                 continue
 
+            max_commit = obj.VolMagic(task_space).MM_MAX_COMMIT.v()
             offset = task_space.vtop(task.obj_offset)
 
             for vad in task.RealVadRoot.traverse():
@@ -321,7 +323,7 @@ class VADDump(VADInfo):
                     self._config.DUMP_DIR, "{0}.{1:x}.{2}-{3}.dmp".format(
                     task.ImageFileName, offset, vad_start, vad_end))
 
-                if (task.IsWow64 and vad.VadFlags.CommitCharge == 0x7ffffffffffff and 
+                if (task.IsWow64 and vad.CommitCharge == max_commit and 
                         vad.End > 0x7fffffff):
                     result = "Skipping Wow64 MM_MAX_COMMIT range"
                 else:
