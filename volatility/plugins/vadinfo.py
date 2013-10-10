@@ -28,6 +28,7 @@
 
 import os.path
 import volatility.obj as obj
+import volatility.utils as utils
 import volatility.plugins.taskmods as taskmods
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.constants as constants
@@ -166,6 +167,20 @@ class VADInfo(taskmods.DllList):
 class VADTree(VADInfo):
     """Walk the VAD tree and display in tree format"""
 
+    @staticmethod
+    def is_valid_profile(profile):
+        version = (profile.metadata.get('major', 0), 
+                   profile.metadata.get('minor', 0))
+
+        return (profile.metadata.get('os', '') == 'windows' and
+                version < (6, 2))
+
+    def calculate(self):
+        addr_space = utils.load_as(self._config)
+        if not self.is_valid_profile(addr_space.profile):
+            debug.error("This command does not support the selected profile.")
+        return VADInfo(self._config).calculate()
+
     def render_text(self, outfd, data):
         for task in data:
             outfd.write("*" * 72 + "\n")
@@ -208,6 +223,20 @@ class VADTree(VADInfo):
 
 class VADWalk(VADInfo):
     """Walk the VAD tree"""
+
+    @staticmethod
+    def is_valid_profile(profile):
+        version = (profile.metadata.get('major', 0), 
+                   profile.metadata.get('minor', 0))
+
+        return (profile.metadata.get('os', '') == 'windows' and
+                version < (6, 2))
+
+    def calculate(self):
+        addr_space = utils.load_as(self._config)
+        if not self.is_valid_profile(addr_space.profile):
+            debug.error("This command does not support the selected profile.")
+        return VADInfo(self._config).calculate()
 
     def render_text(self, outfd, data):
         for task in data:
