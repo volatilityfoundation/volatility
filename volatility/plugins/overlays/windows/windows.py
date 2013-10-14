@@ -54,6 +54,7 @@ windows_overlay = {
     'HibrProcPage': [0x0, ['VolatilityMagic', dict(value = 0x0)]],
     'HibrEntryCount': [0x0, ['VolatilityMagic', dict(value = 0x0)]],
     'MaxAddress': [0x0, ['VolatilityMaxAddress']],
+    'MM_MAX_COMMIT': [ 0x0, ['VolatilityMagic', dict(value = 0x7ffffffffffff)]],
     }],
 
     '_EPROCESS' : [ None, {
