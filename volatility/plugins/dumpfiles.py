@@ -834,6 +834,18 @@ class DumpFiles(common.AbstractWindowsCommand):
                                     continue
                                 file_object = vad.FileObject
                                 if file_object:
+
+                                    # Filter for specific FILE_OBJECTS based on user defined
+                                    # regular expression. (Performance optimization)
+                                    if self._config.REGEX:
+                                        name = None
+                                        if file_object.FileName:
+                                            name = str(file_object.file_name_with_device())
+                                        if not name:
+                                            continue
+                                        if not file_re.search(name):
+                                            continue
+
                                     vadfiles.append(file_object)
                             except AttributeError:
                                 pass
@@ -845,7 +857,21 @@ class DumpFiles(common.AbstractWindowsCommand):
                             otype = handle.get_object_type()
                             if otype == "File":
                                 file_obj = handle.dereference_as("_FILE_OBJECT")
-                                handlefiles.append(file_obj)
+
+                                if file_obj:
+
+                                    # Filter for specific FILE_OBJECTS based on user defined
+                                    # regular expression. (Performance Optimization)
+                                    if self._config.REGEX:
+                                        name = None
+                                        if file_obj.FileName:
+                                            name = str(file_obj.file_name_with_device())
+                                        if not name:
+                                            continue
+                                        if not file_re.search(name):
+                                            continue
+
+                                    handlefiles.append(file_obj)
 
                 # Append the lists of file objects
                 #allfiles = handlefiles + vadfiles
@@ -863,14 +889,6 @@ class DumpFiles(common.AbstractWindowsCommand):
 
                 if file_obj.FileName:
                     name = str(file_obj.file_name_with_device())
-
-                # Filter for specific FILE_OBJECTS based on user defined
-                # regular expression.
-                if self._config.REGEX:
-                    if not name:
-                        continue
-                    if not file_re.search(name):
-                        continue
 
                 # The SECTION_OBJECT_POINTERS structure is used by the memory
                 # manager and cache manager to store file-mapping and cache information
