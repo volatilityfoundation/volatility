@@ -522,20 +522,24 @@ class MFTParser(common.AbstractWindowsCommand):
         config.add_option('CHECK', short_option = 'C', default = False,
                           help = 'Only print entries w/o null timestamps',
                           action = "store_true")
+
+        config.add_option("ENTRYSIZE", short_option = "E", default = 1024,
+                          help = "MFT Entry Size",
+                          action = "store", type = "int")
     def calculate(self):
         address_space = utils.load_as(self._config, astype = 'physical')
         scanner = MFTScanner(needles = ['FILE', 'BAAD'])
         mft_entries = []
         print "Scanning for MFT entries and building directory, this can take a while"
         for offset in scanner.scan(address_space):
-            mft_buff = address_space.read(offset, 1024)
+            mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
             bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
             mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
                                offset = 0)
             next_attr = mft_entry.ResidentAttributes
             end = mft_buff.find("\xff\xff\xff\xff")
             if end == -1:
-                end = 1024
+                end = self._config.ENTRYSIZE
             attributes = []
             while next_attr != None and next_attr.obj_offset <= end:
                 try:
@@ -576,11 +580,11 @@ class MFTParser(common.AbstractWindowsCommand):
                         continue
                     next_attr = self.advance_one(next_off, mft_buff, end)
                 elif attr == "DATA":
+                    start = next_attr.obj_offset + next_attr.ContentOffset
+                    theend = min(start + next_attr.ContentSize, end)
                     if next_attr.Header.NonResidentFlag == 1:
                         thedata = "Non-Resident"
                     else:
-                        start = next_attr.obj_offset + next_attr.ContentOffset
-                        theend = min(start + next_attr.ContentSize, end)
                         try:
                             contents = mft_buff[start:theend]
                         except TypeError:
@@ -590,7 +594,11 @@ class MFTParser(common.AbstractWindowsCommand):
                         if len(thedata) == 0:
                             thedata = "(Empty)"
                     attributes.append((attr, thedata))
-                    next_attr = None 
+                    next_off = theend 
+                    if next_off == start: 
+                        next_attr = None
+                        continue
+                    next_attr = self.advance_one(next_off, mft_buff, end)
                 elif attr == "ATTRIBUTE_LIST":
                     if next_attr.Header.NonResidentFlag == 1:
                         attributes.append((attr, "Non-Resident"))
