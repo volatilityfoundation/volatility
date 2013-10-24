@@ -60,7 +60,6 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
        "Windows Internals, 5th Edition", Microsoft Press, 2009.
     """
     order = 60
-    cache = False
     pae = False
     checkname = 'AMD64ValidAS'
     paging_address_space = True

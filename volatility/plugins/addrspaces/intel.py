@@ -69,7 +69,6 @@ class IA32PagedMemory(paged.AbstractWritablePagedMemory):
        "Windows Internals, 5th Edition", Microsoft Press, 2009.
     """
     order = 70
-    cache = False
     pae = False
     paging_address_space = True
     checkname = 'IA32ValidAS'
