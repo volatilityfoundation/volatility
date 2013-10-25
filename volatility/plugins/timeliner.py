@@ -59,11 +59,10 @@ try:
 except ImportError:
     has_openpyxl = False
 
-class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassist.UserAssist):
+class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
     """ Creates a timeline from various artifacts in memory """
 
     def __init__(self, config, *args):  
-        evtlogs.EvtLogs.__init__(self, config, *args)
         config.remove_option("SAVE-EVT")
         userassist.UserAssist.__init__(self, config, *args)
         config.remove_option("HIVE-OFFSET")
@@ -181,9 +180,10 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, evtlogs.EvtLogs, userassi
                             sock.obj_offset)
                 yield line
 
-            stuff = evtlogs.EvtLogs.calculate(self)
+            evt = evtlogs.EvtLogs(self._config)
+            stuff = evt.calculate()
             for name, buf in stuff:
-                for fields in self.parse_evt_info(name, buf, rawtime = True):
+                for fields in evt.parse_evt_info(name, buf, rawtime = True):
                     if not body:
                         line = '{0} |[EVT LOG]|{1}|{2}|{3}|{4}|{5}|{6}|{7}\n'.format(
                             fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6], fields[7])
