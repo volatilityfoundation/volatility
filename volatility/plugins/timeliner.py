@@ -241,6 +241,7 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
         data = moddump.ModDump(self._config).calculate()
 
         for addr_space, procs, mod_base, mod_name in data:
+            mod_name = str(mod_name or '')
             space = tasks.find_space(addr_space, procs, mod_base)
             if space != None:
                 try:
@@ -327,6 +328,7 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
                 dlls = []
             for proc, ps_ad, base, basename in dlls:
                 if ps_ad.is_valid_address(base):
+                    basename = str(basename or '')
                     if basename == task.ImageFileName:
                         continue
                     try:
