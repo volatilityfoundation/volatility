@@ -84,10 +84,6 @@ windows_overlay = {
     'DirectoryTableBase' : [ None, ['unsigned long']],
     }],
 
-    '_HANDLE_TABLE_ENTRY' : [ None, {
-    'Object' : [ None, ['_EX_FAST_REF']],
-    }],
-
     '_IMAGE_SECTION_HEADER' : [ None, {
     'Name' : [ 0x0, ['String', dict(length = 8)]],
     }],
@@ -1129,6 +1125,22 @@ class VolMagicPoolTag(obj.VolatilityMagic):
         if self.protected:
             tag |= 0x80000000
         yield struct.pack("I", tag)
+
+class HandleTableEntryPreWin8(obj.ProfileModification):
+    """A modification for handle table entries before Windows 8"""
+
+    conditions = {"os": lambda x: x == "windows"}
+
+    def modification(self, profile):
+
+        version = (profile.metadata.get('major', 0), 
+                   profile.metadata.get('minor', 0))
+
+        if version <= (6, 1):
+            profile.merge_overlay({
+                '_HANDLE_TABLE_ENTRY' : [ None, {
+                'Object' : [ None, ['_EX_FAST_REF']],
+                }]})
 
 class PoolTagModification(obj.ProfileModification):
     """A modification for variable pool tags across Windows versions"""
