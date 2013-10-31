@@ -27,7 +27,6 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
         
     Note: Pages can be of any size
     """
-    cache = False
     checkname = "Intel"
 
     def __init__(self, base, config, dtb = 0, skip_as_check = False, *args, **kwargs):
@@ -44,12 +43,6 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
 
         self.as_assert(self.dtb != None, "No valid DTB found")
 
-        # The caching code must be in a separate function to allow the
-        # PAE code, which inherits us, to have its own code.
-        self.cache = config.CACHE_DTB
-        if self.cache:
-            self._cache_values()
-
         if not skip_as_check:
             volmag = obj.VolMagic(self)
             if hasattr(volmag, self.checkname):
@@ -60,12 +53,6 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
         # Reserved for future use
         #self.pagefile = config.PAGEFILE
         self.name = 'Kernel AS'
-
-    def _cache_values(self):
-        '''
-        We cache the top level tables to avoid having to 
-        look them up later.
-        '''
 
     def load_dtb(self):
         """Loads the DTB as quickly as possible from the config, then the base, then searching for it"""
@@ -96,9 +83,6 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
     def register_options(config):
         config.add_option("DTB", type = 'int', default = 0,
                           help = "DTB Address")
-
-        config.add_option("CACHE-DTB", action = "store_false", default = True,
-                          help = "Cache virtual to physical mappings")
 
     def vtop(self, addr):
         """Abstract function that converts virtual (paged) addresses to physical addresses"""

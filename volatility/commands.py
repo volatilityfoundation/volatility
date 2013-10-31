@@ -21,6 +21,8 @@
 import sys, textwrap
 import volatility.debug as debug
 import volatility.fmtspec as fmtspec
+import volatility.obj as obj
+import volatility.registry as registry
 import volatility.addrspace as addrspace
 
 class Command(object):
@@ -85,7 +87,14 @@ class Command(object):
 
     def execute(self):
         """ Executes the plugin command."""
-        ## Executing plugins is done in two stages - first we calculate
+        # Check we can support the plugins
+        profs = registry.get_plugin_classes(obj.Profile)
+        if self._config.PROFILE not in profs:
+            debug.error("Invalid profile " + self._config.PROFILE + " selected")
+        if not self.is_valid_profile(profs[self._config.PROFILE]()):
+            debug.error("This command does not support the profile " + self._config.PROFILE)
+
+        # # Executing plugins is done in two stages - first we calculate
         data = self.calculate()
 
         ## Then we render the result in some way based on the

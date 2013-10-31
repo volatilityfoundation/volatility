@@ -152,7 +152,6 @@ Options:
                         A URN location from which to load an address space
   -w, --write           Enable write support
   --dtb=DTB             DTB Address
-  --cache-dtb           Cache virtual to physical mappings
   --output=text         Output in this format (format support is module
                         specific)
   --output-file=OUTPUT_FILE

@@ -28,24 +28,11 @@ import volatility.plugins.addrspaces.paged as paged
 
 class ArmAddressSpace(paged.AbstractWritablePagedMemory):
     order = 800
-    cache = False
     pae = False
     paging_address_space = True
     checkname = 'ArmValidAS'
     minimum_size = 0x1000
     alignment_gcd = 0x1000
-
-    def _cache_values(self):
-        '''
-        buf = self.base.read(self.dtb, 0x1000)
-        if buf is None:
-            self.cache = False
-        else:
-            self.pde_cache = struct.unpack('<' + 'I' * 0x400, buf)
-    
-        '''
-        #print "skipping cache"
-        pass
 
     def read_long_phys(self, addr):
         '''

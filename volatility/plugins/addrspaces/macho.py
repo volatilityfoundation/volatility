@@ -143,7 +143,6 @@ class MachOAddressSpace(addrspace.AbstractRunBasedMemory):
     From there we can translate between incoming address requests to memory contents
     """
     order = 1
-    cache = False
     pae = True
     checkname = 'MachOValidAS'
 
