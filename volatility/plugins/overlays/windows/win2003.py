@@ -32,47 +32,6 @@ import volatility.plugins.overlays.windows.windows as windows
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.obj as obj
 
-class _MMVAD(windows._MMVAD):
-
-    @property
-    def Parent(self):
-        """
-        Return the Vad's parent node, being sure to chop off the 
-        lower 3 bits, because _MMADDRESS_NODE.u1.Parent is a 
-        packed union with _MMADDRESS_NODE.u1.Balanced. We do not
-        want the Balanced part of the value. 
-
-        Not chopping off these 3 bits is the reason why our vadtree
-        plugin didn't work since introduction of profiles other 
-        than Windows XP. 
-        """
-        return obj.Object("_MMADDRESS_NODE", vm = self.obj_vm, 
-                    offset = self.u1.Parent.v() & ~0x3, 
-                    parent = self.obj_parent)
-
-class _MMVAD_LONG(_MMVAD):
-    pass
-
-class Win2003MMVad(obj.ProfileModification):
-    before = ['WindowsOverlay', 'WindowsObjectClasses']
-
-    def check(self, profile):
-        m = profile.metadata
-        return (m.get('os', None) == 'windows' and
-                (m.get('major') > 5 or (m.get('major') == 5 and m.get('minor') >= 2)))
-
-    def modification(self, profile):
-        profile.object_classes.update({'_MMADDRESS_NODE': _MMVAD,
-                                       '_MMVAD_SHORT': _MMVAD,
-                                       '_MMVAD_LONG': _MMVAD_LONG})
-
-        overlay = {
-            '_EPROCESS': [ None, {
-                'RealVadRoot' : lambda x : x.VadRoot.BalancedRoot,
-                    }],
-                }
-        profile.merge_overlay(overlay)
-
 class Win2003x86Hiber(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',

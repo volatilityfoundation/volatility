@@ -95,65 +95,6 @@ class _LDR_DATA_TABLE_ENTRY(pe_vtypes._LDR_DATA_TABLE_ENTRY):
 
         return 0
 
-class _MM_AVL_NODE(vista._MMVAD):
-    """All nodes in the Vad tree are treated as _MM_AVL_NODE.
-
-    The Vad structures can be either _MMVAD_SHORT or _MMVAD. At the
-    base of each struct there is an _MM_AVL_NODE which contains the LeftChild
-    and RightChild members. In order to traverse the tree, we follow the
-    _MM_AVL_NODE and create the required _MMVAD type at each point.
-
-    In Windows 8 these behave the same as windows 7's _MMADDRESS_NODE.
-    """
-
-    ## The actual type depends on this tag value. Windows 8 does not have an
-    ## _MMVAD_LONG.
-    tag_map = {'Vadl': '_MMVAD',
-               'VadS': '_MMVAD_SHORT',
-               'Vad ': '_MMVAD',
-               'VadF': '_MMVAD_SHORT',
-               'Vadm': '_MMVAD',
-              }
-
-    @property
-    def Start(self):
-        """Get the starting virtual address"""
-        return self.Core.StartingVpn << 12
-
-    @property
-    def End(self):
-        """Get the ending virtual address"""
-        return ((self.Core.EndingVpn + 1) << 12) - 1
-
-    @property
-    def VadFlags(self):
-        return self.Core.u.VadFlags
-
-    @property
-    def CommitCharge(self):
-        """Return the commit charge"""
-        return self.Core.u1.VadFlags1.CommitCharge
-
-    @property
-    def ControlArea(self):
-        return self.Subsection.ControlArea
-
-    @property
-    def FileObject(self):
-        return self.Subsection.ControlArea.FilePointer.dereference_as("_FILE_OBJECT")
-
-    @property
-    def Length(self):
-        """Get the length of the VAD memory region"""
-        return self.End - self.Start 
-
-class _MMVAD_SHORT(vista._MMVAD):
-    
-    @property
-    def CommitCharge(self):
-        """Return the commit charge"""
-        return self.u1.VadFlags1.CommitCharge
-
 class _OBJECT_HEADER(win7._OBJECT_HEADER):
     """A class for object headers"""
 
@@ -324,7 +265,7 @@ class Win8x86SyscallVTypes(obj.ProfileModification):
         profile.vtypes.update(ssdt_vtypes.ssdt_vtypes_2003)
 
 class Win8ObjectClasses(obj.ProfileModification):
-    before = ["WindowsObjectClasses", "Win7ObjectClasses", "WinPEObjectClasses", "Win2003MMVad", "MalwarePspCid", "VistaMMVAD"]
+    before = ["WindowsObjectClasses", "Win7ObjectClasses", "WinPEObjectClasses", "MalwarePspCid"]
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
                   'minor': lambda x: x >= 2}
@@ -344,9 +285,6 @@ class Win8ObjectClasses(obj.ProfileModification):
                 "_HANDLE_TABLE": handletable,
                 "_OBJECT_HEADER": _OBJECT_HEADER,
                 #"_POOL_HEADER": _POOL_HEADER,
-                "_MM_AVL_NODE": _MM_AVL_NODE,
-                "_MMVAD": _MM_AVL_NODE,
-                "_MMVAD_SHORT": _MMVAD_SHORT,
                 "_PSP_CID_TABLE": pspcidtable,
                 })
 

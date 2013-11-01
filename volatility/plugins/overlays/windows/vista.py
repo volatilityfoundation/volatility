@@ -33,25 +33,6 @@ import windows
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.obj as obj
 
-class _MMVAD(windows._MMVAD):
-
-    @property
-    def Parent(self):
-        return obj.Object("_MMADDRESS_NODE", vm = self.obj_vm, 
-                    offset = self.u1.Parent.v() & ~0x3, 
-                    parent = self.obj_parent)
-
-    @property
-    def ControlArea(self):
-        return self.Subsection.ControlArea
-
-    @property
-    def FileObject(self):
-        return self.Subsection.ControlArea.FilePointer.dereference_as("_FILE_OBJECT")
-
-class _MMVAD_LONG(_MMVAD):
-    pass
-
 class _ETHREAD(windows._ETHREAD):
     """A class for Windows 7 ETHREAD objects"""
 
@@ -124,17 +105,14 @@ class Vistax64DTB(obj.ProfileModification):
         profile.merge_overlay(overlay)
 
 
-class VistaMMVAD(obj.ProfileModification):
-    before = ['WindowsOverlay', 'Win2003MMVad']
+class VistaObjectClasses(obj.ProfileModification):
+    before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x >= 6,
                   }
 
     def modification(self, profile):
-        profile.object_classes.update({'_MMVAD_SHORT': _MMVAD,
-                                       '_MMVAD_LONG' : _MMVAD_LONG,
-                                       '_MMVAD': _MMVAD,
-                                       '_ETHREAD'    : _ETHREAD, 
+        profile.object_classes.update({'_ETHREAD'    : _ETHREAD, 
                                        '_POOL_HEADER': _POOL_HEADER, 
                                         '_TOKEN': _TOKEN})
 

@@ -58,24 +58,6 @@ class Windows64Overlay(obj.ProfileModification):
                                     'KUSER_SHARED_DATA': [ 0x0, ['VolatilityMagic', dict(value = 0xFFFFF78000000000)]],
                                                            }
                                                     ]})
-        # This is the location of the MMVAD type which controls how to parse the
-        # node. It is located before the structure.
-        profile.merge_overlay({'_MMVAD_SHORT': [None, {
-                                    'Tag' : [-12, None],
-                                  }],
-                               '_MMVAD_LONG' : [None, {
-                                    'Tag' : [-12, None],
-                                  }],
-                               '_MMVAD' : [None, {
-                                    'Tag' : [-12, None],
-                                  }],
-                               '_MM_AVL_NODE' : [None, {
-                                    'Tag' : [-12, None],
-                                  }],
-                               '_MMADDRESS_NODE' : [None, {
-                                    'Tag' : [-12, None],
-                                  }]
-                               })
         profile.vtypes["_IMAGE_NT_HEADERS"] = profile.vtypes["_IMAGE_NT_HEADERS64"]
 
         profile.merge_overlay({'_DBGKD_GET_VERSION64' : [  None, {

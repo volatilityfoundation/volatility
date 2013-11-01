@@ -147,30 +147,6 @@ windows_overlay = {
     'UniqueProcess' : [ None, ['unsigned int']],
     'UniqueThread' : [ None, ['unsigned int']],
     }],
-
-    '_MMVAD_SHORT': [ None, {
-    # This is the location of the MMVAD type which controls how to parse the
-    # node. It is located before the structure.
-    'Tag': [-4 , ['String', dict(length = 4)]],
-    }],
-
-    '_MMVAD_LONG': [ None, {
-    # This is the location of the MMVAD type which controls how to parse the
-    # node. It is located before the structure.
-    'Tag': [-4 , ['String', dict(length = 4)]],
-    }],
-
-    '_MMVAD': [ None, { 
-    'Tag': [-4 , ['String', dict(length = 4)]],
-    }],
-
-    '_MMADDRESS_NODE': [ None, {
-    'Tag': [ -4, ['String', dict(length = 4)]], 
-    }], 
- 
-    '_MM_AVL_NODE': [ None, {
-    'Tag': [ -4, ['String', dict(length = 4)]], 
-    }], 
 }
 
 class ExecutiveObjectMixin(object):
@@ -653,102 +629,6 @@ class _FILE_OBJECT(obj.CType, ExecutiveObjectMixin):
     def is_valid(self):
         return obj.CType.is_valid(self) and self.FileName.v()
 
-class VadTraverser(obj.CType):
-    """The windows Vad tree is basically the same in all versions of windows,
-    but the exact name of the stucts vary with version. This is the base class
-    for all Vad traversor.
-    """
-
-    ## The actual type depends on this tag value.
-    tag_map = {'Vadl': '_MMVAD_LONG',
-               'VadS': '_MMVAD_SHORT',
-               'Vad ': '_MMVAD',
-               'VadF': '_MMVAD_SHORT',
-               'Vadm': '_MMVAD_LONG',
-              }
-
-    def is_valid(self):
-        return (obj.CType.is_valid(self) and
-                self.Start < obj.VolMagic(self.obj_vm).MaxAddress.v() and
-                self.End < (obj.VolMagic(self.obj_vm).MaxAddress.v() << 12))
-
-    def traverse(self, visited = None, depth = 0):
-        """ Traverse the VAD tree by generating all the left items,
-        then the right items.
-
-        We try to be tolerant of cycles by storing all offsets visited.
-        """
-
-        if depth > 100:
-            raise RuntimeError("Vad tree too deep - something went wrong!")
-
-        if visited == None:
-            visited = set()
-
-        ## We try to prevent loops here
-        if self.obj_offset in visited:
-            return
-
-        #self.obj_context['depth'] = depth
-
-        # Find out which Vad type we need to be:
-        if str(self.Tag) in self.tag_map:
-            yield self.cast(self.tag_map[str(self.Tag)])
-
-        # This tag is valid for the Root.
-        elif depth and str(self.Tag) != "":
-            return
-
-        for c in self.LeftChild.traverse(visited = visited, depth = depth + 1):
-            visited.add(self.obj_offset)
-            yield c
-
-        for c in self.RightChild.traverse(visited = visited, depth = depth + 1):
-            visited.add(self.obj_offset)
-            yield c
-
-class _MMVAD(VadTraverser):
-
-    @property
-    def Parent(self):
-        """Returns the Parent of the MMVAD"""
-        return self.m('Parent').dereference()
-
-    @property
-    def ControlArea(self):
-        """Returns the ControlArea of the MMVAD"""
-        return self.m('ControlArea')
-
-    @property
-    def FileObject(self):
-        """Returns the FilePointer of the ControlArea of the MMVAD"""
-        return self.ControlArea.FilePointer.dereference()
-
-    @property
-    def Start(self):
-        """Get the starting virtual address"""
-        return self.StartingVpn << 12
-
-    @property
-    def End(self):
-        """Get the ending virtual address"""
-        return ((self.EndingVpn + 1) << 12) - 1
-
-    @property
-    def Length(self):
-        """Get the length of the VAD memory region"""
-        return ((self.EndingVpn + 1) << 12) - self.Start 
-
-    @property
-    def VadFlags(self):
-        """Return the primary vad flags"""
-        return self.u.VadFlags 
-
-    @property
-    def CommitCharge(self):
-        """Return the commit charge"""
-        return self.VadFlags.CommitCharge
-
 class _EX_FAST_REF(obj.CType):
 
     MAX_FAST_REF = 7
@@ -925,19 +805,6 @@ class _CMHIVE(obj.CType):
     def is_valid(self):
         return obj.CType.is_valid(self) and self.Hive.Signature == 0xbee0bee0
 
-class _MMVAD_FLAGS(obj.CType):
-    """This is for _MMVAD_SHORT.u.VadFlags"""
-    def __str__(self):
-        return ", ".join(["%s: %s" % (name, self.m(name)) for name in sorted(self.members.keys()) if self.m(name) != 0])
-
-class _MMVAD_FLAGS2(_MMVAD_FLAGS):
-    """This is for _MMVAD_LONG.u2.VadFlags2"""
-    pass
-
-class _MMSECTION_FLAGS(_MMVAD_FLAGS):
-    """This is for _CONTROL_AREA.u.Flags"""
-    pass
-
 class _POOL_HEADER(obj.CType):
     """A class for pool headers"""
 
@@ -1083,9 +950,6 @@ class WindowsObjectClasses(obj.ProfileModification):
             '_HANDLE_TABLE': _HANDLE_TABLE,
             '_OBJECT_HEADER': _OBJECT_HEADER,
             '_FILE_OBJECT': _FILE_OBJECT,
-            '_MMVAD': _MMVAD,
-            '_MMVAD_SHORT': _MMVAD,
-            '_MMVAD_LONG': _MMVAD,
             '_EX_FAST_REF': _EX_FAST_REF,
             'ThreadCreateTimeStamp': ThreadCreateTimeStamp,
             'IpAddress': basic.IpAddress,
@@ -1099,9 +963,6 @@ class WindowsObjectClasses(obj.ProfileModification):
             '_IMAGE_NT_HEADERS': _IMAGE_NT_HEADERS,
             '_IMAGE_SECTION_HEADER': _IMAGE_SECTION_HEADER,
             '_CM_KEY_BODY': _CM_KEY_BODY,
-            '_MMVAD_FLAGS': _MMVAD_FLAGS,
-            '_MMVAD_FLAGS2': _MMVAD_FLAGS2,
-            '_MMSECTION_FLAGS': _MMSECTION_FLAGS,
             '_TOKEN': _TOKEN,
             '_POOL_HEADER': _POOL_HEADER,
             '_OBJECT_SYMBOLIC_LINK': _OBJECT_SYMBOLIC_LINK,

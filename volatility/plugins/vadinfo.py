@@ -93,7 +93,7 @@ class VADInfo(taskmods.DllList):
         for task in data:
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
-            for vad in task.RealVadRoot.traverse():
+            for vad in task.VadRoot.traverse():
                 if vad == None:
                     outfd.write("Error: {0}".format(vad))
                 else:
@@ -167,20 +167,6 @@ class VADInfo(taskmods.DllList):
 class VADTree(VADInfo):
     """Walk the VAD tree and display in tree format"""
 
-    @staticmethod
-    def is_valid_profile(profile):
-        version = (profile.metadata.get('major', 0), 
-                   profile.metadata.get('minor', 0))
-
-        return (profile.metadata.get('os', '') == 'windows' and
-                version < (6, 2))
-
-    def calculate(self):
-        addr_space = utils.load_as(self._config)
-        if not self.is_valid_profile(addr_space.profile):
-            debug.error("This command does not support the selected profile.")
-        return VADInfo(self._config).calculate()
-
     def render_text(self, outfd, data):
         for task in data:
             outfd.write("*" * 72 + "\n")
@@ -192,9 +178,9 @@ class VADTree(VADInfo):
                                ("-", "1"),
                                ("End", "[addrpad]")
                               ])
-            for vad in task.RealVadRoot.traverse():
+            for vad in task.VadRoot.traverse():
                 if vad:
-                    level = levels.get(vad.Subsection.Parent.obj_offset, -1) + 1
+                    level = levels.get(vad.Parent.obj_offset, -1) + 1
                     levels[vad.obj_offset] = level
                     self.table_row(outfd,
                                    " " * level,
@@ -208,7 +194,7 @@ class VADTree(VADInfo):
             outfd.write("/* Pid: {0:6} */\n".format(task.UniqueProcessId))
             outfd.write("digraph processtree {\n")
             outfd.write("graph [rankdir = \"TB\"];\n")
-            for vad in task.RealVadRoot.traverse():
+            for vad in task.VadRoot.traverse():
                 if vad:
                     if vad.Parent:
                         outfd.write("vad_{0:08x} -> vad_{1:08x}\n".format(vad.Parent.obj_offset or 0, vad.obj_offset))
@@ -224,20 +210,6 @@ class VADTree(VADInfo):
 class VADWalk(VADInfo):
     """Walk the VAD tree"""
 
-    @staticmethod
-    def is_valid_profile(profile):
-        version = (profile.metadata.get('major', 0), 
-                   profile.metadata.get('minor', 0))
-
-        return (profile.metadata.get('os', '') == 'windows' and
-                version < (6, 2))
-
-    def calculate(self):
-        addr_space = utils.load_as(self._config)
-        if not self.is_valid_profile(addr_space.profile):
-            debug.error("This command does not support the selected profile.")
-        return VADInfo(self._config).calculate()
-
     def render_text(self, outfd, data):
         for task in data:
             outfd.write("*" * 72 + "\n")
@@ -251,7 +223,7 @@ class VADWalk(VADInfo):
                                ("End", "[addrpad]"),
                                ("Tag", "4"),
                                ])
-            for vad in task.RealVadRoot.traverse():
+            for vad in task.VadRoot.traverse():
                 # Ignore Vads with bad tags (which we explicitly include as None)
                 if vad:
                     self.table_row(outfd,
@@ -336,7 +308,7 @@ class VADDump(VADInfo):
             max_commit = obj.VolMagic(task_space).MM_MAX_COMMIT.v()
             offset = task_space.vtop(task.obj_offset)
 
-            for vad in task.RealVadRoot.traverse():
+            for vad in task.VadRoot.traverse():
                 if not vad.is_valid():
                     continue
 

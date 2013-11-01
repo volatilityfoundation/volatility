@@ -45,10 +45,6 @@ class XPOverlay(obj.ProfileModification):
                         'HibrProcPage' : [ None, ['VolatilityMagic', dict(value = 0x2)]],
                         'HibrEntryCount' : [ None, ['VolatilityMagic', dict(value = 0xff)]],
                                                 }],
-                   '_EPROCESS'        : [ None, {
-                        'VadRoot'      : [ None, ['pointer', ['_MMVAD']]],
-                        'RealVadRoot' : lambda x : x.VadRoot.dereference(),
-                                                }]
                       }
         profile.merge_overlay(overlay)
 
