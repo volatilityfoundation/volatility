@@ -126,7 +126,7 @@ class VolatilityMacIntelValidAS(obj.VolatilityMagic):
 
         string = self.obj_vm.read(version_addr, 60)
 
-        if string.startswith("Darwin"):
+        if string and string.startswith("Darwin"):
             self._set_profile_metadata(string)
             yield True
         else:
