@@ -76,8 +76,16 @@ def is_64bit_capable(addr_space):
     @returns True if 64-bit capable. 
     """
     x86_64_flag_addr = addr_space.profile.get_symbol("_x86_64_flag")
-    x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = addr_space)
-    return x86_64_flag == 1
+    
+    # this symbol no longer exists in 10.9 / Mavericks
+    # this is most likely b/c all Macs are 64 bit by 10.9
+    if x86_64_flag_addr:
+        x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = addr_space)
+        ret = x86_64_flag == 1
+    else:
+        ret = True
+
+    return ret
 
 def get_kernel_addrs(obj_ref):
     import volatility.plugins.mac.lsmod as lsmod
