@@ -50,6 +50,8 @@ class _HANDLE_TABLE32(windows._HANDLE_TABLE):
 class _HANDLE_TABLE64(_HANDLE_TABLE32):
     """A class for 64-bit Windows 8 / 2012 handle tables"""   
 
+    DECODE_MAGIC = 0x13
+
     def decode_pointer(self, value):
         """Decode a pointer like SAR. Since Python does not 
         have an operator for shift arithmetic, we implement
@@ -57,7 +59,7 @@ class _HANDLE_TABLE64(_HANDLE_TABLE32):
         """
 
         value = value & 0xFFFFFFFFFFFFFFF8
-        value = value >> 0x13
+        value = value >> self.DECODE_MAGIC
         if (value & 1 << 44):
             return value | 0xFFFFF00000000000
         else:
@@ -78,6 +80,10 @@ class _HANDLE_TABLE64(_HANDLE_TABLE32):
                           parent = entry, 
                           handle_value = handle_value)
 
+class _HANDLE_TABLE_81R264(_HANDLE_TABLE64):
+    """A class for 64-bit Windows 8.1 / 2012 R2 handle tables"""   
+    DECODE_MAGIC = 0x10
+
 class _PSP_CID_TABLE32(_HANDLE_TABLE32):
     """PspCidTable for 32-bit Windows 8"""
 
@@ -96,7 +102,7 @@ class _LDR_DATA_TABLE_ENTRY(pe_vtypes._LDR_DATA_TABLE_ENTRY):
         return 0
 
 class _OBJECT_HEADER(win7._OBJECT_HEADER):
-    """A class for object headers"""
+    """A class for object headers on Win 8 / Server 2012"""
 
     # This specifies the order the headers are found below the _OBJECT_HEADER
     # Note the AuditInfo field which is new as of Windows 8 / 2012
@@ -179,13 +185,63 @@ class _OBJECT_HEADER(win7._OBJECT_HEADER):
 
         return True
 
+class _OBJECT_HEADER_81R2(_OBJECT_HEADER):
+    """A class for object headers on Win 8.1 / Server 2012 R2"""
+
+    type_map = { 2: 'Type',
+                3: 'Directory',
+                4: 'SymbolicLink',
+                5: 'Token',
+                6: 'Job',
+                7: 'Process',
+                8: 'Thread',
+                9: 'UserApcReserve',
+                10: 'IoCompletionReserve',
+                11: 'DebugObject',
+                12: 'Event',
+                13: 'Mutant',
+                14: 'Callback',
+                15: 'Semaphore',
+                16: 'Timer',
+                17: 'IRTimer',
+                18: 'Profile',
+                19: 'KeyedEvent',
+                20: 'WindowStation',
+                21: 'Desktop',
+                22: 'Composition',
+                23: 'TpWorkerFactory',
+                24: 'Adapter',
+                25: 'Controller',
+                26: 'Device',
+                27: 'Driver',
+                28: 'IoCompletion',
+                29: 'WaitCompletionPacket',
+                30: 'File',
+                31: 'TmTm',
+                32: 'TmTx',
+                33: 'TmRm',
+                34: 'TmEn',
+                35: 'Section',
+                36: 'Session',
+                37: 'Key',
+                38: 'ALPC Port',
+                39: 'PowerRequest',
+                40: 'WmiGuid',
+                41: 'EtwRegistration',
+                42: 'EtwConsumer',
+                43: 'FilterConnectionPort',
+                44: 'FilterCommunicationPort',
+                45: 'PcwObject',
+                46: 'DxgkSharedResource',
+            }
+
 class Win8KDBG(windows.AbstractKDBGMod):
     """The Windows 8 / 2012 KDBG signatures"""
 
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 2}
+                  'minor': lambda x: x >= 2}
 
     kdbgsize = 0x360
 
@@ -208,7 +264,7 @@ class Win8x86DTB(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 2,
+                  'minor': lambda x: x >= 2,
                   'memory_model': lambda x: x == '32bit',
                   }
 
@@ -224,7 +280,7 @@ class Win8x64MaxCommit(obj.ProfileModification):
     before = ["Windows64Overlay"]
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 2,
+                  'minor': lambda x: x >= 2,
                   'memory_model': lambda x: x == '64bit',
                   }
 
@@ -240,7 +296,7 @@ class Win8x64DTB(obj.ProfileModification):
     before = ['WindowsOverlay', 'Windows64Overlay']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 2,
+                  'minor': lambda x: x >= 2,
                   'memory_model': lambda x: x == '64bit',
                   }
 
@@ -257,7 +313,7 @@ class Win8x86SyscallVTypes(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows',
                   'memory_model': lambda x: x == '32bit',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 2}
+                  'minor': lambda x: x >= 2}
 
     def modification(self, profile):
         # Same as 2003, which basically just means there are
@@ -272,19 +328,29 @@ class Win8ObjectClasses(obj.ProfileModification):
 
     def modification(self, profile):
 
-        if profile.metadata.get("memory_model", "32bit") == "32bit":
+        memory_model = profile.metadata.get("memory_model", "32bit") 
+        major = profile.metadata.get("major", 0)
+        minor = profile.metadata.get("minor", 0)
+
+        if memory_model == '32bit':
             handletable = _HANDLE_TABLE32
             pspcidtable = _PSP_CID_TABLE32
         else:
-            handletable = _HANDLE_TABLE64
+            if (major, minor) == (6, 3):
+                handletable = _HANDLE_TABLE_81R264
+            else:
+                handletable = _HANDLE_TABLE64
             pspcidtable = _PSP_CID_TABLE64
 
+        if (major, minor) == (6, 3):
+            objheader = _OBJECT_HEADER_81R2
+        else:
+            objheader = _OBJECT_HEADER
+
         profile.object_classes.update({
-                #"_EPROCESS": _EPROCESS, 
                 "_LDR_DATA_TABLE_ENTRY": _LDR_DATA_TABLE_ENTRY, 
                 "_HANDLE_TABLE": handletable,
-                "_OBJECT_HEADER": _OBJECT_HEADER,
-                #"_POOL_HEADER": _POOL_HEADER,
+                "_OBJECT_HEADER": objheader,
                 "_PSP_CID_TABLE": pspcidtable,
                 })
 
@@ -297,9 +363,22 @@ class Win8SP0x64(obj.Profile):
     _md_build = 9200
     _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp0_x64_vtypes'
 
+class Win8SP1x64(obj.Profile):
+    """ A Profile for Windows 8.1 x64 """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 3
+    _md_build = 9600
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp1_x64_vtypes'
+
 class Win2012SP0x64(Win8SP0x64):
     """ A Profile for Windows Server 2012 SP0 x64 """
     _md_build = 9201 ##FIXME: fake build number to indicate server 2012 vs windows 8
+
+class Win2012R2x64(Win8SP1x64):
+    """ A Profile for Windows Server 2012 R2 x64 """
+    _md_build = 9601 ##FIXME: fake build number to indicate server 2012 R2 vs windows 8.1
 
 class Win8SP0x86(obj.Profile):
     """ A Profile for Windows 8 SP0 x86 """
@@ -309,3 +388,12 @@ class Win8SP0x86(obj.Profile):
     _md_minor = 2
     _md_build = 9200
     _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp0_x86_vtypes'
+
+class Win8SP1x86(obj.Profile):
+    """ A Profile for Windows 8 SP1 x86 """
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 3
+    _md_build = 9600
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp1_x86_vtypes'

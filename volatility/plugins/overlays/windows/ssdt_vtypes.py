@@ -182,3 +182,17 @@ class Win8SP0x86Syscalls(AbstractSyscalls):
                   'memory_model': lambda x: x == '32bit',
                   'major': lambda x : x == 6,
                   'minor': lambda x : x == 2}
+
+class Win8SP1x86Syscalls(AbstractSyscalls):
+    syscall_module = 'volatility.plugins.overlays.windows.win8_sp1_x86_syscalls'
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 3}
+
+class Win8SP1x64Syscalls(AbstractSyscalls):
+    syscall_module = 'volatility.plugins.overlays.windows.win8_sp1_x64_syscalls'
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 3}

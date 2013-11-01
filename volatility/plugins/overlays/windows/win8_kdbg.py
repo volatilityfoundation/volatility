@@ -92,7 +92,11 @@ class VolatilityKDBG(obj.VolatilityMagic):
                     # nt!KdCopyDataBlock is about 100 bytes, we don't want to read
                     # too little and truncate the function, but too much will reach
                     # into other function's space
-                    code = addr_space.read(full_addr, 100)
+                    code = addr_space.read(full_addr, 300)
+
+                    # potentially we crossed a boundary into swapped or unallocated space
+                    if code == None:
+                        continue
 
                     if (code.find(struct.pack("I", kdbg_size / alignment)) == -1 or 
                                     code.find(size_str) == -1):
@@ -137,8 +141,9 @@ class VolatilityKDBG(obj.VolatilityMagic):
                             wait_never = obj.Object("unsigned long long", 
                                                     offset = offset, 
                                                     vm = addr_space)
-                        # mov r11, cs:KiWaitAlways
-                        elif (not wait_always and op.mnemonic == "MOV" and 
+                        # mov r11, cs:KiWaitAlways (Win 8 x64)
+                        # xor rdx, cs:KiWaitAlways (Win 8.1 x64)
+                        elif (not wait_always and op.mnemonic in ["MOV", "XOR"] and 
                                     op.operands[0].type == "Register" and 
                                     op.operands[0].size == 64 and 
                                     op.operands[1].type == "AbsoluteMemory" and 
@@ -147,6 +152,8 @@ class VolatilityKDBG(obj.VolatilityMagic):
                             wait_always = obj.Object("unsigned long long", 
                                                     offset = offset,
                                                     vm = addr_space)
+                            break
+                        elif op.mnemonic == "RET":
                             break
 
                     # check if we've found all the required offsets 
@@ -181,7 +188,7 @@ class Win8x64VolatilityKDBG(obj.ProfileModification):
     before = ['WindowsOverlay', 'WindowsObjectClasses']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 2, 
+                  'minor': lambda x: x >= 2, 
                   'memory_model': lambda x: x == "64bit"}
     
     def modification(self, profile):

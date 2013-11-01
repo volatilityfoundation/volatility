@@ -106,7 +106,7 @@ class Vistax64DTB(obj.ProfileModification):
 
 
 class VistaObjectClasses(obj.ProfileModification):
-    before = ['WindowsOverlay']
+    before = ['WindowsOverlay', 'WindowsObjectClasses']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x >= 6,
                   }

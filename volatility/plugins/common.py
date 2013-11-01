@@ -64,7 +64,7 @@ class AbstractScanCommand(AbstractWindowsCommand):
 
     def scan_results(self, addr_space):
         use_top_down = (addr_space.profile.metadata.get("major", 0) == 6 
-                        and addr_space.profile.metadata.get("minor") == 2)
+                        and addr_space.profile.metadata.get("minor") >= 2)
 
         multiscan = poolscan.MultiScanInterface(config = self._config, 
                                 scanners = self.scanners,
