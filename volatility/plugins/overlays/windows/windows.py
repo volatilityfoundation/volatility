@@ -679,6 +679,12 @@ class VolatilityMaxAddress(obj.VolatilityMagic):
 class VolatilityKDBG(obj.VolatilityMagic):
     """A Scanner for KDBG data within an address space"""
 
+    def v(self):
+        if self.value is None:
+            return self.get_best_suggestion()
+        else:
+            return obj.Object("_KDDEBUGGER_DATA64", offset = self.value, vm = self.obj_vm)
+
     def generate_suggestions(self):
         """Generates a list of possible KDBG structure locations"""
         scanner = kdbg.KDBGScanner(needles = [obj.VolMagic(self.obj_vm).KDBGHeader.v()])
