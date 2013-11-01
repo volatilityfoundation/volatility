@@ -21,7 +21,6 @@
 
 import volatility.plugins.gui.sessions as sessions
 import volatility.debug as debug
-import volatility.utils as utils
 
 class UserHandles(sessions.Sessions):
     """Dump the USER handle tables"""
@@ -51,10 +50,6 @@ class UserHandles(sessions.Sessions):
                 version < (6, 2))
 
     def render_text(self, outfd, data):
-
-        space = utils.load_as(self._config, astype = 'physical')
-        if not is_valid_profile(space.profile):
-            debug.error("This command does not support the selected profile.")
 
         for session in data:
             shared_info = session.find_shared_info()

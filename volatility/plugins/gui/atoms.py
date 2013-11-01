@@ -20,8 +20,6 @@
 #
 
 import volatility.obj as obj
-import volatility.debug as debug
-import volatility.utils as utils
 import volatility.poolscan as poolscan
 import volatility.plugins.common as common
 import volatility.plugins.gui.windowstations as windowstations
@@ -124,11 +122,6 @@ class Atoms(common.AbstractWindowsCommand):
                 version < (6, 2))
 
     def calculate(self):
-        addr_space = utils.load_as(self._config)
-        
-        if not self.is_valid_profile(addr_space.profile):
-            debug.error("This command does not support the selected profile.")
-
         seen = []
 
         # Find the atom tables that belong to each window station 

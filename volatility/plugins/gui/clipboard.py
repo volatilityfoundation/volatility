@@ -41,9 +41,6 @@ class Clipboard(common.AbstractWindowsCommand, sessions.SessionsMixin):
     def calculate(self):
         kernel_space = utils.load_as(self._config)
 
-        if not self.is_valid_profile(kernel_space.profile):
-            debug.error("This command does not support the selected profile.")
-
         # Dictionary of MM_SESSION_SPACEs by ID
         sesses = dict((int(session.SessionId), session)
             for session in self.session_spaces(kernel_space)

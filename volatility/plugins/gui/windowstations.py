@@ -61,9 +61,6 @@ class WndScan(common.AbstractScanCommand, sessions.SessionsMixin):
     def calculate(self):
         addr_space = utils.load_as(self._config)
 
-        if not self.is_valid_profile(addr_space.profile):
-            debug.error("This command does not support the selected profile.")
-
         seen = []
 
         for wind in self.scan_results(addr_space):

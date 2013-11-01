@@ -19,8 +19,6 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import volatility.utils as utils
-import volatility.debug as debug
 import volatility.plugins.gui.sessions as sessions
 
 class EventHooks(sessions.Sessions):
@@ -35,11 +33,6 @@ class EventHooks(sessions.Sessions):
                 version < (6, 2))
 
     def render_text(self, outfd, data):
-
-        space = utils.load_as(self._config, astype = 'physical')
-        
-        if not self.is_valid_profile(space.profile):
-            debug.error("This command does not support the selected profile.")
 
         for session in data:
             shared_info = session.find_shared_info()

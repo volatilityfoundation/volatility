@@ -39,9 +39,6 @@ class Gahti(sessions.Sessions):
 
         profile = utils.load_as(self._config).profile
 
-        if not self.is_valid_profile(profile):
-            debug.error("This command does not support the selected profile.")
-
         # Get the OS version being analyzed 
         version = (profile.metadata.get('major', 0),
                    profile.metadata.get('minor', 0))

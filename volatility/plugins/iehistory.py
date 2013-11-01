@@ -90,14 +90,14 @@ class IEHistory(taskmods.DllList):
 
     @staticmethod
     def is_valid_profile(profile):
-        return not (profile.metadata.get('major', 0) == 6 
-                and profile.metadata.get('minor', 0) == 2)
+        version = (profile.metadata.get('major', 0), 
+                  profile.metadata.get('minor', 0))
+
+        return (profile.metadata.get('os', 'unknown') == 'windows' 
+                and version < (6, 2))
 
     def calculate(self):
         kernel_space = utils.load_as(self._config)
-        
-        if not self.is_valid_profile(kernel_space.profile):
-            debug.error("The IEHistory plugin does not run on Win 8 / Server 2012")
 
         ## Select the tags to scan for. Always find visited URLs,
         ## but make freed and redirected records optional. 

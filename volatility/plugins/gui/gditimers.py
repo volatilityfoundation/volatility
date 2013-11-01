@@ -21,7 +21,6 @@
 
 import volatility.plugins.common as common
 import volatility.utils as utils
-import volatility.debug as debug
 import volatility.plugins.gui.sessions as sessions
 
 class GDITimers(common.AbstractWindowsCommand, sessions.SessionsMixin):
@@ -37,9 +36,6 @@ class GDITimers(common.AbstractWindowsCommand, sessions.SessionsMixin):
 
     def calculate(self):
         kernel_as = utils.load_as(self._config)
-
-        if not self.is_valid_profile(kernel_as.profile):
-            debug.error("This command does not support the selected profile.")
 
         for session in self.session_spaces(kernel_as):
 
