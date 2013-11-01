@@ -138,6 +138,11 @@ class VadTagModification(obj.ProfileModification):
                 '_MM_AVL_NODE': [ None, {
                     'Tag': [offset , ['String', dict(length = 4)]],
                 }]})
+        elif version == (6, 3):
+            overlay.update({
+                '_RTL_BALANCED_NODE': [ None, {
+                    'Tag': [offset , ['String', dict(length = 4)]],
+                }]})
 
         profile.merge_overlay(overlay)
 
@@ -391,4 +396,125 @@ class Win8Vad(obj.ProfileModification):
             '_MMVAD_SHORT': _MMVAD_SHORT_WIN8,
             '_MM_AVL_TABLE': _MM_AVL_TABLE_WIN8,
             '_MM_AVL_NODE': _MM_AVL_NODE,
+            })
+
+#----------------------------------------------------------------------
+# Windows 8.1 and Server 2012 R2
+#----------------------------------------------------------------------
+
+class _RTL_AVL_TREE(obj.CType):
+    def traverse(self):
+        for x in self.Root.traverse():
+            yield x
+
+class _RTL_BALANCED_NODE(VadTraverser):
+
+    ## The actual type depends on this tag value.
+    tag_map = {'Vadl': '_MMVAD',
+               'VadS': '_MMVAD_SHORT',
+               'Vad ': '_MMVAD',
+               'VadF': '_MMVAD_SHORT',
+               'Vadm': '_MMVAD',
+              }
+
+    @property
+    def LeftChild(self):
+        return self.Left
+
+    @property 
+    def RightChild(self):
+        return self.Right
+
+class _MMVAD_SHORT_WIN81(_RTL_BALANCED_NODE):
+
+    @property
+    def Parent(self):
+        return obj.Object("_RTL_BALANCED_NODE", 
+                    vm = self.obj_vm, 
+                    offset = self.VadNode.ParentValue.v() & ~0x3, 
+                    parent = self.obj_parent)
+
+    @property
+    def Start(self):
+        return self.StartingVpn << 12
+
+    @property
+    def End(self):
+        return ((self.EndingVpn + 1) << 12) - 1
+
+    @property
+    def VadFlags(self):
+        return self.u.VadFlags
+
+    @property
+    def CommitCharge(self):
+        return self.u1.VadFlags1.CommitCharge
+
+    @property
+    def Length(self):
+        return self.End - self.Start 
+
+    @property
+    def LeftChild(self):
+        return self.VadNode.Left
+
+    @property
+    def RightChild(self):
+        return self.VadNode.Right
+
+class _MMVAD_WIN81(_MMVAD_SHORT_WIN81):
+
+    @property
+    def Parent(self):
+        return self.Core.Parent
+
+    @property
+    def Start(self):
+        return self.Core.Start
+    
+    @property
+    def End(self):
+        return self.Core.End
+
+    @property
+    def VadFlags(self):
+        return self.Core.VadFlags
+    
+    @property
+    def CommitCharge(self):
+        return self.Core.CommitCharge
+
+    @property
+    def ControlArea(self):
+        return self.Subsection.ControlArea
+
+    @property
+    def FileObject(self):
+        return self.Subsection.ControlArea.FilePointer.dereference_as("_FILE_OBJECT")
+
+    @property
+    def Length(self):
+        return self.End - self.Start 
+
+    @property
+    def LeftChild(self):
+        return self.Core.LeftChild
+
+    @property
+    def RightChild(self):
+        return self.Core.RightChild
+
+class Win81Vad(obj.ProfileModification):
+
+    before = ["WindowsOverlay"]
+    conditions = {"os": lambda x: x == "windows", 
+                  "major": lambda x: x == 6, 
+                  "minor": lambda x: x == 3}
+
+    def modification(self, profile):
+        profile.object_classes.update({
+            '_MMVAD': _MMVAD_WIN81,
+            '_MMVAD_SHORT': _MMVAD_SHORT_WIN81,
+            '_RTL_AVL_TREE': _RTL_AVL_TREE,
+            '_RTL_BALANCED_NODE': _RTL_BALANCED_NODE,
             })
