@@ -345,12 +345,7 @@ class volshell(common.AbstractWindowsCommand):
 
             if isinstance(objct, str):
                 size = profile.get_obj_size(objct)
-                membs = []
-                for m in profile.vtypes[objct][1]:
-                    try:
-                        membs.append((profile.get_obj_offset(objct, m), m, profile.vtypes[objct][1][m][1]))
-                    except TypeError:
-                        pass
+                membs = [ (profile.get_obj_offset(objct, m), m, profile.vtypes[objct][1][m][1]) for m in profile.vtypes[objct][1] ]
                 print repr(objct), "({0} bytes)".format(size)
                 for o, m, t in sorted(membs):
                     print "{0:6}: {1:30} {2}".format(hex(o), m, t)
