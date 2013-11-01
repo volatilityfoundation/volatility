@@ -42,7 +42,7 @@ class mac_netstat(lsof.mac_lsof):
                                   ("Process", "24")])
         
         for proc, i, fd, _path in data:
-            if str(fd.f_fglob.fg_type or '') == 'DTYPE_SOCKET':
+            if fd.f_fglob.fg_type == 'DTYPE_SOCKET':
                 socket = fd.f_fglob.fg_data.dereference_as("socket") 
                 family = socket.family
     

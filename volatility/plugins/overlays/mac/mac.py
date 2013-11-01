@@ -164,6 +164,19 @@ class vnode(obj.CType):
                 ret = "/" + ret
 
         return ret
+
+class fileglob(obj.CType):
+    
+    @property
+    def fg_type(self):
+        ret = self.members.get("fg_type")
+        if ret:
+            ret = self.m("fg_type")
+        else:    
+            ret = self.fg_ops.fo_type
+
+        ret = str(ret)
+        return ret
         
 class proc(obj.CType):   
     @property
@@ -970,6 +983,7 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc'  : proc,
+            'fileglob' : fileglob,
             'vnode' : vnode,
             'socket' : socket,
             'zone' : zone,
