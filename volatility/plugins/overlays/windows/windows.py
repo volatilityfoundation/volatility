@@ -685,6 +685,12 @@ class VolatilityKDBG(obj.VolatilityMagic):
         else:
             return obj.Object("_KDDEBUGGER_DATA64", offset = self.value, vm = self.obj_vm)
 
+    def get_suggestions(self):
+        if self.value:
+            yield obj.Object("_KDDEBUGGER_DATA64", offset = self.value, vm = self.obj_vm)
+        for x in self.generate_suggestions():
+            yield x
+
     def generate_suggestions(self):
         """Generates a list of possible KDBG structure locations"""
         scanner = kdbg.KDBGScanner(needles = [obj.VolMagic(self.obj_vm).KDBGHeader.v()])
