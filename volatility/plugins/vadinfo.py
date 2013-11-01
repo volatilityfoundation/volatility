@@ -28,7 +28,6 @@
 
 import os.path
 import volatility.obj as obj
-import volatility.utils as utils
 import volatility.plugins.taskmods as taskmods
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.constants as constants
