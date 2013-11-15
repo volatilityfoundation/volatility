@@ -135,7 +135,10 @@ def parse_system_map(data, module):
 
     # get the system map
     for line in data.splitlines():
-        (str_addr, symbol_type, symbol) = line.strip().split()
+        try:
+            (str_addr, symbol_type, symbol) = line.strip().split()
+        except ValueError:
+            continue
 
         try:
             sym_addr = long(str_addr, 16)
