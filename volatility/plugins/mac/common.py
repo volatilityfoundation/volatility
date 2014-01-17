@@ -4,10 +4,9 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License Version 2 as
-# published by the Free Software Foundation.  You may not use, modify or
-# distribute this program under any other version of the GNU General
-# Public License.
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -76,8 +75,16 @@ def is_64bit_capable(addr_space):
     @returns True if 64-bit capable. 
     """
     x86_64_flag_addr = addr_space.profile.get_symbol("_x86_64_flag")
-    x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = addr_space)
-    return x86_64_flag == 1
+    
+    # this symbol no longer exists in 10.9 / Mavericks
+    # this is most likely b/c all Macs are 64 bit by 10.9
+    if x86_64_flag_addr:
+        x86_64_flag = obj.Object("int", offset = x86_64_flag_addr, vm = addr_space)
+        ret = x86_64_flag == 1
+    else:
+        ret = True
+
+    return ret
 
 def get_kernel_addrs(obj_ref):
     import volatility.plugins.mac.lsmod as lsmod

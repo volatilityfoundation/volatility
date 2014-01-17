@@ -4,10 +4,9 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License Version 2 as
-# published by the Free Software Foundation.  You may not use, modify or
-# distribute this program under any other version of the GNU General
-# Public License.
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,11 +41,8 @@ class mac_lsof(pstasks.mac_tasks):
             for i, fd in enumerate(fds):
                 f = fd.dereference_as("fileproc")
                 if f:
-                    ## FIXME after 2.3 replace this explicit int field with the following line:
-                    ##    if str(f.f_fglob.fg_type) == 'DTYPE_VNODE':
-                    ## Its not needed for profiles generated with convert.py after r3290 
-                    fg_type = obj.Object("int", f.f_fglob.fg_type.obj_offset, vm = self.addr_space)
-                    if fg_type == 1: # VNODE
+                    ftype = f.f_fglob.fg_type
+                    if ftype == 'DTYPE_VNODE': 
                         vnode = f.f_fglob.fg_data.dereference_as("vnode")
                         path = vnode.full_path()
                     else:

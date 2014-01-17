@@ -279,13 +279,3 @@ POSSIBILITY OF SUCH DAMAGES.
 
 		     END OF TERMS AND CONDITIONS
 
-Notwithstanding any rights to use the Software granted by the foregoing, 
-if entities or individuals have received a Cease & Desist letter from 
-the Volatility Project, the Volatility Foundation, or its copyright holders 
-for violating the terms of the GPL version 2, those entities (their employees,
-subcontractors, independent contractors, and affiliates) and / or persons 
-are granted no such rights and any use by any one or more of them is 
-expressly prohibited, in accordance with Section 4 of the GPL version 2. 
-Any rights granted to such entities and / or persons by earlier license
-agreements have been previously terminated as to them. 
-

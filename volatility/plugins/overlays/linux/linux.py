@@ -5,10 +5,9 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License Version 2 as
-# published by the Free Software Foundation.  You may not use, modify or
-# distribute this program under any other version of the GNU General
-# Public License.
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -135,7 +134,10 @@ def parse_system_map(data, module):
 
     # get the system map
     for line in data.splitlines():
-        (str_addr, symbol_type, symbol) = line.strip().split()
+        try:
+            (str_addr, symbol_type, symbol) = line.strip().split()
+        except ValueError:
+            continue
 
         try:
             sym_addr = long(str_addr, 16)
