@@ -34,7 +34,7 @@ import volatility.addrspace as addrspace
 import volatility.obj as obj
 import struct
 import binascii
-import volatility.plugins.multiscan as multiscan
+import volatility.poolscan as poolscan
 
 ATTRIBUTE_TYPE_ID = {
     0x10:"STANDARD_INFORMATION",
@@ -630,7 +630,7 @@ class MFTParser(common.AbstractWindowsCommand):
                           action = "store", type = "int")
     def calculate(self):
         address_space = utils.load_as(self._config, astype = 'physical')
-        scanner = multiscan.MultiTagScanner(needles = ['FILE', 'BAAD'])
+        scanner = poolscan.MultiPoolScanner(needles = ['FILE', 'BAAD'])
         print "Scanning for MFT entries and building directory, this can take a while"
         seen = []
         for _, offset in scanner.scan(address_space):
