@@ -74,13 +74,13 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
                         hooked = 0
                         sym_name = self.profile.get_symbol_by_address("kernel", idt_addr)
 
-                    yield(i, idt_addr, sym_name, hooked)
+                    yield(i, ent, idt_addr, sym_name, hooked)
 
     def render_text(self, outfd, data):
 
         self.table_header(outfd, [("Index", "[addr]"), ("Address", "[addrpad]"), ("Symbol", "<30")])
 
-        for (i, idt_addr, sym_name, hooked) in data:
+        for (i, _, idt_addr, sym_name, hooked) in data:
             self.table_row(outfd, i, idt_addr, sym_name)
 
 
