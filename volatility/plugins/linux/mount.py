@@ -50,27 +50,50 @@ class linux_mount(linux_common.AbstractLinuxCommand):
             mnttype = "vfsmount"
             ns = None
 
+        fs_types = self._get_filesystem_types()
+
         # get each list_head out of the array
         for outerlist in mnt_list:
 
+            if outerlist == outerlist.next:
+                continue
+
             for mnt in outerlist.list_of_type(mnttype, "mnt_hash"):
-                yield (mnt, ns)
+                yield (mnt, ns, fs_types)
+
+    def _get_filesystem_types(self):
+        all_fs = {}
+        
+        fs_ptr = obj.Object("Pointer", offset = self.addr_space.profile.get_symbol("file_systems"), vm = self.addr_space)
+        file_systems = fs_ptr.dereference_as("file_system_type")
+
+        fs = file_systems
+
+        while fs.is_valid():
+            fsname = obj.Object("String", offset = fs.name, vm = self.addr_space, length=256)
+            all_fs[str(fsname)] = fs
+            fs = fs.next
+
+        return all_fs
 
     def parse_mnt(self, data):
         '''
         We use seen for 3.x kernels with mount namespaces 
         The same mount can be in multiple namespaces and we do not want to repeat output
         '''
-        for (mnt, ns) in data:
+        for (mnt, ns, fs_types) in data:
 
             dev_name = mnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
 
-            if not dev_name.is_valid() or len(dev_name) == 0:
+            if not dev_name.is_valid() or len(dev_name) < 2:
                 continue
 
             fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
 
-            if not fstype.is_valid() or len(fstype) == 0:
+            if not fstype.is_valid():
+                continue
+
+            if str(fstype) not in fs_types:
                 continue
 
             path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
