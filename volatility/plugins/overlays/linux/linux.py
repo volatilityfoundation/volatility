@@ -765,10 +765,36 @@ class task_struct(obj.CType):
 
         return process_as
 
+    # maps from the kernel
     def get_proc_maps(self):
         for vma in linux_common.walk_internal_list("vm_area_struct", "vm_next", self.mm.mmap):
             yield vma
     
+    def get_libdl_maps(self):
+        for vma in self.get_proc_maps():
+            # find the executable part of libdl
+            if not (vma.vm_file and str(vma.vm_flags) == "r-x" and linux_common.get_path(self, vma.vm_file).find("libdl") != -1):
+                continue
+            
+            proc_as = self.get_process_address_space()
+            
+            ehdr = obj.Object("elf_hdr", offset = vma.vm_start, vm = proc_as) 
+            
+            for phdr in ehdr.program_headers():
+                if str(phdr.p_type) != 'PT_DYNAMIC':
+                    continue
+                
+                for dsec in phdr.dynamic_sections():
+                    # link_map is stored at the second GOT entry
+                    if dsec.d_tag == 3: # DT_PLTGOT
+            
+                        got_start = dsec.d_ptr
+                        # size_cache tells us if we are a 32 or 64 bit ELF file
+                        link_map_addr = obj.Object("Pointer", offset = got_start + (dsec.size_cache / 8), vm = proc_as)
+                        link_map = obj.Object("elf_link_map", offset = link_map_addr, vm = proc_as, parent = dsec)
+                        for ent in link_map:
+                            yield ent
+
     def search_process_memory(self, s, heap_only = False):
 
         # Allow for some overlap in case objects are 

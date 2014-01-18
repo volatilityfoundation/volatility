@@ -81,7 +81,7 @@ class VirtualBoxCoreDumpElf64(addrspace.AbstractRunBasedMemory):
                        "ELF64 Header signature invalid")
 
         ## Base AS should be a file AS
-        elf = obj.Object("elf64_hdr", offset = 0, vm = base)
+        elf = obj.Object("elf_hdr", offset = 0, vm = base)
 
         ## Make sure its a core dump
         self.as_assert(str(elf.e_type) == 'ET_CORE',
@@ -97,7 +97,7 @@ class VirtualBoxCoreDumpElf64(addrspace.AbstractRunBasedMemory):
 
             ## The first note should be the VBCORE segment 
             if str(phdr.p_type) == 'PT_NOTE':
-                note = phdr.p_offset.dereference_as("elf64_note")
+                note = obj.Object("elf_note", offset = phdr.p_offset, vm = base, parent = phdr)
 
                 if note.namesz == 'VBCORE' and note.n_type == NT_VBOXCORE:
                     self.header = note.cast_descsz("DBGFCOREDESCRIPTOR")
