@@ -622,9 +622,13 @@ class _RTL_ATOM_TABLE(tagWINDOWSTATION):
         """Carve all atoms out of this atom table"""
         # The default hash buckets should be 0x25 
         for bkt in self.Buckets:
+            seen = []
             cur = bkt.dereference()
             while cur.is_valid() and cur.v() != 0:
+                if cur.obj_offset in seen:
+                    break
                 yield cur
+                seen.append(cur.obj_offset)
                 cur = cur.HashLink.dereference()
 
     def find_atom(self, atom_to_find):
