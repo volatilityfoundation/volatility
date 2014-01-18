@@ -770,6 +770,33 @@ class task_struct(obj.CType):
         for vma in linux_common.walk_internal_list("vm_area_struct", "vm_next", self.mm.mmap):
             yield vma
     
+    def _walk_rb(self, rb):
+        if not rb.is_valid():
+             return
+
+        # container_of
+        rboff = self.obj_vm.profile.get_obj_offset("vm_area_struct", "vm_rb")
+        vma = obj.Object("vm_area_struct", offset = rb - rboff, vm = self.obj_vm)
+
+        yield vma
+
+        for vma in self._walk_rb(rb.rb_left):
+            yield vma
+ 
+        for vma in self._walk_rb(rb.rb_right):
+            yield vma
+
+    # based on find_vma in mm/mmap.c 
+    def get_proc_maps_rb(self):
+        vmas = {}
+        rb = self.mm.mm_rb.rb_node
+
+        for vma in self._walk_rb(rb):
+            vmas[vma.vm_start] = vma
+ 
+        for key in sorted(vmas.iterkeys()):
+            yield vmas[key]
+
     def get_libdl_maps(self):
         for vma in self.get_proc_maps():
             # find the executable part of libdl
@@ -913,6 +940,27 @@ class task_struct(obj.CType):
         dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)
 
         return dt
+
+    def get_environment(self):
+        if self.mm:
+            # set the as with our new dtb so we can read from userland
+            proc_as = self.get_process_address_space()
+
+            # read argv from userland
+            start = self.mm.env_start.v()
+
+            argv = proc_as.read(start, self.mm.env_end - self.mm.env_start + 10)
+            
+            if argv:
+                # split the \x00 buffer into args
+                env = " ".join(argv.split("\x00"))
+            else:
+                env = ""
+        else:
+            # kernel thread
+            env = ""
+
+        return env
 
     def get_commandline(self):
 
