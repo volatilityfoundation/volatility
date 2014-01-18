@@ -34,6 +34,7 @@ import volatility.addrspace as addrspace
 import volatility.obj as obj
 import struct
 import binascii
+import volatility.plugins.multiscan as multiscan
 
 ATTRIBUTE_TYPE_ID = {
     0x10:"STANDARD_INFORMATION",
@@ -147,6 +148,109 @@ class MFT_FILE_RECORD(obj.CType):
             thetype += "File"
         return thetype.rstrip(" & ")
         
+    def parse_attributes(self, mft_buff, check):
+
+        next_attr = self.ResidentAttributes
+        end = mft_buff.find("\xff\xff\xff\xff")
+        if end == -1:
+            ## FIXME: r3519 changed this to self._config.ENTRYSIZE
+            end = 1024
+        attributes = []
+        while next_attr != None and next_attr.obj_offset <= end:
+            try:
+                attr = ATTRIBUTE_TYPE_ID.get(int(next_attr.Header.Type), None)
+            except struct.error:
+                next_attr = None
+                attr = None
+                continue
+            if attr == None:
+                next_attr = None
+            elif attr == "STANDARD_INFORMATION":
+                if not check or next_attr.STDInfo.is_valid():
+                    attributes.append((attr, next_attr.STDInfo))
+                next_off = next_attr.STDInfo.obj_offset + next_attr.ContentSize
+                if next_off == next_attr.STDInfo.obj_offset:
+                    next_attr = None
+                    continue
+                next_attr = self.advance_one(next_off, mft_buff, end)
+            elif attr == 'FILE_NAME':
+                self.add_path(next_attr.FileName)
+                if not check or next_attr.FileName.is_valid():
+                    attributes.append((attr, next_attr.FileName))
+                next_off = next_attr.FileName.obj_offset + next_attr.ContentSize
+                if next_off == next_attr.FileName.obj_offset:
+                    next_attr = None
+                    continue
+                next_attr = self.advance_one(next_off, mft_buff, end)
+            elif attr == "OBJECT_ID":
+                if next_attr.Header.NonResidentFlag == 1:
+                    attributes.append((attr, "Non-Resident"))
+                    next_attr = None
+                    continue
+                else:
+                    attributes.append((attr, next_attr.ObjectID))
+                next_off = next_attr.ObjectID.obj_offset + next_attr.ContentSize
+                if next_off == next_attr.ObjectID.obj_offset:
+                    next_attr = None
+                    continue
+                next_attr = self.advance_one(next_off, mft_buff, end)
+            elif attr == "DATA":
+                start = next_attr.obj_offset + next_attr.ContentOffset
+                theend = min(start + next_attr.ContentSize, end)
+                if next_attr.Header.NonResidentFlag == 1:
+                    thedata = "" #"Non-Resident"
+                else:
+                    try:
+                        contents = mft_buff[start:theend]
+                    except TypeError:
+                        next_attr = None
+                        continue
+                    thedata = contents #"\n".join(["{0:010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(contents)])
+                    #if len(thedata) == 0:
+                    #    thedata = "(Empty)"
+                attributes.append((attr, thedata))
+                next_off = theend
+                if next_off == start:
+                    next_attr = None
+                    continue
+                next_attr = self.advance_one(next_off, mft_buff, end)
+            elif attr == "ATTRIBUTE_LIST":
+                if next_attr.Header.NonResidentFlag == 1:
+                    attributes.append((attr, "Non-Resident"))
+                    next_attr = None
+                    continue
+                next_attr.process_attr_list(self.obj_vm, self, attributes, check)
+                next_attr = None
+            else:
+                next_attr = None
+
+        return attributes
+
+    def advance_one(self, next_off, mft_buff, end):
+        item = None
+        attr = None
+        cursor = 0 
+
+        if next_off == None:
+            return None
+
+        while attr == None and cursor <= end:
+            #bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = mft_buff)
+            #item = obj.Object('RESIDENT_ATTRIBUTE', vm = bufferas,
+            #                    offset = next_off + cursor)
+            #try:
+            #    attr = ATTRIBUTE_TYPE_ID.get(int(item.Header.Type), None)
+            #except struct.error:
+            #    return item
+            try:
+                val = struct.unpack("<I", mft_buff[next_off + cursor: next_off + cursor + 4])[0]
+                attr = ATTRIBUTE_TYPE_ID.get(val, None)
+                item = obj.Object('RESIDENT_ATTRIBUTE', vm = self.obj_vm,
+                            offset = next_off + cursor)
+            except struct.error:
+                return None
+            cursor += 1
+        return item
 
 class RESIDENT_ATTRIBUTE(obj.CType):
     def process_attr_list(self, bufferas, mft_entry, attributes = [], check = False):
@@ -521,111 +625,25 @@ class MFTParser(common.AbstractWindowsCommand):
         config.add_option('CHECK', short_option = 'C', default = False,
                           help = 'Only print entries w/o null timestamps',
                           action = "store_true")
-
         config.add_option("ENTRYSIZE", short_option = "E", default = 1024,
                           help = "MFT Entry Size",
                           action = "store", type = "int")
     def calculate(self):
         address_space = utils.load_as(self._config, astype = 'physical')
-        scanner = MFTScanner(needles = ['FILE', 'BAAD'])
-        mft_entries = []
+        scanner = multiscan.MultiTagScanner(needles = ['FILE', 'BAAD'])
         print "Scanning for MFT entries and building directory, this can take a while"
-        for offset in scanner.scan(address_space):
+        seen = []
+        for _, offset in scanner.scan(address_space):
             mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
             bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
             mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
                                offset = 0)
-            next_attr = mft_entry.ResidentAttributes
-            end = mft_buff.find("\xff\xff\xff\xff")
-            if end == -1:
-                end = self._config.ENTRYSIZE
-            attributes = []
-            while next_attr != None and next_attr.obj_offset <= end:
-                try:
-                    attr = ATTRIBUTE_TYPE_ID.get(int(next_attr.Header.Type), None)
-                except struct.error:
-                    next_attr = None
-                    attr = None
-                    continue
-                if attr == None:
-                    next_attr = None
-                elif attr == "STANDARD_INFORMATION":
-                    if next_attr.STDInfo.is_valid() or not self._config.CHECK:
-                        attributes.append((attr, next_attr.STDInfo))
-                    next_off = next_attr.STDInfo.obj_offset + next_attr.ContentSize
-                    if next_off == next_attr.STDInfo.obj_offset:
-                        next_attr = None
-                        continue
-                    next_attr = self.advance_one(next_off, mft_buff, end)
-                elif attr == 'FILE_NAME':
-                    mft_entry.add_path(next_attr.FileName)
-                    if next_attr.FileName.is_valid() or not self._config.CHECK:
-                        attributes.append((attr, next_attr.FileName))
-                    next_off = next_attr.FileName.obj_offset + next_attr.ContentSize
-                    if next_off == next_attr.FileName.obj_offset:
-                        next_attr = None
-                        continue
-                    next_attr = self.advance_one(next_off, mft_buff, end)
-                elif attr == "OBJECT_ID":
-                    if next_attr.Header.NonResidentFlag == 1:
-                        attributes.append((attr, "Non-Resident"))
-                        next_attr = None
-                        continue
-                    else:
-                        attributes.append((attr, next_attr.ObjectID))
-                    next_off = next_attr.ObjectID.obj_offset + next_attr.ContentSize
-                    if next_off == next_attr.ObjectID.obj_offset:
-                        next_attr = None
-                        continue
-                    next_attr = self.advance_one(next_off, mft_buff, end)
-                elif attr == "DATA":
-                    start = next_attr.obj_offset + next_attr.ContentOffset
-                    theend = min(start + next_attr.ContentSize, end)
-                    if next_attr.Header.NonResidentFlag == 1:
-                        thedata = "Non-Resident"
-                    else:
-                        try:
-                            contents = mft_buff[start:theend]
-                        except TypeError:
-                            next_attr = None
-                            continue
-                        thedata = "\n".join(["{0:010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(contents)])
-                        if len(thedata) == 0:
-                            thedata = "(Empty)"
-                    attributes.append((attr, thedata))
-                    next_off = theend 
-                    if next_off == start: 
-                        next_attr = None
-                        continue
-                    next_attr = self.advance_one(next_off, mft_buff, end)
-                elif attr == "ATTRIBUTE_LIST":
-                    if next_attr.Header.NonResidentFlag == 1:
-                        attributes.append((attr, "Non-Resident"))
-                        next_attr = None
-                        continue
-                    next_attr.process_attr_list(bufferas, mft_entry, attributes, self._config.CHECK)
-                    next_attr = None
-                else:
-                    next_attr = None
-            mft_entries.append((offset, mft_entry, attributes))
-
-        return mft_entries
-
-
-    def advance_one(self, next_off, mft_buff, end):
-        item = None
-        attr = None
-        cursor = 0 
-        while attr == None and cursor <= end:
-            bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
-            item = obj.Object('RESIDENT_ATTRIBUTE', vm = bufferas,
-                                offset = next_off + cursor)
-            try:
-                attr = ATTRIBUTE_TYPE_ID.get(int(item.Header.Type), None)
-            except struct.error:
-                return item
-            cursor += 1
-        return item
+            if int(mft_entry.RecordNumber) in seen:
+                continue
+            else:
+                seen.append(int(mft_entry.RecordNumber))
+            attributes = mft_entry.parse_attributes(mft_buff, self._config.CHECK)
+            yield offset, mft_entry, attributes
 
     def render_body(self, outfd, data):
         # Some notes: every base MFT entry should have one $SI and at lease one $FN
@@ -694,4 +712,3 @@ class MFTParser(common.AbstractWindowsCommand):
                     outfd.write("\n$OBJECT_ID\n")
                     outfd.write(str(i))
             outfd.write("\n" + border + "\n") 
-
