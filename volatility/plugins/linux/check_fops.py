@@ -32,6 +32,7 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsof as linux_lsof
 import volatility.plugins.linux.lsmod as linux_lsmod
 from volatility.plugins.linux.slab_info import linux_slabinfo
+import volatility.plugins.linux.find_file as find_file
 
 class linux_check_fop(linux_common.AbstractLinuxCommand):
     """Check file operation structures for rootkit modifications"""
@@ -39,6 +40,11 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
     def __init__(self, config, *args, **kwargs):
         linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('INODE', short_option = 'i', default = None, help = 'inode to check', action = 'store', type='int')
+
+    def check_file_cache(self, f_op_members, modules):
+        for (_, _, file_path, file_dentry) in find_file.linux_find_file(self._config).walk_sbs():
+            for (hooked_member, hook_address) in self.verify_ops(file_dentry.d_inode.i_fop, f_op_members, modules):
+                yield (file_path, hooked_member, hook_address)
 
     def check_open_files_fop(self, f_op_members, modules):
         # get all the members in file_operations, they are all function pointers
@@ -127,6 +133,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
             
         else:
             funcs = [self.check_open_files_fop, self.check_proc_fop, self.check_proc_root_fops]
+            funcs = [self.check_open_files_fop, self.check_proc_fop, self.check_proc_root_fops, self.check_file_cache]
 
             for func in funcs:
 
