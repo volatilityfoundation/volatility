@@ -35,7 +35,7 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
     def __init__(self, config, *args, **kwargs):
 
         linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
-        self._config.add_option('SECTIONS', short_option = 'S', default = None, help = 'show section addresses', action = 'store_true')
+        self._config.add_option('SECTIONS', short_option = 'A', default = None, help = 'show section addresses', action = 'store_true')
         self._config.add_option('PARAMS', short_option = 'P', default = None, help = 'show module parameters', action = 'store_true')
 
     def get_param_val(self, param, _over = 0):
