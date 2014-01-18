@@ -394,7 +394,8 @@ class tagDESKTOP(tagWINDOWSTATION):
     def threads(self):
         """Generator for _EPROCESS objects attached to this desktop"""
         for ti in self.PtiList.list_of_type("tagTHREADINFO", "PtiLink"):
-            yield ti
+            if ti.ppi.Process.is_valid():
+                yield ti
 
     def hook_params(self):
         """ Parameters for the hooks() method.
