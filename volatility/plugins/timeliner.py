@@ -94,12 +94,13 @@ class Win7LdrDataTableEntry(obj.ProfileModification):
         overlay = {'_LDR_DATA_TABLE_ENTRY': [ None, {
                         'LoadTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
                                         }],
-                   '_MMSUPPORT': [ None, {
-                        'LastTrimStamp': [ None, ['DosDate', dict(is_utc = True)]],
-                                        }],
-                   '_MMPTE_TIMESTAMP': [ None, {
-                        'GlobalTimeStamp' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
-                                        }],
+                   # these timestamps need more research for format
+                   #'_MMSUPPORT': [ None, {
+                   #     'LastTrimStamp': [ None, ['DosDate', dict(is_utc = True)]],
+                   #                     }],
+                   #'_MMPTE_TIMESTAMP': [ None, {
+                   #     'GlobalTimeStamp' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
+                   #                     }],
                    } 
         profile.merge_overlay(overlay)
 
