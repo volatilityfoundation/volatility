@@ -27,13 +27,34 @@
 """
 
 import struct
+import volatility.obj as obj
 import volatility.win32.rawreg as rawreg
 import volatility.win32.hive as hive
 import volatility.win32.hashdump as hashdump
-from Crypto.Hash import MD5
-from Crypto.Cipher import ARC4, DES
+from Crypto.Hash import MD5, SHA256
+from Crypto.Cipher import ARC4, DES, AES
 
-def get_lsa_key(secaddr, bootkey):
+def decrypt_aes(secret, key):
+    """
+    Based on code from http://lab.mediaservice.net/code/cachedump.rb
+    """
+    sha = SHA256.new()
+    sha.update(key)
+    for _i in range(1, 1000 + 1):
+        sha.update(secret[28:60])
+    aeskey = sha.digest()
+
+    data = ""
+    for i in range(60, len(secret), 16):
+        aes = AES.new(aeskey, AES.MODE_CBC, '\x00' * 16)
+        buf = secret[i : i + 16]
+        if len(buf) < 16:
+            buf += (16 - len(buf)) * "\00"
+        data += aes.decrypt(buf)
+
+    return data
+
+def get_lsa_key(addr_space, secaddr, bootkey):
     if not bootkey:
         return None
 
@@ -41,7 +62,8 @@ def get_lsa_key(secaddr, bootkey):
     if not root:
         return None
 
-    enc_reg_key = rawreg.open_key(root, ["Policy", "PolSecretEncryptionKey"])
+    volmag = obj.VolMagic(addr_space)
+    enc_reg_key = rawreg.open_key(root, ["Policy", volmag.PolicyKey.v()])
     if not enc_reg_key:
         return None
 
@@ -54,16 +76,21 @@ def get_lsa_key(secaddr, bootkey):
     if not obf_lsa_key:
         return None
 
-    md5 = MD5.new()
-    md5.update(bootkey)
-    for _i in range(1000):
-        md5.update(obf_lsa_key[60:76])
-    rc4key = md5.digest()
+    if addr_space.profile.metadata.get('major', 0) == 5:
+        md5 = MD5.new()
+        md5.update(bootkey)
+        for _i in range(1000):
+            md5.update(obf_lsa_key[60:76])
+        rc4key = md5.digest()
 
-    rc4 = ARC4.new(rc4key)
-    lsa_key = rc4.decrypt(obf_lsa_key[12:60])
+        rc4 = ARC4.new(rc4key)
+        lsa_key = rc4.decrypt(obf_lsa_key[12:60])
+        lsa_key = lsa_key[0x10:0x20]
+    else:
+        lsa_key = decrypt_aes(obf_lsa_key, bootkey)
+        lsa_key = lsa_key[68:100]
 
-    return lsa_key[0x10:0x20]
+    return lsa_key
 
 def decrypt_secret(secret, key):
     """Python implementation of SystemFunction005.
@@ -87,7 +114,7 @@ def decrypt_secret(secret, key):
     (dec_data_len,) = struct.unpack("<L", decrypted_data[:4])
     return decrypted_data[8:8 + dec_data_len]
 
-def get_secret_by_name(secaddr, name, lsakey):
+def get_secret_by_name(addr_space, secaddr, name, lsakey):
     root = rawreg.get_root(secaddr)
     if not root:
         return None
@@ -105,15 +132,19 @@ def get_secret_by_name(secaddr, name, lsakey):
     if not enc_secret:
         return None
 
-    return decrypt_secret(enc_secret[0xC:], lsakey)
+    if addr_space.profile.metadata.get('major', 0) == 5:
+        secret = enc_secret[0xC:]
+    else:
+        secret = enc_secret
+    return decrypt_secret(secret, lsakey)
 
-def get_secrets(sysaddr, secaddr):
+def get_secrets(addr_space, sysaddr, secaddr):
     root = rawreg.get_root(secaddr)
     if not root:
         return None
 
     bootkey = hashdump.get_bootkey(sysaddr)
-    lsakey = get_lsa_key(secaddr, bootkey)
+    lsakey = get_lsa_key(addr_space, secaddr, bootkey)
     if not bootkey or not lsakey:
         return None
 
@@ -136,7 +167,10 @@ def get_secrets(sysaddr, secaddr):
         if not enc_secret:
             continue
 
-        secret = decrypt_secret(enc_secret[0xC:], lsakey)
+        if addr_space.profile.metadata.get('major', 0) == 5:
+            secret = enc_secret[0xC:]
+        else:
+            secret = enc_secret
         secrets[key.Name] = secret
 
     return secrets
@@ -145,10 +179,11 @@ def get_memory_secrets(addr_space, config, syshive, sechive):
     sysaddr = hive.HiveAddressSpace(addr_space, config, syshive)
     secaddr = hive.HiveAddressSpace(addr_space, config, sechive)
 
-    return get_secrets(sysaddr, secaddr)
+    return get_secrets(addr_space, sysaddr, secaddr)
 
+'''
 def get_file_secrets(sysfile, secfile):
     sysaddr = hive.HiveFileAddressSpace(sysfile)
     secaddr = hive.HiveFileAddressSpace(secfile)
-
     return get_secrets(sysaddr, secaddr)
+'''

@@ -26,23 +26,34 @@
 
 #pylint: disable-msg=C0111
 
+import volatility.obj as obj
 import volatility.win32.rawreg as rawreg
 import volatility.win32.hive as hive
 import volatility.win32.lsasecrets as lsasecrets
 import volatility.win32.hashdump as hashdump
 from Crypto.Hash import HMAC
-from Crypto.Cipher import ARC4
+from Crypto.Cipher import ARC4, AES
 from struct import unpack
 
-def get_nlkm(secaddr, lsakey):
-    return lsasecrets.get_secret_by_name(secaddr, 'NL$KM', lsakey)
+def get_nlkm(addr_space, secaddr, lsakey):
+    return lsasecrets.get_secret_by_name(addr_space, secaddr, 'NL$KM', lsakey)
 
-def decrypt_hash(edata, nlkm, ch):
-    hmac_md5 = HMAC.new(nlkm, ch)
-    rc4key = hmac_md5.digest()
+def decrypt_hash(edata, nlkm, ch, xp = True):
+    if xp:
+        hmac_md5 = HMAC.new(nlkm, ch)
+        rc4key = hmac_md5.digest()
 
-    rc4 = ARC4.new(rc4key)
-    data = rc4.encrypt(edata)
+        rc4 = ARC4.new(rc4key)
+        data = rc4.encrypt(edata)
+    else:
+        # based on  Based on code from http://lab.mediaservice.net/code/cachedump.rb
+        aes = AES.new(nlkm[16:32], AES.MODE_CBC, ch)
+        data = ""
+        for i in range(0, len(edata), 16):
+            buf = edata[i : i + 16]
+            if len(buf) < 16:
+                buf += (16 - len(buf)) * "\00"
+                data += aes.decrypt(buf) 
     return data
 
 def parse_cache_entry(cache_data):
@@ -70,27 +81,28 @@ def parse_decrypted_cache(dec_data, uname_len,
 
     return (username, domain, domain_name, hashh)
 
-def dump_hashes(sysaddr, secaddr):
+def dump_hashes(addr_space, sysaddr, secaddr):
     bootkey = hashdump.get_bootkey(sysaddr)
     if not bootkey:
-        return None
+        return []
 
-    lsakey = lsasecrets.get_lsa_key(secaddr, bootkey)
+    lsakey = lsasecrets.get_lsa_key(addr_space, secaddr, bootkey)
     if not lsakey:
-        return None
+        return []
 
-    nlkm = get_nlkm(secaddr, lsakey)
+    nlkm = get_nlkm(addr_space, secaddr, lsakey)
     if not nlkm:
-        return None
+        return []
 
     root = rawreg.get_root(secaddr)
     if not root:
-        return None
+        return []
 
     cache = rawreg.open_key(root, ["Cache"])
     if not cache:
-        return None
+        return []
 
+    xp = addr_space.profile.metadata.get('major', 0) == 5
     hashes = []
     for v in rawreg.values(cache):
         if v.Name == "NL$Control":
@@ -105,7 +117,7 @@ def dump_hashes(sysaddr, secaddr):
         if uname_len == 0:
             continue
 
-        dec_data = decrypt_hash(enc_data, nlkm, ch)
+        dec_data = decrypt_hash(enc_data, nlkm, ch, xp)
 
         (username, domain, domain_name,
             hashh) = parse_decrypted_cache(dec_data, uname_len,
@@ -119,14 +131,20 @@ def dump_memory_hashes(addr_space, config, syshive, sechive):
     sysaddr = hive.HiveAddressSpace(addr_space, config, syshive)
     secaddr = hive.HiveAddressSpace(addr_space, config, sechive)
 
-    for (u, d, dn, hashh) in dump_hashes(sysaddr, secaddr):
-        print "{0}:{1}:{2}:{3}".format(u.lower(), hashh.encode('hex'),
+    hashes = dump_hashes(addr_space, sysaddr, secaddr)
+    if hashes == []:
+        yield obj.NoneObject("Unable to find hashes")
+    else:
+        for (u, d, dn, hashh) in hashes:
+            yield "{0}:{1}:{2}:{3}".format(u.lower(), hashh.encode('hex'),
                                        d.lower(), dn.lower())
-
+'''
+# I don't think this is used anywhere
 def dump_file_hashes(syshive_fname, sechive_fname):
     sysaddr = hive.HiveFileAddressSpace(syshive_fname)
     secaddr = hive.HiveFileAddressSpace(sechive_fname)
 
-    for (u, d, dn, hashh) in dump_hashes(sysaddr, secaddr):
+    for (u, d, dn, hashh) in dump_hashes(addr_space, sysaddr, secaddr):
         print "{0}:{1}:{2}:{3}".format(u.lower(), hashh.encode('hex'),
                                        d.lower(), dn.lower())
+'''

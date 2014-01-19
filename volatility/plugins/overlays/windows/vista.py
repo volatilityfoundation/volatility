@@ -131,6 +131,17 @@ class VistaSP1KDBG(windows.AbstractKDBGMod):
                   }
     kdbgsize = 0x330
 
+class VistaPolicyKey(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x : x == 'windows',
+                  'major': lambda x: x == 6}
+
+    def modification(self, profile):
+        overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'PolicyKey': [0x0, ['VolatilityMagic', dict(value = "PolEKList")]],
+                                        }]}
+        profile.merge_overlay(overlay)
+
 class VistaSP0x86Hiber(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',

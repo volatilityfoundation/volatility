@@ -52,6 +52,7 @@ windows_overlay = {
     'HibrEntryCount': [0x0, ['VolatilityMagic', dict(value = 0x0)]],
     'MaxAddress': [0x0, ['VolatilityMaxAddress']],
     'MM_MAX_COMMIT': [ 0x0, ['VolatilityMagic', dict(value = 0x7ffffffffffff)]],
+    'PolicyKey': [0x0, ['VolatilityMagic', dict(value = "PolSecretEncryptionKey")]],
     }],
 
     '_EPROCESS' : [ None, {

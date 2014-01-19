@@ -29,10 +29,12 @@
 
 import volatility.win32.lsasecrets as lsasecrets
 import volatility.win32.hashdump as hashdumpmod
+import volatility.win32.domcachedump as domcachedumpmod
 import volatility.debug as debug
 import volatility.cache as cache
 import volatility.utils as utils
 import volatility.plugins.common as common
+import volatility.plugins.registry.registryapi as registryapi
 
 class LSADump(common.AbstractWindowsCommand):
     """Dump (decrypted) LSA secrets from the registry"""
@@ -59,7 +61,13 @@ class LSADump(common.AbstractWindowsCommand):
         addr_space = utils.load_as(self._config)
 
         if not self._config.sys_offset or not self._config.sec_offset:
-            debug.error("Both SYSTEM and SECURITY offsets must be provided")
+            regapi = registryapi.RegistryApi(self._config)
+            for offset in regapi.all_offsets:
+                name = regapi.all_offsets[offset].lower().split("\\")[-1]
+                if "system" == name:
+                    self._config.update("SYS_OFFSET", offset)
+                elif "security" == name:
+                    self._config.update("SEC_OFFSET", offset)
 
         secrets = lsasecrets.get_memory_secrets(addr_space, self._config, self._config.sys_offset, self._config.sec_offset)
         if not secrets:
@@ -89,9 +97,47 @@ class HashDump(common.AbstractWindowsCommand):
         addr_space = utils.load_as(self._config)
 
         if not self._config.sys_offset or not self._config.sam_offset:
-            debug.error("Both SYSTEM and SAM offsets must be provided")
+            regapi = registryapi.RegistryApi(self._config)
+            for offset in regapi.all_offsets:
+                name = regapi.all_offsets[offset].lower().split("\\")[-1]
+                if "system" == name:
+                    self._config.update("SYS_OFFSET", offset)
+                elif "sam" == name:
+                    self._config.update("SAM_OFFSET", offset)
 
         return hashdumpmod.dump_memory_hashes(addr_space, self._config, self._config.sys_offset, self._config.sam_offset)
+
+    def render_text(self, outfd, data):
+        for d in data:
+            if d == None:
+                debug.debug("Unable to read hashes from registry")
+            else:
+                outfd.write(d + "\n")
+
+class CacheDump(common.AbstractWindowsCommand):
+    """Dumps cached domain hashes from memory"""
+
+    def __init__(self, config, *args, **kwargs):
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
+        config.add_option('SYS-OFFSET', short_option = 'y', type = 'int',
+                          help = 'SYSTEM hive offset (virtual)')
+        config.add_option('SEC-OFFSET', short_option = 's', type = 'int',
+                          help = 'SECURITY hive offset (virtual)')
+ 
+
+    def calculate(self):
+        addr_space = utils.load_as(self._config)
+
+        if not self._config.sys_offset or not self._config.sec_offset:
+            regapi = registryapi.RegistryApi(self._config)
+            for offset in regapi.all_offsets:
+                name = regapi.all_offsets[offset].lower().split("\\")[-1]
+                if "system" == name:
+                    self._config.update("SYS_OFFSET", offset)
+                elif "security" == name:
+                    self._config.update("SEC_OFFSET", offset)
+
+        return domcachedumpmod.dump_memory_hashes(addr_space, self._config, self._config.sys_offset, self._config.sec_offset)
 
     def render_text(self, outfd, data):
         for d in data:
