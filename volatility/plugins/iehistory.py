@@ -96,8 +96,6 @@ class IEHistory(taskmods.DllList):
                 and version < (6, 2))
 
     def calculate(self):
-        kernel_space = utils.load_as(self._config)
-
         ## Select the tags to scan for. Always find visited URLs,
         ## but make freed and redirected records optional. 
         tags = ["URL "]
@@ -113,7 +111,7 @@ class IEHistory(taskmods.DllList):
             "REDR" : "_REDR_RECORD"}
  
         ## Enumerate processes based on the --pid and --offset 
-        for proc in self.filter_tasks(tasks.pslist(kernel_space)):
+        for proc in taskmods.DllList(self._config).calculate():
         
             ## Acquire a process specific AS
             ps_as = proc.get_process_address_space()
