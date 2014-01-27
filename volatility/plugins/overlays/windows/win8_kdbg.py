@@ -198,6 +198,10 @@ class VolatilityKDBG(obj.VolatilityMagic):
                                         offset = kdbg_block, 
                                         vm = addr_space)
 
+                        kdbg.newattr('block_encoded', block_encoded)
+                        kdbg.newattr('wait_never', wait_never)
+                        kdbg.newattr('wait_always', wait_always)                    
+
                         yield kdbg
 
                 current_offset += min(constants.SCAN_BLOCKSIZE, l)

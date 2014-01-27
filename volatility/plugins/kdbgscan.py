@@ -169,6 +169,13 @@ class KDBGScan(common.AbstractWindowsCommand):
             else:
                 outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kdbg.obj_offset))
 
+            if hasattr(kdbg, 'block_encoded'):
+                outfd.write("{0:<30}: {1}\n".format("Block encoded", "Yes" if kdbg.block_encoded == 1 else "No"))
+            if hasattr(kdbg, 'wait_never'):
+                outfd.write("{0:<30}: {1:#x}\n".format("Wait never", kdbg.wait_never))
+            if hasattr(kdbg, 'wait_always'):
+                outfd.write("{0:<30}: {1:#x}\n".format("Wait always", kdbg.wait_always))
+
             # These fields can be gathered without dereferencing
             # any pointers, thus they're available always 
             outfd.write("{0:<30}: {1}\n".format("KDBG owner tag check", str(kdbg.is_valid())))
