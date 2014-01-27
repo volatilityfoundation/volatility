@@ -104,6 +104,7 @@ class KDBGScan(common.AbstractWindowsCommand):
         """Determines the address space"""
         profilelist = [ p.__name__ for p in registry.get_plugin_classes(obj.Profile).values() ]
 
+        encrypted_kdbg_profiles = []
         proflens = {}
         maxlen = 0
         origprofile = self._config.PROFILE
@@ -113,18 +114,36 @@ class KDBGScan(common.AbstractWindowsCommand):
             if buf.profile.metadata.get('os', 'unknown') == 'windows':
                 proflens[p] = str(obj.VolMagic(buf).KDBGHeader)
                 maxlen = max(maxlen, len(proflens[p]))
+                if (buf.profile.metadata.get('memory_model', '64bit') == '64bit' and 
+                            (buf.profile.metadata.get('major', 0), 
+                            buf.profile.metadata.get('minor', 0)) >= (6, 2)):
+                    encrypted_kdbg_profiles.append(p)
+                    
         self._config.update('PROFILE', origprofile)
 
         scanner = KDBGScanner(needles = proflens.values())
 
         aspace = utils.load_as(self._config, astype = 'any')
 
+        # keep track of the number of potential KDBGs we find
+        count = 0
         for offset in scanner.scan(aspace):
             val = aspace.read(offset, maxlen + 0x10)
             for l in proflens:
                 if val.find(proflens[l]) >= 0:
                     kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = offset, vm = aspace)
                     yield l, kdbg
+                    count += 1
+
+        # only perform the special win8/2012 scan if we didn't find 
+        # any others and if a virtual x64 address space is available 
+        if count == 0:
+            for profile in encrypted_kdbg_profiles:
+                self._config.update('PROFILE', profile)
+                aspace = utils.load_as(self._config, astype = 'any')
+                if hasattr(aspace, 'vtop'):
+                    for kdbg in obj.VolMagic(aspace).KDBG.generate_suggestions():
+                        yield profile, kdbg 
 
     def render_text(self, outfd, data):
         """Renders the KPCR values as text"""
@@ -141,12 +160,12 @@ class KDBGScan(common.AbstractWindowsCommand):
                         ))
 
             # Will spaces with vtop always have a dtb also? 
-            has_vtop = hasattr(kdbg.obj_vm, 'vtop')
+            has_vtop = hasattr(kdbg.obj_native_vm, 'vtop')
 
             # Always start out with the virtual and physical offsets
             if has_vtop:
                 outfd.write("{0:<30}: {1:#x}\n".format("Offset (V)", kdbg.obj_offset))
-                outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kdbg.obj_vm.vtop(kdbg.obj_offset)))
+                outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kdbg.obj_native_vm.vtop(kdbg.obj_offset)))
             else:
                 outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kdbg.obj_offset))
 
@@ -184,12 +203,12 @@ class KDBGScan(common.AbstractWindowsCommand):
                     "PsLoadedModuleList", kdbg.PsLoadedModuleList, num_modules))
 
                 outfd.write("{0:<30}: {1:#x} (Matches MZ: {2})\n".format(
-                    "KernelBase", kdbg.KernBase, str(kdbg.obj_vm.read(kdbg.KernBase, 2) == "MZ")))
+                    "KernelBase", kdbg.KernBase, str(kdbg.obj_native_vm.read(kdbg.KernBase, 2) == "MZ")))
 
                 try:
                     dos_header = obj.Object("_IMAGE_DOS_HEADER",
                                     offset = kdbg.KernBase,
-                                    vm = kdbg.obj_vm)
+                                    vm = kdbg.obj_native_vm)
                     nt_header = dos_header.get_nt_header()
                 except (ValueError, exceptions.SanityCheckException):
                     pass
