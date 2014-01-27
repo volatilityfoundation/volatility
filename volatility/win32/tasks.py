@@ -48,17 +48,25 @@ def get_kdbg(addr_space):
     if kdbg.is_valid():
         return kdbg
 
-    # Fall back to finding it via the KPCR. We cannot
-    # accept the first/best suggestion, because only 
-    # the KPCR for the first CPU allows us to find KDBG. 
-    for kpcr_off in obj.VolMagic(addr_space).KPCR.generate_suggestions():
-        
-        kpcr = obj.Object("_KPCR", offset = kpcr_off, vm = addr_space)
+    # skip the KPCR backup method for x64 
+    memmode = addr_space.profile.metadata.get('memory_model', '32bit')
 
-        kdbg = kpcr.get_kdbg()
+    version = (addr_space.profile.metadata.get('major', 0), 
+               addr_space.profile.metadata.get('minor', 0))
+
+    if memmode == '32bit' or version <= (6, 1):
+        
+        # Fall back to finding it via the KPCR. We cannot
+        # accept the first/best suggestion, because only 
+        # the KPCR for the first CPU allows us to find KDBG. 
+        for kpcr_off in obj.VolMagic(addr_space).KPCR.generate_suggestions():
+        
+            kpcr = obj.Object("_KPCR", offset = kpcr_off, vm = addr_space)
+
+            kdbg = kpcr.get_kdbg()
     
-        if kdbg.is_valid():
-            return kdbg
+            if kdbg.is_valid():
+                return kdbg
 
     return obj.NoneObject("KDDEBUGGER structure not found using either KDBG signature or KPCR pointer")
 
