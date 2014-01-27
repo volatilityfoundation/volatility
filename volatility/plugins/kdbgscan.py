@@ -169,6 +169,8 @@ class KDBGScan(common.AbstractWindowsCommand):
             else:
                 outfd.write("{0:<30}: {1:#x}\n".format("Offset (P)", kdbg.obj_offset))
 
+            if hasattr(kdbg, 'KdCopyDataBlock'):
+                outfd.write("{0:<30}: {1:#x}\n".format("KdCopyDataBlock (V)", kdbg.KdCopyDataBlock))
             if hasattr(kdbg, 'block_encoded'):
                 outfd.write("{0:<30}: {1}\n".format("Block encoded", "Yes" if kdbg.block_encoded == 1 else "No"))
             if hasattr(kdbg, 'wait_never'):
