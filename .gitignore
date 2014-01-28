@@ -36,3 +36,5 @@ nosetests.xml
 
 .svn/
 .DS_Store
+
+*.zip
