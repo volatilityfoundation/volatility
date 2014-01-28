@@ -500,7 +500,7 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
                         mod_base)
                 yield self.getoutput(line, header.FileHeader.TimeDateStamp, body = body)
 
-        data = iehistory.IEHistory(self._config).calculate()
+        '''data = iehistory.IEHistory(self._config).calculate()
         for process, record in data:
             ## Extended fields are available for these records 
             if record.obj_name == "_URL_RECORD":
@@ -511,7 +511,7 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
                     record.Signature, record.obj_offset,
                     record.Url)
                     
-                yield self.getoutput(line, record.LastModified, end = record.LastAccessed, body = body)
+                yield self.getoutput(line, record.LastModified, end = record.LastAccessed, body = body)'''
 
         uastuff = userassist.UserAssist.calculate(self)
         for win7, reg, key in uastuff:
