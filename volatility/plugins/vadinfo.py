@@ -192,16 +192,38 @@ class VADTree(VADInfo):
             outfd.write("/* Pid: {0:6} */\n".format(task.UniqueProcessId))
             outfd.write("digraph processtree {\n")
             outfd.write("graph [rankdir = \"TB\"];\n")
+            heaps = task.Peb.ProcessHeaps.dereference()
+            modules = [mod.DllBase for mod in task.get_load_modules()]
+            stacks = []
+            for thread in task.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
+                teb = obj.Object("_TEB", 
+                                 offset = thread.Tcb.Teb,
+                                 vm = task.get_process_address_space())
+                stacks.append(teb.NtTib.StackBase)
             for vad in task.VadRoot.traverse():
                 if vad:
                     if vad.Parent:
                         outfd.write("vad_{0:08x} -> vad_{1:08x}\n".format(vad.Parent.obj_offset or 0, vad.obj_offset))
+                        fillcolor = "white"
+                        if vad.Start in heaps:
+                            fillcolor = "red"
+                        elif vad.Start in modules:
+                            fillcolor = "gray"
+                        elif vad.Start in stacks:
+                            fillcolor = "green"
+                        else:
+                            try:
+                                if vad.FileObject.FileName:
+                                    fillcolor = "yellow"
+                            except AttributeError:
+                                pass                        
                         outfd.write("vad_{0:08x} [label = \"{{ {1}\\n{2:08x} - {3:08x} }}\""
-                                "shape = \"record\" color = \"blue\"];\n".format(
+                                "shape = \"record\" color = \"blue\" fillcolor = \"{4}\"];\n".format(
                         vad.obj_offset,
                         vad.Tag,
                         vad.Start,
-                        vad.End))
+                        vad.End, 
+                        fillcolor))
 
             outfd.write("}\n")
 
