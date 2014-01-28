@@ -473,7 +473,8 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
                 self.suspicious[suspiciousline] = {"reason": "UNKNOWN IMAGE", "color": "YELLOW"}
     
         data = filescan.SymLinkScan(self._config).calculate()
-        for objct, link in data:
+        for link in data:
+            objct = link.get_object_header()
             line = "[SYMLINK]{0} {1}->{2}{0} POffset: {3}/Ptr: {4}/Hnd: {5}".format(
                     "" if body else "|",
                     str(objct.NameInfo.Name or ''),
@@ -482,7 +483,6 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
                     objct.PointerCount,
                     objct.HandleCount)
             yield self.getoutput(line, link.CreationTime, body = body)
-
 
         data = moddump.ModDump(self._config).calculate()
         for aspace, procs, mod_base, mod_name in data:
