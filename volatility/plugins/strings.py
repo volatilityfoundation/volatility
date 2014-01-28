@@ -190,34 +190,6 @@ class Strings(common.AbstractWindowsCommand):
         #      recording vpage instead of vpage+i in the reverse map. -- TDM
         reverse_map = {}
 
-        debug.debug("Calculating task mappings...\n")
-        for task in tasks:
-            task_space = task.get_process_address_space()
-            debug.debug("  Task {0} ...".format(cls.get_task_pid(task)))
-            process_id = cls.get_task_pid(task)
-            try:
-                available_pages = task_space.get_available_pages()
-                for (vpage, vpage_size) in available_pages:
-                    physpage = task_space.vtop(vpage)
-                    for i in range(0, vpage_size, 0x1000):
-                        # Since the output will always be mutable, we 
-                        # don't need to reinsert into the list
-                        pagelist = reverse_map.get(physpage + i, None)
-                        if pagelist is None:
-                            pagelist = [False]
-                            reverse_map[physpage + i] = pagelist
-                        if not pagelist[0]:
-                            pagelist.append((process_id, vpage + i))
-
-                    debug.debug("\r  Task {0} [{1:08x}]".format(process_id, vpage))
-            except (AttributeError, ValueError, TypeError):
-                # Handle most errors, but not all of them
-                continue
-            debug.debug("\n")
-        
-        debug.debug("\n")
-        debug.debug("Enumerating kernel modules...\n")
-        
         (mods, mod_addrs) = cls.get_modules(addr_space)
    
         debug.debug("Calculating kernel mapping...\n")
@@ -238,9 +210,30 @@ class Strings(common.AbstractWindowsCommand):
                 else:
                     hint = 'kernel'
                 pagelist.append((hint, vpage + i))
-                debug.debug("\r  Kernel [{0:08x}]".format(vpage))
+
+        debug.debug("Calculating task mappings...\n")
+        for task in tasks:
+            task_space = task.get_process_address_space()
+            debug.debug("  Task {0} ...".format(cls.get_task_pid(task)))
+            process_id = cls.get_task_pid(task)
+            try:
+                available_pages = task_space.get_available_pages()
+                for (vpage, vpage_size) in available_pages:
+                    physpage = task_space.vtop(vpage)
+                    for i in range(0, vpage_size, 0x1000):
+                        # Since the output will always be mutable, we 
+                        # don't need to reinsert into the list
+                        pagelist = reverse_map.get(physpage + i, None)
+                        if pagelist is None:
+                            pagelist = [False]
+                            reverse_map[physpage + i] = pagelist
+                        if not pagelist[0]:
+                            pagelist.append((process_id, vpage + i))
+
+            except (AttributeError, ValueError, TypeError):
+                # Handle most errors, but not all of them
+                continue
         
-        debug.debug("\n")
         return reverse_map
 
     def render_text(self, outfd, data):
