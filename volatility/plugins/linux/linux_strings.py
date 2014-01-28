@@ -26,8 +26,9 @@ import volatility.plugins.linux.lsmod as linux_lsmod
 class linux_strings(strings.Strings, linux_common.AbstractLinuxCommand):
     """Match physical offsets to virtual addresses (may take a while, VERY verbose)"""
 
-    def __init__(self, config, *args, **kwargs):
-        strings.Strings.__init__(self, config, *args, **kwargs)
+    @staticmethod
+    def is_valid_profile(profile):
+        return profile.metadata.get('os', 'Unknown').lower() == 'linux'
 
     def get_processes(self, addr_space):
         """Enumerate processes based on user options.
@@ -58,17 +59,18 @@ class linux_strings(strings.Strings, linux_common.AbstractLinuxCommand):
         """
 
         mask = addr_space.address_mask
-        modules = linux_lsmod.linux_lsmod(self._config).calculate()
+        config = addr_space.get_config()
+        modules = linux_lsmod.linux_lsmod(config).calculate()
         mods = dict((mask(mod[0].module_core), mod[0]) for mod in modules)
         mod_addrs = sorted(mods.keys())
          
         return (mods, mod_addrs)
 
     @classmethod
-    def find_module(cls, mods, mod_addrs, addr_space, vpage):
+    def find_module(cls, modlist, mod_addrs, addr_space, vpage):
         """Determine which module owns a virtual page. 
 
-        :param      mods        | <list>
+        :param      modlist     | <list>
                     mod_addrs   | <list>
                     addr_space  | <addrspace.AbstractVirtualAddressSpace>
                     vpage       | <int> 
@@ -76,14 +78,14 @@ class linux_strings(strings.Strings, linux_common.AbstractLinuxCommand):
         :returns    <module> || None
         """
 
-        pos = bisect_right(mod_addrs, addr) - 1
+        pos = bisect_right(mod_addrs, vpage) - 1
         if pos == -1:
             return None
         mod = modlist[mod_addrs[pos]]
 
         compare = mod.obj_vm.address_compare
-        if (compare(addr, mod.module_core) != -1 and
-                compare(addr, mod.module_core + mod.core_size) == -1):
+        if (compare(vpage, mod.module_core) != -1 and
+                compare(vpage, mod.module_core + mod.core_size) == -1):
             return mod
         else:
             return None
