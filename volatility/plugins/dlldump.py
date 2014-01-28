@@ -29,11 +29,11 @@ import volatility.debug as debug
 import volatility.utils as utils
 import volatility.cache as cache
 
-class DLLDump(procdump.ProcExeDump):
+class DLLDump(procdump.ProcDump):
     """Dump DLLs from a process address space"""
 
     def __init__(self, config, *args, **kwargs):
-        procdump.ProcExeDump.__init__(self, config, *args, **kwargs)
+        procdump.ProcDump.__init__(self, config, *args, **kwargs)
         config.remove_option("OFFSET")
         config.add_option('REGEX', short_option = 'r',
                       help = 'Dump dlls matching REGEX',

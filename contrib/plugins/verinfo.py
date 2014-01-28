@@ -298,11 +298,11 @@ resource_types = {
  'RT_HTML'         : 23,
 }
 
-class VerInfo(procdump.ProcExeDump):
+class VerInfo(procdump.ProcDump):
     """Prints out the version information from PE images"""
 
     def __init__(self, config, *args, **kwargs):
-        procdump.ProcExeDump.__init__(self, config, *args, **kwargs)
+        procdump.ProcDump.__init__(self, config, *args, **kwargs)
         config.remove_option("OFFSET")
         config.remove_option("PID")
         config.add_option("OFFSET", short_option = "o", type = 'int',
@@ -360,8 +360,8 @@ class VerInfo(procdump.ProcExeDump):
             return obj.NoneObject("Disk image not resident in memory")
 
         try:
-            nt_header = self.get_nt_header(addr_space = addr_space,
-                                       base_addr = offset)
+            pe_file = obj.Object("_IMAGE_DOS_HEADER", offset = offset, vm = addr_space)
+            nt_header = pe_file.get_nt_header()
         except ValueError, ve:
             return obj.NoneObject("PE file failed initial sanity checks: {0}".format(ve))
         except exceptions.SanityCheckException, ve:

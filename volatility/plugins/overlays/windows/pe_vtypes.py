@@ -18,8 +18,10 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import struct
 import volatility.exceptions as exceptions
 import volatility.obj as obj
+import volatility.debug as debug
 
 pe_vtypes = {
     '_IMAGE_EXPORT_DIRECTORY': [ 0x28, {
@@ -428,6 +430,174 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
             for o, f, n in expdir._exported_functions():
                 yield o, f, n
 
+class _IMAGE_DOS_HEADER(obj.CType):
+    """DOS header"""
+
+    def get_nt_header(self):
+        """Get the NT header"""
+
+        if self.e_magic != 0x5a4d:
+            raise ValueError('e_magic {0:04X} is not a valid DOS signature.'.format(self.e_magic))
+
+        nt_header = obj.Object("_IMAGE_NT_HEADERS",
+                          offset = self.e_lfanew + self.obj_offset,
+                          vm = self.obj_vm,
+                          native_vm = self.obj_native_vm)
+
+        if nt_header.Signature != 0x4550:
+            raise ValueError('NT header signature {0:04X} is not a valid'.format(nt_header.Signature))
+
+        return nt_header
+
+    def get_code(self, data_start, data_size, offset):
+        """Returns a single section of re-created data from a file image"""
+        first_block = 0x1000 - data_start % 0x1000
+        full_blocks = ((data_size + (data_start % 0x1000)) / 0x1000) - 1
+        left_over = (data_size + data_start) % 0x1000
+
+        paddr = self.obj_vm.vtop(data_start)
+        code = ""
+
+        # Deal with reads that are smaller than a block
+        if data_size < first_block:
+            data_read = self.obj_vm.zread(data_start, data_size)
+            if paddr == None:
+                pass
+                #if self._config.verbose:
+                #    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(data_start, offset, data_size))
+            code += data_read
+            return (offset, code)
+
+        data_read = self.obj_vm.zread(data_start, first_block)
+        if paddr == None:
+            pass
+            #if self._config.verbose:
+            #    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(data_start, offset, first_block))
+        code += data_read
+
+        # The middle part of the read
+        new_vaddr = data_start + first_block
+
+        for _i in range(0, full_blocks):
+            data_read = self.obj_vm.zread(new_vaddr, 0x1000)
+            if self.obj_vm.vtop(new_vaddr) == None:
+                pass
+                #if self._config.verbose:
+                #    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(new_vaddr, offset, 0x1000))
+            code += data_read
+            new_vaddr = new_vaddr + 0x1000
+
+        # The last part of the read
+        if left_over > 0:
+            data_read = self.obj_vm.zread(new_vaddr, left_over)
+            if self.obj_vm.vtop(new_vaddr) == None:
+                pass
+                #if self._config.verbose:
+                #    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(new_vaddr, offset, left_over))
+            code += data_read
+        return (offset, code)
+
+    def round(self, addr, align, up = False):
+        """Rounds down an address based on an alignment"""
+        if addr % align == 0:
+            return addr
+        else:
+            if up:
+                return (addr + (align - (addr % align)))
+            return (addr - (addr % align))
+
+    def _get_image_exe(self, unsafe):
+    
+        nt_header = self.get_nt_header()
+        soh = nt_header.OptionalHeader.SizeOfHeaders
+        header = self.obj_vm.zread(self.obj_offset, soh)
+        yield (0, header)
+
+        fa = nt_header.OptionalHeader.FileAlignment
+        for sect in nt_header.get_sections(unsafe):
+            foa = self.round(sect.PointerToRawData, fa)
+            if foa != sect.PointerToRawData:
+                debug.warning("Section start on disk not aligned to file alignment.\n")
+                debug.warning("Adjusted section start from {0} to {1}.\n".format(sect.PointerToRawData, foa))
+            yield self.get_code(sect.VirtualAddress + self.obj_offset,
+                                sect.SizeOfRawData, foa)
+
+    def replace_header_field(self, sect, header, item, value):
+        """Replaces a field in a sector header"""
+        field_size = item.size()
+        start = item.obj_offset - sect.obj_offset
+        end = start + field_size
+        newval = struct.pack(item.format_string, int(value))
+        result = header[:start] + newval + header[end:]
+        return result
+
+    def _get_image_mem(self, unsafe):
+
+        nt_header = self.get_nt_header()
+
+        sa = nt_header.OptionalHeader.SectionAlignment
+        shs = self.obj_vm.profile.get_obj_size('_IMAGE_SECTION_HEADER')
+
+        yield self.get_code(self.obj_offset, nt_header.OptionalHeader.SizeOfImage, 0)
+
+        prevsect = None
+        sect_sizes = []
+        for sect in nt_header.get_sections(unsafe):
+            if prevsect is not None:
+                sect_sizes.append(sect.VirtualAddress - prevsect.VirtualAddress)
+            prevsect = sect
+        if prevsect is not None:
+            sect_sizes.append(self.round(prevsect.Misc.VirtualSize, sa, up = True))
+
+        counter = 0
+        start_addr = nt_header.FileHeader.SizeOfOptionalHeader + (nt_header.OptionalHeader.obj_offset - self.obj_offset)
+        for sect in nt_header.get_sections(unsafe):
+            sectheader = self.obj_vm.read(sect.obj_offset, shs)
+            # Change the PointerToRawData
+            sectheader = self.replace_header_field(sect, sectheader, sect.PointerToRawData, sect.VirtualAddress)
+            sectheader = self.replace_header_field(sect, sectheader, sect.SizeOfRawData, sect_sizes[counter])
+            sectheader = self.replace_header_field(sect, sectheader, sect.Misc.VirtualSize, sect_sizes[counter])
+
+            yield (start_addr + (counter * shs), sectheader)
+            counter += 1
+
+    def get_image(self, unsafe, memory):
+
+        if memory:
+            return self._get_image_mem(unsafe)
+        else:
+            return self._get_image_exe(unsafe)
+
+class _IMAGE_NT_HEADERS(obj.CType):
+    """PE header"""
+
+    def get_sections(self, unsafe):
+        """Get the PE sections"""
+        sect_size = self.obj_vm.profile.get_obj_size("_IMAGE_SECTION_HEADER")
+        start_addr = self.FileHeader.SizeOfOptionalHeader + self.OptionalHeader.obj_offset
+
+        for i in range(self.FileHeader.NumberOfSections):
+            s_addr = start_addr + (i * sect_size)
+            sect = obj.Object("_IMAGE_SECTION_HEADER", offset = s_addr, vm = self.obj_vm,
+                              parent = self, native_vm = self.obj_native_vm)
+            if not unsafe:
+                sect.sanity_check_section()
+            yield sect
+
+class _IMAGE_SECTION_HEADER(obj.CType):
+    """PE section"""
+
+    def sanity_check_section(self):
+        """Sanity checks address boundaries"""
+        # Note: all addresses here are RVAs
+        image_size = self.obj_parent.OptionalHeader.SizeOfImage
+        if self.VirtualAddress > image_size:
+            raise exceptions.SanityCheckException('VirtualAddress {0:08x} is past the end of image.'.format(self.VirtualAddress))
+        if self.Misc.VirtualSize > image_size:
+            raise exceptions.SanityCheckException('VirtualSize {0:08x} is larger than image size.'.format(self.Misc.VirtualSize))
+        if self.SizeOfRawData > image_size:
+            raise exceptions.SanityCheckException('SizeOfRawData {0:08x} is larger than image size.'.format(self.SizeOfRawData))
+
 class WinPEVTypes(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x : x == 'windows'}
@@ -449,4 +619,7 @@ class WinPEObjectClasses(obj.ProfileModification):
             '_IMAGE_EXPORT_DIRECTORY': _IMAGE_EXPORT_DIRECTORY,
             '_IMAGE_IMPORT_DESCRIPTOR': _IMAGE_IMPORT_DESCRIPTOR,
             '_LDR_DATA_TABLE_ENTRY': _LDR_DATA_TABLE_ENTRY,
+            '_IMAGE_DOS_HEADER': _IMAGE_DOS_HEADER,
+            '_IMAGE_NT_HEADERS': _IMAGE_NT_HEADERS,
+            '_IMAGE_SECTION_HEADER': _IMAGE_SECTION_HEADER,
             })

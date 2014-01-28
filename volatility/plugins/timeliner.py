@@ -82,7 +82,6 @@ colors = {
     "TAN":      "FFFFCC99",
     "PINK":     "FFFF00FF",
 }
-
     
 class Win7LdrDataTableEntry(obj.ProfileModification):
     before = ['WindowsOverlay']
@@ -131,7 +130,6 @@ class WinXPTrim(obj.ProfileModification):
                                         
         profile.merge_overlay(overlay)
 
-
 class WinAllTime(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',}
@@ -149,8 +147,7 @@ class WinAllTime(obj.ProfileModification):
                   } 
         profile.merge_overlay(overlay)
 
-
-class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
+class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
     """ Creates a timeline from various artifacts in memory """
 
     def __init__(self, config, *args):  
@@ -162,7 +159,7 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
         config.remove_option("BASE")
         config.remove_option("REGEX")
         config.remove_option("IGNORE-CASE")
-        procdump.ProcExeDump.__init__(self, config, *args)
+        procdump.ProcDump.__init__(self, config, *args)
         config.remove_option("DUMP-DIR")
         config.remove_option("OFFSET")
         config.remove_option("PID")
@@ -174,10 +171,6 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
                           help = 'Gather Timestamps from a Particular User\'s Hive(s)', type = 'str')
         config.add_option("REGISTRY", default = False, action = 'store_true',
                           help = 'Adds registry keys/dates to timeline')
-        config.add_option("KERNEL", short_option = 'K', default = False, action = 'store_true',
-                        help = 'Scan kernel modules')
-        config.add_option("WIDE", short_option = 'W', default = False, action = 'store_true',
-                        help = 'Match wide (unicode) strings')
         config.add_option('YARA-RULES', short_option = 'Y', default = None,
                         help = 'Yara rules (as a string)')
         config.add_option('YARA-FILE', short_option = 'y', default = None,
@@ -244,8 +237,6 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
             except ValueError, ve:
                 return "{0}|{1}\n".format(-1, header)
                 
-        
-
     def calculate(self):
         if self._config.OUTPUT == "xlsx" and not has_openpyxl:
             debug.error("You must install OpenPyxl for xlsx format:\n\thttps://bitbucket.org/ericgazoni/openpyxl/wiki/Home")
@@ -499,7 +490,8 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcExeDump, userassist.UserAssist):
             space = tasks.find_space(aspace, procs, mod_base)
             if space != None:
                 try:
-                    header = procdump.ProcExeDump(self._config).get_nt_header(space, mod_base)
+                    pe_file = obj.Object("_IMAGE_DOS_HEADER", offset = mod_base, vm = space)
+                    header = pe_file.get_nt_header()
                 except ValueError, ve: 
                     continue
                 line = "[PE HEADER (module)]{0} {1}{0} Base: {2:#010x}".format(

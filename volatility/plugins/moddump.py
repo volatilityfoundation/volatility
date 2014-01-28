@@ -30,11 +30,11 @@ import volatility.win32.tasks as tasks
 import volatility.utils as utils
 import volatility.debug as debug
 
-class ModDump(procdump.ProcExeDump):
+class ModDump(procdump.ProcDump):
     """Dump a kernel driver to an executable file sample"""
 
     def __init__(self, config, *args, **kwargs):
-        procdump.ProcExeDump.__init__(self, config, *args, **kwargs)
+        procdump.ProcDump.__init__(self, config, *args, **kwargs)
         config.remove_option("PID")
         config.remove_option("OFFSET")
         config.add_option('REGEX', short_option = 'r',

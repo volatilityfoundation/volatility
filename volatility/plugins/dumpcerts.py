@@ -120,12 +120,12 @@ class SSLKeyModification(obj.ProfileModification):
             '_PKCS_PRIVATE_CERT': _PKCS_PRIVATE_CERT, 
             })
 
-# Inherit from ProcExeDump for access to the --dump-dir option
-class DumpCerts(procdump.ProcExeDump):
+# Inherit from ProcDump for access to the --dump-dir option
+class DumpCerts(procdump.ProcDump):
     """Dump RSA private and public SSL keys"""
 
     def __init__(self, config, *args, **kwargs):
-        procdump.ProcExeDump.__init__(self, config, *args, **kwargs)
+        procdump.ProcDump.__init__(self, config, *args, **kwargs)
 
         config.remove_option("UNSAFE")
         config.add_option("SSL", short_option = 's', 
