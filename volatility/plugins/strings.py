@@ -158,7 +158,7 @@ class Strings(common.AbstractWindowsCommand):
         :returns    <tuple>
         """
         # Remove any leading spaces to handle nasty strings output
-        stringLine = line.lstrip()
+        line = line.lstrip()
         maxlen = len(line)
         split_char = ' '
         for char in [' ', ':']:
