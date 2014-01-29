@@ -667,8 +667,8 @@ class DumpFiles(common.AbstractWindowsCommand):
                       help = 'Dump files for Process with physical address OFFSET',
                       action = 'store', type = 'int')
         config.add_option('PHYSOFFSET', short_option = 'Q', default = None,
-                      help = 'Dump File Object at physical address PHYSOFFSET',
-                      action = 'store', type = 'int')
+                      help = 'Dump File Object at physical address PHYSOFFSETs (comma delimited)',
+                      action = 'store', type = 'str')
         config.add_option('DUMP-DIR', short_option = 'D', default = None,
                       cache_invalidator = False,
                       help = 'Directory in which to dump extracted files')
@@ -804,9 +804,14 @@ class DumpFiles(common.AbstractWindowsCommand):
         # are found with filescan that are not associated with a process
         # For example, $Mft.
         if self._config.PHYSOFFSET:
-            file_obj = obj.Object("_FILE_OBJECT", self._config.PHYSOFFSET, self.kaddr_space.base, native_vm = self.kaddr_space)
-            procfiles.append((None, [file_obj]))
-            #return
+            try:
+                phys = []
+                for p in self._config.PHYSOFFSET.split(","):
+                    file_obj = obj.Object("_FILE_OBJECT", int(p, 16), self.kaddr_space.base, native_vm = self.kaddr_space)
+                    phys.append(file_obj)
+                procfiles.append((None, phys))
+            except ValueError:
+                debug.error("Invalid PHYSOFFSET {0}".format(self._config.PHYSOFFSET))
 
         # Iterate through the process list and collect all references to
         # FILE_OBJECTS from both the VAD and HandleTable. Each open handle to a file
@@ -871,10 +876,13 @@ class DumpFiles(common.AbstractWindowsCommand):
         for pid, allfiles in procfiles:
             for file_obj in allfiles:
 
-                if not self._config.PHYSOFFSET:
-                    offset = file_obj.obj_offset
-                else:
-                    offset = self._config.PHYSOFFSET
+                # XXX TODO: remove these comments when accepted
+                #if not self._config.PHYSOFFSET:
+                offset = file_obj.obj_offset
+                #else:
+                # I'm not sure why we need to specify PHYSOFFSET here, 
+                # shouldn't we have a valid _FILE_OBJECT?
+                #    offset = self._config.PHYSOFFSET
 
                 name = None
 
@@ -1064,6 +1072,7 @@ class DumpFiles(common.AbstractWindowsCommand):
 
                 if self._config.SUMMARY_FILE:
                     json.dump(summaryinfo, summaryfo)
+                    summaryfo.write("\n")
                 of.close()
 
             elif summaryinfo['type'] == "ImageSectionObject":
@@ -1099,6 +1108,7 @@ class DumpFiles(common.AbstractWindowsCommand):
 
                 if self._config.SUMMARY_FILE:
                     json.dump(summaryinfo, summaryfo)
+                    summaryfo.write("\n")
                 of.close()
 
             elif summaryinfo['type'] == "SharedCacheMap":
@@ -1122,6 +1132,7 @@ class DumpFiles(common.AbstractWindowsCommand):
 
                 if self._config.SUMMARY_FILE:
                     json.dump(summaryinfo, summaryfo)
+                    summaryfo.write("\n")
                 of.close()
 
             else:
