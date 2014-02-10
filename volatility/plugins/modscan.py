@@ -67,7 +67,7 @@ class ModScan(common.AbstractScanCommand):
 
     def render_text(self, outfd, data):
         self.table_header(outfd,
-                          [("Offset(P)", "[addrpad]"),
+                          [("Offset(P)", "#018x"),
                            ('Name', "20"),
                            ('Base', "[addrpad]"),
                            ('Size', "[addr]"),
@@ -107,7 +107,7 @@ class ThrdScan(common.AbstractScanCommand):
 
     def render_text(self, outfd, data):
         self.table_header(outfd,
-                          [("Offset(P)", "[addrpad]"),
+                          [("Offset(P)", "#018x"),
                            ("PID", ">6"),
                            ("TID", ">6"),
                            ("Start Address", "[addr]"),
