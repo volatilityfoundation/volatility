@@ -198,10 +198,11 @@ class RegistryApi(object):
         '''
         This function returns the requested value of a registry key
         '''
-        if key and value:
-            h = given_root if given_root != None else self.reg_get_key(hive_name, key)
-            if h != None:
-                for v in rawreg.values(h):
+        if value != None:
+            if given_root == None and key != None:
+                given_root = self.reg_get_key(hive_name, key)
+            if given_root != None:
+                for v in rawreg.values(given_root):
                     if value == v.Name:
                         tp, dat = rawreg.value_data(v)
                         if tp == 'REG_BINARY' or strcmp == None:
