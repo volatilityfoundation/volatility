@@ -205,7 +205,6 @@ class MFT_FILE_RECORD(obj.CType):
                     nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
                     nameend = next_attr.obj_offset + next_attr.Header.NameOffset + (next_attr.Header.NameLength * 2)
                     adsname = obj.Object("NullString", vm = self.obj_vm, offset = next_attr.obj_offset + next_attr.Header.NameOffset, length = next_attr.Header.NameLength * 2)
-                    #adsname = mft_buff[nameloc:nameend]
                     if adsname != "":
                         attr += " ADS Name: {0}".format(adsname)
                 start = next_attr.obj_offset + next_attr.ContentOffset
