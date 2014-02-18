@@ -195,6 +195,19 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
             elif attr == "DATA":
+                if next_attr.ContentSize == 0 and next_attr.Header.NameOffset <= 0 and next_attr.Header.NameLength <= 0:
+                    next_off = next_attr.obj_offset + 0x16
+                    next_attr = self.advance_one(next_off, mft_buff, end)
+                    attributes.append((attr, ""))
+                    continue
+                adsname = ""
+                if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
+                    nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
+                    nameend = next_attr.obj_offset + next_attr.Header.NameOffset + (next_attr.Header.NameLength * 2)
+                    adsname = obj.Object("NullString", vm = self.obj_vm, offset = next_attr.obj_offset + next_attr.Header.NameOffset, length = next_attr.Header.NameLength * 2)
+                    #adsname = mft_buff[nameloc:nameend]
+                    if adsname != "":
+                        attr += " ADS Name: {0}".format(adsname)
                 start = next_attr.obj_offset + next_attr.ContentOffset
                 theend = min(start + next_attr.ContentSize, end)
                 if next_attr.Header.NonResidentFlag == 1:
@@ -705,8 +718,8 @@ class MFTParser(common.AbstractWindowsCommand):
                         outfd.write("{0}\n".format(i.get_full(full)))
                     else:
                         outfd.write("{0}\n".format(str(i)))
-                elif a == "DATA":
-                    outfd.write("\n$DATA\n")
+                elif a.startswith("DATA"):
+                    outfd.write("\n${0}\n".format(a))
                     outfd.write("{0}\n".format(str(i)))
                 elif a == "OBJECT_ID":
                     outfd.write("\n$OBJECT_ID\n")
