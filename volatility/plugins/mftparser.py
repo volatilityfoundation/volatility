@@ -195,18 +195,19 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
             elif attr == "DATA":
-                if next_attr.ContentSize == 0 and next_attr.Header.NameOffset <= 0 and next_attr.Header.NameLength <= 0:
+                if next_attr.Header.NameOffset > 0 and next_attr.Header.NameLength > 0:
+                    adsname = ""
+                    if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
+                        nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
+                        nameend = next_attr.obj_offset + next_attr.Header.NameOffset + (next_attr.Header.NameLength * 2)
+                        adsname = obj.Object("NullString", vm = self.obj_vm, offset = next_attr.obj_offset + next_attr.Header.NameOffset, length = next_attr.Header.NameLength * 2)
+                        if adsname.strip() != "":
+                            attr += " ADS Name: {0}".format(adsname)
+                if next_attr.ContentSize == 0:
                     next_off = next_attr.obj_offset + 0x16
                     next_attr = self.advance_one(next_off, mft_buff, end)
                     attributes.append((attr, ""))
                     continue
-                adsname = ""
-                if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
-                    nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
-                    nameend = next_attr.obj_offset + next_attr.Header.NameOffset + (next_attr.Header.NameLength * 2)
-                    adsname = obj.Object("NullString", vm = self.obj_vm, offset = next_attr.obj_offset + next_attr.Header.NameOffset, length = next_attr.Header.NameLength * 2)
-                    if adsname != "":
-                        attr += " ADS Name: {0}".format(adsname)
                 start = next_attr.obj_offset + next_attr.ContentOffset
                 theend = min(start + next_attr.ContentSize, end)
                 if next_attr.Header.NonResidentFlag == 1:
@@ -394,11 +395,14 @@ class FILE_NAME(STANDARD_INFORMATION):
             self.remove_unprintable(self.get_name()))
 
     def get_full(self, full):
-        return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
-            str(self.ModifiedTime),
-            str(self.MFTAlteredTime),
-            str(self.FileAccessedTime),
-            self.remove_unprintable(full))
+        try:
+            return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
+                str(self.ModifiedTime),
+                str(self.MFTAlteredTime),
+                str(self.FileAccessedTime),
+                self.remove_unprintable(full))
+        except struct.error:
+            return None
 
     def body(self, path, record_num, size, offset):
         return "[MFT FILE_NAME] {0} (Offset: 0x{1:x})|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
@@ -645,15 +649,22 @@ class MFTParser(common.AbstractWindowsCommand):
         scanner = poolscan.MultiPoolScanner(needles = ['FILE', 'BAAD'])
         print "Scanning for MFT entries and building directory, this can take a while"
         seen = []
+        offsets = []
         for _, offset in scanner.scan(address_space):
             mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
             bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
             mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
                                offset = 0)
+            temp = mft_entry.advance_one(mft_entry.ResidentAttributes.STDInfo.obj_offset + mft_entry.ResidentAttributes.ContentSize, mft_buff, self._config.ENTRYSIZE)
+            if temp != None: # and temp.FileName.is_valid():
+                mft_entry.add_path(temp.FileName)
             if int(mft_entry.RecordNumber) in seen:
                 continue
             else:
                 seen.append(int(mft_entry.RecordNumber))
+            offsets.append((offset, mft_entry))
+        for offset, mft_entry in offsets:
+            mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
             attributes = mft_entry.parse_attributes(mft_buff, self._config.CHECK)
             yield offset, mft_entry, attributes
 
@@ -714,7 +725,10 @@ class MFTParser(common.AbstractWindowsCommand):
                     if hasattr(i, "ParentDirectory"):
                         full = mft_entry.get_full_path(i)
                         self.table_header(outfd, i.get_header())
-                        outfd.write("{0}\n".format(i.get_full(full)))
+                        output = i.get_full(full)
+                        if output == None:
+                            continue
+                        outfd.write("{0}\n".format(output))
                     else:
                         outfd.write("{0}\n".format(str(i)))
                 elif a.startswith("DATA"):
