@@ -203,10 +203,10 @@ class MFT_FILE_RECORD(obj.CType):
                         nameend = next_attr.obj_offset + next_attr.Header.NameOffset + (next_attr.Header.NameLength * 2)
                         adsname = obj.Object("NullString", vm = self.obj_vm, offset = next_attr.obj_offset + next_attr.Header.NameOffset, length = next_attr.Header.NameLength * 2)
                         if adsname.strip() != "" and dataseen:
-                            attr += " ADS Name: {0}".format(adsname)
+                            attr += " ADS Name: {0}".format(adsname.strip())
                 dataseen = True
                 if next_attr.ContentSize == 0:
-                    next_off = next_attr.obj_offset + 0x16
+                    next_off = next_attr.obj_offset + self.obj_vm.profile.get_obj_size("RESIDENT_ATTRIBUTE")
                     next_attr = self.advance_one(next_off, mft_buff, end)
                     attributes.append((attr, ""))
                     continue
