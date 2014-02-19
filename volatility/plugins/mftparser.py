@@ -32,8 +32,10 @@ import volatility.scan as scan
 import volatility.utils as utils
 import volatility.addrspace as addrspace
 import volatility.obj as obj
+import volatility.debug as debug
 import struct
 import binascii
+import os
 import volatility.poolscan as poolscan
 
 ATTRIBUTE_TYPE_ID = {
@@ -646,6 +648,10 @@ class MFTParser(common.AbstractWindowsCommand):
         config.add_option("ENTRYSIZE", short_option = "E", default = 1024,
                           help = "MFT Entry Size",
                           action = "store", type = "int")
+        config.add_option('DUMP-DIR', short_option = 'D', default = None,
+                      cache_invalidator = False,
+                      help = 'Directory in which to dump extracted resident files')
+
     def calculate(self):
         address_space = utils.load_as(self._config, astype = 'physical')
         scanner = poolscan.MultiPoolScanner(needles = ['FILE', 'BAAD'])
@@ -704,6 +710,8 @@ class MFTParser(common.AbstractWindowsCommand):
                 outfd.write("0|{0}\n".format(si.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize), offset)))
 
     def render_text(self, outfd, data):
+        if self._config.DUMP_DIR != None and not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
         border = "*" * 75
         for offset, mft_entry, attributes in data:
             if len(attributes) == 0:
@@ -714,6 +722,10 @@ class MFTParser(common.AbstractWindowsCommand):
             outfd.write("Record Number: {0}\n".format(mft_entry.RecordNumber))
             outfd.write("Link count: {0}\n".format(mft_entry.LinkCount))
             outfd.write("\n")
+            # there can be more than one resident $DATA attribute
+            # e.g. ADS.  Therfore we need to differentiate somehow
+            # to avoid clobbering.  For now we'll use a counter (datanum)
+            datanum = 0
             for a, i in attributes:
                 if i == None:
                     outfd.write("${0}: malformed entry\n".format(a))
@@ -735,7 +747,15 @@ class MFTParser(common.AbstractWindowsCommand):
                         outfd.write("{0}\n".format(str(i)))
                 elif a.startswith("DATA"):
                     outfd.write("\n${0}\n".format(a))
-                    outfd.write("{0}\n".format(str(i)))
+                    contents = "\n".join(["{0:010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(i)])
+                    outfd.write("{0}\n".format(str(contents)))
+                    if len(str(i)) > 0:
+                        file_string = ".".join(["file", "0x{0:x}".format(offset), "data{0}".format(datanum), "dmp"])
+                        datanum += 1
+                        of_path = os.path.join(self._config.DUMP_DIR, file_string)
+                        of = open(of_path, 'wb')
+                        of.write(i)
+                        of.close()
                 elif a == "OBJECT_ID":
                     outfd.write("\n$OBJECT_ID\n")
                     outfd.write(str(i))
