@@ -156,6 +156,7 @@ class MFT_FILE_RECORD(obj.CType):
             ## FIXME: r3519 changed this to self._config.ENTRYSIZE
             end = 1024
         attributes = []
+        dataseen = False
         while next_attr != None and next_attr.obj_offset <= end:
             try:
                 attr = ATTRIBUTE_TYPE_ID.get(int(next_attr.Header.Type), None)
@@ -201,8 +202,9 @@ class MFT_FILE_RECORD(obj.CType):
                         nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
                         nameend = next_attr.obj_offset + next_attr.Header.NameOffset + (next_attr.Header.NameLength * 2)
                         adsname = obj.Object("NullString", vm = self.obj_vm, offset = next_attr.obj_offset + next_attr.Header.NameOffset, length = next_attr.Header.NameLength * 2)
-                        if adsname.strip() != "":
+                        if adsname.strip() != "" and dataseen:
                             attr += " ADS Name: {0}".format(adsname)
+                dataseen = True
                 if next_attr.ContentSize == 0:
                     next_off = next_attr.obj_offset + 0x16
                     next_attr = self.advance_one(next_off, mft_buff, end)
