@@ -172,6 +172,10 @@ class _MMVAD_SHORT_XP(VadTraverser):
     def VadFlags(self):
         return self.u.VadFlags
 
+    @property
+    def CommitCharge(self):
+        return self.u.VadFlags.CommitCharge
+
 class _MMVAD_XP(_MMVAD_SHORT_XP):
 
     @property
