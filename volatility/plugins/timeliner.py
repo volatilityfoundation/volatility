@@ -303,6 +303,26 @@ class TimeLiner(common.AbstractWindowsCommand):
                     offset)
                 yield self.getoutput(line, eprocess.Vm.LastTrimTime, body = body)
 
+            if eprocess.ObjectTable.HandleTableList:
+                for handle in eprocess.ObjectTable.handles():
+                    if not handle.is_valid():
+                        continue
+
+                    name = ""
+                    object_type = handle.get_object_type()
+                    if object_type == "Key":
+                        key_obj = handle.dereference_as("_CM_KEY_BODY")
+                        name = key_obj.full_key_name()
+                        line = "[_CM_KEY_BODY KcbLastWriteTime]{0} {1}{0} {2} PID: {3}/PPID: {4}/POffset: 0x{5:08x}".format(
+                            "" if body else "|",
+                            name,
+                            eprocess.ImageFileName,
+                            eprocess.UniqueProcessId,
+                            eprocess.InheritedFromUniqueProcessId,
+                            offset)
+                        yield self.getoutput(line, key_obj.KeyControlBlock.KcbLastWriteTime, body = body)
+
+
             injected = False
             for vad, address_space in eprocess.get_vads(vad_filter = eprocess._injection_filter):
 
@@ -370,7 +390,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                             offset,
                             mod.DllBase.v())
                     if hasattr(mod, "LoadTime"): 
-                        temp = line.replace("[PE HEADER ", "[PE LOADTIME ")
+                        temp = line.replace("[PE HEADER ", "[DLL LOADTIME ")
                         if body:
                             yield self.getoutput(temp, mod.TimeDateStamp, end = mod.LoadTime, body = body)
                         else:
@@ -586,11 +606,13 @@ class TimeLiner(common.AbstractWindowsCommand):
                     regapi.all_offsets[o])
             h = obj.Object("_HHIVE", o, addr_space)
             yield self.getoutput(line, h.BaseBlock.TimeStamp, body = body)
+
+            cmhive = obj.Object("_CMHIVE", o, addr_space)
+
             if version[0] == 6 and addr_space.profile.metadata.get('build', 0) == 7601:
-                line = line = "[_CMHIVE LASTWRITE]{0} {1}{0} ".format(
+                line = line = "[_CMHIVE LastWriteTime]{0} {1}{0} ".format(
                     "" if body else "|",
                     regapi.all_offsets[o])
-                h = obj.Object("_CMHIVE", o, addr_space)
                 yield self.getoutput(line, h.LastWriteTime, body = body)
 
         if self._config.REGISTRY:
