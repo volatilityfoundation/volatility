@@ -25,6 +25,7 @@
 @organization: Volatility Foundation
 """
 
+import volatility.plugins.common as common
 import volatility.plugins.registry.registryapi as registryapi
 import volatility.plugins.taskmods as taskmods
 import volatility.plugins.registry.shimcache as shimcache
@@ -32,8 +33,6 @@ import volatility.plugins.filescan as filescan
 import volatility.plugins.sockets as sockets
 import volatility.plugins.sockscan as sockscan
 import volatility.plugins.modscan as modscan
-import volatility.plugins.procdump as  procdump
-import volatility.plugins.dlldump as dlldump
 import volatility.plugins.moddump as moddump
 import volatility.plugins.netscan as netscan
 import volatility.plugins.evtlogs as evtlogs
@@ -147,19 +146,17 @@ class WinAllTime(obj.ProfileModification):
                   } 
         profile.merge_overlay(overlay)
 
-class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
+class TimeLiner(common.AbstractWindowsCommand):
     """ Creates a timeline from various artifacts in memory """
 
-    def __init__(self, config, *args):  
+    def __init__(self, config, *args, **kwargs):
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
         config.remove_option("SAVE-EVT")
-        userassist.UserAssist.__init__(self, config, *args)
         config.remove_option("HIVE-OFFSET")
         config.remove_option("KEY")
-        dlldump.DLLDump.__init__(self, config, *args)
         config.remove_option("BASE")
         config.remove_option("REGEX")
         config.remove_option("IGNORE-CASE")
-        procdump.ProcDump.__init__(self, config, *args)
         config.remove_option("DUMP-DIR")
         config.remove_option("OFFSET")
         config.remove_option("PID")
@@ -249,9 +246,6 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
         addr_space = utils.load_as(self._config)
         version = (addr_space.profile.metadata.get('major', 0), 
                    addr_space.profile.metadata.get('minor', 0))
-
-        self._config.update("REDR", True)
-        self._config.update("LEAK", True)
 
         pids = {}     #dictionary of process IDs/ImageFileName
         
@@ -513,7 +507,10 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
                         mod_base)
                 yield self.getoutput(line, header.FileHeader.TimeDateStamp, body = body)
 
-        '''data = iehistory.IEHistory(self._config).calculate()
+        '''
+        self._config.update("REDR", True)
+        self._config.update("LEAK", True)
+        data = iehistory.IEHistory(self._config).calculate()
         for process, record in data:
             ## Extended fields are available for these records 
             if record.obj_name == "_URL_RECORD":
@@ -524,9 +521,10 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
                     record.Signature, record.obj_offset,
                     record.Url)
                     
-                yield self.getoutput(line, record.LastModified, end = record.LastAccessed, body = body)'''
+                yield self.getoutput(line, record.LastModified, end = record.LastAccessed, body = body)
+        '''
 
-        uastuff = userassist.UserAssist.calculate(self)
+        uastuff = userassist.UserAssist(self._config).calculate()
         for win7, reg, key in uastuff:
             ts = "{0}".format(key.LastWriteTime)
             for v in rawreg.values(key):
