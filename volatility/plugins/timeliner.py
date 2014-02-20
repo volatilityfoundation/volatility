@@ -607,13 +607,13 @@ class TimeLiner(common.AbstractWindowsCommand):
             h = obj.Object("_HHIVE", o, addr_space)
             yield self.getoutput(line, h.BaseBlock.TimeStamp, body = body)
 
-            cmhive = obj.Object("_CMHIVE", o, addr_space)
 
             if version[0] == 6 and addr_space.profile.metadata.get('build', 0) == 7601:
                 line = line = "[_CMHIVE LastWriteTime]{0} {1}{0} ".format(
                     "" if body else "|",
                     regapi.all_offsets[o])
-                yield self.getoutput(line, h.LastWriteTime, body = body)
+                cmhive = obj.Object("_CMHIVE", o, addr_space)
+                yield self.getoutput(line, cmhive.LastWriteTime, body = body)
 
         if self._config.REGISTRY:
             regapi.reset_current()
