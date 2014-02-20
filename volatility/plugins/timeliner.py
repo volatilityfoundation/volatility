@@ -274,6 +274,24 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
 
             yield self.getoutput(line, eprocess.CreateTime, end = eprocess.ExitTime, body = body)
 
+            if not hasattr(eprocess.obj_vm, "vtop"):
+                eprocess = taskmods.DllList(self._config).virtual_process_from_physical_offset(addr_space, eprocess.obj_offset)
+                if eprocess == None:
+                    continue
+            else:
+                ps_ad = eprocess.get_process_address_space()
+                if ps_ad == None:
+                    continue
+                
+            if version[0] == 5: 
+                line = "[PROCESS LastTrimTime]{0} {1}{0} PID: {2}/PPID: {3}/POffset: 0x{4:08x}".format(
+                    "" if body else "|",
+                    eprocess.ImageFileName,
+                    eprocess.UniqueProcessId,
+                    eprocess.InheritedFromUniqueProcessId,
+                    offset)
+                yield self.getoutput(line, eprocess.Vm.LastTrimTime, body = body)
+
             injected = False
             for vad, address_space in eprocess.get_vads(vad_filter = eprocess._injection_filter):
 
@@ -310,13 +328,8 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
             if eprocess.Peb == None or eprocess.Peb.ImageBaseAddress == None:
                 dllskip = True
                 continue
-
             # Get DLL PE timestamps
-            if not dllskip:
-                ps_ad = eprocess.get_process_address_space()
-                if ps_ad == None:
-                    continue
-
+            else:
                 mods = dict((mod.DllBase.v(), mod) for mod in eprocess.get_load_modules())
                 for mod in mods.values():
                     basename = str(mod.BaseDllName or "")
@@ -345,7 +358,7 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
                             basename,
                             offset,
                             mod.DllBase.v())
-                    if hasattr(mod, "LoadTime"): # or (addr_space.profile.metadata.get('major', 0) == 6 and addr_space.profile.metadata.get('minor', 0) == 1):
+                    if hasattr(mod, "LoadTime"): 
                         temp = line.replace("[PE HEADER ", "[PE LOADTIME ")
                         if body:
                             yield self.getoutput(temp, mod.TimeDateStamp, end = mod.LoadTime, body = body)
@@ -391,7 +404,7 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
                     self.suspicious[line.strip()]["reason"] = self.suspicious[line.strip()]["reason"] + " and YARASCAN {0}".format(hit.rule)
 
         # Get Sockets and Evtlogs XP/2k3 only
-        if addr_space.profile.metadata.get('major', 0) == 5:
+        if version[0] == 5:
             socks = sockets.Sockets(self._config).calculate()
             #socks = sockscan.SockScan(self._config).calculate()   # you can use sockscan instead if you uncomment
             for sock in socks:
@@ -570,12 +583,12 @@ class TimeLiner(dlldump.DLLDump, procdump.ProcDump, userassist.UserAssist):
 
         regapi = registryapi.RegistryApi(self._config)
         for o in regapi.all_offsets:
-            line = "[REG LOADED]{0} {1}{0} ".format(
+            line = "[_HBASE_BLOCK TimeStamp]{0} {1}{0} ".format(
                     "" if body else "|",
                     regapi.all_offsets[o])
             h = obj.Object("_HHIVE", o, addr_space)
             yield self.getoutput(line, h.BaseBlock.TimeStamp, body = body)
-            if addr_space.profile.metadata.get('major', 0) == 6 and addr_space.profile.metadata.get('build', 0) == 7601:
+            if version[0] == 6 and addr_space.profile.metadata.get('build', 0) == 7601:
                 line = line = "[_CMHIVE LASTWRITE]{0} {1}{0} ".format(
                     "" if body else "|",
                     regapi.all_offsets[o])
