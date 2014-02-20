@@ -256,6 +256,23 @@ class TimeLiner(common.AbstractWindowsCommand):
     
         yield self.getoutput("[END LIVE RESPONSE]{0} (System time)".format("" if body else "|"), im['ImageDatetime'], body = body)
 
+        self._config.update("REDR", True)
+        self._config.update("LEAK", True)
+        data = iehistory.IEHistory(self._config).calculate()
+        for process, record in data:
+            ## Extended fields are available for these records 
+            if record.obj_name == "_URL_RECORD":
+                line = "[IEHISTORY]{0} {1}->{5}{0} PID: {2}/Cache type \"{3}\" at {4:#x}".format(
+                    "" if body else "|",
+                    process.ImageFileName,
+                    process.UniqueProcessId,
+                    record.Signature, record.obj_offset,
+                    record.Url)
+                        
+                yield self.getoutput(line, record.LastModified, end = record.LastAccessed, body = body)
+        self._config.remove_option("REDR")
+        self._config.remove_option("LEAK")
+
         psx = psxview.PsXview(self._config).calculate()
         for offset, eprocess, ps_sources in psx:
             pids[eprocess.UniqueProcessId.v()] = eprocess.ImageFileName
@@ -506,23 +523,6 @@ class TimeLiner(common.AbstractWindowsCommand):
                         mod_name,
                         mod_base)
                 yield self.getoutput(line, header.FileHeader.TimeDateStamp, body = body)
-
-        '''
-        self._config.update("REDR", True)
-        self._config.update("LEAK", True)
-        data = iehistory.IEHistory(self._config).calculate()
-        for process, record in data:
-            ## Extended fields are available for these records 
-            if record.obj_name == "_URL_RECORD":
-                line = "[IEHISTORY]{0} {1}->{5}{0} PID: {2}/Cache type \"{3}\" at {4:#x}".format(
-                    "" if body else "|",
-                    process.ImageFileName,
-                    process.UniqueProcessId,
-                    record.Signature, record.obj_offset,
-                    record.Url)
-                    
-                yield self.getoutput(line, record.LastModified, end = record.LastAccessed, body = body)
-        '''
 
         uastuff = userassist.UserAssist(self._config).calculate()
         for win7, reg, key in uastuff:
