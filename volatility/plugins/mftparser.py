@@ -677,6 +677,8 @@ class MFTParser(common.AbstractWindowsCommand):
             yield offset, mft_entry, attributes
 
     def render_body(self, outfd, data):
+        if self._config.DUMP_DIR != None and not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
         # Some notes: every base MFT entry should have one $SI and at lease one $FN
         # Usually $SI occurs before $FN
         # We'll make an effort to get the filename from $FN for $SI
@@ -684,6 +686,7 @@ class MFTParser(common.AbstractWindowsCommand):
         for offset, mft_entry, attributes in data:
             si = None
             full = ""
+            datanum = 0
             for a, i in attributes:
                 if a.startswith("STANDARD_INFORMATION"):
                     if full != "":
@@ -705,6 +708,15 @@ class MFTParser(common.AbstractWindowsCommand):
                         if si != None:
                             outfd.write("0|{0}\n".format(si.body(full, mft_entry.RecordNumber, int(mft_entry.EntryUsedSize), offset)))
                             si = None
+                elif a.startswith("DATA"):
+                    if len(str(i)) > 0:
+                        file_string = ".".join(["file", "0x{0:x}".format(offset), "data{0}".format(datanum), "dmp"])
+                        datanum += 1
+                        of_path = os.path.join(self._config.DUMP_DIR, file_string)
+                        of = open(of_path, 'wb')
+                        of.write(i)
+                        of.close()
+
             if si != None:
                 # here we have a lone $SI in an MFT entry with no valid $FN.  This is most likely a non-base entry
                 outfd.write("0|{0}\n".format(si.body("", mft_entry.RecordNumber, int(mft_entry.EntryUsedSize), offset)))
