@@ -355,7 +355,7 @@ class STANDARD_INFORMATION(obj.CType):
                 # given physical offset in memory for example
                 path = record["filename"] + " (Possible non-base entry, extra $SI or invalid $FN)"
 
-        return "[MFT STD_INFO] {0} (Offset: 0x{1:x})|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
+        return "[{9}MFT STD_INFO] {0} (Offset: 0x{1:x})|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
             path,
             offset,
             record_num,
@@ -364,7 +364,8 @@ class STANDARD_INFORMATION(obj.CType):
             self.FileAccessedTime.v(),
             self.ModifiedTime.v(),
             self.MFTAlteredTime.v(),
-            self.CreationTime.v())
+            self.CreationTime.v(),
+            self.obj_vm._config.MACHINE)
 
 class FILE_NAME(STANDARD_INFORMATION):
     def remove_unprintable(self, str):
@@ -409,7 +410,7 @@ class FILE_NAME(STANDARD_INFORMATION):
             return None
 
     def body(self, path, record_num, size, offset):
-        return "[MFT FILE_NAME] {0} (Offset: 0x{1:x})|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
+        return "[{9}MFT FILE_NAME] {0} (Offset: 0x{1:x})|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
             path,
             offset,
             record_num,
@@ -418,7 +419,8 @@ class FILE_NAME(STANDARD_INFORMATION):
             self.FileAccessedTime.v(),
             self.ModifiedTime.v(),
             self.MFTAlteredTime.v(),
-            self.CreationTime.v())
+            self.CreationTime.v(),
+            self.obj_vm._config.MACHINE)
 
 class OBJECT_ID(obj.CType):
     # Modified from analyzeMFT.py:
@@ -651,8 +653,12 @@ class MFTParser(common.AbstractWindowsCommand):
         config.add_option('DUMP-DIR', short_option = 'D', default = None,
                       cache_invalidator = False,
                       help = 'Directory in which to dump extracted resident files')
+        config.add_option("MACHINE", default = "",
+                        help = "Machine name to add to timeline header")
 
     def calculate(self):
+        if self._config.MACHINE != "":
+            self._config.update("MACHINE", "{0} ".format(self._config.MACHINE))
         address_space = utils.load_as(self._config, astype = 'physical')
         scanner = poolscan.MultiPoolScanner(needles = ['FILE', 'BAAD'])
         print "Scanning for MFT entries and building directory, this can take a while"
@@ -712,10 +718,11 @@ class MFTParser(common.AbstractWindowsCommand):
                     if len(str(i)) > 0:
                         file_string = ".".join(["file", "0x{0:x}".format(offset), "data{0}".format(datanum), "dmp"])
                         datanum += 1
-                        of_path = os.path.join(self._config.DUMP_DIR, file_string)
-                        of = open(of_path, 'wb')
-                        of.write(i)
-                        of.close()
+                        if self._config.DUMP_DIR != None:
+                            of_path = os.path.join(self._config.DUMP_DIR, file_string)
+                            of = open(of_path, 'wb')
+                            of.write(i)
+                            of.close()
 
             if si != None:
                 # here we have a lone $SI in an MFT entry with no valid $FN.  This is most likely a non-base entry
@@ -764,10 +771,11 @@ class MFTParser(common.AbstractWindowsCommand):
                     if len(str(i)) > 0:
                         file_string = ".".join(["file", "0x{0:x}".format(offset), "data{0}".format(datanum), "dmp"])
                         datanum += 1
-                        of_path = os.path.join(self._config.DUMP_DIR, file_string)
-                        of = open(of_path, 'wb')
-                        of.write(i)
-                        of.close()
+                        if self._config.DUMP_DIR != None:
+                            of_path = os.path.join(self._config.DUMP_DIR, file_string)
+                            of = open(of_path, 'wb')
+                            of.write(i)
+                            of.close()
                 elif a == "OBJECT_ID":
                     outfd.write("\n$OBJECT_ID\n")
                     outfd.write(str(i))

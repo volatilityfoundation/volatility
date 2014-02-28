@@ -172,6 +172,8 @@ class TimeLiner(common.AbstractWindowsCommand):
                         help = 'Yara rules (as a string)')
         config.add_option('YARA-FILE', short_option = 'y', default = None,
                         help = 'Yara rules (rules file)')
+        config.add_option("MACHINE", default = "",
+                        help = "Machine name to add to timeline header")
 
         self.suspicious = {}
         self.suspiciouspids = {}
@@ -253,21 +255,29 @@ class TimeLiner(common.AbstractWindowsCommand):
         body = False
         if self._config.OUTPUT == "body":
             body = True
-    
-        yield self.getoutput("[END LIVE RESPONSE]{0} (System time)".format("" if body else "|"), im['ImageDatetime'], body = body)
+        if self._config.MACHINE != "":
+            self._config.update("MACHINE", "{0} ".format(self._config.MACHINE))
 
-        self._config.update("REDR", True)
+        detections = False
+        if self._config.OUTPUT == "xlsx":
+            detections = True
+    
+        yield self.getoutput("[{0}LIVE RESPONSE]{1} (System time)".format(
+            self._config.MACHINE, "" if body else "|"), 
+            im['ImageDatetime'], body = body)
+
         self._config.update("LEAK", True)
         data = iehistory.IEHistory(self._config).calculate()
         for process, record in data:
             ## Extended fields are available for these records 
             if record.obj_name == "_URL_RECORD":
-                line = "[IEHISTORY]{0} {1}->{5}{0} PID: {2}/Cache type \"{3}\" at {4:#x}".format(
+                line = "[{6}IEHISTORY]{0} {1}->{5}{0} PID: {2}/Cache type \"{3}\" at {4:#x}".format(
                     "" if body else "|",
                     process.ImageFileName,
                     process.UniqueProcessId,
                     record.Signature, record.obj_offset,
-                    record.Url)
+                    record.Url,
+                    self._config.MACHINE)
                         
                 yield self.getoutput(line, record.LastModified, end = record.LastAccessed, body = body)
         self._config.remove_option("REDR")
@@ -276,12 +286,13 @@ class TimeLiner(common.AbstractWindowsCommand):
         psx = psxview.PsXview(self._config).calculate()
         for offset, eprocess, ps_sources in psx:
             pids[eprocess.UniqueProcessId.v()] = eprocess.ImageFileName
-            line = "[PROCESS]{0} {1}{0} PID: {2}/PPID: {3}/POffset: 0x{4:08x}".format(
+            line = "[{5}PROCESS]{0} {1}{0} PID: {2}/PPID: {3}/POffset: 0x{4:08x}".format(
                 "" if body else "|",
                 eprocess.ImageFileName,
                 eprocess.UniqueProcessId,
                 eprocess.InheritedFromUniqueProcessId,
-                offset)
+                offset,
+                self._config.MACHINE)
 
             yield self.getoutput(line, eprocess.CreateTime, end = eprocess.ExitTime, body = body)
 
@@ -295,12 +306,13 @@ class TimeLiner(common.AbstractWindowsCommand):
                     continue
                 
             if version[0] == 5: 
-                line = "[PROCESS LastTrimTime]{0} {1}{0} PID: {2}/PPID: {3}/POffset: 0x{4:08x}".format(
+                line = "[{5}PROCESS LastTrimTime]{0} {1}{0} PID: {2}/PPID: {3}/POffset: 0x{4:08x}".format(
                     "" if body else "|",
                     eprocess.ImageFileName,
                     eprocess.UniqueProcessId,
                     eprocess.InheritedFromUniqueProcessId,
-                    offset)
+                    offset,
+                    self._config.MACHINE)
                 yield self.getoutput(line, eprocess.Vm.LastTrimTime, body = body)
 
             if eprocess.ObjectTable.HandleTableList:
@@ -313,47 +325,49 @@ class TimeLiner(common.AbstractWindowsCommand):
                     if object_type == "Key":
                         key_obj = handle.dereference_as("_CM_KEY_BODY")
                         name = key_obj.full_key_name()
-                        line = "[_CM_KEY_BODY KcbLastWriteTime]{0} {1}{0} {2} PID: {3}/PPID: {4}/POffset: 0x{5:08x}".format(
+                        line = "[{6}Handle (Key)]{0} {1}{0} {2} PID: {3}/PPID: {4}/POffset: 0x{5:08x}".format(
                             "" if body else "|",
                             name,
                             eprocess.ImageFileName,
                             eprocess.UniqueProcessId,
                             eprocess.InheritedFromUniqueProcessId,
-                            offset)
+                            offset,
+                            self._config.MACHINE)
                         yield self.getoutput(line, key_obj.KeyControlBlock.KcbLastWriteTime, body = body)
 
 
-            injected = False
-            for vad, address_space in eprocess.get_vads(vad_filter = eprocess._injection_filter):
+            if detections:
+                injected = False
+                for vad, address_space in eprocess.get_vads(vad_filter = eprocess._injection_filter):
 
-                if malfind.Malfind(self._config)._is_vad_empty(vad, address_space):
-                    continue
+                    if malfind.Malfind(self._config)._is_vad_empty(vad, address_space):
+                        continue
 
-                line = "PID: {0}/PPID: {1}/POffset: 0x{2:08x}".format(
-                    eprocess.UniqueProcessId,
-                    eprocess.InheritedFromUniqueProcessId,
-                    offset)
-                self.suspicious[line.strip()] = {"reason":"MALFIND", "color": "RED"}
-                self.suspiciouspids[eprocess.UniqueProcessId.v()] = {"reason":"MALFIND", "color": "RED"}
-                injected = True
+                    line = "PID: {0}/PPID: {1}/POffset: 0x{2:08x}".format(
+                        eprocess.UniqueProcessId,
+                        eprocess.InheritedFromUniqueProcessId,
+                        offset)
+                    self.suspicious[line.strip()] = {"reason":"MALFIND", "color": "RED"}
+                    self.suspiciouspids[eprocess.UniqueProcessId.v()] = {"reason":"MALFIND", "color": "RED"}
+                    injected = True
 
-            proc_okay = False
-            if not injected and (eprocess.ExitTime.v() > 0 or str(eprocess.ImageFileName).lower() in ["system", "smss.exe", "csrss.exe"]):
-                proc_okay = True
-            elif not injected and ps_sources['psscan'].has_key(offset) and (not ps_sources['pslist'].has_key(offset) or not \
-                ps_sources['thrdproc'].has_key(offset) or not ps_sources['pspcid'].has_key(offset) or not \
-                ps_sources['csrss'].has_key(offset) or not ps_sources['session'].has_key(offset) or not \
-                ps_sources['deskthrd'].has_key(offset)):
-                proc_okay = True
-            if not proc_okay and (not ps_sources['pslist'].has_key(offset) or not ps_sources['psscan'].has_key(offset) or not ps_sources['thrdproc'].has_key(offset) \
-                or not ps_sources['pspcid'].has_key(offset) or not ps_sources['csrss'].has_key(offset) or not ps_sources['session'].has_key(offset) \
-                or not ps_sources['deskthrd'].has_key(offset)):
-                if self.suspicious.get(line.strip(), {}).get("reason", None) == None:
-                    self.suspicious[line.strip()] = {"reason":"PSXVIEW", "color": "RED"}
-                    self.suspiciouspids[eprocess.UniqueProcessId.v()] = {"reason":"PSXVIEW", "color": "RED"}
-                else:
-                    self.suspicious[line.strip()] = {"reason":"MALFIND and PSXVIEW", "color": "RED"}
-                    self.suspiciouspids[eprocess.UniqueProcessId.v()] = {"reason":"MALFIND and PSXVIEW", "color": "RED"}
+                proc_okay = False
+                if not injected and (eprocess.ExitTime.v() > 0 or str(eprocess.ImageFileName).lower() in ["system", "smss.exe", "csrss.exe"]):
+                    proc_okay = True
+                elif not injected and ps_sources['psscan'].has_key(offset) and (not ps_sources['pslist'].has_key(offset) or not \
+                    ps_sources['thrdproc'].has_key(offset) or not ps_sources['pspcid'].has_key(offset) or not \
+                    ps_sources['csrss'].has_key(offset) or not ps_sources['session'].has_key(offset) or not \
+                    ps_sources['deskthrd'].has_key(offset)):
+                    proc_okay = True
+                if not proc_okay and (not ps_sources['pslist'].has_key(offset) or not ps_sources['psscan'].has_key(offset) or not ps_sources['thrdproc'].has_key(offset) \
+                    or not ps_sources['pspcid'].has_key(offset) or not ps_sources['csrss'].has_key(offset) or not ps_sources['session'].has_key(offset) \
+                    or not ps_sources['deskthrd'].has_key(offset)):
+                    if self.suspicious.get(line.strip(), {}).get("reason", None) == None:
+                        self.suspicious[line.strip()] = {"reason":"PSXVIEW", "color": "RED"}
+                        self.suspiciouspids[eprocess.UniqueProcessId.v()] = {"reason":"PSXVIEW", "color": "RED"}
+                    else:
+                        self.suspicious[line.strip()] = {"reason":"MALFIND and PSXVIEW", "color": "RED"}
+                        self.suspiciouspids[eprocess.UniqueProcessId.v()] = {"reason":"MALFIND and PSXVIEW", "color": "RED"}
 
             dllskip = False
             if eprocess.Peb == None or eprocess.Peb.ImageBaseAddress == None:
@@ -364,48 +378,50 @@ class TimeLiner(common.AbstractWindowsCommand):
                 mods = dict((mod.DllBase.v(), mod) for mod in eprocess.get_load_modules())
                 for mod in mods.values():
                     basename = str(mod.BaseDllName or "")
-                    suspiciousline = "Process: {0}/PID: {1}/PPID: {2}/Process POffset: 0x{3:08x}/DLL Base: 0x{4:08x}".format(
-                            eprocess.ImageFileName,
-                            eprocess.UniqueProcessId,
-                            eprocess.InheritedFromUniqueProcessId,
-                            offset,
-                            mod.DllBase.v())
-
                     if basename == str(eprocess.ImageFileName):
-                        line = "[PE HEADER (exe)]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
+                        line = "[{7}PE HEADER (exe)]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
                             "" if body else "|",
                             eprocess.ImageFileName,
                             eprocess.UniqueProcessId,
                             eprocess.InheritedFromUniqueProcessId,
                             basename,
                             offset,
-                            mod.DllBase.v())
+                            mod.DllBase.v(),
+                            self._config.MACHINE)
                     else:
-                        line = "[PE HEADER (dll)]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
+                        line = "[{7}PE HEADER (dll)]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
                             "" if body else "|",
                             eprocess.ImageFileName,
                             eprocess.UniqueProcessId,
                             eprocess.InheritedFromUniqueProcessId,
                             basename,
                             offset,
-                            mod.DllBase.v())
+                            mod.DllBase.v(),
+                            self._config.MACHINE)
                     if hasattr(mod, "LoadTime"): 
-                        temp = line.replace("[PE HEADER ", "[DLL LOADTIME ")
+                        temp = line.replace("[{0}PE HEADER ".format(self._config.MACHINE), "[{0}DLL LOADTIME ".format(self._config.MACHINE))
                         if body:
                             yield self.getoutput(temp, mod.TimeDateStamp, end = mod.LoadTime, body = body)
                         else:
                             yield self.getoutput(temp, mod.LoadTime, body = body)
                     yield self.getoutput(line, mod.TimeDateStamp, body = body)
-                    line = "[PE DEBUG]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
+                    line = "[{7}PE DEBUG]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
                             "" if body else "|",
                             eprocess.ImageFileName,
                             eprocess.UniqueProcessId,
                             eprocess.InheritedFromUniqueProcessId,
                             basename,
                             offset,
-                            mod.DllBase.v())
+                            mod.DllBase.v(),
+                            self._config.MACHINE)
                     yield self.getoutput(line, mod.get_debug_directory().TimeDateStamp, body = body)
-                    if eprocess.UniqueProcessId.v() in self.suspiciouspids.keys():
+                    if detections and eprocess.UniqueProcessId.v() in self.suspiciouspids.keys():
+                        suspiciousline = "Process: {0}/PID: {1}/PPID: {2}/Process POffset: 0x{3:08x}/DLL Base: 0x{4:08x}".format(
+                            eprocess.ImageFileName,
+                            eprocess.UniqueProcessId,
+                            eprocess.InheritedFromUniqueProcessId,
+                            offset,
+                            mod.DllBase.v())
                         self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[eprocess.UniqueProcessId.v()]["reason"], "color": "BLUE"}
 
         # yarascan
@@ -421,7 +437,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                     o.UniqueProcessId,
                     o.InheritedFromUniqueProcessId,
                     o.obj_vm.vtop(o.obj_offset))
-                if self.suspicious.get(line.strip(), {}).get("reason", None) == None:
+                if detections and self.suspicious.get(line.strip(), {}).get("reason", None) == None:
                     self.suspicious[line.strip()] = {"reason":"YARASCAN", "color": "LORANGE"}
                     self.suspiciouspids[o.UniqueProcessId.v()] = {"reason":"YARASCAN", "color": "LORANGE"}
                 elif self.suspicious[line.strip()]["reason"].find("YARASCAN {0}".format(hit.rule)) == -1:
@@ -429,9 +445,9 @@ class TimeLiner(common.AbstractWindowsCommand):
             else:
                 line = "Base: {0:#010x}".format(
                         o.BaseDllName)
-                if self.suspicious.get(line.strip(), {}).get("reason", None) == None:
+                if detections and self.suspicious.get(line.strip(), {}).get("reason", None) == None:
                     self.suspicious[line.strip()] = {"reason":"YARASCAN {0}".format(hit.rule), "color": "LORANGE"}
-                elif self.suspicious[line.strip()]["reason"].find("YARASCAN {0}".format(hit.rule)) == -1:
+                elif detections and self.suspicious[line.strip()]["reason"].find("YARASCAN {0}".format(hit.rule)) == -1:
                     self.suspicious[line.strip()]["reason"] = self.suspicious[line.strip()]["reason"] + " and YARASCAN {0}".format(hit.rule)
 
         # Get Sockets and Evtlogs XP/2k3 only
@@ -440,28 +456,32 @@ class TimeLiner(common.AbstractWindowsCommand):
             #socks = sockscan.SockScan(self._config).calculate()   # you can use sockscan instead if you uncomment
             for sock in socks:
                 la = "{0}:{1}".format(sock.LocalIpAddress, sock.LocalPort)
-                line = "[SOCKET]{0} LocalIP: {2}/Protocol: {3}({4}){0} PID: {1}/POffset: 0x{5:#010x}".format(
+                line = "[{6}SOCKET]{0} LocalIP: {2}/Protocol: {3}({4}){0} PID: {1}/POffset: 0x{5:#010x}".format(
                         "" if body else "|",
                         sock.Pid, 
                         la, 
                         sock.Protocol,
                         protos.protos.get(sock.Protocol.v(), "-"),
-                        sock.obj_offset)
-                suspiciousline = "PID: {0}/POffset: 0x{1:#010x}".format(
-                        sock.Pid,
-                        sock.obj_offset)
+                        sock.obj_offset,
+                        self._config.MACHINE)
 
                 yield self.getoutput(line, sock.CreateTime, body = body)
-                if sock.Pid.v() in self.suspiciouspids.keys():
+                if detections and sock.Pid.v() in self.suspiciouspids.keys():
+                    suspiciousline = "PID: {0}/POffset: 0x{1:#010x}".format(
+                        sock.Pid,
+                        sock.obj_offset)
                     self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[sock.Pid.v()]["reason"], "color": "YELLOW"}
 
             evt = evtlogs.EvtLogs(self._config)
             stuff = evt.calculate()
             for name, buf in stuff:
                 for fields in evt.parse_evt_info(name, buf, rawtime = True):
-                    line = "[EVT LOG]{0} {1}{0} {2}/{3}/{4}/{5}/{6}/{7}".format("" if body else "|",
-                            fields[1], fields[2], fields[3], fields[4], fields[5], fields[6], fields[7])
+                    line = "[{8}EVT LOG]{0} {1}{0} {2}/{3}/{4}/{5}/{6}/{7}".format("" if body else "|",
+                            fields[1], fields[2], fields[3], fields[4], fields[5], fields[6], fields[7],
+                            self._config.MACHINE)
                     yield self.getoutput(line, fields[0], body = body)
+                    if not detections:
+                        continue
                     line = "{0}/{1}/{2}/{3}/{4}/{5}".format(
                        fields[2], fields[3], fields[4], fields[5], fields[6], fields[7])
                     if fields[5] == 517:
@@ -479,38 +499,41 @@ class TimeLiner(common.AbstractWindowsCommand):
             nets = netscan.Netscan(self._config).calculate()
             for net_object, proto, laddr, lport, raddr, rport, state in nets:
                 conn = "{0}:{1} -> {2}:{3}".format(laddr, lport, raddr, rport)
-                line = "[NETWORK CONNECTION]{0} {2}{0} {1}/{3}/{4}/{5:<#10x}".format(
+                line = "[{6}NETWORK CONNECTION]{0} {2}{0} {1}/{3}/{4}/{5:<#10x}".format(
                         "" if body else "|",
                         net_object.Owner.UniqueProcessId,
                         conn,
                         proto,
                         state,
-                        net_object.obj_offset)
-                suspiciousline = "{0}/{1}/{2}/{3:<#10x}".format(
+                        net_object.obj_offset,
+                        self._config.MACHINE)
+
+                yield self.getoutput(line, net_object.CreateTime, body = body)
+                if detections and net_object.Owner.UniqueProcessId.v() in self.suspiciouspids.keys():
+                    suspiciousline = "{0}/{1}/{2}/{3:<#10x}".format(
                         net_object.Owner.UniqueProcessId,
                         proto,
                         state,
                         net_object.obj_offset)
-
-                yield self.getoutput(line, net_object.CreateTime, body = body)
-                if net_object.Owner.UniqueProcessId.v() in self.suspiciouspids.keys():
                     self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[net_object.Owner.UniqueProcessId.v()]["reason"], "color": "YELLOW"}
 
         # Get threads
         threads = modscan.ThrdScan(self._config).calculate()
         for thread in threads:
             image = pids.get(thread.Cid.UniqueProcess.v(), "UNKNOWN")
-            line = "[THREAD]{0} {1}{0} PID: {2}/TID: {3}".format(
+            line = "[{4}THREAD]{0} {1}{0} PID: {2}/TID: {3}".format(
                     "" if body else "|",
                     image,
                     thread.Cid.UniqueProcess,
-                    thread.Cid.UniqueThread)
+                    thread.Cid.UniqueThread,
+                    self._config.MACHINE)
+            yield self.getoutput(line, thread.CreateTime, end = thread.ExitTime, body = body)
 
+            if not detections:
+                continue
             suspiciousline = "PID: {0}/TID: {1}".format(
                     thread.Cid.UniqueProcess,
                     thread.Cid.UniqueThread)
-
-            yield self.getoutput(line, thread.CreateTime, end = thread.ExitTime, body = body)
             if thread.Cid.UniqueProcess.v() in self.suspiciouspids.keys():
                 self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[thread.Cid.UniqueProcess.v()]["reason"], "color": "YELLOW"}
             if image == "UNKNOWN" or thread.Cid.UniqueProcess.v() not in pids:
@@ -519,13 +542,14 @@ class TimeLiner(common.AbstractWindowsCommand):
         data = filescan.SymLinkScan(self._config).calculate()
         for link in data:
             objct = link.get_object_header()
-            line = "[SYMLINK]{0} {1}->{2}{0} POffset: {3}/Ptr: {4}/Hnd: {5}".format(
+            line = "[{6}SYMLINK]{0} {1}->{2}{0} POffset: {3}/Ptr: {4}/Hnd: {5}".format(
                     "" if body else "|",
                     str(objct.NameInfo.Name or ''),
                     str(link.LinkTarget or ''),
                     link.obj_offset,
                     objct.PointerCount,
-                    objct.HandleCount)
+                    objct.HandleCount,
+                    self._config.MACHINE)
             yield self.getoutput(line, link.CreationTime, body = body)
 
         data = moddump.ModDump(self._config).calculate()
@@ -538,10 +562,11 @@ class TimeLiner(common.AbstractWindowsCommand):
                     header = pe_file.get_nt_header()
                 except ValueError, ve: 
                     continue
-                line = "[PE HEADER (module)]{0} {1}{0} Base: {2:#010x}".format(
+                line = "[{3}PE HEADER (module)]{0} {1}{0} Base: {2:#010x}".format(
                         "" if body else "|",
                         mod_name,
-                        mod_base)
+                        mod_base,
+                        self._config.MACHINE)
                 yield self.getoutput(line, header.FileHeader.TimeDateStamp, body = body)
 
         uastuff = userassist.UserAssist(self._config).calculate()
@@ -584,16 +609,17 @@ class TimeLiner(common.AbstractWindowsCommand):
                         lw = "{0}".format(uadata.LastUpdated)
 
                 subname = subname.replace("|", "%7c")
-                line = "[USER ASSIST]{0} {2}{0} Registry: {1}/ID: {3}/Count: {4}/FocusCount: {5}/TimeFocused: {6}".format(
+                line = "[{7}USER ASSIST]{0} {2}{0} Registry: {1}/ID: {3}/Count: {4}/FocusCount: {5}/TimeFocused: {6}".format(
                         "" if body else "|",
-                        reg, subname, ID, count, fc, tf)
+                        reg, subname, ID, count, fc, tf,
+                        self._config.MACHINE)
                 yield self.getoutput(line, uadata.LastUpdated, body = body)
 
         shimdata = shimcache.ShimCache(self._config).calculate()
         for path, lm, lu in shimdata:
-            line = "[SHIMCACHE]{0} {1}{0} ".format(
+            line = "[{2}SHIMCACHE]{0} {1}{0} ".format(
                     "" if body else "|",
-                    path)
+                    path, self._config.MACHINE)
             if lu:
                 yield self.getoutput(line, lm, end = lu, body = body)
             else:
@@ -601,17 +627,19 @@ class TimeLiner(common.AbstractWindowsCommand):
 
         regapi = registryapi.RegistryApi(self._config)
         for o in regapi.all_offsets:
-            line = "[_HBASE_BLOCK TimeStamp]{0} {1}{0} ".format(
+            line = "[{2}_HBASE_BLOCK TimeStamp]{0} {1}{0} ".format(
                     "" if body else "|",
-                    regapi.all_offsets[o])
+                    regapi.all_offsets[o],
+                    self._config.MACHINE)
             h = obj.Object("_HHIVE", o, addr_space)
             yield self.getoutput(line, h.BaseBlock.TimeStamp, body = body)
 
 
             if version[0] == 6 and addr_space.profile.metadata.get('build', 0) == 7601:
-                line = line = "[_CMHIVE LastWriteTime]{0} {1}{0} ".format(
+                line = line = "[{2}_CMHIVE LastWriteTime]{0} {1}{0} ".format(
                     "" if body else "|",
-                    regapi.all_offsets[o])
+                    regapi.all_offsets[o],
+                    self._config.MACHINE)
                 cmhive = obj.Object("_CMHIVE", o, addr_space)
                 yield self.getoutput(line, cmhive.LastWriteTime, body = body)
 
@@ -621,10 +649,11 @@ class TimeLiner(common.AbstractWindowsCommand):
     
             for lwtime, reg, item in regdata:
                 item = item.replace("|", "%7c")
-                line = "[REGISTRY]{0} {2}{0} Registry: {1}".format(
+                line = "[{3}REGISTRY]{0} {2}{0} Registry: {1}".format(
                         "" if body else "|",
                         reg, 
-                        item)
+                        item,
+                        self._config.MACHINE)
                         
                 yield self.getoutput(line, lwtime, body = body)
 

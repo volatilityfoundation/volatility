@@ -292,13 +292,14 @@ class ITEMPOS(obj.CType):
         return fileattrs
 
     def body(self, details):
-        return "0|[SHELLBAGS ITEMPOS] Name: {3}/Attrs: {4}/{5}|0|---------------|0|0|0|{0}|{1}|{2}|{2}\n".format(
+        return "0|[{6}SHELLBAGS ITEMPOS] Name: {3}/Attrs: {4}/{5}|0|---------------|0|0|0|{0}|{1}|{2}|{2}\n".format(
             self.Attributes.AccessDate.v(), 
             self.Attributes.ModifiedDate.v(),
             self.Attributes.CreatedDate.v(),
             str(self.Attributes.UnicodeFilename), 
             self.get_file_attrs(), 
-            details)
+            details,
+            self.obj_vm._config.MACHINE)
 
     def __str__(self):
         return "{0:<14} {1:30} {2:30} {3:30} {4:25} {5}".format(self.Attributes.FileName,
@@ -327,13 +328,14 @@ class FILE_ENTRY(ITEMPOS):
         return fileattrs
 
     def body(self, details):
-        return "0|[SHELLBAGS FILE_ENTRY] Name: {3}/Attrs: {4}/{5}|0|---------------|0|0|0|{0}|{1}|{2}|{2}\n".format(
+        return "0|[{6}SHELLBAGS FILE_ENTRY] Name: {3}/Attrs: {4}/{5}|0|---------------|0|0|0|{0}|{1}|{2}|{2}\n".format(
             self.Attributes.AccessDate.v(), 
             self.Attributes.ModifiedDate.v(),
             self.Attributes.CreatedDate.v(),
             str(self.Attributes.UnicodeFilename),
             self.get_file_attrs(),
-            details)
+            details,
+            self.obj_vm._config.MACHINE)
 
     def __str__(self):
         return "{0:<14} {1:30} {2:30} {3:30} {4:25}".format(self.Attributes.FileName,
@@ -799,6 +801,8 @@ class ShellBags(common.AbstractWindowsCommand):
     """Prints ShellBags info"""
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
+        config.add_option("MACHINE", default = "",
+                        help = "Machine name to add to timeline header")
         self.supported = ["FILE_ENTRY", "FOLDER_ENTRY", "CONTROL_PANEL", "VOLUME_NAME", "NETWORK_VOLUME_NAME", "NETWORK_SHARE", "UNKNOWN_00"]
         self.paths = {}
 
@@ -863,6 +867,8 @@ class ShellBags(common.AbstractWindowsCommand):
         version = (addr_space.profile.metadata.get('major', 0), 
                    addr_space.profile.metadata.get('minor', 0))
         
+        if self._config.MACHINE != "":
+            self._config.update("MACHINE", "{0} ".format(self._config.MACHINE))
         #set our current registry of interest and get its path
         regapi = registryapi.RegistryApi(self._config)
         regapi.reset_current()
