@@ -30,9 +30,11 @@
 @organization: Volatility Foundation
 """
 
-
+import volatility.plugins.registry.registryapi as registryapi
 import volatility.plugins.taskmods as taskmods
-import re
+import volatility.plugins.getservicesids as getservicesids
+import volatility.utils as utils
+import re, ntpath
 
 def find_sid_re(sid_string, sid_re_list):
     for reg, name in sid_re_list:
@@ -145,8 +147,31 @@ class GetSIDs(taskmods.DllList):
     meta_info['os'] = 'WIN_32_XP_SP2'
     meta_info['version'] = '1.0'
 
+    def lookup_user_sids(self):
+
+        regapi = registryapi.RegistryApi(self._config)
+        regapi.set_current("hklm") 
+
+        key = "Microsoft\\Windows NT\\CurrentVersion\\ProfileList"
+        val = "ProfileImagePath"
+
+        sids = {}
+
+        for subkey in regapi.reg_get_all_subkeys(None, key = key):
+            sid = str(subkey.Name)
+            path = regapi.reg_get_value(None, key = "", value = val, given_root = subkey)
+            if path:
+                path = str(path).replace("\x00", "")
+                user = ntpath.basename(path)
+                sids[sid] = user
+
+        return sids
+
     def render_text(self, outfd, data):
         """Renders the sids as text"""
+
+        user_sids = self.lookup_user_sids()
+
         for task in data:
             token = task.get_token()
 
@@ -157,6 +182,10 @@ class GetSIDs(taskmods.DllList):
             for sid_string in token.get_sids():
                 if sid_string in well_known_sids:
                     sid_name = " ({0})".format(well_known_sids[sid_string])
+                elif sid_string in getservicesids.servicesids:
+                    sid_name = " ({0})".format(getservicesids.servicesids[sid_string])
+                elif sid_string in user_sids:   
+                    sid_name = " ({0})".format(user_sids[sid_string])
                 else:
                     sid_name_re = find_sid_re(sid_string, well_known_sid_re)
                     if sid_name_re:
