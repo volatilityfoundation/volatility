@@ -59,8 +59,8 @@ def get_kdbg(addr_space):
         # Fall back to finding it via the KPCR. We cannot
         # accept the first/best suggestion, because only 
         # the KPCR for the first CPU allows us to find KDBG. 
-        for kpcr_off in obj.VolMagic(addr_space).KPCR.generate_suggestions():
-        
+        for kpcr_off in obj.VolMagic(addr_space).KPCR.get_suggestions():
+
             kpcr = obj.Object("_KPCR", offset = kpcr_off, vm = addr_space)
 
             kdbg = kpcr.get_kdbg()
