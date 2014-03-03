@@ -65,7 +65,7 @@ class AbstractScanCommand(AbstractWindowsCommand):
         use_top_down = (addr_space.profile.metadata.get("major", 0) == 6 
                         and addr_space.profile.metadata.get("minor") >= 2)
 
-        multiscan = poolscan.MultiScanInterface(config = self._config, 
+        multiscan = poolscan.MultiScanInterface(addr_space = addr_space, 
                                 scanners = self.scanners,
                                 scan_virtual = self._config.VIRTUAL, 
                                 show_unalloc = self._config.SHOW_UNALLOCATED,

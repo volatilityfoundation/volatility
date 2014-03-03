@@ -77,10 +77,10 @@ class MultiScanInterface(object):
     """An interface into a scanner that can find multiple pool tags
     in a single pass through an address space."""
 
-    def __init__(self, config, scanners = [], scan_virtual = False, show_unalloc = False, use_top_down = False, start_offset = None, max_length = None):
+    def __init__(self, addr_space, scanners = [], scan_virtual = False, show_unalloc = False, use_top_down = False, start_offset = None, max_length = None):
         """An interface into the multiple concurrent pool scanner. 
 
-        @param config: a Volatility config object 
+        @param addr_space: a Volatility address space
         
         @param scanners: a list of PoolScanner classes to scan for. 
 
@@ -98,7 +98,6 @@ class MultiScanInterface(object):
         @param max_length: the size in bytes to scan from the start. 
         """
 
-        self.config = config
         self.scanners = scanners
         self.scan_virtual = scan_virtual
         self.show_unalloc = show_unalloc
@@ -106,7 +105,7 @@ class MultiScanInterface(object):
         self.start_offset = start_offset
         self.max_length = max_length
 
-        self.address_space = utils.load_as(config)
+        self.address_space = addr_space
         self.pool_alignment = obj.VolMagic(self.address_space).PoolAlignment.v()
 
     def _check_pool_size(self, check, pool_header):

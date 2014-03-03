@@ -28,6 +28,7 @@
 import volatility.plugins.common as common
 import volatility.obj as obj
 import volatility.poolscan as poolscan
+import volatility.utils as utils
 
 class PoolScanFile(poolscan.PoolScanner):
     """Pool scanner for file objects"""
@@ -259,6 +260,13 @@ class PSScan(common.AbstractScanCommand):
     meta_info['url'] = 'https://www.volatilityfoundation.org/'
     meta_info['os'] = ['Win7SP0x86', 'WinXPSP3x86']
     meta_info['version'] = '0.1'
+
+    def calculate(self):
+        if self._config.VIRTUAL:
+            addr_space = utils.load_as(self._config)
+        else:
+            addr_space = utils.load_as(self._config, astype = 'physical')
+        return self.scan_results(addr_space)
 
     def render_text(self, outfd, data):
 
