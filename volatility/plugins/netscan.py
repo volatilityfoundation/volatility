@@ -229,8 +229,8 @@ class Netscan(common.AbstractScanCommand):
 
     def render_text(self, outfd, data):
 
-        outfd.write("{0:<10} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
-            "Offset(P)", "Proto", "Local Address", "Foreign Address",
+        outfd.write("{0:<18} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
+            self.offset_column(), "Proto", "Local Address", "Foreign Address",
             "State", "Pid", "Owner", "Created"))
 
         for net_object, proto, laddr, lport, raddr, rport, state in data:
@@ -238,7 +238,7 @@ class Netscan(common.AbstractScanCommand):
             lendpoint = "{0}:{1}".format(laddr, lport)
             rendpoint = "{0}:{1}".format(raddr, rport)
 
-            outfd.write("{0:<#10x} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
+            outfd.write("{0:<#18x} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
                 net_object.obj_offset, proto, lendpoint,
                 rendpoint, state, net_object.Owner.UniqueProcessId,
                 net_object.Owner.ImageFileName,

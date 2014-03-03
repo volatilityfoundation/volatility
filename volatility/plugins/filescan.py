@@ -64,7 +64,7 @@ class FileScan(common.AbstractScanCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [('Offset(P)', '#018x'),
+        self.table_header(outfd, [(self.offset_column(), '#018x'),
                                   ('#Ptr', '>6'),
                                   ('#Hnd', '>6'),
                                   ('Access', '>6'),
@@ -107,7 +107,7 @@ class DriverScan(common.AbstractScanCommand):
 
     def render_text(self, outfd, data):
        
-        self.table_header(outfd, [('Offset(P)', '#018x'),
+        self.table_header(outfd, [(self.offset_column(), '#018x'),
                                   ('#Ptr', '>8'),
                                   ('#Hnd', '>8'),
                                   ('Start', '[addrpad]'),
@@ -152,7 +152,7 @@ class SymLinkScan(common.AbstractScanCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [('Offset(P)', '#018x'),
+        self.table_header(outfd, [(self.offset_column(), '#018x'),
                                   ('#Ptr', '>6'),
                                   ('#Hnd', '>6'),
                                   ('Creation time', '30'),
@@ -200,7 +200,7 @@ class MutantScan(common.AbstractScanCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [('Offset(P)', '#018x'),
+        self.table_header(outfd, [(self.offset_column(), '#018x'),
                                   ('#Ptr', '>8'),
                                   ('#Hnd', '>8'),
                                   ('Signal', '4'),
@@ -270,7 +270,7 @@ class PSScan(common.AbstractScanCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [('Offset(P)', '#018x'),
+        self.table_header(outfd, [(self.offset_column(), '#018x'),
                                   ('Name', '16'),
                                   ('PID', '>6'),
                                   ('PPID', '>6'),

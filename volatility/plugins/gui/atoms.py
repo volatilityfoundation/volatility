@@ -77,7 +77,7 @@ class AtomScan(common.AbstractScanCommand):
     def render_text(self, outfd, data):
 
         self.table_header(outfd,
-                         [("TableOfs(P)", "[addr]"),
+                         [(self.offset_column(), "[addr]"),
                           ("AtomOfs(V)", "[addrpad]"),
                           ("Atom", "[addr]"),
                           ("Refs", "6"),
@@ -147,7 +147,7 @@ class Atoms(common.AbstractWindowsCommand):
     def render_text(self, outfd, data):
 
         self.table_header(outfd,
-                         [("Offset(P)", "[addr]"),
+                         [(self.offset_column(), "[addr]"),
                           ("Session", "^10"),
                           ("WindowStation", "^18"),
                           ("Atom", "[addr]"),

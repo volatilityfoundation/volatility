@@ -61,6 +61,9 @@ class AbstractScanCommand(AbstractWindowsCommand):
             debug.error("This command does not support the selected profile.")
         return self.scan_results(addr_space)
 
+    def offset_column(self):
+        return "Offset(V)" if self._config.VIRTUAL else "Offset(P)"
+
     def scan_results(self, addr_space):
         use_top_down = (addr_space.profile.metadata.get("major", 0) == 6 
                         and addr_space.profile.metadata.get("minor") >= 2)

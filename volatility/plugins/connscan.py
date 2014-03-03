@@ -68,7 +68,7 @@ class ConnScan(common.AbstractScanCommand):
 
     def render_text(self, outfd, data):
         self.table_header(outfd,
-                          [("Offset(P)", "[addrpad]"),
+                          [(self.offset_column(), "[addrpad]"),
                            ("Local Address", "25"),
                            ("Remote Address", "25"),
                            ("Pid", "")
