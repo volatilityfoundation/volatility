@@ -202,8 +202,7 @@ class MFT_FILE_RECORD(obj.CType):
                     adsname = ""
                     if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
                         nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
-                        nameend = next_attr.obj_offset + next_attr.Header.NameOffset + (next_attr.Header.NameLength * 2)
-                        adsname = obj.Object("NullString", vm = self.obj_vm, offset = next_attr.obj_offset + next_attr.Header.NameOffset, length = next_attr.Header.NameLength * 2)
+                        adsname = obj.Object("NullString", vm = self.obj_vm, offset = nameloc, length = next_attr.Header.NameLength * 2)
                         if adsname.strip() != "" and dataseen:
                             attr += " ADS Name: {0}".format(adsname.strip())
                 dataseen = True
