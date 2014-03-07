@@ -112,10 +112,13 @@ class _KDDEBUGGER_DATA64(obj.CType):
 
             kpcrb = p.dereference_as("_KPRCB")
 
-            yield obj.Object("_KPCR", offset = kpcrb.obj_offset -
+            kpcr = obj.Object("_KPCR", offset = kpcrb.obj_offset -
                     self.obj_native_vm.profile.get_obj_offset("_KPCR", prcb_member),
                     vm = self.obj_native_vm,
                     )
+
+            if kpcr.is_valid():
+                yield kpcr
 
 class KDBGObjectClass(obj.ProfileModification):
     """Add the KDBG object class to all Windows profiles"""
