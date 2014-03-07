@@ -26,6 +26,7 @@ import volatility.utils as utils
 import volatility.plugins.common as common
 import volatility.cache as cache
 import volatility.obj as obj
+import volatility.debug as debug
 
 #pylint: disable-msg=C0111
 
@@ -92,7 +93,11 @@ class PSTree(common.AbstractWindowsCommand):
                             outfd.write("{0}    path: {1}\n".format(
                                 ' ' * pad, str(process_params.ImagePathName or '')))
 
-                    del data[int(task.UniqueProcessId)]
+                    try:
+                        del data[int(task.UniqueProcessId)]
+                    except KeyError:
+                        debug.warning("PID {0} PPID {1} has already been seen".format(task.UniqueProcessId, task.InheritedFromUniqueProcessId))
+
                     draw_branch(pad + 1, task.UniqueProcessId) 
 
         while len(data.keys()) > 0:
