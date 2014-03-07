@@ -361,7 +361,7 @@ class volshell(common.AbstractWindowsCommand):
                     if callable(o):
                         o = o(objct) - objct.obj_offset
 
-                    offsets.append((o, m, val))
+                    offsets.append((o, m, str(val or '')))
 
                 # Deal with potentially out of order offsets
                 offsets.sort(key = lambda x: x[0])
