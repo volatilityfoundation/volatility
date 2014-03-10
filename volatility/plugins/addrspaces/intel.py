@@ -203,20 +203,20 @@ class IA32PagedMemoryPae(IA32PagedMemory):
         return (vaddr >> pde_shift) & (ptrs_per_pde - 1)
 
     def pdba_base(self, pdpe):
-        return pdpe & 0xFFFFFF000
+        return pdpe & 0xFFFFFFFFFF000
 
     def get_pgd(self, vaddr, pdpe):
         pgd_entry = self.pdba_base(pdpe) + self.pde_index(vaddr) * entry_size
         return self._read_long_long_phys(pgd_entry)
 
     def pte_pfn(self, pte):
-        return pte & 0xFFFFFF000
+        return pte & 0xFFFFFFFFFF000
 
     def pte_index(self, vaddr):
         return (vaddr >> page_shift) & (ptrs_per_pde - 1)
 
     def ptba_base(self, pde):
-        return pde & 0xFFFFFF000
+        return pde & 0xFFFFFFFFFF000
 
     def get_pte(self, vaddr, pgd):
         pgd_val = self.ptba_base(pgd) + self.pte_index(vaddr) * entry_size
@@ -226,7 +226,7 @@ class IA32PagedMemoryPae(IA32PagedMemory):
         return self.pte_pfn(pte) | (vaddr & ((1 << page_shift) - 1))
 
     def get_large_paddr(self, vaddr, pgd_entry):
-        return (pgd_entry & 0xFFE00000) | (vaddr & ~((ptrs_page - 1) << 21))
+        return (pgd_entry & 0xFFFFFFFE00000) | (vaddr & ~((ptrs_page - 1) << 21))
 
     def vtop(self, vaddr):
         retVal = None
