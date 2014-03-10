@@ -22,9 +22,9 @@
 import os
 import volatility.debug as debug
 import volatility.utils as utils
-import volatility.plugins.common as common
+import volatility.commands as commands
 
-class ImageCopy(common.AbstractWindowsCommand):
+class ImageCopy(commands.Command):
     """Copies a physical address space out as a raw DD image"""
 
     def __init__(self, *args, **kwargs):
