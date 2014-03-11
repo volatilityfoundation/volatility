@@ -179,33 +179,41 @@ class VMWareSnapshotFile(addrspace.AbstractRunBasedMemory):
                        "Invalid VMware signature: {0:#x}".format(self.header.Magic))
 
         ## The number of memory regions contained in the file 
-        region_count = self._get_tag(grp_name = "memory",
-                                     tag_name = "regionsCount", data_type = "unsigned int")
+        region_count = self.get_tag(self.header, grp_name = "memory",
+                                     tag_name = "regionsCount", 
+                                     data_type = "unsigned int")
 
         if not region_count.is_valid() or region_count == 0:
             ## Create a single run from the main memory region 
-            memory_tag = self._get_tag(grp_name = "memory", tag_name = "Memory")
+            memory_tag = self.get_tag(self.header, grp_name = "memory", 
+                                      tag_name = "Memory")
 
-            self.as_assert(memory_tag is not None,
+            self.as_assert(memory_tag != None,
                            "Cannot find the single-region Memory tag")
 
             self.runs.append((0, memory_tag.RealDataOffset, memory_tag.DataDiskSize))
         else:
             ## Create multiple runs - one for each region in the header
             for i in range(region_count):
-                memory_tag = self._get_tag(grp_name = "memory", tag_name = "Memory",
+                memory_tag = self.get_tag(self.header, grp_name = "memory",
+                                tag_name = "Memory",
                                 indices = [0, 0])
 
-                memory_offset = self._get_tag(grp_name = "memory", tag_name = "regionPPN",
+                self.as_assert(memory_tag != None,
+                           "Cannot find the Memory tag")
+
+                memory_offset = self.get_tag(self.header, grp_name = "memory", 
+                                tag_name = "regionPPN",
                                 indices = [i],
                                 data_type = "unsigned int") * self.PAGE_SIZE
 
-                file_offset = self._get_tag(grp_name = "memory",
+                file_offset = self.get_tag(self.header, grp_name = "memory",
                                 tag_name = "regionPageNum", indices = [i],
                                 data_type = "unsigned int") * \
                                 self.PAGE_SIZE + memory_tag.RealDataOffset
 
-                length = self._get_tag(grp_name = "memory", tag_name = "regionSize",
+                length = self.get_tag(self.header, grp_name = "memory", 
+                                tag_name = "regionSize",
                                 indices = [i],
                                 data_type = "unsigned int") * self.PAGE_SIZE
 
@@ -218,17 +226,18 @@ class VMWareSnapshotFile(addrspace.AbstractRunBasedMemory):
         ## Find the DTB from CR3. For x86 we grab an int from CR and 
         ## for x64 we grab a long long from CR64.
         if self.profile.metadata.get("memory_model", "32bit") == "32bit":
-            self.dtb = self._get_tag(grp_name = "cpu", tag_name = "CR",
+            self.dtb = self.get_tag(self.header, grp_name = "cpu", tag_name = "CR",
                                  indices = [0, 3],
                                  data_type = "unsigned int")
         else:
-            self.dtb = self._get_tag(grp_name = "cpu", tag_name = "CR64",
+            self.dtb = self.get_tag(self.header, grp_name = "cpu", tag_name = "CR64",
                                 indices = [0, 3],
                                 data_type = "unsigned long long")
 
-        self.as_assert(self.dtb is not None, "Cannot find a DTB")
+        self.as_assert(self.dtb != None, "Cannot find a DTB")
 
-    def _get_tag(self, grp_name, tag_name, indices = None, data_type = None):
+    @staticmethod
+    def get_tag(header, grp_name, tag_name, indices = None, data_type = None):
         """Get a tag from the VMware headers
         
         @param grp_name: the group name (from _VMWARE_GROUP.Name)
@@ -247,7 +256,7 @@ class VMWareSnapshotFile(addrspace.AbstractRunBasedMemory):
         get back the _VMWARE_TAG object itself. 
         """
 
-        for group in self.header.Groups:
+        for group in header.Groups:
             ## Match on the group's name
             if str(group.Name) != grp_name:
                 continue
