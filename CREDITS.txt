@@ -15,6 +15,7 @@ intentional. Please bring it to our attention!
 Volatility 2.4:
 
 Justin Capella and Espen Olsen for their work on the Qemu ELF core dumps
+Sebastien Bourdon-Richard for his work on the VMware vmem/vmss split (with meta) AS 
 
 Volatility 2.3:
 
