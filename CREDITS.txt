@@ -12,6 +12,10 @@ If you believe you've been left off, it is not
 intentional. Please bring it to our attention!
 ===============================================
 
+Volatility 2.4:
+
+Justin Capella and Espen Olsen for their work on the Qemu ELF core dumps
+
 Volatility 2.3:
 
 Cem Gurkok for his work on the privileges plugin for Windows
