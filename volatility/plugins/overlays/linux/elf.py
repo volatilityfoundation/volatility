@@ -86,6 +86,15 @@ elf32_vtypes = {
         'd_ptr' : [4, ['unsigned int']],
         }],
 
+    'elf32_note' : [ 12, {
+        'n_namesz' : [ 0, ['unsigned int']], 
+        'n_descsz' : [ 4, ['unsigned int']], 
+        'n_type' : [ 8, ['unsigned int']], 
+         ## FIXME: this must be cast to int() because the base AS (FileAddressSpace) read method doesn't understand NativeType.
+         ## Remove the cast after http://code.google.com/p/volatility/issues/detail?id=350 is fixed. 
+        'namesz' : [ 12, ['String', dict(length = lambda x : int(x.n_namesz))]], 
+        }],
+
     'elf32_link_map' : [0, {
         'l_addr' : [0, ['unsigned int']], 
         'l_name' : [4, ['unsigned int']], 
@@ -386,7 +395,6 @@ class ELFModification(obj.ProfileModification):
                     'elf32_dyn'  : elf32_dyn,
                     'elf64_dyn'  : elf64_dyn,
                     'elf_note'   : elf_note,
-                    'elf32_note' : elf32_note,
                     'elf64_note' : elf64_note,
                     'elf_link_map'   : elf_link_map,
                     'elf32_link_map' : elf32_link_map,

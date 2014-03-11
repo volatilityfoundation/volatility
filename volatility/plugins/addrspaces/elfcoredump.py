@@ -79,15 +79,16 @@ class VirtualBoxCoreDumpElf64(addrspace.AbstractRunBasedMemory):
 
         ## Quick test (before instantiating an object) 
         ## for ELF64, little-endian - ELFCLASS64 and ELFDATA2LSB
-        self.as_assert(base.read(0, 6) == '\x7fELF\x02\x01',
-                       "ELF64 Header signature invalid")
+        ## for ELF32, little-endian - ELFCLASS32 and ELFDATA2LSB
+        self.as_assert(base.read(0, 6) in ['\x7fELF\x02\x01', '\x7fELF\x01\x01'], 
+                       "ELF Header signature invalid")
 
         ## Base AS should be a file AS
         elf = obj.Object("elf_hdr", offset = 0, vm = base)
 
         ## Make sure its a core dump
         self.as_assert(str(elf.e_type) == 'ET_CORE',
-                       "ELF64 type is not a Core file")
+                       "ELF type is not a Core file")
 
         ## Tuple of (physical memory address, file offset, length)
         self.runs = []
@@ -128,8 +129,8 @@ class VirtualBoxCoreDumpElf64(addrspace.AbstractRunBasedMemory):
         self.as_assert(self.header.u32FmtVersion == DBGFCORE_FMT_VERSION, 'Unknown VBox core format version')
         self.as_assert(self.runs, 'ELF error: did not find any LOAD segment with main RAM')
 
-class QemuCoreDumpElf64(VirtualBoxCoreDumpElf64):
-    """ This AS supports Qemu ELF64 coredump format """
+class QemuCoreDumpElf(VirtualBoxCoreDumpElf64):
+    """ This AS supports Qemu ELF32 and ELF64 coredump format """
 
     def check_note(self, note):
         """Check the Note type"""
