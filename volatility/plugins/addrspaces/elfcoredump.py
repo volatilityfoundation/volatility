@@ -1,11 +1,12 @@
 # Volatility
-# Copyright (C) 2007-2013 Volatility Foundation
-# Copyright (C) 2005,2006,2007 4tphi Research
+# Copyright (C) 2007-2014 Volatility Foundation
 #
 # Authors: 
-# {npetroni,awalters}@4tphi.net (Nick Petroni and AAron Walters)
 # phil@teuwen.org (Philippe Teuwen)
-#
+# espen@mrfjo.org (Espen Fjellvaer Olsen)
+# justincapella@gmail.com (Justin Capella)
+# michael.ligh@mnin.org (Michael Ligh)
+# 
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
@@ -36,6 +37,7 @@ NT_VBOXCORE = 0xb00
 NT_VBOXCPU = 0xb01
 DBGFCORE_MAGIC = 0xc01ac0de
 DBGFCORE_FMT_VERSION = 0x00010000
+NT_QEMUCORE = 0x1
 
 class DBGFCOREDESCRIPTOR(obj.CType):
     """A class for VBox core dump descriptors"""
@@ -99,8 +101,7 @@ class VirtualBoxCoreDumpElf64(addrspace.AbstractRunBasedMemory):
             if str(phdr.p_type) == 'PT_NOTE':
                 note = obj.Object("elf_note", offset = phdr.p_offset, vm = base, parent = phdr)
 
-                if note.namesz == 'VBCORE' and note.n_type == NT_VBOXCORE:
-                    self.header = note.cast_descsz("DBGFCOREDESCRIPTOR")
+                self.check_note(note)
                 continue
 
             # Only keep load segments with valid file sizes
@@ -113,7 +114,31 @@ class VirtualBoxCoreDumpElf64(addrspace.AbstractRunBasedMemory):
                               int(phdr.p_offset),
                               int(phdr.p_memsz)))
 
+        self.validate()    
+
+    def check_note(self, note):
+        """Check the Note type"""
+
+        if note.namesz == 'VBCORE' and note.n_type == NT_VBOXCORE:
+            self.header = note.cast_descsz("DBGFCOREDESCRIPTOR")
+
+    def validate(self):
         self.as_assert(self.header, 'ELF error: did not find any PT_NOTE segment with VBCORE')
         self.as_assert(self.header.u32Magic == DBGFCORE_MAGIC, 'Could not find VBox core magic signature')
         self.as_assert(self.header.u32FmtVersion == DBGFCORE_FMT_VERSION, 'Unknown VBox core format version')
+        self.as_assert(self.runs, 'ELF error: did not find any LOAD segment with main RAM')
+
+class QemuCoreDumpElf64(VirtualBoxCoreDumpElf64):
+    """ This AS supports Qemu ELF64 coredump format """
+
+    def check_note(self, note):
+        """Check the Note type"""
+
+        if str(note.namesz) == 'CORE' and note.n_type == NT_QEMUCORE:
+            ## Fake the header since we don't know what structure 
+            ## Qemu uses. It just has to pass the assertion check. 
+            self.header = 1
+
+    def validate(self):
+        self.as_assert(self.header, 'ELF error: did not find any PT_NOTE segment with CORE')
         self.as_assert(self.runs, 'ELF error: did not find any LOAD segment with main RAM')
