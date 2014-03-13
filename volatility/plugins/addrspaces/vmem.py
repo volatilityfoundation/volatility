@@ -47,6 +47,9 @@ class VMEMAddressSpace(addrspace.AbstractRunBasedMemory):
         self.as_assert(not (hasattr(base, 'vmem_address_space') and base.vmem_address_space), 
                 "Can not stack over another vmem")
 
+        self.as_assert(not (hasattr(base, 'paging_address_space') and base.paging_address_space), 
+                "Can not stack over another paging address space")
+
         self.as_assert(config.LOCATION.startswith("file://"), 
                 'Location is not of file scheme')
 
