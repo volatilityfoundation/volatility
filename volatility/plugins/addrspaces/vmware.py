@@ -158,8 +158,8 @@ class VMwareVTypesModification(obj.ProfileModification):
             '_VMWARE_TAG': _VMWARE_TAG
             })
 
-class VMWareSnapshotFile(addrspace.AbstractRunBasedMemory):
-    """ This AS supports VMware snapshot files """
+class VMWareAddressSpace(addrspace.AbstractRunBasedMemory):
+    """ This AS supports VMware snapshot (VMSS) and saved state (VMSS) files """
 
     order = 30
     PAGE_SIZE = 4096

@@ -29,7 +29,7 @@ import volatility.plugins.addrspaces.vmware as vmware
 import volatility.plugins.addrspaces.standard as standard
 import volatility.obj as obj
                 
-class VMEMAddressSpace(addrspace.AbstractRunBasedMemory):
+class VMWareMetaAddressSpace(addrspace.AbstractRunBasedMemory):
     """ This AS supports the VMEM format with VMSN/VMSS metadata """
     
     order = 30
@@ -88,7 +88,7 @@ class VMEMAddressSpace(addrspace.AbstractRunBasedMemory):
         self.as_assert(header.Magic in [0xbed2bed0, 0xbad1bad1, 0xbed2bed2, 0xbed3bed3],
                        "Invalid VMware signature: {0:#x}".format(header.Magic))
         
-        get_tag = vmware.VMWareSnapshotFile.get_tag
+        get_tag = vmware.VMWareAddressSpace.get_tag
 
         ## The number of memory regions contained in the file 
         region_count = get_tag(header, grp_name = "memory", tag_name = "regionsCount", 
