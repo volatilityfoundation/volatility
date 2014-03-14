@@ -23,9 +23,7 @@
 @license:      GNU General Public License 2.0 or later
 """
 
-import volatility.utils as utils
 import volatility.addrspace as addrspace
-import volatility.conf as conf
 import sys, urllib, copy, os        
 import volatility.plugins.addrspaces.vmware as vmware
 import volatility.plugins.addrspaces.standard as standard
@@ -44,10 +42,16 @@ class VMEMAddressSpace(addrspace.AbstractRunBasedMemory):
         self.as_assert(base, "No base Address Space")
         addrspace.AbstractRunBasedMemory.__init__(self, base, config, **kwargs)
 
-        self.as_assert(not (hasattr(base, 'vmem_address_space') and base.vmem_address_space), 
+        base_vmem = (hasattr(base, 'vmem_address_space') 
+                        and base.vmem_address_space)
+
+        self.as_assert(not base_vmem, 
                 "Can not stack over another vmem")
 
-        self.as_assert(not (hasattr(base, 'paging_address_space') and base.paging_address_space), 
+        base_page = (hasattr(base, 'paging_address_space') 
+                        and base.paging_address_space)
+
+        self.as_assert(not base_page, 
                 "Can not stack over another paging address space")
 
         self.as_assert(config.LOCATION.startswith("file://"), 
@@ -58,10 +62,16 @@ class VMEMAddressSpace(addrspace.AbstractRunBasedMemory):
         location = os.path.abspath(config.LOCATION[7:])
         location = urllib.url2pathname(location)
         path = os.path.splitext(location)[0]
-        metadata = path + ".vmss"
 
-        self.as_assert(os.path.isfile(metadata), 
-                'VMware metadata file is not available')
+        vmss = path + ".vmss"
+        vmsn = path + ".vmsn"
+
+        if os.path.isfile(vmss):
+            metadata = vmss
+        elif os.path.isfile(vmsn):
+            metadata = vmsn
+        else:
+            raise addrspace.ASAssertionError('VMware metadata file is not available')
 
         self.as_assert(location != metadata, 
                 'VMware metadata file already detected')
@@ -73,8 +83,8 @@ class VMEMAddressSpace(addrspace.AbstractRunBasedMemory):
         vmMetaConfig = copy.deepcopy(config)
         vmMetaConfig.LOCATION = "file://" + metadata
 
-        vmss = standard.FileAddressSpace(None, vmMetaConfig)
-        header = obj.Object("_VMWARE_HEADER", offset = 0, vm = vmss)
+        meta_space = standard.FileAddressSpace(None, vmMetaConfig)
+        header = obj.Object("_VMWARE_HEADER", offset = 0, vm = meta_space)
 
         self.as_assert(header.Magic in [0xbed2bed0, 0xbad1bad1, 0xbed2bed2, 0xbed3bed3],
                        "Invalid VMware signature: {0:#x}".format(header.Magic))
