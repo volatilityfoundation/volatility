@@ -59,8 +59,7 @@ class VMEMAddressSpace(addrspace.AbstractRunBasedMemory):
 
         ## Build a path to the vmss - it should be relative 
         ## to the vmem and have the same base name 
-        location = os.path.abspath(config.LOCATION[7:])
-        location = urllib.url2pathname(location)
+        location = urllib.url2pathname(config.LOCATION[7:])
         path = os.path.splitext(location)[0]
 
         vmss = path + ".vmss"
