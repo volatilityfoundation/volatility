@@ -14,6 +14,12 @@ symbols and then read the DWARF symbols from it.
 #include <net/udp.h>
 #include <linux/mount.h>
 #include <linux/inetdevice.h>
+#include <net/protocol.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
+#include <linux/lockref.h>
+struct lockref lockref;
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
 #include <linux/fdtable.h>
@@ -22,6 +28,7 @@ symbols and then read the DWARF symbols from it.
 #endif
 
 #include <net/ip_fib.h>
+#include <linux/un.h>
 #include <net/af_unix.h>
 #include <linux/pid.h>
 
@@ -31,9 +38,20 @@ struct pid_namespace pid_namespace;
 #endif
 
 
-#include <linux/radix-tree.h>
+#ifdef CONFIG_NETFILTER
 #include <linux/netfilter.h>
+
+struct nf_hook_ops nf_hook_ops;
+struct nf_sockopt_ops nf_sockopt_ops;
+
+#ifdef CONFIG_NETFILTER_XTABLES
 #include <linux/netfilter/x_tables.h>
+struct xt_table xt_table;
+#endif
+
+#endif
+
+#include <linux/radix-tree.h>
 #include <net/tcp.h>
 #include <net/udp.h>
 
@@ -66,17 +84,34 @@ struct fib_table fib_table;
 struct unix_sock unix_sock;
 struct pid pid;
 struct radix_tree_root radix_tree_root;
-#ifdef CONFIG_NETFILTER
-struct nf_hook_ops nf_hook_ops;
-struct nf_sockopt_ops nf_sockopt_ops;
+
+#ifdef CONFIG_NET_SCHED
+#include <net/sch_generic.h>
+struct Qdisc qdisc;
 #endif
 
-struct xt_table xt_table;
+struct inet_protosw inet_protosw;
 
 /********************************************************************
 The following structs are not defined in headers, so we cant import
 them. Hopefully they dont change too much.
 *********************************************************************/
+
+struct kthread_create_info
+{
+     /* Information passed to kthread() from kthreadd. */
+     int (*threadfn)(void *data);
+     void *data;
+     int node;
+
+     /* Result passed back to kthread_create() from kthreadd. */
+     struct task_struct *result;
+     struct completion done;
+
+     struct list_head list;
+};
+
+struct kthread_create_info kthread_create_info;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 #include <net/net_namespace.h>
@@ -146,6 +181,7 @@ struct rt_hash_bucket {
 #define RADIX_TREE_MAP_SIZE     (1UL << RADIX_TREE_MAP_SHIFT)
 #define RADIX_TREE_MAP_MASK     (RADIX_TREE_MAP_SIZE-1)
 #define RADIX_TREE_TAG_LONGS    ((RADIX_TREE_MAP_SIZE + BITS_PER_LONG - 1) / BITS_PER_LONG)
+#define RADIX_TREE_MAX_TAGS     2
 
 struct radix_tree_node {
     unsigned int    height;         /* Height from the bottom */
@@ -172,7 +208,9 @@ struct module_sect_attrs
 };
 #endif
 
-struct module_sect_attrs module_sect_attrs;
+struct module_sections module_sect_attrs;
+
+struct module_kobject module_kobject;
 
 #ifdef CONFIG_SLAB
 
