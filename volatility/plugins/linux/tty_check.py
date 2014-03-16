@@ -58,7 +58,7 @@ class linux_check_tty(linux_common.AbstractLinuxCommand):
                 if recv_buf in sym_cache:
                     sym_name = sym_cache[recv_buf]
                 else:
-                    sym_name = self.profile.get_symbol_by_address("kernel", recv_buf)
+                    sym_name = self.is_known_address(recv_buf)
 
                 if not sym_name:
                     sym_name = "HOOKED"
