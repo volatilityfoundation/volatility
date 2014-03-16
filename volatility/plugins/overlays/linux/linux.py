@@ -5,9 +5,10 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -134,10 +135,7 @@ def parse_system_map(data, module):
 
     # get the system map
     for line in data.splitlines():
-        try:
-            (str_addr, symbol_type, symbol) = line.strip().split()
-        except ValueError:
-            continue
+        (str_addr, symbol_type, symbol) = line.strip().split()
 
         try:
             sym_addr = long(str_addr, 16)
@@ -203,6 +201,7 @@ def LinuxProfileFactory(profpkg):
         def __init__(self, *args, **kwargs):
             # change the name to catch any code referencing the old hash table
             self.sys_map = {}
+            self.sym_addr_cache = {}
             obj.Profile.__init__(self, *args, **kwargs)
 
         def clear(self):
@@ -257,7 +256,7 @@ def LinuxProfileFactory(profpkg):
 
         def load_sysmap(self):
             """Loads up the system map data"""
-            arch, _memmodel, sysmapvar = parse_system_map(sysmapdata, "kernel")
+            arch, _memmodel, sysmapvar = parse_system_map(sysmapdata, "kernel") 
             debug.debug("{2}: Found system file {0} with {1} symbols".format(f.filename, len(sysmapvar.keys()), profilename))
 
             self.sys_map.update(sysmapvar)
@@ -270,7 +269,6 @@ def LinuxProfileFactory(profpkg):
             symtable = self.sys_map
 
             if module in symtable:
-
                 mod = symtable[module]
 
                 for (name, addrs) in mod.items():
@@ -296,7 +294,7 @@ def LinuxProfileFactory(profpkg):
 
             return ret
 
-        def get_symbol_by_address(self, module, sym_address):
+        def _get_symbol_by_address(self, module, sym_address):
             ret = ""
             symtable = self.sys_map
 
@@ -311,13 +309,22 @@ def LinuxProfileFactory(profpkg):
 
             return ret
 
+        def get_symbol_by_address(self, module, sym_address):
+            key = "%s|%d" % (module, sym_address) 
+        
+            if key in self.sym_addr_cache:
+                ret = self.sym_addr_cache[key] 
+            else:
+                ret = self._get_symbol_by_address(module, sym_address)
+                self.sym_addr_cache[key] = ret
+
+            return ret
+
         def get_all_symbol_names(self, module = "kernel"):
             symtable = self.sys_map
 
             if module in symtable:
-
                 ret = symtable[module].keys()
-
             else:
                 debug.error("get_all_symbol_names called on non-existent module")
 
@@ -378,7 +385,8 @@ def LinuxProfileFactory(profpkg):
                     # if a symbol has multiple definitions, then the plugin needs to specify the type
                     if len(sym_list) > 1:
                         if nm_type == "":
-                            debug.error("Requested symbol {0:s} in module {1:s} has multiple definitions and no type given\n".format(sym_name, module))
+                            debug.debug("Requested symbol {0:s} in module {1:s} has multiple definitions and no type given\n".format(sym_name, module))
+                            return None
                         else:
                             for (addr, stype) in sym_list:
 
@@ -397,6 +405,43 @@ def LinuxProfileFactory(profpkg):
                 debug.info("Requested module {0:s} not found in symbol table\n".format(module))
 
             return ret
+
+        def get_symbol_type(self, sym_name, nm_type = "", module = "kernel"):
+            symtable = self.sys_map
+
+            ret = None
+
+            # check if the module is there...
+            if module in symtable:
+                mod = symtable[module]
+
+                # check if the requested symbol is in the module
+                if sym_name in mod:
+                    sym_list = mod[sym_name]
+
+                    # if a symbol has multiple definitions, then the plugin needs to specify the type
+                    if len(sym_list) > 1:
+                        if nm_type == "":
+                            debug.debug("Requested symbol {0:s} in module {1:s} has multiple definitions and no type given\n".format(sym_name, module))
+                            return None
+                        else:
+                            for (addr, stype) in sym_list:
+                                if stype == nm_type:
+                                    ret = addr
+                                    break
+
+                            if ret == None:
+                                debug.error("Requested symbol {0:s} in module {1:s} could not be found\n".format(sym_name, module))
+                    else:
+                        # get the type of the symbol
+                        ret = sym_list[0][1]
+                else:
+                    debug.debug("Requested symbol {0:s} not found in module {1:s}\n".format(sym_name, module))
+            else:
+                debug.info("Requested module {0:s} not found in symbol table\n".format(module))
+
+            return ret
+
 
     cls = AbstractLinuxProfile
     cls.__name__ = 'Linux' + profilename.replace('.', '_') + arch
@@ -526,6 +571,49 @@ class list_head(obj.CType):
     def __iter__(self):
         return self.list_of_type(self.obj_parent.obj_name, self.obj_name)
 
+class hlist_bl_node(obj.CType):
+    """A list_head makes a doubly linked list."""
+    def list_of_type(self, obj_type, member, offset = -1, forward = True, head_sentinel = True):
+        if not self.is_valid():
+            return
+
+        ## Get the first element
+        if forward:
+            nxt = self.next.dereference()
+        else:
+            nxt = self.prev.dereference()
+
+        offset = self.obj_vm.profile.get_obj_offset(obj_type, member)
+
+        seen = set()
+        if head_sentinel:
+            # We're a header element and not to be included in the list
+            seen.add(self.obj_offset)
+
+        while nxt.is_valid() and nxt.obj_offset not in seen:
+            ## Instantiate the object
+            item = obj.Object(obj_type, offset = nxt.obj_offset - offset,
+                                    vm = self.obj_vm,
+                                    parent = self.obj_parent,
+                                    name = obj_type)
+
+            seen.add(nxt.obj_offset)
+
+            yield item
+
+            if forward:
+                nxt = item.m(member).next.dereference()
+            else:
+                nxt = item.m(member).prev.dereference()
+
+    def __nonzero__(self):
+        ## List entries are valid when both Flinks and Blink are valid
+        return bool(self.next) or bool(self.prev)
+
+    def __iter__(self):
+        return self.list_of_type(self.obj_parent.obj_name, self.obj_name)
+
+
 class files_struct(obj.CType):
 
     def get_fds(self):
@@ -590,15 +678,19 @@ class desc_struct(obj.CType):
         return (self.b & 0xffff0000) | (self.a & 0x0000ffff)
 
 class module_sect_attr(obj.CType):
-        
-    def get_name(self):
-        
+    @property
+    def sect_name(self):
         if type(self.m("name")) == obj.Array:
             name = obj.Object("String", offset = self.m("name").obj_offset, vm = self.obj_vm, length = 32)
         else:
             name = self.name.dereference_as("String", length = 255)
 
-        return name         
+        return str(name)       
+
+class sock(obj.CType):
+    @property
+    def sk_node(self):
+        return self.__sk_common.skc_node #pylint: disable-msg=W0212
 
 class inet_sock(obj.CType):
     """Class for an internet socket object"""
@@ -703,6 +795,170 @@ class net_device(obj.CType):
     def promisc(self):
         return self.flags & 0x100 == 0x100 # IFF_PROMISC
 
+class module_struct(obj.CType):
+    def _get_sect_count(self, grp):
+        arr = obj.Object(theType = 'Array', offset = grp.attrs, vm = self.obj_vm, targetType = 'Pointer', count = 25)
+
+        idx = 0
+        while arr[idx]:
+            idx = idx + 1
+
+        return idx
+
+    def get_sections(self):
+        if hasattr(self.sect_attrs, "nsections"):
+            num_sects = self.sect_attrs.nsections
+        else:
+            num_sects = self._get_sect_count(self.sect_attrs.grp)
+
+        attrs = obj.Object(theType = 'Array', offset = self.sect_attrs.attrs.obj_offset, vm = self.obj_vm, targetType = 'module_sect_attr', count = num_sects)
+
+        for attr in attrs:
+            yield attr        
+
+    def get_param_val(self, param, _over = 0):
+        ints = {
+                self.obj_vm.profile.get_symbol("param_get_invbool") : "int",
+                self.obj_vm.profile.get_symbol("param_get_bool") : "int",
+                self.obj_vm.profile.get_symbol("param_get_int") : "int",
+                self.obj_vm.profile.get_symbol("param_get_ulong") : "unsigned long",
+                self.obj_vm.profile.get_symbol("param_get_long") : "long",
+                self.obj_vm.profile.get_symbol("param_get_uint") : "unsigned int",
+                self.obj_vm.profile.get_symbol("param_get_ushort") : "unsigned short",
+                self.obj_vm.profile.get_symbol("param_get_short") : "short",
+                self.obj_vm.profile.get_symbol("param_get_byte") : "char",
+               }
+
+        getfn = param.get
+
+        if getfn == 0:
+            val = ""
+
+        elif getfn == self.obj_vm.profile.get_symbol("param_array_get"):
+            val = ""
+            arr = param.arr
+            overwrite = param.arr
+
+            if arr.num:
+                maxi = arr.num.dereference()
+            else:
+                maxi = arr.max
+
+            for i in range(maxi):
+                if i > 0:
+                    val = val + ","
+
+                arg = arr.elem + arr.elemsize * i
+                overwrite.arg = arg
+
+                mret = self.get_param_val(overwrite)
+                val = val + str(mret or '')
+
+        elif getfn == self.obj_vm.profile.get_symbol("param_get_string"):
+            val = param.str.dereference_as("String", length = param.str.maxlen)
+
+        elif getfn == self.obj_vm.profile.get_symbol("param_get_charp"):
+            addr = obj.Object("Pointer", offset = param.arg, vm = self.obj_vm)
+            if addr == 0:
+                val = "(null)"
+            else:
+                val = addr.dereference_as("String", length = 256)
+
+        elif getfn.v() in ints:
+            val = obj.Object(ints[getfn.v()], offset = param.arg, vm = self.obj_vm)
+
+            if getfn == self.obj_vm.profile.get_symbol("param_get_bool"):
+                if val:
+                    val = 'Y'
+                else:
+                    val = 'N'
+
+            if getfn == self.obj_vm.profile.get_symbol("param_get_invbool"):
+                if val:
+                    val = 'N'
+                else:
+                    val = 'Y'
+
+        else:
+            print "Unknown get_fn: {0:#x}".format(getfn)
+            return None
+
+        return val
+
+    def get_params(self):
+        params = ""
+        param_array = obj.Object(theType = 'Array', offset = self.kp, vm = self.obj_vm, targetType = 'kernel_param', count = self.num_kp)
+        
+        for param in param_array:
+            val = self.get_param_val(param)
+            params = params + "{0}={1} ".format(param.name.dereference_as("String", length = 255), val)
+
+        return params
+
+    def get_symbol_for_address(self, wanted_address):
+        ret = None
+
+        syms = obj.Object(theType = "Array", targetType = "elf32_sym", offset = self.symtab, count = self.num_symtab + 1, vm = self.obj_vm)           
+
+        for sym_struct in syms:
+            if sym_struct.st_value == wanted_address:
+                sym_name_addr = self.strtab + sym_struct.st_name
+
+                sym_name = self.obj_vm.read(sym_name_addr, 64)
+                if not sym_name:
+                    continue
+                
+                idx = sym_name.index("\x00")
+                if idx != -1:
+                    sym_name = sym_name[:idx]
+
+                ret = sym_name
+
+                break
+
+        return ret    
+
+    def get_symbols(self):
+        ret_syms = []
+
+        syms = obj.Object(theType = "Array", targetType = "elf32_sym", offset = self.symtab, count = self.num_symtab + 1, vm = self.obj_vm)           
+
+        for sym_struct in syms:
+            sym_name_addr = self.strtab + sym_struct.st_name
+
+            sym_name = self.obj_vm.read(sym_name_addr, 64)
+            if not sym_name:
+                continue
+            
+            idx = sym_name.index("\x00")
+            if idx != -1:
+                sym_name = sym_name[:idx]
+
+            ret_syms.append((sym_name, sym_struct.st_value))
+
+        return ret_syms
+
+    def get_symbol(self, wanted_sym_name):
+        ret = None
+
+        syms = obj.Object(theType = "Array", targetType = "elf64_sym", offset = self.symtab, count = self.num_symtab + 1, vm = self.obj_vm)           
+
+        for sym_struct in syms:
+            sym_name_addr = self.strtab + sym_struct.st_name
+
+            sym_name = self.obj_vm.read(sym_name_addr, 64)
+            if not sym_name:
+                continue
+            
+            idx = sym_name.index("\x00")
+            if idx != -1:
+                sym_name = sym_name[:idx]
+
+            if wanted_sym_name == str(sym_name):
+                ret = sym_struct.st_value
+
+        return ret       
+
 class task_struct(obj.CType):
     def is_valid_task(self):
 
@@ -765,11 +1021,47 @@ class task_struct(obj.CType):
 
         return process_as
 
-    # maps from the kernel
+    def get_libdl_maps(self):
+        proc_as = self.get_process_address_space()
+        
+        found_list = False
+
+        for vma in self.get_proc_maps():
+            # find the executable part of libdl
+            ehdr = obj.Object("elf_hdr", offset = vma.vm_start, vm = proc_as)
+
+            if not ehdr.is_valid():
+                #print "could not get header for  %d | %s" % (self.pid, self.comm)
+                continue
+
+            for phdr in ehdr.program_headers():
+                if str(phdr.p_type) != 'PT_DYNAMIC':
+                    continue
+
+                for dsec in phdr.dynamic_sections():
+                    # link_map is stored at the second GOT entry
+                    if dsec.d_tag == 3: # DT_PLTGOT
+                        seen_ents = {}
+                        got_start = dsec.d_ptr
+                        # size_cache tells us if we are a 32 or 64 bit ELF file
+                        link_map_addr = obj.Object("Pointer", offset = got_start + (dsec.size_cache / 8), vm = proc_as)
+                        link_map = obj.Object("elf_link_map", offset = link_map_addr, vm = proc_as, parent = dsec)
+                        for ent in link_map:
+                            if ent.obj_offset in seen_ents:
+                                continue
+                            found_list = True
+                            yield ent
+                            seen_ents[ent.obj_offset] = 1
+
+            if found_list:
+                break
+
     def get_proc_maps(self):
+        if not self.mm:
+            return
         for vma in linux_common.walk_internal_list("vm_area_struct", "vm_next", self.mm.mmap):
             yield vma
-    
+   
     def _walk_rb(self, rb):
         if not rb.is_valid():
              return
@@ -797,31 +1089,6 @@ class task_struct(obj.CType):
         for key in sorted(vmas.iterkeys()):
             yield vmas[key]
 
-    def get_libdl_maps(self):
-        for vma in self.get_proc_maps():
-            # find the executable part of libdl
-            if not (vma.vm_file and str(vma.vm_flags) == "r-x" and linux_common.get_path(self, vma.vm_file).find("libdl") != -1):
-                continue
-            
-            proc_as = self.get_process_address_space()
-            
-            ehdr = obj.Object("elf_hdr", offset = vma.vm_start, vm = proc_as) 
-            
-            for phdr in ehdr.program_headers():
-                if str(phdr.p_type) != 'PT_DYNAMIC':
-                    continue
-                
-                for dsec in phdr.dynamic_sections():
-                    # link_map is stored at the second GOT entry
-                    if dsec.d_tag == 3: # DT_PLTGOT
-            
-                        got_start = dsec.d_ptr
-                        # size_cache tells us if we are a 32 or 64 bit ELF file
-                        link_map_addr = obj.Object("Pointer", offset = got_start + (dsec.size_cache / 8), vm = proc_as)
-                        link_map = obj.Object("elf_link_map", offset = link_map_addr, vm = proc_as, parent = dsec)
-                        for ent in link_map:
-                            yield ent
-
     def search_process_memory(self, s, heap_only = False):
 
         # Allow for some overlap in case objects are 
@@ -842,6 +1109,7 @@ class task_struct(obj.CType):
             if heap_only:
                 if not (vma.vm_start <= self.mm.start_brk and vma.vm_end >= self.mm.brk):
                     continue
+
             offset = vma.vm_start
             out_of_range = vma.vm_start + (vma.vm_end - vma.vm_start)
             while offset < out_of_range:
@@ -963,7 +1231,6 @@ class task_struct(obj.CType):
         return env
 
     def get_commandline(self):
-
         if self.mm:
             # set the as with our new dtb so we can read from userland
             proc_as = self.get_process_address_space()
@@ -1116,6 +1383,8 @@ class LinuxObjectClasses(obj.ProfileModification):
             'hlist_node': hlist_node,
             'files_struct': files_struct,
             'task_struct': task_struct,
+            'module' : module_struct,
+            'hlist_bl_node' : hlist_bl_node,
             'net_device' : net_device,
             'in_device'  : in_device,
             'tty_ldisc' : tty_ldisc,
@@ -1135,6 +1404,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'inode' : inode,
             'dentry' : dentry,
             'timespec' : timespec,
+            'sock' : sock,
             'inet_sock' : inet_sock,
             })
 
