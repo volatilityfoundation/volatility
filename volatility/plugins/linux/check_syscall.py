@@ -4,9 +4,10 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,9 +25,13 @@
 @organization: 
 """
 
+import os
+
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
+import volatility.plugins.linux.lsmod as linux_lsmod
+import volatility.plugins.linux.hidden_modules as linux_hidden_modules
 
 try:
     import distorm3
@@ -36,6 +41,11 @@ except ImportError:
 
 class linux_check_syscall(linux_common.AbstractLinuxCommand):
     """ Checks if the system call table has been altered """
+
+
+    def __init__(self, config, *args, **kwargs):
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
+        self._config.add_option('syscall-indexes', short_option = 'i', default = None, help = 'Path to unistd_{32,64}.h from the target machine', action = 'store', type = 'str')
 
     def _get_table_size(self, table_addr, table_name):
         """
@@ -90,11 +100,9 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         func_addr = self.addr_space.profile.get_symbol(func)
 
         if func_addr:
-
             data = self.addr_space.read(func_addr, 6)
-
+            
             for op in distorm3.Decompose(func_addr, data, mode):
-
                 if not op.valid:
                     continue
 
@@ -118,6 +126,53 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
         return [table_addr, table_size]
 
+
+    def _compute_hook_sym_name(self, visible_mods, hidden_mods, call_addr):
+        mod_found = 0
+        for (module, _, __) in visible_mods:
+            if module.module_core <= call_addr <= module.module_core + module.core_size:
+                mod_found = 1
+                break
+
+        if mod_found == 0:
+            for module in hidden_mods:
+                if module.module_core <= call_addr <= module.module_core + module.core_size:
+                    mod_found = 1
+                    break
+
+        if mod_found == 1:        
+            sym = module.get_symbol_for_address(call_addr)
+            sym_name = "HOOKED: %s/%s" % (module.name, sym)
+        else:    
+            sym_name = "HOOKED: UNKNOWN"
+
+        return sym_name
+
+    def _index_name(self, index_names, i):
+        if i in index_names:
+            ret = index_names[i]
+        else:
+            ret = "<INDEX NOT FOUND %d>" % i
+        
+        return ret
+
+    def _find_index(self, index_names, line_index):
+        ret = None
+
+        # "(__NR_timer_create+1)"
+        (line_name, offset) = line_index[1:-1].split("+")
+        line_name = line_name.replace("__NR_", "")
+
+        for index in index_names:
+            if index_names[index] == line_name:
+                ret = index + int(offset)
+                break
+
+        if ret == None:
+            debug.error("Unable to find offset for %s" % index_name)
+
+        return ret
+
     def calculate(self):
         """ 
         This works by walking the system call table 
@@ -127,6 +182,29 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
         if not has_distorm:
             debug.warning("distorm not installed. The best method to calculate the system call table size will not be used.")
+                        
+        if self._config.SYSCALL_INDEXES:
+            if not os.path.exists(self._config.SYSCALL_INDEXES):
+                debug.error("Given syscall indexes file does not exist!")
+
+            index_names = {}
+
+            for line in open(self._config.SYSCALL_INDEXES, "r").readlines():
+                ents = line.split()
+                if len(ents) == 3 and ents[0] == "#define":
+                    name  = ents[1].replace("__NR_", "")
+
+                    # "(__NR_timer_create+1)"
+                    index = ents[2] 
+                    if index[0] == "(":
+                        index = self._find_index(index_names, index)
+                    else:
+                        index = int(index)
+                    
+                    index_names[index] = name
+
+        hidden_mods = list(linux_hidden_modules.linux_hidden_modules(self._config).calculate())
+        visible_mods = linux_lsmod.linux_lsmod(self._config).calculate()
 
         table_name = self.addr_space.profile.metadata.get('memory_model', '32bit')
         sym_addrs = self.profile.get_all_addresses()
@@ -140,29 +218,29 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
             addrs.append(("32bit", ia32_info))
 
         for (table_name, (tableaddr, tblsz)) in addrs:
-
             table = obj.Object(theType = 'Array', offset = tableaddr, vm = self.addr_space, targetType = 'unsigned long', count = tblsz)
 
             for (i, call_addr) in enumerate(table):
-
                 if not call_addr:
                     continue
+
+                idx_name = self._index_name(index_names, i)
 
                 call_addr = int(call_addr)
 
                 if not call_addr in sym_addrs:
                     hooked = 1
-                    sym_name = "HOOKED"
+
+                    sym_name = self._compute_hook_sym_name(visible_mods, hidden_mods, call_addr)
                 else:
                     hooked = 0 
                     sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
                 
-                yield(tableaddr, table_name, i, call_addr, sym_name, hooked)
+                yield (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked)
     
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Table Name", "6"), ("Index", "[addr]"), ("Address", "[addrpad]"), ("Symbol", "<30")])
-        for (tableaddr, table_name, i, call_addr, sym_name, hooked) in data:
-            self.table_row(outfd, table_name, i, call_addr, sym_name)
-
+        self.table_header(outfd, [("Table Name", "6"), ("Index", "5"), ("System Call", "24"), ("Handler Address", "[addrpad]"), ("Symbol", "<60")])
+        for (tableaddr, table_name, i, idx_name, call_addr, sym_name, _) in data:
+            self.table_row(outfd, table_name, i, idx_name, call_addr, sym_name)
 
 
