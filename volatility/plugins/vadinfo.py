@@ -87,11 +87,21 @@ MI_VAD_TYPE = dict(enumerate([
 class VADInfo(taskmods.DllList):
     """Dump the VAD info"""
 
+    def __init__(self, config, *args, **kwargs):
+        taskmods.DllList.__init__(self, config, *args, **kwargs)
+        config.add_option('ADDR', short_option = 'a', default = None,
+                          help = 'Show info on VAD at or containing this address',
+                          action = 'store', type = 'int')
+
     def render_text(self, outfd, data):
         for task in data:
             outfd.write("*" * 72 + "\n")
             outfd.write("Pid: {0:6}\n".format(task.UniqueProcessId))
             for vad in task.VadRoot.traverse():
+                if (self._config.ADDR is not None and 
+                            (self._config.ADDR < vad.Start or 
+                            self._config.ADDR > vad.End)):
+                    continue
                 if vad == None:
                     outfd.write("Error: {0}".format(vad))
                 else:
