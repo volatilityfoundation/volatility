@@ -3,9 +3,10 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,21 +43,28 @@ class linux_keyboard_notifier(linux_common.AbstractLinuxCommand):
         
         symbol_cache = {}
         
-        for callback in linux_common.walk_internal_list("notifier_block", "next", knl.head):
-            if symbol_cache.has_key(callback):
-                sym_name = symbol_cache[callback]
+        for call_back in linux_common.walk_internal_list("notifier_block", "next", knl.head):
+            call_addr = call_back.notifier_call
+            
+            if symbol_cache.has_key(call_addr):
+                sym_name = symbol_cache[call_addr]
                 hooked = 0
 
             else:
-                sym_name = self.profile.get_symbol_by_address("kernel", callback)
+                sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
                 if not sym_name:
                     sym_name = "HOOKED"
+                    
+                    module = obj.Object("module", offset = 0xffffffffa03a15d0, vm = self.addr_space)
+                    sym = module.get_symbol_for_address(call_addr)
+     
+                    sym_name = "%s: %s/%s" % (sym_name, module.name, sym)
 
                 hooked = 1            
         
-            symbol_cache[callback] = sym_name
+            symbol_cache[call_addr] = sym_name
 
-            yield callback.notifier_call, sym_name, hooked
+            yield call_addr, sym_name, hooked
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Address", "[addrpad]"), ("Symbol", "<30")])
