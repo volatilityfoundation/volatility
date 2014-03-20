@@ -4,9 +4,10 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,6 +28,7 @@
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
+import socket
 
 class linux_route_cache(linux_common.AbstractLinuxCommand):
     """ Recovers the routing cache from memory """
@@ -77,8 +79,16 @@ class linux_route_cache(linux_common.AbstractLinuxCommand):
 
         self.table_header(outfd, [("Interface", "16"),
                                   ("Destination", "20"),
+                                  ("Dest Name", "30"), 
                                   ("Gateway", "")])
 
         for (name, dest, gw) in data:
-            self.table_row(outfd, name, dest.cast("IpAddress"), gw.cast("IpAddress"))
+            host = str(dest.cast("IpAddress"))
+            try:
+                host = socket.gethostbyaddr(host)
+                host = host[0]
+            except socket.herror:
+                host = ""
+
+            self.table_row(outfd, name, dest.cast("IpAddress"), host, gw.cast("IpAddress"))
 
