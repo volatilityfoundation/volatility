@@ -4,9 +4,10 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -37,14 +38,18 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
         if not module_kset_addr:
             debug.error("This command is not supported by this profile.") 
 
-        ret = set()
+        ret = {}
 
         module_kset = obj.Object("kset", offset = module_kset_addr, vm = self.addr_space)
     
         for kobj in module_kset.list.list_of_type("kobject", "entry"):
+            kobj_off = self.profile.get_obj_offset("module_kobject", "kobj")
+            mod_kobj = obj.Object("module_kobject", offset = kobj.v() - kobj_off, vm = self.addr_space)            
+            mod = mod_kobj.mod
+
             name = kobj.name.dereference_as("String", length = 32)
             if name.is_valid() and kobj.kref.refcount.counter > 2:
-                ret.add(str(name))
+                ret[str(name)] = mod
     
         return ret
 
@@ -55,12 +60,12 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
         
         lsmod_modules = set([str(module.name) for (module, params, sects) in linux_lsmod.linux_lsmod(self._config).calculate()])
             
-        for mod_name in kset_modules.difference(lsmod_modules):
-            yield mod_name
+        for mod_name in set(kset_modules.keys()).difference(lsmod_modules):
+            yield kset_modules[mod_name]
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("Module Name", "")])
-        for name in data:
-            self.table_row(outfd, name)
+        self.table_header(outfd, [("Module Address", "[address]"), ("Module Name", "24")])
+        for mod in data:
+            self.table_row(outfd, mod.obj_offset, str(mod.name))
 
