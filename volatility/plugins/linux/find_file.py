@@ -4,9 +4,10 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -48,7 +49,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             return
 
         ret = None
-
+        
         for dentry in dentry_param.d_subdirs.list_of_type("dentry", "d_u"):
             if not dentry.d_name.name.is_valid():
                 continue
@@ -65,7 +66,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             if inode and inode.is_dir():
                 for new_file, dentry in self._walk_sb(dentry, last_dentry, new_file):
                     yield new_file, dentry
-    
+
     def _get_sbs(self):
         ret = []
         mnts = linux_mount.linux_mount(self._config).calculate()
@@ -85,11 +86,15 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             else:
                 parent = ""
 
+            rname  = sb.s_root.d_name.name.dereference_as("String", length = 255)
+            if rname and len(rname) > 0:
+                yield (sb, sb_path, rname, sb.s_root)
+
             for vals in self._walk_sb(sb.s_root, None, parent):
                 if vals:
                     (file_path, file_dentry) = vals
                     yield (sb, sb_path, file_path, file_dentry)
-            
+    
     def calculate(self):
         linux_common.set_plugin_members(self)
 
@@ -190,8 +195,11 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         if page_addr:
             page = obj.Object("page", offset = page_addr, vm = self.addr_space)
             phys_offset = page.to_paddr()
-            phys_as = utils.load_as(self._config, astype = 'physical')
-            data = phys_as.zread(phys_offset, 4096)
+            if phys_offset > 0:
+                phys_as = utils.load_as(self._config, astype = 'physical')
+                data = phys_as.zread(phys_offset, 4096)
+            else:
+                data = "\x00" * 4096
         else:
             data = "\x00" * 4096
 
