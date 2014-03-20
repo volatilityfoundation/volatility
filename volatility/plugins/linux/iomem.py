@@ -4,9 +4,10 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,13 +31,11 @@ import volatility.plugins.linux.common as linux_common
 class linux_iomem(linux_common.AbstractLinuxCommand):
     """Provides output similar to /proc/iomem"""
 
-    def yield_resource(self, io_ptr, depth = 0):
+    def yield_resource(self, io_res, depth = 0):
 
-        if not io_ptr:
+        if not io_res:
             #print "null"
             return []
-
-        io_res = obj.Object("resource", offset = io_ptr, vm = self.addr_space)
 
         name = io_res.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
         start = io_res.start
@@ -52,8 +51,9 @@ class linux_iomem(linux_common.AbstractLinuxCommand):
         linux_common.set_plugin_members(self)
 
         io_ptr = self.addr_space.profile.get_symbol("iomem_resource")
+        io_res = obj.Object("resource", offset = io_ptr, vm = self.addr_space)
 
-        for r in self.yield_resource(io_ptr):
+        for r in self.yield_resource(io_res.child):
             yield r
 
     def render_text(self, outfd, data):
