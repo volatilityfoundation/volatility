@@ -4,9 +4,10 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,7 +43,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
         self._config.add_option('INODE', short_option = 'i', default = None, help = 'inode to check', action = 'store', type='int')
 
     def check_file_cache(self, f_op_members, modules):
-        for (_, _, file_path, file_dentry) in find_file.linux_find_file(self._config).walk_sbs():
+         for (_, _, file_path, file_dentry) in find_file.linux_find_file(self._config).walk_sbs():
             for (hooked_member, hook_address) in self.verify_ops(file_dentry.d_inode.i_fop, f_op_members, modules):
                 yield (file_path, hooked_member, hook_address)
 
@@ -113,7 +114,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
             yield("proc_root", hooked_member, hook_address)
 
         for (name, hooked_member, hook_address) in self.walk_proc(proc_root, f_op_members, modules):
-            yield (name, hooked_member, hook_address)
+            yield (name, hooked_member, hook_address) 
 
     def calculate(self):
         linux_common.set_plugin_members(self)
@@ -132,7 +133,6 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
                 yield("inode at {0:x}".format(inode.obj_offset), hooked_member, hook_address)
             
         else:
-            funcs = [self.check_open_files_fop, self.check_proc_fop, self.check_proc_root_fops]
             funcs = [self.check_open_files_fop, self.check_proc_fop, self.check_proc_root_fops, self.check_file_cache]
 
             for func in funcs:
