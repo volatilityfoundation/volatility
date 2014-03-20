@@ -5,9 +5,10 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -35,14 +36,20 @@ import volatility.plugins.linux.common as linux_common
 class linux_psxview(linux_common.AbstractLinuxCommand):
     "Find hidden processes with various process listings"
 
-    def get_pslist(self):
+    def _get_pslist(self):
         return [x.obj_offset for x in linux_pslist.linux_pslist(self._config).calculate()]
 
-    def get_pid_hash(self):
+    def _get_pid_hash(self):
         return [x.obj_offset for x in linux_pidhashtable.linux_pidhashtable(self._config).calculate()]
 
-    def get_kmem_cache(self):
+    def _get_kmem_cache(self):
         return [x.obj_offset for x in linux_pslist_cache.linux_pslist_cache(self._config).calculate()]
+
+    def _get_task_parents(self):
+        return [x.real_parent.v() for x in linux_pslist.linux_pslist(self._config).calculate()]
+    
+    def _get_thread_leaders(self):
+        return [x.group_leader.v() for x in linux_pidhashtable.linux_pidhashtable(self._config).calculate()]
 
     def calculate(self):
         linux_common.set_plugin_members(self)
@@ -52,12 +59,11 @@ class linux_psxview(linux_common.AbstractLinuxCommand):
         # The keys are names of process sources
         # The values are the virtual offset of the task_struct
 
-        ps_sources['pslist'] = self.get_pslist()
-        ps_sources['pid_hash'] = self.get_pid_hash()
-        ps_sources['kmem_cache'] = self.get_kmem_cache()
-
-        # FUTURE
-        # ps_sources['run_queue']  = 
+        ps_sources['pslist']     = self._get_pslist()
+        ps_sources['pid_hash']   = self._get_pid_hash()
+        ps_sources['kmem_cache'] = self._get_kmem_cache()
+        ps_sources['parents']    = self._get_task_parents()
+        ps_sources['thread_leaders'] = self._get_thread_leaders()
 
         # Build a list of offsets from all sources
         seen_offsets = []
@@ -79,6 +85,8 @@ class linux_psxview(linux_common.AbstractLinuxCommand):
                                   ('pslist', '5'),
                                   ('pid_hash', '5'),
                                   ('kmem_cache', '5'),
+                                  ('parents', '5'),
+                                  ('leaders', '5'),
                                   ])
 
         for offset, process, ps_sources in data:
@@ -88,5 +96,7 @@ class linux_psxview(linux_common.AbstractLinuxCommand):
                 process.pid,
                 str(ps_sources['pslist'].__contains__(offset)),
                 str(ps_sources['pid_hash'].__contains__(offset)),
-                str(ps_sources['kmem_cache'].__contains__(offset))
+                str(ps_sources['kmem_cache'].__contains__(offset)),
+                str(ps_sources['parents'].__contains__(offset)),
+                str(ps_sources['thread_leaders'].__contains__(offset)),
                 )
