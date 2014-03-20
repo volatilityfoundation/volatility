@@ -4,9 +4,10 @@
 # This file is part of Volatility.
 #
 # Volatility is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# it under the terms of the GNU General Public License Version 2 as
+# published by the Free Software Foundation.  You may not use, modify or
+# distribute this program under any other version of the GNU General
+# Public License.
 #
 # Volatility is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,8 +29,6 @@ import volatility.commands as commands
 import volatility.utils as utils
 import volatility.debug as debug
 import volatility.obj as obj
-
-from bisect import bisect_right
 
 MAX_STRING_LENGTH = 256
 
@@ -129,7 +128,6 @@ def do_get_path(rdentry, rmnt, dentry, vfsmnt):
         return []
 
     while (dentry != rdentry or vfsmnt != rmnt) and dentry.d_name.name.is_valid():
-
         dname = dentry.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
 
         ret_path.append(dname.strip('/'))
@@ -187,9 +185,13 @@ def get_new_sock_pipe_path(dentry):
 
 def get_path(task, filp):
     rdentry = task.fs.get_root_dentry()
-    rmnt = task.fs.get_root_mnt()
-    dentry = filp.dentry
-    vfsmnt = filp.vfsmnt
+    rmnt    = task.fs.get_root_mnt()
+    dentry  = filp.dentry
+    vfsmnt  = filp.vfsmnt
+    
+    parent_name = vfsmnt.mnt_parent.mnt_mountpoint.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
+    mount_point = vfsmnt.mnt_mountpoint.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
+    mnt_root    = vfsmnt.mnt_root.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
 
     if dentry.d_op and dentry.d_op.d_dname:
         ret = get_new_sock_pipe_path(filp.dentry)
@@ -197,3 +199,7 @@ def get_path(task, filp):
         ret = do_get_path(rdentry, rmnt, dentry, vfsmnt)
 
     return ret
+
+
+
+
