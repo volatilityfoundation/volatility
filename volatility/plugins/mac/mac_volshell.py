@@ -76,6 +76,6 @@ class mac_volshell(volshell.volshell):
             print "Must provide one of: offset, name, or pid as a argument."
             return
 
-        self.proc = obj.Object("proc", offset = offset, vm = self.addrspace)
+        self.proc = obj.Object("proc", offset = offset, vm = self._addrspace)
 
         self.context_display()
