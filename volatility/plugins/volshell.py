@@ -63,20 +63,21 @@ class volshell(common.AbstractWindowsCommand):
                           help = 'Operate on these Process IDs (comma-separated)',
                           action = 'store', type = 'str')
 
-        self.addrspace = None
-        self.proc = None
+        self._addrspace = None
+        self._proc = None
 
     def getpidlist(self):
-        return win32.tasks.pslist(self.addrspace)
+        return win32.tasks.pslist(self._addrspace)
 
     def getmodules(self):
-        return win32.modules.lsmod(self.addrspace)
+        return win32.modules.lsmod(self._addrspace)
 
     def context_display(self):
-        print "Current context: process {0}, pid={1}, ppid={2} DTB={3:#x}".format(self.proc.ImageFileName,
-                                                                                  self.proc.UniqueProcessId.v(),
-                                                                                  self.proc.InheritedFromUniqueProcessId.v(),
-                                                                                  self.proc.Pcb.DirectoryTableBase.v())
+        print "Current context: {0} @ {1:#x}, pid={2}, ppid={3} DTB={4:#x}".format(self._proc.ImageFileName,
+                                                                                  self._proc.obj_offset,
+                                                                                  self._proc.UniqueProcessId.v(),
+                                                                                  self._proc.InheritedFromUniqueProcessId.v(),
+                                                                                  self._proc.Pcb.DirectoryTableBase.v())
 
     def ps(self, procs = None):
         print "{0:16} {1:6} {2:6} {3:8}".format("Name", "PID", "PPID", "Offset")
@@ -87,7 +88,7 @@ class volshell(common.AbstractWindowsCommand):
                                                        eproc.obj_offset)
 
     def modules(self, modules = None):
-        if self.addrspace.profile.metadata.get('memory_model', '32bit') == '32bit':
+        if self._addrspace.profile.metadata.get('memory_model', '32bit') == '32bit':
             print "{0:10} {1:10} {2}".format("Offset", "Base", "Name")
         else:
             print "{0:18} {1:18} {2}".format("Offset", "Base", "Name")
@@ -131,12 +132,12 @@ class volshell(common.AbstractWindowsCommand):
             print "Must provide one of: offset, name, or pid as a argument."
             return
 
-        self.proc = obj.Object("_EPROCESS", offset = offset, vm = self.addrspace)
+        self._proc = obj.Object("_EPROCESS", offset = offset, vm = self._addrspace)
 
         self.context_display()
 
     def render_text(self, _outfd, _data):
-        self.addrspace = utils.load_as(self._config)
+        self._addrspace = utils.load_as(self._config)
 
         if not self._config.OFFSET is None:
             self.set_context(offset = self._config.OFFSET)
@@ -187,7 +188,7 @@ class volshell(common.AbstractWindowsCommand):
             optionally specify the address space to read the data from.
             """
             if not space:
-                space = self.proc.get_process_address_space()
+                space = self._proc.get_process_address_space()
             #if length % 4 != 0:
             #    length = (length+4) - (length%4)
             data = space.read(address, length)
@@ -211,7 +212,7 @@ class volshell(common.AbstractWindowsCommand):
             to read the data from.
             """
             if not space:
-                space = self.proc.get_process_address_space()
+                space = self._proc.get_process_address_space()
             # round up to multiple of 4
             if length % 4 != 0:
                 length = (length + 4) - (length % 4)
@@ -245,7 +246,7 @@ class volshell(common.AbstractWindowsCommand):
             to read the data from.
             """
             if not space:
-                space = self.proc.get_process_address_space()
+                space = self._proc.get_process_address_space()
 
             # round up 
             if length % 8 != 0:
@@ -262,14 +263,42 @@ class volshell(common.AbstractWindowsCommand):
                 print "{0:#x} {1:#x}".format(qword.obj_offset, qword.v())
 
         def ps():
-            """Print a process listing.
+            """Print active processes in a table view.
 
             Prints a process listing with PID, PPID, image name, and offset.
             """
             self.ps()
 
+        def addrspace():
+            """Get the current kernel/virtual address space. 
+
+            This returns the current address space. 
+            """
+            return self._addrspace
+
+        def proc():
+            """Get the current process object.
+            
+            This returns the current process object. 
+            """
+            return self._proc 
+
+        def getprocs():
+            """Generator of process objects (scripting).
+
+            This returns a list of active process objects.
+            """    
+            return self.getpidlist()
+
+        def getmods():
+            """Generator for kernel modules (scripting).
+
+            This returns a list of loaded kernel module objects.
+            """
+            return self.getmodules()
+
         def modules():
-            """Print a module listing.
+            """Print loaded modules in a table view.
 
             Prints a module listing with base, offset, name etc
             """
@@ -289,7 +318,7 @@ class volshell(common.AbstractWindowsCommand):
             objects of type objname. The value of offset should be set to the
             offset of the _LIST_ENTRY within the desired object."""
 
-            vm = self.proc.get_process_address_space()
+            vm = self._proc.get_process_address_space()
             seen = set()
 
             if fieldname:
@@ -330,17 +359,17 @@ class volshell(common.AbstractWindowsCommand):
 
             Examples:
                 # Dump the current process object
-                dt(self.proc)
+                dt(self._proc)
                 # Show the _EPROCESS structure
                 dt('_EPROCESS')
                 # Overlay an _EPROCESS structure at 0x81234567
                 dt('_EPROCESS', 0x81234567)
             """
 
-            profile = (space or self.proc.obj_vm).profile
+            profile = (space or self._proc.obj_vm).profile
 
             if address is not None:
-                objct = obj.Object(objct, address, space or self.proc.get_process_address_space())
+                objct = obj.Object(objct, address, space or self._proc.get_process_address_space())
 
             if isinstance(objct, str):
                 size = profile.get_obj_size(objct)
@@ -395,7 +424,7 @@ class volshell(common.AbstractWindowsCommand):
                 print "ERROR: Disassembly unavailable, distorm not found"
                 return
             if not space:
-                space = self.proc.get_process_address_space()
+                space = self._proc.get_process_address_space()
 
             if mode == None:
                 mode = space.profile.metadata.get('memory_model', '32bit')
@@ -414,18 +443,18 @@ class volshell(common.AbstractWindowsCommand):
             for (offset, _size, instruction, hexdump) in iterable:
                 print "{0:<#8x} {1:<32} {2}".format(offset, hexdump, instruction)
 
-        shell_funcs = {'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis, 'dq': dq, 'modules': modules, 'sc': sc,}
+        shell_funcs = {'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis, 'dq': dq, 'modules': modules, 'sc': sc, 'addrspace': addrspace, 'proc': proc, 'getprocs': getprocs, 'getmods': getmods}
         def hh(cmd = None):
             """Get help on a command."""
             shell_funcs['hh'] = hh
             import pydoc
             from inspect import getargspec, formatargspec
             if not cmd:
-                print "\nUse self.addrspace for Kernel/Virtual AS"
-                print "Use self.addrspace.base for Physical AS"
-                print "Use self.proc to get the current _EPROCESS object"
-                print "  and self.proc.get_process_address_space() for the current process AS"
-                print "  and self.proc.get_load_modules() for the current process DLLs\n"
+                print "\nUse addrspace() for Kernel/Virtual AS"
+                print "Use addrspace().base for Physical AS"
+                print "Use proc() to get the current process object"
+                print "  and proc().get_process_address_space() for the current process AS"
+                print "  and proc().get_load_modules() for the current process DLLs\n"
                 for f in sorted(shell_funcs):
                     doc = pydoc.getdoc(shell_funcs[f])
                     synop, _full = pydoc.splitdoc(doc)
