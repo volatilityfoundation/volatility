@@ -302,3 +302,68 @@ class PoolTagCheck(scan.ScannerCheck):
     def check(self, offset):
         data = self.address_space.read(offset, len(self.tag))
         return data == self.tag
+
+class CheckPoolType(scan.ScannerCheck):
+    """ Check the pool type """
+    def __init__(self, address_space, paged = False,
+                 non_paged = False, free = False, **kwargs):
+        scan.ScannerCheck.__init__(self, address_space, **kwargs)
+        self.non_paged = non_paged
+        self.paged = paged
+        self.free = free
+
+    def check(self, offset):
+        pool_hdr = obj.Object('_POOL_HEADER', vm = self.address_space,
+                             offset = offset - 4)
+
+        return ((self.non_paged and pool_hdr.NonPagedPool) or
+               (self.free and pool_hdr.FreePool) or
+               (self.paged and pool_hdr.PagedPool))
+
+class SinglePoolScanner(scan.BaseScanner):
+
+    def object_offset(self, found, address_space):
+        """ 
+        The name of this function "object_offset" can be misleading depending
+        on how its used. Even before removing the preambles (r1324), it may not
+        always return the offset of an object. Here are the rules:
+
+        If you subclass PoolScanner and do not override this function, it 
+        will return the offset of _POOL_HEADER. If you do override this function,
+        it should be used to calculate and return the offset of your desired 
+        object within the pool. Thus there are two different ways it can be done. 
+
+        Example 1. 
+
+        For an example of subclassing PoolScanner and not overriding this function, 
+        see filescan.PoolScanFile. In this case, the plugin (filescan.FileScan) 
+        treats the offset returned by this function as the start of _POOL_HEADER 
+        and then works out the object from the bottom up: 
+
+            for offset in PoolScanFile().scan(address_space):
+                pool_obj = obj.Object("_POOL_HEADER", vm = address_space,
+                     offset = offset)
+                ##
+                ## Work out objects base here
+                ## 
+
+        Example 2. 
+
+        For an example of subclassing PoolScanner and overriding this function, 
+        see filescan.PoolScanProcess. In this case, the "work" described above is
+        done here (in the sublcassed object_offset). Thus in the plugin (filescan.PSScan)
+        it can directly instantiate _EPROCESS from the offset we return. 
+
+            for offset in PoolScanProcess().scan(address_space):
+                eprocess = obj.Object('_EPROCESS', vm = address_space,
+                        native_vm = kernel_as, offset = offset)
+        """
+
+        ## Subtract the offset of the PoolTag member to get the start 
+        ## of _POOL_HEADER. This is done because PoolScanners search 
+        ## for the PoolTag.
+        return found - self.buffer.profile.get_obj_offset('_POOL_HEADER', 'PoolTag')
+
+    def scan(self, address_space, offset = 0, maxlen = None):
+        for i in scan.BaseScanner.scan(self, address_space, offset, maxlen):
+            yield self.object_offset(i, address_space)
