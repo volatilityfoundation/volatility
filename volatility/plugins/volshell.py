@@ -390,13 +390,16 @@ class volshell(common.AbstractWindowsCommand):
                     if callable(o):
                         o = o(objct) - objct.obj_offset
 
-                    offsets.append((o, m, str(val or '')))
+                    offsets.append((o, m, val))
 
                 # Deal with potentially out of order offsets
                 offsets.sort(key = lambda x: x[0])
 
                 for o, m, val in offsets:
-                    print "{0:6}: {1:30} {2}".format(hex(o), m, val)
+                    try:
+                        print "{0:6}: {1:30} {2}".format(hex(o), m, val)
+                    except UnicodeDecodeError:
+                        print "{0:6}: {1:30} -".format(hex(o), m)
             elif isinstance(objct, obj.NoneObject):
                 print "ERROR: could not instantiate object"
                 print
