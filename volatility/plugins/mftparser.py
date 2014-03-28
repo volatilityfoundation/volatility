@@ -130,8 +130,11 @@ class MFT_FILE_RECORD(obj.CType):
 
     def get_full_path(self, fileinfo):
         parent = ""
-        parent_id = fileinfo.ParentDirectory & 0xffffff
         path = self.remove_unprintable(fileinfo.get_name()) or "(Null)"
+        try:
+            parent_id = fileinfo.ParentDirectory & 0xffffff
+        except struct.error:
+            return path
         if int(self.RecordNumber) == 5 or int(self.RecordNumber) == 0:
             return path
         while parent != {}:
@@ -169,6 +172,8 @@ class MFT_FILE_RECORD(obj.CType):
             if attr == None:
                 next_attr = None
             elif attr == "STANDARD_INFORMATION":
+                if self._config.DEBUG:
+                    print "Found $SI"
                 if not check or next_attr.STDInfo.is_valid():
                     attributes.append((attr, next_attr.STDInfo))
                 next_off = next_attr.STDInfo.obj_offset + next_attr.ContentSize
@@ -177,6 +182,8 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
             elif attr == 'FILE_NAME':
+                if self._config.DEBUG:
+                    print "Found $FN"
                 self.add_path(next_attr.FileName)
                 if not check or next_attr.FileName.is_valid():
                     attributes.append((attr, next_attr.FileName))
@@ -186,6 +193,8 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
             elif attr == "OBJECT_ID":
+                if self._config.DEBUG:
+                    print "Found $ObjectId"
                 if next_attr.Header.NonResidentFlag == 1:
                     attributes.append((attr, "Non-Resident"))
                     next_attr = None
@@ -198,6 +207,8 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
             elif attr == "DATA":
+                if self._config.DEBUG:
+                    print "Found $DATA"
                 if next_attr.Header.NameOffset > 0 and next_attr.Header.NameLength > 0:
                     adsname = ""
                     if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
@@ -231,6 +242,8 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
             elif attr == "ATTRIBUTE_LIST":
+                if self._config.DEBUG:
+                    print "Found $AttributeList"
                 if next_attr.Header.NonResidentFlag == 1:
                     attributes.append((attr, "Non-Resident"))
                     next_attr = None
@@ -654,6 +667,8 @@ class MFTParser(common.AbstractWindowsCommand):
                       help = 'Directory in which to dump extracted resident files')
         config.add_option("MACHINE", default = "",
                         help = "Machine name to add to timeline header")
+        config.add_option("DEBUG", default = None,
+                        help = "Output debugging messages")
 
     def calculate(self):
         if self._config.MACHINE != "":
@@ -678,6 +693,8 @@ class MFTParser(common.AbstractWindowsCommand):
             offsets.append((offset, mft_entry))
         for offset, mft_entry in offsets:
             mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
+            if self._config.DEBUG:
+                print "Processing MFT Entry at offset:", offset
             attributes = mft_entry.parse_attributes(mft_buff, self._config.CHECK)
             yield offset, mft_entry, attributes
 
