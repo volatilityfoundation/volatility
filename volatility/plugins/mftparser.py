@@ -695,7 +695,7 @@ class MFTParser(common.AbstractWindowsCommand):
         for offset, mft_entry in offsets:
             mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
             if self._config.DEBUGOUT:
-                print "Processing MFT Entry at offset:", offset
+                print "Processing MFT Entry at offset:", hex(offset)
             attributes = mft_entry.parse_attributes(mft_buff, self._config.CHECK)
             yield offset, mft_entry, attributes
 
