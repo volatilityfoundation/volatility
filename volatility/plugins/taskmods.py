@@ -23,7 +23,7 @@
 
 #pylint: disable-msg=C0111
 
-import os
+import os, re
 import volatility.plugins.common as common
 import volatility.win32 as win32
 import volatility.obj as obj
@@ -44,6 +44,10 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
         config.add_option('PID', short_option = 'p', default = None,
                           help = 'Operate on these Process IDs (comma-separated)',
                           action = 'store', type = 'str')
+                          	
+    	config.add_option('NAME', short_option = 'n', default = None, 
+    					  help = 'Operate on these process names (regex)', 
+    					  action = 'store', type = 'str')
 
     def render_text(self, outfd, data):
         for task in data:
@@ -75,15 +79,23 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
         Returns a reduced list or the full list if config.PIDS not specified.
         """
         
-        if self._config.PID is None:
-            return tasks
-        
-        try:
-            pidlist = [int(p) for p in self._config.PID.split(',')]
-        except ValueError:
-            debug.error("Invalid PID {0}".format(self._config.PID))
+        if self._config.PID is not None:        
+			try:
+				pidlist = [int(p) for p in self._config.PID.split(',')]
+			except ValueError:
+				debug.error("Invalid PID {0}".format(self._config.PID))
+				
+			return [t for t in tasks if t.UniqueProcessId in pidlist]
             
-        return [t for t in tasks if t.UniqueProcessId in pidlist]
+        if self._config.NAME is not None:
+			try:
+				name_re = re.compile(self._config.NAME, re.I)
+			except re.error:
+				debug.error("Invalid name {0}".format(self._config.NAME))
+            
+			return [t for t in tasks if name_re.search(str(t.ImageFileName))]
+        	        	
+    	return tasks
 
     @staticmethod
     def virtual_process_from_physical_offset(addr_space, offset):
