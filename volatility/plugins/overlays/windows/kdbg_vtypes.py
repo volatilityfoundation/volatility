@@ -115,6 +115,7 @@ class _KDDEBUGGER_DATA64(obj.CType):
             kpcr = obj.Object("_KPCR", offset = kpcrb.obj_offset -
                     self.obj_native_vm.profile.get_obj_offset("_KPCR", prcb_member),
                     vm = self.obj_native_vm,
+                    parent = self,
                     )
 
             if kpcr.is_valid():

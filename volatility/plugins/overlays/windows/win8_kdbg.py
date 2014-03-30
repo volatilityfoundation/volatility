@@ -24,6 +24,7 @@ import volatility.addrspace as addrspace
 import volatility.constants as constants
 import volatility.utils as utils
 import volatility.plugins.overlays.windows.win8 as win8
+import volatility.plugins.patchguard as patchguard
 
 try:
     import distorm3
@@ -57,29 +58,14 @@ class VolatilityKDBG(obj.VolatilityMagic):
         for x in self.generate_suggestions():
             yield x
 
-    def rol(self, value, count):
-        """A rotate-left instruction in Python"""
-        
-        for y in range(count):
-            value *= 2
-            if (value > 0xFFFFFFFFFFFFFFFF):
-                value -= 0x10000000000000000
-                value += 1
-        return value
-
-    def bswap(self, value):
-        """A byte-swap instruction in Python"""
-
-        hi, lo = struct.unpack(">II", struct.pack("<Q", value))
-        return (hi << 32) | lo 
-
     def decode_kdbg(self, vals):
         """Decoder the KDBG block using the provided 
         magic values and the algorithm reversed from 
         the Windows kernel file."""
 
         block_encoded, kdbg_block, wait_never, wait_always = vals
-        kdbg_size = win8.Win8KDBG.kdbgsize
+        header = obj.VolMagic(self.obj_vm).KDBGHeader.v()
+        kdbg_size = struct.unpack("<H", header[-2:])[0]
         buffer = ""
 
         entries = obj.Object("Array", 
@@ -89,9 +75,9 @@ class VolatilityKDBG(obj.VolatilityMagic):
 
         for entry in entries: 
             low_byte = (wait_never & 0xFFFFFFFF) & 0xFF
-            entry = self.rol(entry ^ wait_never, low_byte)
+            entry = patchguard.rol(entry ^ wait_never, low_byte)
             swap_xor = block_encoded.obj_offset | 0xFFFF000000000000
-            entry = self.bswap(entry ^ swap_xor)
+            entry = patchguard.bswap(entry ^ swap_xor)
             buffer += struct.pack("Q", entry ^ wait_always) 
 
         return buffer
@@ -101,7 +87,10 @@ class VolatilityKDBG(obj.VolatilityMagic):
         machine by finding the encoded KDBG structure and using
         the required entropy values to decode it."""
 
-        kdbg_size = win8.Win8KDBG.kdbgsize
+        # this unpacks the kdbgsize from the signature 
+        header = obj.VolMagic(self.obj_vm).KDBGHeader.v()
+        kdbg_size = struct.unpack("<H", header[-2:])[0]
+
         size_str = struct.pack("I", kdbg_size)
         alignment = 8 
         addr_space = self.obj_vm
