@@ -478,10 +478,15 @@ class volshell(common.AbstractWindowsCommand):
         banner = "Welcome to volshell! Current memory image is:\n{0}\n".format(self._config.LOCATION)
         banner += "To get help, type 'hh()'"
         try:
-            from IPython.Shell import IPShellEmbed #pylint: disable-msg=W0611,F0401
-            shell = IPShellEmbed([], banner = banner)
-            shell()
-        except ImportError:
+            import IPython
+            try:
+                # New versions of IPython
+                IPython.embed()
+            except AttributeError:
+                # Old versions of IPythom
+                shell = IPython.Shell.IPShellEmbed([], banner = banner)
+                shell()
+        except (AttributeError, ImportError):
             import code, inspect
 
             frame = inspect.currentframe()
