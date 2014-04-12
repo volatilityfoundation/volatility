@@ -44,9 +44,9 @@ class linux_volshell(volshell.volshell):
             print "{0:16} {1:<6} {2:#08x}".format(proc.comm, proc.pid, proc.obj_offset)
 
     def context_display(self):
-        dtb = self._addrspace.vtop(self.proc.mm.pgd) or self.proc.mm.pgd
-        print "Current context: process {0}, pid={1} DTB={2:#x}".format(self.proc.comm,
-                                                                        self.proc.pid, dtb)
+        dtb = self._addrspace.vtop(self._proc.mm.pgd) or self._proc.mm.pgd
+        print "Current context: process {0}, pid={1} DTB={2:#x}".format(self._proc.comm,
+                                                                        self._proc.pid, dtb)
 
     def set_context(self, offset = None, pid = None, name = None):
         if pid is not None:
@@ -83,6 +83,6 @@ class linux_volshell(volshell.volshell):
             print "Must provide one of: offset, name, or pid as a argument."
             return
 
-        self.proc = obj.Object("task_struct", offset = offset, vm = self._addrspace)
+        self._proc = obj.Object("task_struct", offset = offset, vm = self._addrspace)
 
         self.context_display()
