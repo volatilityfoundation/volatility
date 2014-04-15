@@ -202,6 +202,8 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                         index = int(index)
                     
                     index_names[index] = name
+        else:
+            index_names = None
 
         hidden_mods = list(linux_hidden_modules.linux_hidden_modules(self._config).calculate())
         visible_mods = linux_lsmod.linux_lsmod(self._config).calculate()
@@ -224,7 +226,10 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                 if not call_addr:
                     continue
 
-                idx_name = self._index_name(index_names, i)
+                if index_names:
+                    idx_name = self._index_name(index_names, i)
+                else:
+                    idx_name = ""
 
                 call_addr = int(call_addr)
 
