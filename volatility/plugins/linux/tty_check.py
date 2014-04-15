@@ -63,7 +63,7 @@ class linux_check_tty(linux_common.AbstractLinuxCommand):
                     sym_name = "HOOKED"
                     hooked = 1
                 else:
-                    sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
+                    sym_name = self.profile.get_symbol_by_address("kernel", recv_buf)
                     hooked = 0
                 
                 sym_cache[recv_buf] = sym_name
