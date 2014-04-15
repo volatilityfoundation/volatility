@@ -57,15 +57,13 @@ class linux_check_tty(linux_common.AbstractLinuxCommand):
                 name = tty_dev.name
                 recv_buf = tty_dev.ldisc.ops.receive_buf
                 
-                if recv_buf in sym_cache:
-                    sym_name = sym_cache[recv_buf]
-                else:
-                    sym_name = self.is_known_address(recv_buf, modules)
+                hooked = self.is_known_address(recv_buf, modules)
 
-                if not sym_name:
+                if hooked:
                     sym_name = "HOOKED"
                     hooked = 1
                 else:
+                    sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
                     hooked = 0
                 
                 sym_cache[recv_buf] = sym_name
