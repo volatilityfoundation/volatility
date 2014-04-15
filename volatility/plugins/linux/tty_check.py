@@ -26,13 +26,15 @@
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
-
+import volatility.plugins.linux.lsmod as linux_lsmod
 
 class linux_check_tty(linux_common.AbstractLinuxCommand):
     """Checks tty devices for hooks"""
 
     def calculate(self):
         linux_common.set_plugin_members(self)
+        
+        modules  = linux_lsmod.linux_lsmod(self._config).get_modules()
 
         tty_addr = self.addr_space.profile.get_symbol("tty_drivers")
         
