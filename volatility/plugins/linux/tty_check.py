@@ -57,9 +57,9 @@ class linux_check_tty(linux_common.AbstractLinuxCommand):
                 name = tty_dev.name
                 recv_buf = tty_dev.ldisc.ops.receive_buf
                 
-                hooked = self.is_known_address(recv_buf, modules)
+                known = self.is_known_address(recv_buf, modules)
 
-                if hooked:
+                if not known:
                     sym_name = "HOOKED"
                     hooked = 1
                 else:
