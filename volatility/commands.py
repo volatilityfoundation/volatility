@@ -88,11 +88,12 @@ class Command(object):
         """ Executes the plugin command."""
         # Check we can support the plugins
         profs = registry.get_plugin_classes(obj.Profile)
-        # force a profile if a plugin other than kdbgscan or imageinfo are given:
+        # force user to give a profile if a plugin 
+        #  other than kdbgscan or imageinfo are given:
         if self.__class__.__name__.lower() in ["kdbgscan", "imageinfo"] and self._config.PROFILE == None:
             self._config.update("PROFILE", "WinXPSP2x86")
         elif self._config.PROFILE == None:
-            debug.error("You must set a profile!" + self.args)
+            debug.error("You must set a profile!")
         if self._config.PROFILE not in profs:
             debug.error("Invalid profile " + self._config.PROFILE + " selected")
         if not self.is_valid_profile(profs[self._config.PROFILE]()):
