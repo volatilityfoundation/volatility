@@ -153,13 +153,12 @@ class MFT_FILE_RECORD(obj.CType):
             thetype += "File"
         return thetype.rstrip(" & ")
         
-    def parse_attributes(self, mft_buff, check):
+    def parse_attributes(self, mft_buff, check = True, entrysize = 1024):
 
         next_attr = self.ResidentAttributes
         end = mft_buff.find("\xff\xff\xff\xff")
         if end == -1:
-            ## FIXME: r3519 changed this to self._config.ENTRYSIZE
-            end = 1024
+            end = entrysize
         attributes = []
         dataseen = False
         while next_attr != None and next_attr.obj_offset <= end:
@@ -282,7 +281,7 @@ class MFT_FILE_RECORD(obj.CType):
         return item
 
 class RESIDENT_ATTRIBUTE(obj.CType):
-    def process_attr_list(self, bufferas, mft_entry, attributes = [], check = False):
+    def process_attr_list(self, bufferas, mft_entry, attributes = [], check = True):
         start = 0
         end = self.obj_offset + self.ContentSize
         while start < end:
@@ -656,8 +655,8 @@ class MFTParser(common.AbstractWindowsCommand):
     """ Scans for and parses potential MFT entries """
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
-        config.add_option('CHECK', short_option = 'C', default = False,
-                          help = 'Only print entries w/o null timestamps',
+        config.add_option('NOCHECK', short_option = 'N', default = False,
+                          help = 'Only all entries including w/null timestamps',
                           action = "store_true")
         config.add_option("ENTRYSIZE", short_option = "E", default = 1024,
                           help = "MFT Entry Size",
@@ -696,7 +695,7 @@ class MFTParser(common.AbstractWindowsCommand):
             mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
             if self._config.DEBUGOUT:
                 print "Processing MFT Entry at offset:", hex(offset)
-            attributes = mft_entry.parse_attributes(mft_buff, self._config.CHECK)
+            attributes = mft_entry.parse_attributes(mft_buff, not self._config.NOCHECK, self._config.ENTRYSIZE)
             yield offset, mft_entry, attributes
 
     def render_body(self, outfd, data):
