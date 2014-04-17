@@ -209,8 +209,8 @@ class MBRParser(commands.Command):
         config.add_option('OFFSET', short_option = 'o', default = None,
                           help = "Offset of MBR", 
                           action = "store", type = "int")
-        config.add_option('CHECK', short_option = 'C', default = False,
-                          help = "Check partitions", 
+        config.add_option('NOCHECK', short_option = 'N', default = False,
+                          help = "Don't check partitions", 
                           action = "store_true")
         config.add_option('DISK', short_option = 'm', default = None,
                          help = "Disk or extracted MBR",
@@ -331,7 +331,7 @@ class MBRParser(commands.Command):
             entry3 = PARTITION_TABLE.Entry3.dereference_as('PARTITION_ENTRY')
             entry4 = PARTITION_TABLE.Entry4.dereference_as('PARTITION_ENTRY')
             have_bootable = entry1.is_bootable_and_used() or entry2.is_bootable_and_used() or entry3.is_bootable_and_used() or entry4.is_bootable_and_used()
-            if self._config.CHECK and not have_bootable: 
+            if not self._config.NOCHECK and not have_bootable: 
                 # it doesn't really make sense to have a partition that is bootable, but empty or invalid
                 # but we only skip MBRs with these types of partitions if we are checking
                 continue
