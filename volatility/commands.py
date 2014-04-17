@@ -88,6 +88,8 @@ class Command(object):
         """ Executes the plugin command."""
         # Check we can support the plugins
         profs = registry.get_plugin_classes(obj.Profile)
+        if self._config.PROFILE == None:
+            debug.error("You must set a profile!")
         if self._config.PROFILE not in profs:
             debug.error("Invalid profile " + self._config.PROFILE + " selected")
         if not self.is_valid_profile(profs[self._config.PROFILE]()):
