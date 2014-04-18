@@ -684,12 +684,14 @@ class MFTParser(common.AbstractWindowsCommand):
             mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
                                offset = 0)
             temp = mft_entry.advance_one(mft_entry.ResidentAttributes.STDInfo.obj_offset + mft_entry.ResidentAttributes.ContentSize, mft_buff, self._config.ENTRYSIZE)
+            name = ""
             if temp != None: # and temp.FileName.is_valid():
                 mft_entry.add_path(temp.FileName)
-            if int(mft_entry.RecordNumber) in seen:
+                name = temp.FileName.get_name()
+            if (int(mft_entry.RecordNumber), name) in seen:
                 continue
             else:
-                seen.append(int(mft_entry.RecordNumber))
+                seen.append((int(mft_entry.RecordNumber), name))
             offsets.append((offset, mft_entry))
         for offset, mft_entry in offsets:
             mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
