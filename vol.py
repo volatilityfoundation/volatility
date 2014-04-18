@@ -65,6 +65,8 @@ def list_plugins():
     result = "\n\tSupported Plugin Commands:\n\n"
     cmds = registry.get_plugin_classes(commands.Command, lower = True)
     profs = registry.get_plugin_classes(obj.Profile)
+    if config.PROFILE == None:
+        config.update("PROFILE", "WinXPSP2x86")
     if config.PROFILE not in profs:
         raise BaseException("Invalid profile " + config.PROFILE + " selected")
     profile = profs[config.PROFILE]()
