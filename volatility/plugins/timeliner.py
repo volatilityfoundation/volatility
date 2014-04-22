@@ -46,7 +46,7 @@ import volatility.win32.tasks as tasks
 import volatility.utils as utils
 import volatility.protos as protos
 import volatility.plugins.iehistory as iehistory
-import os, sys
+import os, sys, ntpath
 import struct
 import volatility.debug as debug
 import volatility.obj as obj 
@@ -369,60 +369,80 @@ class TimeLiner(common.AbstractWindowsCommand):
                         self.suspicious[line.strip()] = {"reason":"MALFIND and PSXVIEW", "color": "RED"}
                         self.suspiciouspids[eprocess.UniqueProcessId.v()] = {"reason":"MALFIND and PSXVIEW", "color": "RED"}
 
-            dllskip = False
             if eprocess.Peb == None or eprocess.Peb.ImageBaseAddress == None:
-                dllskip = True
                 continue
-            # Get DLL PE timestamps
-            else:
-                mods = dict((mod.DllBase.v(), mod) for mod in eprocess.get_load_modules())
-                for mod in mods.values():
-                    basename = str(mod.BaseDllName or "")
-                    if basename == str(eprocess.ImageFileName):
-                        line = "[{7}PE HEADER (exe)]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
+            # Get DLL PE timestamps for Wow64 processes (excluding 64-bit ones)
+            if eprocess.IsWow64:
+                for vad, address_space in eprocess.get_vads(vad_filter = eprocess._mapped_file_filter):
+                    if vad.FileObject.FileName:
+                        name = str(vad.FileObject.FileName).lower()
+                        basename = ntpath.basename(name)
+                        if not basename.endswith("dll") or basename in ["wow64cpu.dll", "ntdll.dll", "wow64.dll", "wow64win.dll"]:
+                            continue
+                        data = ps_ad.zread(vad.Start, vad.Length)
+                        bufferas = addrspace.BufferAddressSpace(self._config, data = data)
+                        try:
+                            pe_file = obj.Object("_IMAGE_DOS_HEADER", offset = 0, vm = bufferas)
+                            header = pe_file.get_nt_header()
+                        except ValueError, ve: 
+                            continue
+                        line = "[{7}PE HEADER 32-bit (dll)]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
                             "" if body else "|",
                             eprocess.ImageFileName,
                             eprocess.UniqueProcessId,
                             eprocess.InheritedFromUniqueProcessId,
                             basename,
                             offset,
-                            mod.DllBase.v(),
+                            vad.Start,
                             self._config.MACHINE)
-                    else:
-                        line = "[{7}PE HEADER (dll)]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
-                            "" if body else "|",
-                            eprocess.ImageFileName,
-                            eprocess.UniqueProcessId,
-                            eprocess.InheritedFromUniqueProcessId,
-                            basename,
-                            offset,
-                            mod.DllBase.v(),
-                            self._config.MACHINE)
-                    if hasattr(mod, "LoadTime"): 
-                        temp = line.replace("[{0}PE HEADER ".format(self._config.MACHINE), "[{0}DLL LOADTIME ".format(self._config.MACHINE))
-                        if body:
-                            yield self.getoutput(temp, mod.TimeDateStamp, end = mod.LoadTime, body = body)
-                        else:
-                            yield self.getoutput(temp, mod.LoadTime, body = body)
-                    yield self.getoutput(line, mod.TimeDateStamp, body = body)
-                    line = "[{7}PE DEBUG]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
-                            "" if body else "|",
-                            eprocess.ImageFileName,
-                            eprocess.UniqueProcessId,
-                            eprocess.InheritedFromUniqueProcessId,
-                            basename,
-                            offset,
-                            mod.DllBase.v(),
-                            self._config.MACHINE)
-                    yield self.getoutput(line, mod.get_debug_directory().TimeDateStamp, body = body)
-                    if detections and eprocess.UniqueProcessId.v() in self.suspiciouspids.keys():
-                        suspiciousline = "Process: {0}/PID: {1}/PPID: {2}/Process POffset: 0x{3:08x}/DLL Base: 0x{4:08x}".format(
-                            eprocess.ImageFileName,
-                            eprocess.UniqueProcessId,
-                            eprocess.InheritedFromUniqueProcessId,
-                            offset,
-                            mod.DllBase.v())
-                        self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[eprocess.UniqueProcessId.v()]["reason"], "color": "BLUE"}
+                        yield self.getoutput(line, header.FileHeader.TimeDateStamp, body = body)
+
+            # get DLL PE timestamps
+            mods = dict((mod.DllBase.v(), mod) for mod in eprocess.get_load_modules())
+            for mod in mods.values():
+                basename = str(mod.BaseDllName or "")
+                if basename == str(eprocess.ImageFileName):
+                    line = "[{7}PE HEADER (exe)]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
+                        "" if body else "|",
+                        eprocess.ImageFileName,
+                        eprocess.UniqueProcessId,
+                        eprocess.InheritedFromUniqueProcessId,
+                        basename,
+                        offset,
+                        mod.DllBase.v(),
+                        self._config.MACHINE)
+                else:
+                    line = "[{7}PE HEADER (dll)]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
+                        "" if body else "|",
+                        eprocess.ImageFileName,
+                        eprocess.UniqueProcessId,
+                        eprocess.InheritedFromUniqueProcessId,
+                        basename,
+                        offset,
+                        mod.DllBase.v(),
+                        self._config.MACHINE)
+                yield self.getoutput(line, mod.TimeDateStamp, body = body)
+                if hasattr(mod, "LoadTime"): 
+                    temp = line.replace("[{0}PE HEADER ".format(self._config.MACHINE), "[{0}DLL LOADTIME ".format(self._config.MACHINE))
+                    yield self.getoutput(temp, mod.TimeDateStamp, end = mod.LoadTime, body = body)
+                line = "[{7}PE DEBUG]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
+                    "" if body else "|",
+                    eprocess.ImageFileName,
+                    eprocess.UniqueProcessId,
+                    eprocess.InheritedFromUniqueProcessId,
+                    basename,
+                    offset,
+                    mod.DllBase.v(),
+                    self._config.MACHINE)
+                yield self.getoutput(line, mod.get_debug_directory().TimeDateStamp, body = body)
+                if detections and eprocess.UniqueProcessId.v() in self.suspiciouspids.keys():
+                    suspiciousline = "Process: {0}/PID: {1}/PPID: {2}/Process POffset: 0x{3:08x}/DLL Base: 0x{4:08x}".format(
+                        eprocess.ImageFileName,
+                        eprocess.UniqueProcessId,
+                        eprocess.InheritedFromUniqueProcessId,
+                        offset,
+                        mod.DllBase.v())
+                    self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[eprocess.UniqueProcessId.v()]["reason"], "color": "BLUE"}
 
         # yarascan
         mal = []
