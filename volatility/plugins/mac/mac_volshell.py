@@ -19,6 +19,7 @@
 
 import volatility.plugins.mac.pstasks as pstasks
 import volatility.plugins.volshell as volshell
+import volatility.plugins.mac.lsmod as lsmod
 import volatility.obj as obj
 
 class mac_volshell(volshell.volshell):
@@ -27,6 +28,12 @@ class mac_volshell(volshell.volshell):
     @staticmethod
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'mac'
+
+    def modules(self):
+        mods = lsmod.mac_lsmod(self._config).calculate()
+       
+        for mod in mods: 
+            print "{3:16x} {0:48} {1:16x} {2:6d}".format(mod.name, mod.address, mod.m('size'), mod.obj_offset)
 
     def getpidlist(self):
         return pstasks.mac_tasks(self._config).calculate()
@@ -37,9 +44,9 @@ class mac_volshell(volshell.volshell):
             print "{0:16} {1:<6} {2:#08x}".format(proc.p_comm, proc.p_pid, proc.obj_offset)
 
     def context_display(self):
-        dtb = self.proc.task.dereference_as("task").map.pmap.pm_cr3
-        print "Current context: process {0}, pid={1} DTB={2:#x}".format(self.proc.p_comm,
-                                                                        self.proc.p_pid, dtb)
+        dtb = self._proc.task.dereference_as("task").map.pmap.pm_cr3
+        print "Current context: process {0}, pid={1} DTB={2:#x}".format(self._proc.p_comm,
+                                                                        self._proc.p_pid, dtb)
 
     def set_context(self, offset = None, pid = None, name = None):
         if pid is not None:
@@ -76,6 +83,6 @@ class mac_volshell(volshell.volshell):
             print "Must provide one of: offset, name, or pid as a argument."
             return
 
-        self.proc = obj.Object("proc", offset = offset, vm = self._addrspace)
+        self._proc = obj.Object("proc", offset = offset, vm = self._addrspace)
 
         self.context_display()
