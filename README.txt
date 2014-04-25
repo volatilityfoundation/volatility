@@ -13,7 +13,7 @@ from volatile memory samples and provide a platform for further work into
 this exciting area of research.
 
 The Volatility distribution is available from: 
-http://code.google.com/p/volatility/downloads/list
+https://github.com/volatilityfoundation/volatility/releases
 
 Volatility should run on any platform that supports 
 Python (http://www.python.org)
