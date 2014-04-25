@@ -165,11 +165,11 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
 
         if self._config.BASE:
             module_address = int(self._config.BASE)
-            yield obj.Object("module", offset = module_address, vm = proc_as)
+            yield obj.Object("module", offset = module_address, vm = self.addr_space)
         else:
             # walk the modules list
             modules_addr = self.addr_space.profile.get_symbol("modules")
-            modules = obj.Object("list_head", vm = proc_as, offset = modules_addr)
+            modules = obj.Object("list_head", vm = self.addr_space, offset = modules_addr)
             for module in modules.list_of_type("module", "list"):
                 if self._config.REGEX:
                     if not mod_re.search(str(module.name)):
