@@ -40,6 +40,47 @@ x64_native_types = copy.deepcopy(native_types.x64_native_types)
 x64_native_types['long'] = [8, '<q']
 x64_native_types['unsigned long'] = [8, '<Q']
 
+dyld_vtypes_32 = {
+    'dyld_image_info' : [12, {
+         'imageLoadAddress' : [0, ['pointer', ['unsigned int']]],
+         'imageFilePath'    : [4, ['pointer', ['char']]],
+         'imageFileModDate' : [8, ['pointer', ['unsigned int']]],  
+         }],
+    
+    'dyld_all_image_infos' : [20 , {
+        'version'           : [0, ['unsigned int']],
+        'infoArrayCount'    : [4, ['unsigned int']],
+        'infoArray'         : [8, ['pointer', ['dyld_image_info']]],
+        'notification'      : [12, ['pointer', ['void']]],
+        'processDetachedFromSharedRegion': [16, ['unsigned int']],
+    }],
+}
+
+dyld_vtypes_64 = {
+    'dyld_image_info' : [24, {
+         'imageLoadAddress' : [0, ['pointer', ['unsigned int']]],
+         'imageFilePath'    : [8, ['pointer', ['char']]],
+         'imageFileModDate' : [16, ['pointer', ['unsigned int']]],  
+         }],
+    
+    'dyld_all_image_infos' : [28 , {
+        'version'           : [0,  ['unsigned int']],
+        'infoArrayCount'    : [4,  ['unsigned int']],
+        'infoArray'         : [8,  ['pointer', ['dyld_image_info']]],
+        'notification'      : [16, ['pointer', ['void']]],
+        'processDetachedFromSharedRegion': [24, ['unsigned int']],
+    }],
+}
+
+class DyldTypes(obj.ProfileModification):
+    conditions = {"os" : lambda x : x in ["mac"]}
+
+    def modification(self, profile):
+        if profile.metadata.get('memory_model', '32bit') == "32bit":
+            profile.vtypes.update(dyld_vtypes_32)
+        else:
+            profile.vtypes.update(dyld_vtypes_64)
+
 class catfishScan(scan.BaseScanner):
     """ Scanner for Catfish string for Mountain Lion """
     checks = []
@@ -273,9 +314,18 @@ class proc(obj.CType):
         dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)
 
         return dt
+    
+    def get_dyld_maps(self):        
+        proc_as = self.get_process_address_space()
+
+        infos = obj.Object("dyld_all_image_infos", offset=self.task.all_image_info_addr, vm=proc_as)
+
+        info_arr = obj.Object(theType="Array", targetType="dyld_image_info", offset=infos.infoArray, count=infos.infoArrayCount, vm=proc_as)
+
+        for info in info_arr:
+            yield info
 
     def get_proc_maps(self):
-
         map = self.task.map.hdr.links.next
 
         for i in xrange(self.task.map.hdr.nentries):
@@ -518,15 +568,23 @@ class sysctl_oid(obj.CType):
             return "INVALID -1"
 
 class OSString(obj.CType):
-
     def __str__(self):
+        if self.string == 0:
+            return ""
+
         string_object = obj.Object("String", offset = self.string, vm = self.obj_vm, length = self.length)
         return str(string_object or '')
 
 class vm_map_entry(obj.CType):
+    @property
+    def start(self):
+        return self.links.start
+
+    @property
+    def end(self):
+        return self.links.end
 
     def get_perms(self):
-
         permask = "rwx"
         perms = ""
 
@@ -539,7 +597,6 @@ class vm_map_entry(obj.CType):
         return perms
 
     def get_path(self):
-
         vnode = self._get_vnode()
     
         if type(vnode) == str and vnode == "sub_map":
@@ -557,12 +614,13 @@ class vm_map_entry(obj.CType):
         return ret
 
     def _get_vnode(self):
+        map_obj = self
 
         if self.is_sub_map == 1:
-            return "sub_map" 
+            return "sub_map"
 
         # find_vnode_object
-        vnode_object = self.object.vm_object 
+        vnode_object = map_obj.object.vm_object 
 
         while vnode_object.shadow.dereference() != None:
             vnode_object = vnode_object.shadow.dereference()
@@ -576,6 +634,76 @@ class vm_map_entry(obj.CType):
             ret = None
 
         return ret
+
+class inpcb(obj.CType):
+    
+    def get_tcp_state(self):
+        tcp_states = (
+              "CLOSED",
+              "LISTEN",
+              "SYN_SENT",
+              "SYN_RECV",
+              "ESTABLISHED",
+              "CLOSE_WAIT",
+              "FIN_WAIT1",
+              "CLOSING",
+              "LAST_ACK",
+              "FIN_WAIT2",
+              "TIME_WAIT")
+
+        tcpcb = self.inp_ppcb.dereference_as("tcpcb")
+
+        return tcp_states[tcpcb.t_state]
+
+    def ipv4_info(self):
+        lip = self.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v()    
+        lport = self.inp_lport 
+
+        rip = self.inp_dependfaddr.inp46_foreign.ia46_addr4.s_addr.v()
+        rport = self.inp_fport 
+    
+        return [lip, lport, rip, rport]
+
+    def ipv6_info(self):
+        lip = self.inp_dependladdr.inp6_local.__u6_addr.v()
+        lport = self.inp_lport 
+
+        rip = self.inp_dependfaddr.inp6_foreign.__u6_addr.v() 
+        rport = self.inp_fport 
+
+        return [lip, lport, rip, rport]
+
+class inpcbinfo(obj.CType):
+    @property
+    def hashbase(self):
+        ret = self.members.get("hashbase")
+        if ret is None:
+            ret = self.ipi_hashbase
+        else:
+            ret = self.m("hashbase")
+
+        return ret
+
+    @property
+    def hashmask(self):
+        ret = self.members.get("hashmask")
+        if ret is None:
+            ret = self.ipi_hashmask
+        else:
+            ret = self.m("hashmask")
+
+        return ret
+
+    @property
+    def listhead(self):
+        ret = self.members.get("listhead")
+        if ret is None:
+            ret = self.ipi_listhead
+        else:
+            ret = self.m("listhead")
+
+        return ret
+
 
 class socket(obj.CType):
     @property
@@ -623,36 +751,17 @@ class socket(obj.CType):
         
         return ret
         
-    def _parse_ipv4(self, pcb):
-        lip = pcb.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v()    
-        lport = pcb.inp_lport 
-
-        rip = pcb.inp_dependfaddr.inp46_foreign.ia46_addr4.s_addr.v()
-        rport = pcb.inp_fport 
-    
-        return [lip, lport, rip, rport]
-
-    def _parse_ipv6(self, pcb):
-        lip = pcb.inp_dependladdr.inp6_local.__u6_addr.v()
-        lport = pcb.inp_lport 
-
-        rip = pcb.inp_dependfaddr.inp6_foreign.__u6_addr.v() 
-        rport = pcb.inp_fport 
-
-        return [lip, lport, rip, rport]
-
     def get_connection_info(self):
         ipcb = self.so_pcb.dereference_as("inpcb")
         
         if self.family == 2:
-            ret = self._parse_ipv4(ipcb)
+            ret = ipcb.ipv4_info()
         else:
-            ret = self._parse_ipv6(ipcb)
+            ret = ipcb.ipv6_info()
 
         return ret
 
 class sockaddr_dl(obj.CType):
-
     def v(self):
         """Get the value of the sockaddr_dl object."""
 
@@ -672,9 +781,7 @@ class sockaddr_dl(obj.CType):
         return ret
 
 class sockaddr(obj.CType):
-    
     def get_address(self):
-
         family = self.sa_family
 
         ip = ""
@@ -692,6 +799,11 @@ class sockaddr(obj.CType):
             ip = addr_dl.v()
 
         return ip
+
+class dyld_image_info(obj.CType):
+    @property
+    def imageFilePath(self):
+        return str(self.m("imageFilePath").dereference())
 
 def exec_vtypes(filename):
     env = {}
@@ -982,9 +1094,12 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc'  : proc,
+            'dyld_image_info' : dyld_image_info,
             'fileglob' : fileglob,
             'vnode' : vnode,
             'socket' : socket,
+            'inpcbinfo' : inpcbinfo,
+            'inpcb' : inpcb,
             'zone' : zone,
             'OSString' : OSString,
             'OSString_class' : OSString,
@@ -1045,6 +1160,9 @@ mac_overlay = {
     'sysctl_oid' : [ None, { 
         'oid_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
         }], 
+    'dyld_image_info' : [ None, { 
+        'imageFilePath' : [ None, ['pointer', ['String', dict(length = 256)]]], 
+        }], 
     'sockaddr_un': [ None, { 
         'sun_path' : [ None, ['String', dict(length = 104)]],
         }],
@@ -1059,4 +1177,5 @@ mac_overlay = {
         'inp_fport' : [ None, ['unsigned be short']], 
         }], 
 }
+
 
