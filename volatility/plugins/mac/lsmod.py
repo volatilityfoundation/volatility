@@ -50,7 +50,7 @@ class mac_lsmod(common.AbstractMacCommand):
                                   ("Name", "")])
         for kmod in data:
             self.table_row(outfd,
-                           kmod.obj_offset, 
+                           kmod, 
                            kmod.address, 
                            kmod.m('size'), 
                            kmod.reference_count, 
