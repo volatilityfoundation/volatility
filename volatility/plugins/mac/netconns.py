@@ -82,7 +82,11 @@ class mac_network_conns(common.AbstractMacCommand):
 
         for (proto_str, info_addr) in info_addrs:
             for (pcbinfo, lip, lport, rip, rport) in self._walk_pcb_entries(info_addr):
-                yield (proto_str, pcbinfo, lip, lport, rip, rport)
+                if proto_str == "TCP":
+                    state = pcbinfo.get_tcp_state()
+                else:
+                    state = ""
+                yield (proto_str, pcbinfo, lip, lport, rip, rport, state)
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Offset (V)", "[addrpad]"), 
@@ -91,8 +95,9 @@ class mac_network_conns(common.AbstractMacCommand):
                                   ("Local Port", "6"),
                                   ("Remote IP", "20"),
                                   ("Remote Port", "6"),
+                                  ("State", ""),
                                  ])
 
-        for (proto, pcb, lip, lport, rip, rport) in data: 
-            self.table_row(outfd, pcb.obj_offset, proto, lip, lport, rip, rport)
+        for (proto, pcb, lip, lport, rip, rport, state) in data: 
+            self.table_row(outfd, pcb.obj_offset, proto, lip, lport, rip, rport, state)
 
