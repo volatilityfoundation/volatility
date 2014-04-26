@@ -36,7 +36,11 @@ class mac_lsof(pstasks.mac_tasks):
         procs = pstasks.mac_tasks(self._config).calculate()
 
         for proc in procs:
-            fds = obj.Object('Array', offset = proc.p_fd.fd_ofiles, vm = self.addr_space, targetType = 'Pointer', count = proc.p_fd.fd_lastfile)
+            num_fds = proc.p_fd.fd_lastfile
+            if proc.p_fd.fd_nfiles > num_fds:
+                num_fds = proc.p_fd.fd_nfiles
+
+            fds = obj.Object('Array', offset = proc.p_fd.fd_ofiles, vm = self.addr_space, targetType = 'Pointer', count = proc.p_fd.fd_nfiles)
 
             for i, fd in enumerate(fds):
                 f = fd.dereference_as("fileproc")
