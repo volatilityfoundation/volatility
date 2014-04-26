@@ -42,15 +42,19 @@ class mac_lsmod(common.AbstractMacCommand):
             kmod = kmod.next
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Address", "[addrpad]"), 
-                                  ("Size", "[addr]"), 
+        self.table_header(outfd, [("Offset (V)", "[addrpad]"),
+                                  ("Module Address", "[addrpad]"), 
+                                  ("Size", "8"), 
                                   ("Refs", "^8"),
                                   ("Version", "12"),  
                                   ("Name", "")])
         for kmod in data:
-            self.table_row(outfd, 
+            self.table_row(outfd,
+                           kmod.obj_offset, 
                            kmod.address, 
                            kmod.m('size'), 
                            kmod.reference_count, 
                            kmod.version, 
                            kmod.name)
+
+
