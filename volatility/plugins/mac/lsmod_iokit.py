@@ -47,7 +47,8 @@ class mac_lsmod_iokit(common.AbstractMacCommand):
                 yield kext
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Address", "[addrpad]"), 
+        self.table_header(outfd, [("Offset (V)", "[addrpad]"),
+                                  ("Module Address", "[addrpad]"), 
                                   ("Size", "8"), 
                                   ("Refs", "^8"),
                                   ("Version", "12"),  
@@ -59,7 +60,8 @@ class mac_lsmod_iokit(common.AbstractMacCommand):
             if path:
                 path = str(path.dereference())
 
-            self.table_row(outfd, 
+            self.table_row(outfd,
+                           kext.kmod_info,
                            kext.kmod_info.address, 
                            kext.kmod_info.m("size"),
                            kext.kmod_info.reference_count, 
