@@ -93,14 +93,6 @@ macho_types = {
     'nsects': [0x40, ['unsigned int']],
     'flags': [0x44, ['unsigned int']],
 }],
-'symtab_command': [ 0x18, {
-    'cmd': [0x0, ['unsigned int']],
-    'cmdsize': [0x4, ['unsigned int']],
-    'symoff': [0x8, ['unsigned int']],
-    'nsyms': [0xc, ['unsigned int']],
-    'stroff': [0x10, ['unsigned int']],
-    'strsize': [0x14, ['unsigned int']],
-}],
  'section_64': [ 0x50, {
     'sectname': [0x0, ['array', 16, ['char']]],
     'segname': [0x10, ['array', 16, ['char']]],
