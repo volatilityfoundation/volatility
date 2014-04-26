@@ -34,27 +34,47 @@ class mac_dump_maps(proc_maps.mac_proc_maps):
 
     def __init__(self, config, *args, **kwargs):         
         proc_maps.mac_proc_maps.__init__(self, config, *args, **kwargs)         
-        self._config.add_option('MAP_ADDRESS', short_option = 's', default = None, help = 'Filter by starting address of map', action = 'store', type = 'long') 
-        self._config.add_option('OUTPUTFILE', short_option = 'O', default = None, help = 'Output File', action = 'store', type = 'str')
-    
+        self._config.add_option('MAP_ADDRESS', short_option = 's', default = None, help = 'Filter by starting address of map', action = 'store', type = 'long')
+        self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'Output directory', action = 'store', type = 'str')
+ 
     def render_text(self, outfd, data):
-        if not self._config.OUTPUTFILE:
-            debug.error("Please specify an OUTPUTFILE")
-        elif os.path.exists(self._config.OUTPUTFILE):
-            debug.error("Cowardly refusing to overwrite an existing file")
-                    
-        outfile = open(self._config.OUTPUTFILE, "wb+")
-        map_address = self._config.MAP_ADDRESS
+        if (not self._config.DUMP_DIR or not os.path.isdir(self._config.DUMP_DIR)):
+            debug.error("Please specify an existing output dir (--dump-dir)")
+ 
+        self.table_header(outfd, [("Task", "10"), 
+                                  ("VM Start", "[addrpad]"), 
+                                  ("VM End", "[addrpad]"), 
+                                  ("Length", "[addr]"), 
+                                  ("Path", "")])
+       
+        if self._config.MAP_ADDRESS:
+            map_address = self._config.MAP_ADDRESS
+        else:
+            map_adddress = None
 
-        size = 0
-        for proc, map in data:
-            if not map_address or map_address == map.links.start:
-                for page in self._read_addr_range(proc, map.links.start, map.links.end):
-                    size += len(page)
-                    outfile.write(page)
-        
-        outfile.close()
-        outfd.write("Wrote {0} bytes\n".format(size))
+        for proc, map in data: 
+            if map_address and map_address != map.links.start:
+                continue
+
+            file_name = "task.{0}.{1:#x}.dmp".format(proc.p_pid, map.links.start)
+            file_path = os.path.join(self._config.DUMP_DIR, file_name)
+
+            outfile = open(file_path, "wb+")
+            
+            map_address = self._config.MAP_ADDRESS
+
+            size = 0
+            for page in self._read_addr_range(proc, map.links.start, map.links.end):
+                size += len(page)
+                outfile.write(page)
+    
+            outfile.close()
+
+            self.table_row(outfd, proc.p_pid, 
+                           map.start,
+                           map.end, 
+                           map.end - map.start, 
+                           file_path)
 
     def _read_addr_range(self, proc, start, end):
         pagesize = 4096 
