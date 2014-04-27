@@ -36,7 +36,7 @@ import volatility.addrspace as addrspace
 class OSXPmemELF(addrspace.AbstractRunBasedMemory):
     """ This AS supports VirtualBox ELF64 coredump format """
 
-    order = 30
+    order = 90
 
     def __init__(self, base, config, **kwargs):
         ## We must have an AS below us
