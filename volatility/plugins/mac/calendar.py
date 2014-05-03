@@ -91,22 +91,26 @@ class mac_calendar(pstasks.mac_tasks):
                     start = map.links.start + i * 4096
                     data = space.zread(start, 4096)
                     for match in guid_re2.finditer(data):
-                        event = obj.Object("String", offset = start + match.start() + 40 + 40, vm = space, length = 128)
+                        event = obj.Object("String", vm = space, length = 128, 
+                                        offset = start + match.start() + 40 + 40, )
                         yield proc, "", event
                         
     def render_text(self, outfd, data):
 
+        self.table_header(outfd, [("Source", "16"), 
+                          ("Type", "8"),
+                          ("Description", "26"),
+                          ("Event", "")])
+
         for proc, description, event in data:       
     
             if proc == None:
-                tp = "Local Calendar Item"
-                source = "Kernel Memory"
+                tp = "Local"
+                source = "(Kernel)"
             else:
                 tp = "Other"
-                source = "Process {0} (PID {1})".format(proc.p_comm, proc.p_pid)
+                source = "{0}({1})".format(proc.p_comm, proc.p_pid)
 
-            outfd.write("Source: {0}\n".format(source))
-            outfd.write("Type: {0}\n".format(tp))
-            outfd.write("Description: {0}\n".format(description or "<No description>"))
-            outfd.write("Event: {0}\n".format(event))
-            outfd.write("Status: ACCEPTED\n\n") 
+            self.table_row(outfd, source, tp, 
+                        description or "(None)",
+                        event)
