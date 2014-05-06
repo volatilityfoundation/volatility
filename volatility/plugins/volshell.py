@@ -30,6 +30,7 @@ import volatility.plugins.common as common
 import volatility.win32 as win32
 import volatility.utils as utils
 import volatility.obj as obj
+import volatility.plugins.taskmods as taskmods
 
 try:
     import distorm3 #pylint: disable-msg=F0401
@@ -97,8 +98,10 @@ class volshell(common.AbstractWindowsCommand):
                                                  module.DllBase,
                                                  module.FullDllName or module.BaseDllName or '')
 
-    def set_context(self, offset = None, pid = None, name = None):
-        if pid is not None:
+    def set_context(self, offset = None, pid = None, name = None, physical = False):
+        if physical and offset != None:
+            offset = taskmods.DllList.virtual_process_from_physical_offset(self._addrspace, offset).obj_offset
+        elif pid is not None:
             offsets = []
             for p in self.getpidlist():
                 if p.UniqueProcessId.v() == pid:
@@ -163,7 +166,7 @@ class volshell(common.AbstractWindowsCommand):
                 break
 
         # Functions inside the shell
-        def cc(offset = None, pid = None, name = None):
+        def cc(offset = None, pid = None, name = None, physical = False):
             """Change current shell context.
 
             This function changes the current shell context to to the process
@@ -173,7 +176,7 @@ class volshell(common.AbstractWindowsCommand):
             If multiple processes match the given PID or name, you will be shown a
             list of matching processes, and will have to specify by offset.
             """
-            self.set_context(offset = offset, pid = pid, name = name)
+            self.set_context(offset = offset, pid = pid, name = name, physical = physical)
 
         def db(address, length = 0x80, space = None):
             """Print bytes as canonical hexdump.
