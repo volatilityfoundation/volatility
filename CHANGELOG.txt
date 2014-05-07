@@ -4,7 +4,7 @@ As of Volatility 2.4, all changes are now tracked on the GitHub site:
 
 https://github.com/volatilityfoundation/volatility
 
-Volatility 2.0-2.3: all changes are now tracked on the Google Code site: 
+Volatility 2.0-2.3: all changes were tracked on the Google Code site: 
 
 http://code.google.com/p/volatility/source/list
 
