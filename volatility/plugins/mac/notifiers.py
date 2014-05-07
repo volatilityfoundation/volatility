@@ -59,7 +59,7 @@ class mac_notifiers(lsmod.mac_lsmod):
         # walk the current set of notifications
         for ent in ents:
 
-            if ent == None:
+            if ent == None or not ent.is_valid():
                 continue
 
             key = str(ent.key.dereference_as(self._struct_or_class("OSString")))
@@ -85,13 +85,18 @@ class mac_notifiers(lsmod.mac_lsmod):
                 # drivers for the specific kernel
                 handler = notifier.handler
 
-                good = common.is_known_address(handler, kernel_symbol_addresses, kmods)
-                yield (good, key, notifier, matches)
+                ch = notifier.compatHandler
+
+                if ch:
+                    handler = ch
+
+                (good, module) = common.is_known_address_name(handler, kernel_symbol_addresses, kmods)
+                yield (good, module, key, notifier, matches)
 
     # returns the list of matching notifiers (serviceMatch) for a notifier as a string
     def get_matching(self, notifier):
         matches = []
-    
+   
         ents = obj.Object('Array', offset = notifier.matching.dictionary, 
                           vm = self.addr_space, 
                           targetType = self._struct_or_class("dictEntry"), 
@@ -107,16 +112,19 @@ class mac_notifiers(lsmod.mac_lsmod):
         return ",".join(matches)
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Status", "10"), 
-                                  ("Key", "30"), 
-                                  ("Handler", "[addrpad]"), 
-                                  ("Matches", "")])
+        self.table_header(outfd, [("Key", "30"), 
+                                  ("Matches", "40"),
+                                  ("Handler", "[addrpad]"),
+                                  ("Module", "40"),
+                                  ("Status", "")])
 
-        for (good, key, notifier, matches) in data:
+        for (good, module, key, notifier, matches) in data:
 
             if good == 0:
                 status = "UNKNOWN"
             else:
                 status = "OK"
 
-            self.table_row(outfd, status, key, notifier.handler, matches)
+            self.table_row(outfd, key, matches, notifier, module, status)
+
+
