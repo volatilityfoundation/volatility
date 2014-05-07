@@ -51,3 +51,4 @@ nosetests.xml
 *.dmp
 *.sys
 *.bin
+*.001
