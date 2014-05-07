@@ -72,7 +72,7 @@ class mac_psxview(common.AbstractMacCommand):
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [('Offset(P)', '[addrpad]'),
+        self.table_header(outfd, [('Offset(V)', '[addrpad]'),
                                   ('Name', '<20'),
                                   ('PID', '>6'),
                                   ('pslist', '5'),
