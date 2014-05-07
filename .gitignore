@@ -37,4 +37,17 @@ nosetests.xml
 .svn/
 .DS_Store
 
+# compressed files
 *.zip
+*.7z
+*.rar
+*.tar.gz
+*.gz
+
+# common memory extensions:
+*.vmem
+*.mem
+*.img
+*.dmp
+*.sys
+*.bin
