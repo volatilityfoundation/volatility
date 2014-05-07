@@ -398,12 +398,12 @@ PoolTagCheck           - This scanner checks for the occurance of a pool tag
    Example:
    
     > python vol.py imageinfo -f WIN-II7VOJTUNGL-20120324-193051.raw 
-    Volatility Foundation Volatility Framework 2.3
+    Volatility Foundation Volatility Framework 2.4
     Determining profile based on KDBG search...
     
               Suggested Profile(s) : Win2008R2SP0x64, Win7SP1x64, Win7SP0x64, Win2008R2SP1x64 (Instantiated with Win7SP0x64)
                          AS Layer1 : AMD64PagedMemory (Kernel AS)
-                         AS Layer2 : FileAddressSpace (/Users/Michael/Desktop/memory/WIN-II7VOJTUNGL-20120324-193051.raw)
+                         AS Layer2 : FileAddressSpace (/Path/to/WIN-II7VOJTUNGL-20120324-193051.raw)
                           PAE type : PAE
                                DTB : 0x187000L
                               KDBG : 0xf800016460a0
