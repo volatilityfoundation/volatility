@@ -66,16 +66,16 @@ class mac_trustedbsd(mac_lsmod):
                 ptr = ops.__getattr__(check)
                 
                 if ptr.dereference().v() != None:
-                    good = common.is_known_address(ptr, kernel_symbol_addresses, kmods) 
+                    (good, module) = common.is_known_address_name(ptr, kernel_symbol_addresses, kmods) 
 
-                    yield (good, check, name, ptr)
+                    yield (good, check, module, name, ptr)
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Check", "40"), ("Name", "20"), ("Pointer", "[addrpad]"), ("Status", "")])
-        for (good, check, name, ptr) in data:
+        self.table_header(outfd, [("Check", "40"), ("Name", "20"), ("Pointer", "[addrpad]"), ("Module", ""), ("Status", "")])
+        for (good, check, module, name, ptr) in data:
                 if good:
                     status = "OK"
                 else:
                     status = "HOOKED"
 
-                self.table_row(outfd, check, name, ptr, status)
+                self.table_row(outfd, check, name, ptr, module, status)
