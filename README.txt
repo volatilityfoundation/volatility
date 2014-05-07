@@ -127,7 +127,7 @@ Quick Start
    Example:
 
 $ python vol.py -h
-Volatility Foundation Volatility Framework 2.3
+Volatility Foundation Volatility Framework 2.4
 Usage: Volatility - A memory forensics analysis platform.
 
 Options:
@@ -161,7 +161,7 @@ Options:
   -k KPCR, --kpcr=KPCR  Specify a specific KPCR address
 
 $ python vol.py --info
-Volatility Foundation Volatility Framework 2.3
+Volatility Foundation Volatility Framework 2.4
 
 Profiles
 --------
