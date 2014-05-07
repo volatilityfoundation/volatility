@@ -68,13 +68,12 @@ ability to convert between these formats:
 
 For a more detailed list of capabilities, see the following:
 
-    https://code.google.com/p/volatility/wiki/Release23
-    https://code.google.com/p/volatility/wiki/CommandReference23
-    https://code.google.com/p/volatility/wiki/CommandReferenceGui23
-    https://code.google.com/p/volatility/wiki/CommandReferenceMal23
-    https://code.google.com/p/volatility/wiki/CommandReferenceRegistryApi23
-    https://code.google.com/p/volatility/wiki/LinuxCommandReference23
-    https://code.google.com/p/volatility/wiki/MacCommandReference23
+    https://github.com/volatilityfoundation/volatility/wiki/Volatility-2.3
+    https://github.com/volatilityfoundation/volatility/wiki/Command-Reference-Gui23
+    https://github.com/volatilityfoundation/volatility/wiki/Command-Reference-Mal23
+    https://github.com/volatilityfoundation/volatility/wiki/Command-Reference-Registry-Api23
+    https://github.com/volatilityfoundation/volatility/wiki/Linux-Command-Reference23
+    https://github.com/volatilityfoundation/volatility/wiki/Mac-Command-Reference23
 
 Example Data
 ============
@@ -86,7 +85,7 @@ data hosted by NIST at the following url:
 
 Links to other public memory images can be found at the following url:
 
-    https://code.google.com/p/volatility/wiki/SampleMemoryImages
+    https://github.com/volatilityfoundation/volatility/wiki/Memory-Samples
 
 Mailing Lists
 =============
@@ -116,19 +115,19 @@ Requirements
 - Python 2.6 or later, but not 3.0. http://www.python.org
 
 Some plugins may have other requirements which can be found at: 
-    https://code.google.com/p/volatility/wiki/VolatilityInstallation
+    https://github.com/volatilityfoundation/volatility/wiki/Installation
 
 Quick Start
 ===========
 1. Unpack the latest version of Volatility from
-   http://code.google.com/p/volatility/downloads/list
+    volatilityfoundation.org
    
 2. To see available options, run "python vol.py -h"  
 
    Example:
 
 $ python vol.py -h
-Volatility Foundation Volatility Framework 2.3
+Volatility Foundation Volatility Framework 2.4
 Usage: Volatility - A memory forensics analysis platform.
 
 Options:
@@ -162,7 +161,7 @@ Options:
   -k KPCR, --kpcr=KPCR  Specify a specific KPCR address
 
 $ python vol.py --info
-Volatility Foundation Volatility Framework 2.3
+Volatility Foundation Volatility Framework 2.4
 
 Profiles
 --------
@@ -399,12 +398,12 @@ PoolTagCheck           - This scanner checks for the occurance of a pool tag
    Example:
    
     > python vol.py imageinfo -f WIN-II7VOJTUNGL-20120324-193051.raw 
-    Volatility Foundation Volatility Framework 2.3
+    Volatility Foundation Volatility Framework 2.4
     Determining profile based on KDBG search...
     
               Suggested Profile(s) : Win2008R2SP0x64, Win7SP1x64, Win7SP0x64, Win2008R2SP1x64 (Instantiated with Win7SP0x64)
                          AS Layer1 : AMD64PagedMemory (Kernel AS)
-                         AS Layer2 : FileAddressSpace (/Users/Michael/Desktop/memory/WIN-II7VOJTUNGL-20120324-193051.raw)
+                         AS Layer2 : FileAddressSpace (/Path/to/WIN-II7VOJTUNGL-20120324-193051.raw)
                           PAE type : PAE
                                DTB : 0x187000L
                               KDBG : 0xf800016460a0
@@ -420,11 +419,11 @@ PoolTagCheck           - This scanner checks for the occurance of a pool tag
    more information on a particular command.  A Command Reference wiki
    is also available on the Google Code site:
 
-        http://code.google.com/p/volatility/wiki/CommandReference23
+        https://github.com/volatilityfoundation/volatility/wiki/Command-Reference23
 
    as well as Basic Usage:
 
-        http://code.google.com/p/volatility/wiki/VolatilityUsage23
+        https://github.com/volatilityfoundation/volatility/wiki/Volatility-Usage23
 
 Licensing and Copyright
 =======================
@@ -454,7 +453,7 @@ PURPOSE.
 
 If you think you've found a bug, please report it at:
 
-    http://code.google.com/p/volatility/issues
+    https://github.com/volatilityfoundation/volatility/issues
 
 In order to help us solve your issues as quickly as possible,
 please include the following information when filing a bug:
@@ -475,7 +474,7 @@ For Linux:
 * The suspected kernel version of the memory image
 
 Other options for communicaton can be found at:
-    http://code.google.com/p/volatility/wiki/VolatilityIntroduction
+    https://github.com/volatilityfoundation/volatility/wiki
 
 Missing or Truncated Information
 ================================
@@ -491,6 +490,6 @@ Command Reference
 The following url contains a reference of all commands supported by 
 Volatility.
 
-    http://code.google.com/p/volatility/wiki/CommandReference23
+    https://github.com/volatilityfoundation/volatility/wiki/Command-Reference23
 
 
