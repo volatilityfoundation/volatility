@@ -81,6 +81,34 @@ class DyldTypes(obj.ProfileModification):
         else:
             profile.vtypes.update(dyld_vtypes_64)
 
+mig_vtypes_32 = {
+    'mig_hash_entry' : [16, {
+         'num'       : [0, ['int']],
+         'routine'   : [4, ['pointer', ['void']]],
+         'size'      : [8, ['int']],  
+         'callcount' : [12, ['unsigned int']],  
+         }],
+}
+
+mig_vtypes_64 = {
+    'mig_hash_entry' : [24, {
+         'num'       : [0, ['long long']],
+         'routine'   : [8, ['pointer', ['void']]],
+         'size'      : [16, ['int']],  
+         'callcount' : [20, ['unsigned int']],  
+         }],
+}
+
+class MigTypes(obj.ProfileModification):
+    conditions = {"os" : lambda x : x in ["mac"]}
+
+    def modification(self, profile):
+        if profile.metadata.get('memory_model', '32bit') == "32bit":
+            profile.vtypes.update(mig_vtypes_32)
+        else:
+            profile.vtypes.update(mig_vtypes_64)
+
+
 class catfishScan(scan.BaseScanner):
     """ Scanner for Catfish string for Mountain Lion """
     checks = []
@@ -597,7 +625,7 @@ class vm_map_entry(obj.CType):
         return perms
 
     def get_path(self):
-        vnode = self._get_vnode()
+        vnode = self.get_vnode()
     
         if type(vnode) == str and vnode == "sub_map":
             ret = vnode  
@@ -613,7 +641,7 @@ class vm_map_entry(obj.CType):
                 
         return ret
 
-    def _get_vnode(self):
+    def get_vnode(self):
         map_obj = self
 
         if self.is_sub_map == 1:
@@ -896,6 +924,7 @@ def MacProfileFactory(profpkg):
         def __init__(self, *args, **kwargs):
             self.sys_map = {}
             self.shift_address = 0
+            self.sba_cache = {}
             obj.Profile.__init__(self, *args, **kwargs)
 
         def clear(self):
@@ -956,19 +985,32 @@ def MacProfileFactory(profpkg):
 
             return ret
 
-        def get_symbol_by_address(self, module, sym_address):
+        def _get_symbol_by_address(self, module, sym_address):
             ret = ""
+            
             symtable = self.sys_map
 
             mod = symtable[module]
 
             for (name, addrs) in mod.items():
-
-                for (addr, addr_type) in addrs:
+                for (addr, _) in addrs:
+                    key = "%s|%x" % (module, addr)
+                    self.sba_cache[key] = name
+         
                     if sym_address == addr or sym_address == self.shift_address + addr:
                         ret = name
                         break
+                    
 
+            return ret
+        
+        def get_symbol_by_address(self, module, sym_address):
+            key = "%s|%x" % (module, sym_address)
+            if key in self.sba_cache:
+                ret = self.sba_cache[key]
+            else:
+                ret = self._get_symbol_by_address(module, sym_address)
+            
             return ret
 
         def get_all_symbol_names(self, module = "kernel"):

@@ -53,21 +53,25 @@ class AbstractMacCommand(commands.Command):
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'mac'
 
-def is_known_address(handler, kernel_symbol_addresses, kmods):
+def is_known_address_name(handler, kernel_symbol_addresses, kmods):
     # see if this handler is in a known location
     good = 0 
+    module = "UNKNOWN"
 
     handler = handler.v()
 
     if handler in kernel_symbol_addresses:
         good = 1     
+        module = "__kernel__"
     else:
         # see if the address fits in any of the known modules
         for (start, end, name) in kmods:
             if start <= handler <= end:
                 good = 1
+                module = name
                 break
-    return good
+
+    return (good, module)
 
 def is_64bit_capable(addr_space):
     """Test if the AS is capable of doing 64-bits. 
@@ -94,7 +98,7 @@ def get_kernel_addrs(obj_ref):
     
     # module addresses, tuple of (start, end)
     # TODO -- make sure more stringent and parse each kext in-memory so we only allow whitelist from .text
-    kmods = [(kmod.address, kmod.address + kmod.m('size'), kmod.name) for kmod in lsmod.mac_lsmod(obj_ref._config).calculate()] 
+    kmods = [(kmod.address, kmod.address + kmod.m('size'), kmod.name) for kmod in lsmod.mac_lsmod(obj_ref._config).calculate() if str(kmod.name) != "com.apple.kpi.unsupported"] 
 
     return (kernel_symbol_addresses, kmods)
 

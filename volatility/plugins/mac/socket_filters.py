@@ -62,9 +62,9 @@ class mac_socket_filters(lsmod.mac_lsmod):
                 if not ptr:
                     continue   
  
-                good = common.is_known_address(ptr, kernel_symbol_addresses, kmods) 
+                (good, module) = common.is_known_address_name(ptr, kernel_symbol_addresses, kmods) 
     
-                yield good, filter, filter_name, filter_socket, member, ptr
+                yield good, filter, filter_name, filter_socket, member, ptr, module
        
             cur = cur.sf_global_next.tqe_next
 
@@ -74,6 +74,7 @@ class mac_socket_filters(lsmod.mac_lsmod):
                                   ("Filter Member", "16"),
                                   ("Socket (V)", "[addrpad]"),
                                   ("Handler", "[addrpad]"), 
+                                  ("Module", "30"),
                                   ("Status", "")])
 
         for (good, filter, filter_name, filter_socket, member, ptr) in data:
@@ -81,5 +82,5 @@ class mac_socket_filters(lsmod.mac_lsmod):
                 status = "UNKNOWN"
             else:
                 status = "OK"
-            self.table_row(outfd, filter.obj_offset, filter_name, member, filter_socket, ptr, status)
+            self.table_row(outfd, filter.obj_offset, filter_name, member, filter_socket, ptr, module, status)
 

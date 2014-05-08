@@ -30,6 +30,25 @@ import volatility.plugins.mac.common as common
 # based on sysctl_sysctl_debug_dump_node
 class mac_check_sysctl(common.AbstractMacCommand):
     """ Checks for unknown sysctl handlers """
+    
+    # returns the value for known, hardcoded-sysctls, otherwise ""
+    def _parse_global_variable_sysctls(self, name):
+        known_sysctls = {
+            "hostname"      : "_hostname",
+            "nisdomainname" : "_domainname",
+            }
+
+        if name in known_sysctls:
+            var_name = known_sysctls[name]
+
+            var_addr = self.addr_space.profile.get_symbol(var_name)
+
+            var_str = common.get_string(var_addr, self.addr_space)
+
+        else:
+            var_str = ""
+
+        return var_str
 
     def _process_sysctl_list(self, sysctl_list, r = 0):
 
@@ -48,10 +67,12 @@ class mac_check_sysctl(common.AbstractMacCommand):
             if len(name) == 0:
                 break
 
+            name = str(name)
+
             ctltype = sysctl.get_ctltype()
 
             if sysctl.oid_arg1 == 0 or not sysctl.oid_arg1.is_valid():
-                val = ""
+                val = self._parse_global_variable_sysctls(name)
             elif ctltype == 'CTLTYPE_NODE':
                 if sysctl.oid_handler == 0:
                     for info in self._process_sysctl_list(sysctl.oid_arg1, r = 1):
@@ -82,28 +103,33 @@ class mac_check_sysctl(common.AbstractMacCommand):
             if val == "INVALID -1":
                 continue
 
-            is_known = common.is_known_address(sysctl.oid_handler, kernel_symbol_addresses, kmods)
+            (is_known, module_name) = common.is_known_address_name(sysctl.oid_handler, kernel_symbol_addresses, kmods)
             
             if is_known:
                 status = "OK"
             else:
                 status = "UNKNOWN"
 
-            yield (sysctl, name, val, is_known, status)
+            yield (sysctl, name, val, is_known, module_name, status)
 
     def render_text(self, outfd, data):
 
-        self.table_header(outfd, [("Name", "30"), 
+        self.table_header(outfd, [
+                                  ("Name", "30"), 
                                   ("Number", "8"), 
                                   ("Perms", "6"), 
                                   ("Handler", "[addrpad]"), 
-                                  ("Status", "10"),
-                                  ("Value", "")])
+                                  ("Value", "20"),
+                                  ("Module", "40"),
+                                  ("Status", "5")])
 
-        for (sysctl, name, val, is_known, status) in data:
-            self.table_row(outfd, name, 
+        for (sysctl, name, val, is_known, module_name, status) in data:
+            self.table_row(outfd, 
+               name, 
                sysctl.oid_number, 
                sysctl.get_perms(),
                sysctl.oid_handler, 
-               status, val)
+               val,
+               module_name,
+               status)
 

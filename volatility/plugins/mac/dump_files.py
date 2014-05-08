@@ -60,20 +60,23 @@ class mac_dump_file(common.AbstractMacCommand):
 
         wrote = 0
 
-        while cur:
-            # I am not 100% sure why pages of other objects end up in the queue, but they do...
-            if cur.object != moc:           
-                cur = cur.next
-                continue 
+        file_size = vnode.v_un.vu_ubcinfo.ui_size
 
+        #print "file size: %d %d" % (vnode.v_un.vu_ubcinfo.ui_size, vnode.v_un.vu_ubcinfo.ui_size/4096)
+        #print "pmapped: %d wire count: %d active: %d inactive: %d offset: %d" % (cur.pmapped, cur.wire_count, cur.active, cur.inactive, cur.offset)
+
+        while cur and cur.is_valid() and cur.offset < file_size:
+            #print "pmapped: %d wire count: %d active: %d inactive: %d offset: %d" % (cur.pmapped, cur.wire_count, cur.active, cur.inactive, cur.offset)
             # FIXME -- use the proper load_as call
             buf = self.addr_space.base.zread(cur.phys_page * 4096, 4096)              
+
+            fd.seek(cur.offset.v())
 
             fd.write(buf) 
             
             wrote = wrote + 4096
 
-            cur = cur.next
+            cur = cur.listq.next.dereference_as("vm_page")
 
         fd.close()
 

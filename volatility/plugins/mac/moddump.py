@@ -59,7 +59,7 @@ class mac_moddump(common.AbstractMacCommand):
 
             file_name = "{0}.{1:#x}.kext".format(kmod.name, kmod.obj_offset)
             mod_file = open(os.path.join(self._config.DUMP_DIR, file_name), 'wb')
-            mod_data = self.addr_space.read(kmod.address, kmod.m("size"))
+            mod_data = self.addr_space.read(kmod.address, size)
             mod_file.write(mod_data)
             mod_file.close()
             self.table_row(outfd, start, size, file_name)

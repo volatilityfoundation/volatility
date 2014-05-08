@@ -49,11 +49,11 @@ class mac_trustedbsd(mac_lsmod):
         list_addr = self.addr_space.profile.get_symbol("_mac_policy_list")
     
         plist = obj.Object("mac_policy_list", offset = list_addr, vm = self.addr_space)
-        parray = obj.Object('Array', offset = plist.entries, vm = self.addr_space, targetType = 'mac_policy_list_element', count = plist.maxindex + 1)
+        parray = obj.Object('Array', offset = plist.entries, vm = self.addr_space, targetType = 'mac_policy_list_element', count = plist.staticmax + 1)
 
         for ent in parray:
             # I don't know how this can happen, but the kernel makes this check all over the place
-            # the policy is useful without any ops so a rootkit can't abuse this
+            # the policy isn't useful without any ops so a rootkit can't abuse this
             if ent.mpc == None:
                 continue
 
@@ -64,14 +64,18 @@ class mac_trustedbsd(mac_lsmod):
             # walk each member of the struct
             for check in ops_members:
                 ptr = ops.__getattr__(check)
-               
-                if ptr != 0:
-                    good = common.is_known_address(ptr, kernel_symbol_addresses, kmods) 
+                
+                if ptr.dereference().v() != None:
+                    (good, module) = common.is_known_address_name(ptr, kernel_symbol_addresses, kmods) 
 
-                    yield (good, check, name, ptr)
+                    yield (good, check, module, name, ptr)
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Check", "40"), ("Name", "20"), ("Pointer", "[addrpad]")])
-        for (good, check, name, ptr) in data:
-            if not good:
-                self.table_row(outfd, check, name, ptr)
+        self.table_header(outfd, [("Check", "40"), ("Name", "20"), ("Pointer", "[addrpad]"), ("Module", ""), ("Status", "")])
+        for (good, check, module, name, ptr) in data:
+                if good:
+                    status = "OK"
+                else:
+                    status = "HOOKED"
+
+                self.table_row(outfd, check, name, ptr, module, status)

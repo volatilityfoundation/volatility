@@ -233,14 +233,24 @@ class macho_header(macho):
             yield cmd
 
             offset = offset + cmd.cmdsize
+    
+    def load_commands_of_type(self, cmd_type):
+        cmds = []
+
+        for cmd in self.load_commands():
+            if cmd_type == cmd.cmd.v():
+                cmds.append(cmd)
+
+        return cmds
 
     def load_command_of_type(self, cmd_type):
         ret = None
 
-        for cmd in self.load_commands():
-            if cmd_type == cmd.cmd.v():
-                ret = cmd
-                break
+        cmds = self.load_commands_of_type(cmd_type)
+        if cmds and len(cmds) > 1:
+            debug.error("load_command_of_type: Multiple commands of type %d found!" % cmd_type)
+        else:
+            ret = cmds[0]
 
         return ret
     
@@ -249,6 +259,8 @@ class macho_header(macho):
         syms = []
         
         sym_type = self._get_typename("nlist")
+
+        print "macho: %x symoff: %x" % (self.obj_offset, sym_cmd.symoff)
 
         sym_arr = obj.Object(theType="Array", targetType=sym_type, count=sym_cmd.nsyms, offset = self.obj_offset + sym_cmd.symoff, vm = self.obj_vm)
 
@@ -279,22 +291,63 @@ class macho_header(macho):
             self._build_symbol_caches()        
          
         name_addr = self.cached_strtab + sym.n_strx
+        
+        print "strab: %x name_addr: %x" % (self.cached_strtab, sym.n_strx)
+
         name = self.obj_vm.read(name_addr, 128)
         if name:
             idx = name.find("\x00")
             if idx != -1:
                 name = name[:idx]
 
-        return name
+        return name 
 
-    '''
-    TODO         
-    def _find_symbols(self):
+    def address_for_symbol(self, sym_name):
+        ret = None
 
-    def symbols(self):
+        for sym in self.symbols():
+            if self.symbol_name(sym) == sym_name:
+                ret = sym.n_value.v()
+                break
 
-    def symbol_name(self, sym):
-    '''
+        return ret
+
+    def segments(self):
+        seg_struct = self._get_typename("segment_command")
+
+        LC_SEGMENT    = 1    # 32 bit segments
+        LC_SEGMENT_64 = 0x19 # 64 bit segments
+
+        if self.size_cache == 32:
+            seg_type = LC_SEGMENT
+        else:
+            seg_type = LC_SEGMENT_64
+
+        load_commands = self.load_commands_of_type(seg_type) 
+
+        for load_command in load_commands:
+            segment = load_command.cast(seg_struct)
+
+            yield segment
+
+    def get_segment(self, segment_name):
+        ret = None   
+            
+        for segment in self.get_segments():
+            if str(segment.segname) == segment_name:
+                ret = segment
+                break
+
+        return ret
+    
+    def sections_for_segment(self, segment):
+        sect_struct = self._get_typename("section")
+        seg_size = segment.size()
+
+        sect_array = obj.Object(theType="Array", targetType=sect_struct, offset=segment.obj_offset + seg_size, count=segment.nsects, vm = self.obj_vm) 
+
+        for sect in sect_array:
+            yield sect
 
 class macho32_header(obj.CType):
     def __init__(self, theType, offset, vm, name = None, **kwargs):
@@ -334,6 +387,23 @@ class macho_load_command(macho):
     """ A macho load command """
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         macho.__init__(self, 0, "macho32_load_command", "macho64_load_command", theType, offset, vm, name, **kwargs)    
+
+    @property
+    def cmd_type(self):
+        cmd_types = {
+                    1  : "LC_SEGMENT",
+                    2  : "LC_SYMTAB",
+                    25 : "LC_SEGMENT_64",
+                    12 : "LC_LOAD_DYLIB",
+                    }
+
+        cmd = self.cmd.v()
+        if cmd in cmd_types:
+            ret = cmd_types[cmd]
+        else:
+            ret = ""
+    
+        return ret
 
 class macho32_load_command(obj.CType):
     def __init__(self, theType, offset, vm, name = None, **kwargs):
@@ -396,5 +466,30 @@ class MachoModification(obj.ProfileModification):
                     'macho32_nlist'           : macho32_nlist,
                     'macho64_nlist'           : macho64_nlist,
                     })
+
+macho_overlay = {
+     'macho32_segment_command' : [ None, {
+        'segname' : [ None , ['String', dict(length = 16)]],
+        }],
+
+     'macho64_segment_command' : [ None, {
+        'segname' : [ None , ['String', dict(length = 16)]],
+        }],
+
+     'macho32_section' : [ None, {
+        'sectname' : [ None , ['String', dict(length = 16)]],
+        }],
+
+     'macho64_section' : [ None, {
+        'sectname' : [ None , ['String', dict(length = 16)]],
+        }],
+}
+ 
+class MachoOverlay(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'mac'}
+    before = ['BasicObjectClasses']
+
+    def modification(self, profile):
+        profile.merge_overlay(macho_overlay)
 
 
