@@ -81,8 +81,8 @@ class mac_ldrmodules(mac_pslist.mac_pslist):
                                   ("Name", "16"),
                                   ("Start", "#018x"),
                                   ("File Path", "100"),                    
-                                  ("Proc Maps", "6"),
-                                  ("Libdl Maps", "6"), 
+                                  ("Kernel", "6"),
+                                  ("Dyld", "6"), 
                                 ]) 
 
         for task_offset, task, proc_as, vm_start, map_name, proc_maps, dl_maps in data:
