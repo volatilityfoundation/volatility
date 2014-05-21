@@ -92,12 +92,19 @@ def list_plugins():
     return result
 
 def command_help(command):
+    outputs = []
+    for item in dir(command):
+        if item.startswith("render_"):
+            outputs.append(item.split("render_", 1)[-1])
+    outputopts = "\nModule Output Options: " + \
+        "{0}\n".format("{0}".format("\n".join([", ".join(o for o in sorted(outputs))]))) 
+
     result = textwrap.dedent("""
     ---------------------------------
     Module {0}
     ---------------------------------\n""".format(command.__class__.__name__))
 
-    return result + command.help() + "\n\n"
+    return outputopts + result + command.help() + "\n\n"
 
 def print_info():
     """ Returns the results """
