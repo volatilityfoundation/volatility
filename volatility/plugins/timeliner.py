@@ -94,10 +94,10 @@ class Win7LdrDataTableEntry(obj.ProfileModification):
                                         }],
                    # these timestamps need more research for format
                    #'_MMSUPPORT': [ None, {
-                   #     'LastTrimStamp': [ None, ['DosDate', dict(is_utc = True)]],
+                   #     'LastTrimStamp': [ None, ['None', dict(is_utc = True)]],
                    #                     }],
                    #'_MMPTE_TIMESTAMP': [ None, {
-                   #     'GlobalTimeStamp' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
+                   #     'GlobalTimeStamp' : [ None, ['None', dict(is_utc = True)]],
                    #                     }],
                    } 
         profile.merge_overlay(overlay)
@@ -162,18 +162,24 @@ class TimeLiner(common.AbstractWindowsCommand):
         config.remove_option("PID")
         config.remove_option("UNSAFE")
 
+        self.types = ["Process", "ImageDate", "Socket", "Shimcache", "Userassist", "IEHistory", "Registry", "Thread",
+                      "Symlink",
+                      "_CM_KEY_BODY", "LoadTime", "TimeDateStamp", "_HBASE_BLOCK", "_CMHIVE", "EvtLog", "ImageDate"]
+
         config.add_option('HIVE', short_option = 'H',
                           help = 'Gather Timestamps from a Particular Registry Hive', type = 'str')
         config.add_option('USER', short_option = 'U',
                           help = 'Gather Timestamps from a Particular User\'s Hive(s)', type = 'str')
-        config.add_option("REGISTRY", default = False, action = 'store_true',
-                          help = 'Adds registry keys/dates to timeline')
         config.add_option('YARA-RULES', short_option = 'Y', default = None,
                         help = 'Yara rules (as a string)')
         config.add_option('YARA-FILE', short_option = 'y', default = None,
                         help = 'Yara rules (rules file)')
         config.add_option("MACHINE", default = "",
                         help = "Machine name to add to timeline header")
+        config.add_option("TYPE", default = "".join([",".join(x for x in sorted(self.types))]),
+                        help = "Type of artifact to use in timeline (default is all)")
+        config.add_option("HIGHLIGHT", default = None,
+                        help = "Highlight potentially malicious items in xlsx output (experimental)")
 
         self.suspicious = {}
         self.suspiciouspids = {}
@@ -206,17 +212,18 @@ class TimeLiner(common.AbstractWindowsCommand):
             total += 1
         wb.save(filename = self._config.OUTPUT_FILE)
 
-        wb = load_workbook(filename = self._config.OUTPUT_FILE)
-        ws = wb.get_sheet_by_name(name = "Timeline Output")
-        for col in xrange(1, len(header) + 1):
-            ws.cell("{0}{1}".format(get_column_letter(col), 1)).style.font.bold = True
-        for row in xrange(2, total + 1):
-            for col in xrange(2, len(header)):
-                if ws.cell("{0}{1}".format(get_column_letter(col), row)).value in self.suspicious.keys():
-                    self.fill(ws, row, len(header) + 1, self.suspicious[ws.cell("{0}{1}".format(get_column_letter(col), row)).value]["color"])
-                    ws.cell("{0}{1}".format(get_column_letter(col + 1), row)).value = self.suspicious[ws.cell("{0}{1}".format(get_column_letter(col), row)).value]["reason"]
+        if self._config.HIGHLIGHT != None:
+            wb = load_workbook(filename = self._config.OUTPUT_FILE)
+            ws = wb.get_sheet_by_name(name = "Timeline Output")
+            for col in xrange(1, len(header) + 1):
+                ws.cell("{0}{1}".format(get_column_letter(col), 1)).style.font.bold = True
+            for row in xrange(2, total + 1):
+                for col in xrange(2, len(header)):
+                    if ws.cell("{0}{1}".format(get_column_letter(col), row)).value in self.suspicious.keys():
+                        self.fill(ws, row, len(header) + 1, self.suspicious[ws.cell("{0}{1}".format(get_column_letter(col), row)).value]["color"])
+                        ws.cell("{0}{1}".format(get_column_letter(col + 1), row)).value = self.suspicious[ws.cell("{0}{1}".format(get_column_letter(col), row)).value]["reason"]
                     
-        wb.save(filename = self._config.OUTPUT_FILE)
+            wb.save(filename = self._config.OUTPUT_FILE)
 
     def getoutput(self, header, start, end = None, body = False):
         if body:
@@ -242,8 +249,12 @@ class TimeLiner(common.AbstractWindowsCommand):
         elif self._config.OUTPUT == "xlsx" and not self._config.OUTPUT_FILE:
             debug.error("You must specify an output *.xlsx file!\n\t(Example: --output-file=OUTPUT.xlsx)")
 
-        if (self._config.HIVE or self._config.USER) and not (self._config.REGISTRY):
+        if (self._config.HIVE or self._config.USER) and "Registry" not in self._config.TYPE:
             debug.error("You must use --registry in conjuction with -H/--hive and/or -U/--user")
+        if self._config.TYPE != None:
+            for t in self._config.TYPE.split(","):
+                if t.strip() not in self.types:
+                    debug.error("You have entered an incorrect type: {0}".format(t))
 
         addr_space = utils.load_as(self._config)
         version = (addr_space.profile.metadata.get('major', 0), 
@@ -251,7 +262,6 @@ class TimeLiner(common.AbstractWindowsCommand):
 
         pids = {}     #dictionary of process IDs/ImageFileName
         
-        im = imageinfo.ImageInfo(self._config).get_image_time(addr_space) 
         body = False
         if self._config.OUTPUT == "body":
             body = True
@@ -259,42 +269,49 @@ class TimeLiner(common.AbstractWindowsCommand):
             self._config.update("MACHINE", "{0} ".format(self._config.MACHINE))
 
         detections = False
-        if self._config.OUTPUT == "xlsx":
+        if self._config.OUTPUT == "xlsx" and self._config.HIGHLIGHT != None:
             detections = True
     
-        yield self.getoutput("[{0}LIVE RESPONSE]{1} (System time)".format(
-            self._config.MACHINE, "" if body else "|"), 
-            im['ImageDatetime'], body = body)
+        if "ImageDate" in self._config.TYPE:
+            im = imageinfo.ImageInfo(self._config).get_image_time(addr_space)
+            yield self.getoutput("[{0}LIVE RESPONSE]{1} (System time)".format(
+                self._config.MACHINE, "" if body else "|"), 
+                im['ImageDatetime'], body = body)
 
-        self._config.update("LEAK", True)
-        data = iehistory.IEHistory(self._config).calculate()
-        for process, record in data:
-            ## Extended fields are available for these records 
-            if record.obj_name == "_URL_RECORD":
-                line = "[{6}IEHISTORY]{0} {1}->{5}{0} PID: {2}/Cache type \"{3}\" at {4:#x}".format(
-                    "" if body else "|",
-                    process.ImageFileName,
-                    process.UniqueProcessId,
-                    record.Signature, record.obj_offset,
-                    record.Url,
-                    self._config.MACHINE)
+        if "IEHistory" in self._config.TYPE:
+            self._config.update("LEAK", True)
+            data = iehistory.IEHistory(self._config).calculate()
+            for process, record in data:
+                ## Extended fields are available for these records 
+                if record.obj_name == "_URL_RECORD":
+                    line = "[{6}IEHISTORY]{0} {1}->{5}{0} PID: {2}/Cache type \"{3}\" at {4:#x}".format(
+                        "" if body else "|",
+                        process.ImageFileName,
+                        process.UniqueProcessId,
+                        record.Signature, record.obj_offset,
+                        record.Url,
+                        self._config.MACHINE)
                         
-                yield self.getoutput(line, record.LastModified, end = record.LastAccessed, body = body)
-        self._config.remove_option("REDR")
-        self._config.remove_option("LEAK")
+                    yield self.getoutput(line, record.LastModified, end = record.LastAccessed, body = body)
+            self._config.remove_option("REDR")
+            self._config.remove_option("LEAK")
 
-        psx = psxview.PsXview(self._config).calculate()
+        psx = []
+        if "Process" in self._config.Type or "TimeDateStamp" in self._config.Type or \
+            "LoadTime" in self._config.Type or "_CM_KEY_BODY" in self._config.Type:
+            psx = psxview.PsXview(self._config).calculate()
         for offset, eprocess, ps_sources in psx:
             pids[eprocess.UniqueProcessId.v()] = eprocess.ImageFileName
-            line = "[{5}PROCESS]{0} {1}{0} PID: {2}/PPID: {3}/POffset: 0x{4:08x}".format(
-                "" if body else "|",
-                eprocess.ImageFileName,
-                eprocess.UniqueProcessId,
-                eprocess.InheritedFromUniqueProcessId,
-                offset,
-                self._config.MACHINE)
+            if "Process" in self._config.TYPE:
+                line = "[{5}PROCESS]{0} {1}{0} PID: {2}/PPID: {3}/POffset: 0x{4:08x}".format(
+                    "" if body else "|",
+                    eprocess.ImageFileName,
+                    eprocess.UniqueProcessId,
+                    eprocess.InheritedFromUniqueProcessId,
+                    offset,
+                    self._config.MACHINE)
 
-            yield self.getoutput(line, eprocess.CreateTime, end = eprocess.ExitTime, body = body)
+                yield self.getoutput(line, eprocess.CreateTime, end = eprocess.ExitTime, body = body)
 
             if not hasattr(eprocess.obj_vm, "vtop"):
                 eprocess = taskmods.DllList(self._config).virtual_process_from_physical_offset(addr_space, eprocess.obj_offset)
@@ -305,7 +322,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                 if ps_ad == None:
                     continue
                 
-            if version[0] == 5: 
+            if version[0] == 5 and "Process" in self._config.TYPE:
                 line = "[{5}PROCESS LastTrimTime]{0} {1}{0} PID: {2}/PPID: {3}/POffset: 0x{4:08x}".format(
                     "" if body else "|",
                     eprocess.ImageFileName,
@@ -315,7 +332,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                     self._config.MACHINE)
                 yield self.getoutput(line, eprocess.Vm.LastTrimTime, body = body)
 
-            if eprocess.ObjectTable.HandleTableList:
+            if eprocess.ObjectTable.HandleTableList and "_CM_KEY_BODY" in self._config.TYPE:
                 for handle in eprocess.ObjectTable.handles():
                     if not handle.is_valid():
                         continue
@@ -336,7 +353,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                         yield self.getoutput(line, key_obj.KeyControlBlock.KcbLastWriteTime, body = body)
 
 
-            if detections:
+            if detections and "Process" in self._config.TYPE:
                 injected = False
                 for vad, address_space in eprocess.get_vads(vad_filter = eprocess._injection_filter):
 
@@ -372,7 +389,7 @@ class TimeLiner(common.AbstractWindowsCommand):
             if eprocess.Peb == None or eprocess.Peb.ImageBaseAddress == None:
                 continue
             # Get DLL PE timestamps for Wow64 processes (excluding 64-bit ones)
-            if eprocess.IsWow64:
+            if eprocess.IsWow64 and "TimeDateStamp" in self._config.TYPE:
                 for vad, address_space in eprocess.get_vads(vad_filter = eprocess._mapped_file_filter):
                     if vad.FileObject.FileName:
                         name = str(vad.FileObject.FileName).lower()
@@ -398,7 +415,9 @@ class TimeLiner(common.AbstractWindowsCommand):
                         yield self.getoutput(line, header.FileHeader.TimeDateStamp, body = body)
 
             # get DLL PE timestamps
-            mods = dict((mod.DllBase.v(), mod) for mod in eprocess.get_load_modules())
+            mods = dict()
+            if "TimeDateStamp" in self._config.TYPE or "LoadTime" in self._config.TYPE:
+                mods = dict((mod.DllBase.v(), mod) for mod in eprocess.get_load_modules())
             for mod in mods.values():
                 basename = str(mod.BaseDllName or "")
                 if basename == str(eprocess.ImageFileName):
@@ -421,20 +440,21 @@ class TimeLiner(common.AbstractWindowsCommand):
                         offset,
                         mod.DllBase.v(),
                         self._config.MACHINE)
-                yield self.getoutput(line, mod.TimeDateStamp, body = body)
-                if hasattr(mod, "LoadTime"): 
+                if "TimeDateStamp" in self._config.TYPE:
+                    yield self.getoutput(line, mod.TimeDateStamp, body = body)
+                    line2 = "[{7}PE DEBUG]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
+                        "" if body else "|",
+                        eprocess.ImageFileName,
+                        eprocess.UniqueProcessId,
+                        eprocess.InheritedFromUniqueProcessId,
+                        basename,
+                        offset,
+                        mod.DllBase.v(),
+                        self._config.MACHINE)
+                    yield self.getoutput(line2, mod.get_debug_directory().TimeDateStamp, body = body)
+                if hasattr(mod, "LoadTime") and "LoadTime" in self._config.TYPE:
                     temp = line.replace("[{0}PE HEADER ".format(self._config.MACHINE), "[{0}DLL LOADTIME ".format(self._config.MACHINE))
                     yield self.getoutput(temp, mod.TimeDateStamp, end = mod.LoadTime, body = body)
-                line = "[{7}PE DEBUG]{0} {4}{0} Process: {1}/PID: {2}/PPID: {3}/Process POffset: 0x{5:08x}/DLL Base: 0x{6:08x}".format(
-                    "" if body else "|",
-                    eprocess.ImageFileName,
-                    eprocess.UniqueProcessId,
-                    eprocess.InheritedFromUniqueProcessId,
-                    basename,
-                    offset,
-                    mod.DllBase.v(),
-                    self._config.MACHINE)
-                yield self.getoutput(line, mod.get_debug_directory().TimeDateStamp, body = body)
                 if detections and eprocess.UniqueProcessId.v() in self.suspiciouspids.keys():
                     suspiciousline = "Process: {0}/PID: {1}/PPID: {2}/Process POffset: 0x{3:08x}/DLL Base: 0x{4:08x}".format(
                         eprocess.ImageFileName,
@@ -472,8 +492,10 @@ class TimeLiner(common.AbstractWindowsCommand):
 
         # Get Sockets and Evtlogs XP/2k3 only
         if version[0] == 5:
-            socks = sockets.Sockets(self._config).calculate()
-            #socks = sockscan.SockScan(self._config).calculate()   # you can use sockscan instead if you uncomment
+            #socks = sockets.Sockets(self._config).calculate()
+            socks = []
+            if "Socket" in self._config.TYPE:
+                socks = sockscan.SockScan(self._config).calculate()   # you can use sockscan instead if you uncomment
             for sock in socks:
                 la = "{0}:{1}".format(sock.LocalIpAddress, sock.LocalPort)
                 line = "[{6}SOCKET]{0} LocalIP: {2}/Protocol: {3}({4}){0} PID: {1}/POffset: 0x{5:#010x}".format(
@@ -492,8 +514,10 @@ class TimeLiner(common.AbstractWindowsCommand):
                         sock.obj_offset)
                     self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[sock.Pid.v()]["reason"], "color": "YELLOW"}
 
-            evt = evtlogs.EvtLogs(self._config)
-            stuff = evt.calculate()
+            stuff = []
+            if "EvtLog" in self._config.TYPE:
+                evt = evtlogs.EvtLogs(self._config)
+                stuff = evt.calculate()
             for name, buf in stuff:
                 for fields in evt.parse_evt_info(name, buf, rawtime = True):
                     line = "[{8}EVT LOG]{0} {1}{0} {2}/{3}/{4}/{5}/{6}/{7}".format("" if body else "|",
@@ -516,7 +540,9 @@ class TimeLiner(common.AbstractWindowsCommand):
                         self.suspicious[line] = {"reason": "OFFICE APPLICATION FAILURE", "color": "TAN"}
         else:
             # Vista+
-            nets = netscan.Netscan(self._config).calculate()
+            nets = []
+            if "Socket" in self._config.TYPE:
+                nets = netscan.Netscan(self._config).calculate()
             for net_object, proto, laddr, lport, raddr, rport, state in nets:
                 conn = "{0}:{1} -> {2}:{3}".format(laddr, lport, raddr, rport)
                 line = "[{6}NETWORK CONNECTION]{0} {2}{0} {1}/{3}/{4}/{5:<#10x}".format(
@@ -538,7 +564,9 @@ class TimeLiner(common.AbstractWindowsCommand):
                     self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[net_object.Owner.UniqueProcessId.v()]["reason"], "color": "YELLOW"}
 
         # Get threads
-        threads = modscan.ThrdScan(self._config).calculate()
+        threads = []
+        if "Thread" in self._config.TYPE:
+            threads = modscan.ThrdScan(self._config).calculate()
         for thread in threads:
             image = pids.get(thread.Cid.UniqueProcess.v(), "UNKNOWN")
             line = "[{4}THREAD]{0} {1}{0} PID: {2}/TID: {3}".format(
@@ -559,7 +587,9 @@ class TimeLiner(common.AbstractWindowsCommand):
             if image == "UNKNOWN" or thread.Cid.UniqueProcess.v() not in pids:
                 self.suspicious[suspiciousline] = {"reason": "UNKNOWN IMAGE", "color": "YELLOW"}
     
-        data = filescan.SymLinkScan(self._config).calculate()
+        data = []
+        if "Symlink" in self._config.TYPE:
+            data = filescan.SymLinkScan(self._config).calculate()
         for link in data:
             objct = link.get_object_header()
             line = "[{6}SYMLINK]{0} {1}->{2}{0} POffset: {3}/Ptr: {4}/Hnd: {5}".format(
@@ -572,7 +602,9 @@ class TimeLiner(common.AbstractWindowsCommand):
                     self._config.MACHINE)
             yield self.getoutput(line, link.CreationTime, body = body)
 
-        data = moddump.ModDump(self._config).calculate()
+        data = []
+        if "TimeDateStamp" in self._config.TYPE:
+            data = moddump.ModDump(self._config).calculate()
         for aspace, procs, mod_base, mod_name in data:
             mod_name = str(mod_name or '')
             space = tasks.find_space(aspace, procs, mod_base)
@@ -589,7 +621,9 @@ class TimeLiner(common.AbstractWindowsCommand):
                         self._config.MACHINE)
                 yield self.getoutput(line, header.FileHeader.TimeDateStamp, body = body)
 
-        uastuff = userassist.UserAssist(self._config).calculate()
+        uastuff = []
+        if "Userassist" in self._config.TYPE:
+            uastuff = userassist.UserAssist(self._config).calculate()
         for win7, reg, key in uastuff:
             ts = "{0}".format(key.LastWriteTime)
             for v in rawreg.values(key):
@@ -635,7 +669,9 @@ class TimeLiner(common.AbstractWindowsCommand):
                         self._config.MACHINE)
                 yield self.getoutput(line, uadata.LastUpdated, body = body)
 
-        shimdata = shimcache.ShimCache(self._config).calculate()
+        shimdata = []
+        if "Shimcache" in self._config.TYPE:
+            shimdata = shimcache.ShimCache(self._config).calculate()
         for path, lm, lu in shimdata:
             line = "[{2}SHIMCACHE]{0} {1}{0} ".format(
                     "" if body else "|",
@@ -645,25 +681,27 @@ class TimeLiner(common.AbstractWindowsCommand):
             else:
                 yield self.getoutput(line, lm, body = body)
 
-        regapi = registryapi.RegistryApi(self._config)
-        for o in regapi.all_offsets:
-            line = "[{2}_HBASE_BLOCK TimeStamp]{0} {1}{0} ".format(
-                    "" if body else "|",
-                    regapi.all_offsets[o],
-                    self._config.MACHINE)
-            h = obj.Object("_HHIVE", o, addr_space)
-            yield self.getoutput(line, h.BaseBlock.TimeStamp, body = body)
+        if "_HBASE_BLOCK" in self._config.TYPE or "_CMHIVE" in self._config.TYPE or "Registry" in self._config.TYPE:
+            regapi = registryapi.RegistryApi(self._config)
+            for o in regapi.all_offsets:
+                if "_HBASE_BLOCK" in self._config.TYPE:
+                    line = "[{2}_HBASE_BLOCK TimeStamp]{0} {1}{0} ".format(
+                        "" if body else "|",
+                        regapi.all_offsets[o],
+                        self._config.MACHINE)
+                    h = obj.Object("_HHIVE", o, addr_space)
+                    yield self.getoutput(line, h.BaseBlock.TimeStamp, body = body)
 
 
-            if version[0] == 6 and addr_space.profile.metadata.get('build', 0) == 7601:
-                line = line = "[{2}_CMHIVE LastWriteTime]{0} {1}{0} ".format(
-                    "" if body else "|",
-                    regapi.all_offsets[o],
-                    self._config.MACHINE)
-                cmhive = obj.Object("_CMHIVE", o, addr_space)
-                yield self.getoutput(line, cmhive.LastWriteTime, body = body)
+                if "_CMHIVE" in self._config.TYPE and version[0] == 6 and addr_space.profile.metadata.get('build', 0) == 7601:
+                    line = line = "[{2}_CMHIVE LastWriteTime]{0} {1}{0} ".format(
+                        "" if body else "|",
+                        regapi.all_offsets[o],
+                        self._config.MACHINE)
+                    cmhive = obj.Object("_CMHIVE", o, addr_space)
+                    yield self.getoutput(line, cmhive.LastWriteTime, body = body)
 
-        if self._config.REGISTRY:
+        if "Registry" in self._config.TYPE:
             regapi.reset_current()
             regdata = regapi.reg_get_all_keys(self._config.HIVE, self._config.USER, reg = True, rawtime = True)
     
