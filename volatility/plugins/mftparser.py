@@ -655,6 +655,8 @@ class MFTParser(common.AbstractWindowsCommand):
     """ Scans for and parses potential MFT entries """
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
+        config.add_option("OFFSET", short_option = "o", default = None, 
+                          help = "Physical offset for MFT Entries (comma delimited)")
         config.add_option('NOCHECK', short_option = 'N', default = False,
                           help = 'Only all entries including w/null timestamps',
                           action = "store_true")
@@ -673,26 +675,35 @@ class MFTParser(common.AbstractWindowsCommand):
     def calculate(self):
         if self._config.MACHINE != "":
             self._config.update("MACHINE", "{0} ".format(self._config.MACHINE))
-        address_space = utils.load_as(self._config, astype = 'physical')
-        scanner = poolscan.MultiPoolScanner(needles = ['FILE', 'BAAD'])
-        print "Scanning for MFT entries and building directory, this can take a while"
-        seen = []
         offsets = []
-        for _, offset in scanner.scan(address_space):
-            mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
-            bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
-            mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
+        address_space = utils.load_as(self._config, astype = 'physical')
+        if self._config.OFFSET != None:
+            items = [int(o, 16) for o in self._config.OFFSET.split(',')]
+            for offset in items:
+                mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
+                bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
+                mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,                               offset = 0)
+                offsets.append((offset, mft_entry))
+        else:
+            scanner = poolscan.MultiPoolScanner(needles = ['FILE', 'BAAD'])
+            print "Scanning for MFT entries and building directory, this can take a while"
+            seen = []
+            for _, offset in scanner.scan(address_space):
+                mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
+                bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
+                mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
                                offset = 0)
-            temp = mft_entry.advance_one(mft_entry.ResidentAttributes.STDInfo.obj_offset + mft_entry.ResidentAttributes.ContentSize, mft_buff, self._config.ENTRYSIZE)
-            name = ""
-            if temp != None: # and temp.FileName.is_valid():
-                mft_entry.add_path(temp.FileName)
-                name = temp.FileName.get_name()
-            if (int(mft_entry.RecordNumber), name) in seen:
-                continue
-            else:
-                seen.append((int(mft_entry.RecordNumber), name))
-            offsets.append((offset, mft_entry))
+                temp = mft_entry.advance_one(mft_entry.ResidentAttributes.STDInfo.obj_offset + mft_entry.ResidentAttributes.ContentSize, mft_buff, self._config.ENTRYSIZE)
+                name = ""
+                if temp != None: # and temp.FileName.is_valid():
+                    mft_entry.add_path(temp.FileName)
+                    name = temp.FileName.get_name()
+                if (int(mft_entry.RecordNumber), name) in seen:
+                    continue
+                else:
+                    seen.append((int(mft_entry.RecordNumber), name))
+                offsets.append((offset, mft_entry))
+
         for offset, mft_entry in offsets:
             mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
             if self._config.DEBUGOUT:
