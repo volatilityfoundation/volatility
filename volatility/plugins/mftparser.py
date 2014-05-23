@@ -682,7 +682,7 @@ class MFTParser(common.AbstractWindowsCommand):
             for offset in items:
                 mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
                 bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
-                mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,                               offset = 0)
+                mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas, offset = 0)
                 offsets.append((offset, mft_entry))
         else:
             scanner = poolscan.MultiPoolScanner(needles = ['FILE', 'BAAD'])
