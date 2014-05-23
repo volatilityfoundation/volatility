@@ -57,6 +57,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
             outfd.write("{0} pid: {1:6}\n".format(task.ImageFileName, pid))
 
             if task.Peb:
+                ## REMOVE this after 2.4, since we have the cmdline plugin now
                 outfd.write("Command line : {0}\n".format(str(task.Peb.ProcessParameters.CommandLine or '')))
                 if task.IsWow64:
                     outfd.write("Note: use ldrmodules for listing DLLs in Wow64 processes\n")
