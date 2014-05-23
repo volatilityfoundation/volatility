@@ -38,7 +38,7 @@ import volatility.plugins.netscan as netscan
 import volatility.plugins.evtlogs as evtlogs
 import volatility.plugins.malware.psxview as psxview
 import volatility.plugins.malware.malfind as malfind
-import volatility.plugins.userassist as userassist
+import volatility.plugins.registry.userassist as userassist
 import volatility.plugins.imageinfo as imageinfo
 import volatility.win32.rawreg as rawreg
 import volatility.addrspace as addrspace
