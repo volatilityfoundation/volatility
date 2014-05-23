@@ -18,7 +18,7 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import datetime, struct
+import datetime, struct, calendar
 import volatility.plugins.overlays.basic as basic
 import volatility.plugins.kpcrscan as kpcr
 import volatility.plugins.kdbgscan as kdbg
@@ -307,6 +307,71 @@ class WinTimeStamp(obj.NativeType):
         if dt != None:
             return format(timefmt.display_datetime(dt), formatspec)
         return "-"
+
+class DosDate(obj.NativeType):
+    def __init__(self, theType, offset, vm, is_utc = False, **kwargs):
+        self.is_utc = is_utc
+        obj.NativeType.__init__(self, theType, offset, vm, format_string = "<I", **kwargs)
+
+    def as_dos_timestamp(self):
+        return obj.NativeType.v(self)
+
+    def v(self):
+        value = self.as_dos_timestamp()
+        return self.dos_to_unix_time(value)
+
+    def __nonzero__(self):
+        return self.v() != 0
+
+    def __str__(self):
+        return "{0}".format(self)
+
+    def as_datetime(self):
+        try:
+            dt = datetime.datetime.utcfromtimestamp(self.v())
+            if self.is_utc:
+                # Only do dt.replace when dealing with UTC
+                dt = dt.replace(tzinfo = timefmt.UTC())
+        except ValueError, e:
+            return obj.NoneObject("Datetime conversion failure: " + str(e))
+        return dt
+
+    def __format__(self, formatspec):
+        """Formats the datetime according to the timefmt module"""
+        dt = self.as_datetime()
+        if dt != None:
+            return format(timefmt.display_datetime(dt), formatspec)
+        return "-"
+
+    def dos_to_unix_time(self, dosdate):
+        """  
+        Every previous conversion algorithm takes in two unsigned shorts separately.  
+        We're not doing that here, but instead getting those shorts from an unsigned int (dosdate)
+
+        dosdate: 4 bytes little endian converted to:
+        date: 2 bytes
+        time: 2 bytes
+
+        conversion to datetime taken from: http://code.google.com/p/libforensics/
+        dosdate is already in UTC: http://download.polytechnic.edu.na/pub4/download.sourceforge.net/pub/sourceforge/l/project/li/liblnk/Documentation/Windows%20Shell%20Item%20format/Windows%20Shell%20Item%20format.pdf
+        """
+        date = struct.unpack(">H", ''.join([chr(x) for x in [(dosdate >> 8) & 0xff, (dosdate & 0xff)]]))[0]
+        time = struct.unpack(">H", ''.join([chr(x) for x in [(dosdate >> 24) & 0xff, (dosdate >> 16) & 0xff]]))[0]
+        seconds = (time & 0x1F) * 2
+        minutes = (time & 0x7E0) >> 5
+        hours = (time & 0xF800) >> 11
+        day = date & 0x1F
+        month = (date & 0x1E0) >> 5
+        year = ((date & 0xFE00) >> 9) + 1980
+
+        #convert into timestamp and return:
+        try:
+            return calendar.timegm(datetime.datetime(year, month, day, hours, minutes, seconds).utctimetuple())
+        except ValueError:
+            return 0
+        # if we use the following we need to s/utcfromtimestamp/fromtimestamp/ in as_datetime() function:
+        #return time.mktime(datetime.datetime(year, month, day, hours, minutes, seconds).timetuple())
+
 
 class _EPROCESS(obj.CType, ExecutiveObjectMixin):
     """ An extensive _EPROCESS with bells and whistles """
@@ -1106,6 +1171,7 @@ class WindowsObjectClasses(obj.ProfileModification):
             '_UNICODE_STRING': _UNICODE_STRING,
             '_LIST_ENTRY': _LIST_ENTRY,
             'WinTimeStamp': WinTimeStamp,
+            'DosDate':DosDate,
             '_EPROCESS': _EPROCESS,
             '_ETHREAD': _ETHREAD,
             '_HANDLE_TABLE': _HANDLE_TABLE,
