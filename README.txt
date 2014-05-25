@@ -13,7 +13,7 @@ from volatile memory samples and provide a platform for further work into
 this exciting area of research.
 
 The Volatility distribution is available from: 
-https://github.com/volatilityfoundation/volatility/releases
+http://www.volatilityfoundation.org/#!releases/component_71401
 
 Volatility should run on any platform that supports 
 Python (http://www.python.org)
@@ -68,12 +68,7 @@ ability to convert between these formats:
 
 For a more detailed list of capabilities, see the following:
 
-    https://github.com/volatilityfoundation/volatility/wiki/Volatility-2.3
-    https://github.com/volatilityfoundation/volatility/wiki/Command-Reference-Gui23
-    https://github.com/volatilityfoundation/volatility/wiki/Command-Reference-Mal23
-    https://github.com/volatilityfoundation/volatility/wiki/Command-Reference-Registry-Api23
-    https://github.com/volatilityfoundation/volatility/wiki/Linux-Command-Reference23
-    https://github.com/volatilityfoundation/volatility/wiki/Mac-Command-Reference23
+    https://github.com/volatilityfoundation/volatility/wiki
 
 Example Data
 ============
@@ -101,8 +96,9 @@ For information or requests, contact:
 
 Volatility Foundation
 
-Web: http://www.volatilityfoundation.org/
-     http://volatility.tumblr.com/
+Web: http://www.volatilityfoundation.org
+     http://volatility-labs.blogspot.com
+     http://volatility.tumblr.com
      
 Email: volatility (at) volatilityfoundation (dot) org
 
@@ -428,7 +424,7 @@ PoolTagCheck           - This scanner checks for the occurance of a pool tag
 Licensing and Copyright
 =======================
 
-Copyright (C) 2007-2013 Volatility Foundation
+Copyright (C) 2007-2014 Volatility Foundation
 
 All Rights Reserved
 
