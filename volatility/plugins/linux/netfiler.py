@@ -41,15 +41,12 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
       
         nf_hooks_addr = self.addr_space.profile.get_symbol("nf_hooks")
 
-        # nf_hooks_outer = obj.Object(theType="Array", targetType="list_head", offset = nf_hooks_addr, vm = self.addr_space, count = 13)
-
-        # TODO
-        list_head_size = 16
+        list_head_size = self.addr_space.profile.get_obj_size("list_head")
         
         for outer in range(13):
             arr = nf_hooks_addr + (outer * (list_head_size * 8))
            
-            for inner in range(8):
+            for inner in range(7):
                 list_head = obj.Object("list_head", offset = arr + (inner * list_head_size), vm = self.addr_space)
         
                 for hook_ops in list_head.list_of_type("nf_hook_ops", "list"):
@@ -58,7 +55,7 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
     def render_text(self, outfd, data):
         modules  = linux_lsmod.linux_lsmod(self._config).get_modules()
         hook_names = ["PRE_ROUTING", "LOCAL_IN", "FORWARD", "LOCAL_OUT", "POST_ROUTING"]
-        proto_names = ["", "", "IPV4"]
+        proto_names = ["", "", "IPV4", "", "", "", "", "", "", "", "" , "", "", ""]
 
         self.table_header(outfd, [("Proto", "5"), ("Hook", "16"), ("Handler", "[addrpad]"), ("Is Hooked", "5")])
 
@@ -68,15 +65,8 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
             else:
                 hooked = "True"
 
+            print "%6d | %6d" % (outer, inner)
+
             self.table_row(outfd, proto_names[outer], hook_names[inner], hook_addr, hooked)
-
-
-
-
-
-
-
-
-
 
 
