@@ -214,20 +214,19 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         extra = file_size % 4096
         idxs = file_size / 4096
 
-        if extra != 0:
+        if extra > 0:
             extra = 4096 - extra
             idxs = idxs + 1
 
         for idx in range(0, idxs):
-            data = data + self.get_page_contents(inode, idx)
-
-        # this is chop off any extra data on the last page
-
-        if extra != 0:
-            extra = extra * -1
-            data = data[:extra]
-
-        return data
-
+            data = self.get_page_contents(inode, idx)
+                
+            # this is to chop off any extra data on the last page
+            if idx == idxs - 1:
+                if extra > 0:
+                    extra = extra * -1
+                    data = data[:extra]
+            
+            yield data
 
 
