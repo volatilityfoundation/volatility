@@ -264,7 +264,7 @@ class linux_check_inline_kernel(linux_common.AbstractLinuxCommand):
                     yield (name, hooked_member, hook_type, hook_address)
 
     def _check_known_functions(self, modules):
-        known_funcs = ["dev_get_flags"]
+        known_funcs = ["dev_get_flags", "vfs_readdir", "tcp_sendmsg"]
 
         for func_name in known_funcs:
             func_addr = self.profile.get_symbol(func_name)
