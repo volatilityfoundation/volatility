@@ -38,9 +38,12 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
     def __init__(self, config, *args, **kwargs):
         linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
-        self._config.add_option('FIND',  short_option = 'F', default = None, help = 'file (path) to find', action = 'store', type = 'str')
-        self._config.add_option('INODE', short_option = 'i', default = None, help = 'inode to write to disk', action = 'store', type = 'int')
-        self._config.add_option('OUTFILE', short_option = 'O', default = None, help = 'output file path', action = 'store', type = 'str')
+        config.add_option('FIND',  short_option = 'F', default = None, help = 'file (path) to find', action = 'store', type = 'str')
+        config.add_option('INODE', short_option = 'i', default = None, help = 'inode to write to disk', action = 'store', type = 'int')
+        config.add_option('OUTFILE', short_option = 'O', default = None, help = 'output file path', action = 'store', type = 'str')
+        
+        config.remove_option("LIST_SBS")
+        config.add_option('LISTFILES', short_option = 'L', default = None, help = 'list all files cached in memory', action = 'count')
 
     def _walk_sb(self, dentry_param, last_dentry, parent):
         if last_dentry == None or last_dentry != dentry_param.v():
@@ -101,40 +104,43 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         find_file  = self._config.FIND
         inode_addr = self._config.inode        
         outfile    = self._config.outfile
+        listfiles  = self._config.LISTFILES
 
-        if find_file and len(find_file):
+        if listfiles:
+             for (_, _, file_path, file_dentry) in self.walk_sbs():
+                yield (file_path, file_dentry.d_inode)
+
+        elif find_file and len(find_file):
             for (_, _, file_path, file_dentry) in self.walk_sbs():
                 if file_path == find_file:
-                    yield file_dentry
+                    yield (file_path, file_dentry.d_inode)
                     break
 
         elif inode_addr and inode_addr > 0 and outfile and len(outfile) > 0:
             inode = obj.Object("inode", offset = inode_addr, vm = self.addr_space)
             
-            contents = self.get_file_contents(inode)
-
             f = open(outfile, "wb")
-            f.write(contents)
+            
+            for page in self.get_file_contents(inode):        
+                f.write(page)
+
             f.close()
 
         else:
             debug.error("Incorrect command line parameters given.")
 
     def render_text(self, outfd, data):
-
         shown_header = 0
 
-        for dentry in data:
+        for (file_path, inode) in data:
+                if not shown_header:
+                    self.table_header(outfd, [("Inode Number", "16"), ("Inode", "[addr]"), ("File Path", "")])
+                    shown_header = 1
 
-            if not shown_header:
-                self.table_header(outfd, [("Inode Number", "16"), ("Inode", "[addr]")])
-                shown_header = 1
+                inode_num = inode.i_ino
 
-            inode     = dentry.d_inode
-            inode_num = inode.i_ino
-
-            self.table_row(outfd, inode_num, inode)
-            
+                self.table_row(outfd, inode_num, inode, file_path)
+                
     # from here down is code to walk the page cache and mem_map / mem_section page structs#
     def radix_tree_is_indirect_ptr(self, ptr):
         return ptr & 1

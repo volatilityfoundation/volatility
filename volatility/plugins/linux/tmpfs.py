@@ -35,9 +35,11 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
 
     def __init__(self, config, *args, **kwargs):
         linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
-        self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'output directory for recovered files', action = 'store', type = 'str')
-        self._config.add_option('SB', short_option = 'S', default = None, help = 'superblock to process, see -l', action = 'store', type = 'int')
-        self._config.add_option('LIST_SBS', short_option = 'L', default = None, help = 'list avaiable tmpfs superblocks', action = 'store_true')
+        config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'output directory for recovered files', action = 'store', type = 'str')
+        config.add_option('SB', short_option = 'S', default = None, help = 'superblock to process, see -l', action = 'store', type = 'int')
+        
+        config.remove_option("LISTFILES")
+        config.add_option('LIST_SBS', short_option = 'L', default = None, help = 'list avaiable tmpfs superblocks', action = 'store_true')
 
         # used to keep correct time for directories
         self.dir_times = {}
@@ -76,11 +78,12 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
                     self.process_directory(dentry, 1, new_file)
 
                 elif inode.is_reg():
+                    f = open(new_file, "wb")
 
-                    contents = linux_find_file.linux_find_file(self._config).get_file_contents(inode)
+                    for page in linux_find_file.linux_find_file(self._config).get_file_contents(inode):
+                        f.write(page)
 
                     f = open(new_file, "wb")
-                    f.write(contents)
                     f.close()
                     self.fix_md(new_file, perms, atime, mtime)
 
