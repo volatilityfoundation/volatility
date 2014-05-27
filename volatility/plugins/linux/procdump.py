@@ -46,7 +46,6 @@ class linux_procdump(linux_pslist.linux_pslist):
         elf_hdr = obj.Object("elf_hdr", offset = elf_addr, vm = proc_as)
 
         for phdr in elf_hdr.program_headers():
-            print "|%s|" % str(phdr.p_type)
 
             if str(phdr.p_type) != 'PT_LOAD':
                 continue
