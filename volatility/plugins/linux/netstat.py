@@ -54,32 +54,27 @@ class linux_netstat(linux_pslist.linux_pslist):
                 skt = self.SOCKET_I(iaddr)
                 inet_sock = obj.Object("inet_sock", offset = skt.sk, vm = self.addr_space)
 
-                yield task, i, inet_sock
+                yield task, i, iaddr, inet_sock
 
     def render_text(self, outfd, data):
 
-        for task, _fd, inet_sock in data:
-
+        for task, _fd, inode, inet_sock in data:
             if inet_sock.protocol in ("TCP", "UDP", "IP", "HOPOPT"): #hopopt is where unix sockets end up on linux
 
                 state = inet_sock.state if inet_sock.protocol == "TCP" else ""
                 family = inet_sock.sk.__sk_common.skc_family #pylint: disable-msg=W0212
 
                 if family == socket.AF_UNIX:
-
-                    # the user choose to ignore unix sockets
                     if self._config.IGNORE_UNIX:
                         continue
 
                     unix_sock = obj.Object("unix_sock", offset = inet_sock.sk.v(), vm = self.addr_space)
 
                     if unix_sock.addr:
-
-                        name = obj.Object("sockaddr_un", offset = unix_sock.addr.name.obj_offset, vm = self.addr_space)
-
-                        # only print out sockets with paths
-                        if str(name.sun_path) != "":
-                            outfd.write("UNIX {0:s}\n".format(name.sun_path))
+                        name_obj = obj.Object("sockaddr_un", offset = unix_sock.addr.name.obj_offset, vm = self.addr_space)
+                        name   = str(name_obj.sun_path)
+                        
+                        outfd.write("UNIX {0:<8d} {1:>17s}/{2:<5d} {3:s}\n".format(inode.i_ino, task.comm, task.pid, name))
 
                 elif family in (socket.AF_INET, socket.AF_INET6):
 
@@ -89,9 +84,6 @@ class linux_netstat(linux_pslist.linux_pslist):
                     daddr = inet_sock.dst_addr
 
                     outfd.write("{0:8s} {1}:{2:<5} {3}:{4:<5} {5:s} {6:>17s}/{7:<5d}\n".format(inet_sock.protocol, saddr, sport, daddr, dport, state, task.comm, task.pid))
-
-                #else:
-                #    print "unknown family: %d" % family
 
     # has to get the struct socket given an inode (see SOCKET_I in sock.h)
     def SOCKET_I(self, inode):
