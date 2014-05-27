@@ -100,6 +100,8 @@ class kmem_cache_slab(kmem_cache):
 
             i = slab.free
             while i != 0xFFFFFFFF:
+                if i >= self.num:
+                    break
                 unallocated[i] = 1
                 i = bufctl[i]
 
