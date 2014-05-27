@@ -33,6 +33,11 @@ import socket
 class linux_route_cache(linux_common.AbstractLinuxCommand):
     """ Recovers the routing cache from memory """
 
+    def __init__(self, config, *args, **kwargs):
+        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
+        config.add_option('RESOLVE', short_option = 'R', default = None, action='count',
+                          help = 'Resolve DNS names of remote IP addresses')
+
     def calculate(self):
         linux_common.set_plugin_members(self)
 
@@ -76,19 +81,29 @@ class linux_route_cache(linux_common.AbstractLinuxCommand):
                 rth = nxt
 
     def render_text(self, outfd, data):
-
-        self.table_header(outfd, [("Interface", "16"),
+        if self._config.RESOLVE:
+            self.table_header(outfd, [("Interface", "16"),
                                   ("Destination", "20"),
                                   ("Dest Name", "30"), 
                                   ("Gateway", "")])
-
+        else:
+            self.table_header(outfd, [("Interface", "16"),
+                                  ("Destination", "20"),
+                                  ("Gateway", "")])
+   
         for (name, dest, gw) in data:
-            host = str(dest.cast("IpAddress"))
-            try:
-                host = socket.gethostbyaddr(host)
-                host = host[0]
-            except socket.herror:
-                host = ""
-
-            self.table_row(outfd, name, dest.cast("IpAddress"), host, gw.cast("IpAddress"))
+            if self._config.RESOLVE:
+                
+                host = str(dest.cast("IpAddress"))
+                try:
+                    host = socket.gethostbyaddr(host)
+                    host = host[0]
+                except socket.herror:
+                    host = ""
+                except socket.gaierror:
+                    host = ""
+                
+                self.table_row(outfd, name, dest.cast("IpAddress"), host, gw.cast("IpAddress"))
+            else:        
+                self.table_row(outfd, name, dest.cast("IpAddress"), gw.cast("IpAddress"))
 
