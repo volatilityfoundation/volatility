@@ -206,9 +206,14 @@ struct module_sect_attrs
         unsigned int nsections;
         struct module_sect_attr attrs[0];
 };
-#endif
+
+struct module_sect_attrs module_sect_attrs;
+
+#else
 
 struct module_sections module_sect_attrs;
+
+#endif
 
 struct module_kobject module_kobject;
 
