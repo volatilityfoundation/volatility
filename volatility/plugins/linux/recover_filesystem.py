@@ -57,12 +57,17 @@ class linux_recover_filesystem(linux_common.AbstractLinuxCommand):
             ents = file_path.split("/")
             out_path = os.path.join(self._config.DUMP_DIR, *ents)
 
-            contents = ff.get_file_contents(inode)
+            try:
+                fd = open(out_path, "wb")
+            except IOError, e:
+                debug.warning("Unable to process file: %s : %s" % (out_path, str(e)))
+                return
+                
+            for page in ff.get_file_contents(inode):
+                fd.write(page)  
             
-            fd = open(out_path, "wb")
-            fd.write(contents)
             fd.close()
-
+            
     def _make_path(self, file_path, file_dentry):
         inode = file_dentry.d_inode
         
@@ -95,9 +100,9 @@ class linux_recover_filesystem(linux_common.AbstractLinuxCommand):
 
             num_files = num_files + 1
 
-        yield num_files, 0, 0
+        yield num_files
 
     def render_text(self, outfd, data):
-        for (num_files, real_bytes, total_bytes) in data: 
-            outfd.write("Recovered %d bytes of %d bytes in %d files\n" % (real_bytes, total_bytes, num_files))
+        for (num_files) in data: 
+            outfd.write("Recovered %d files\n" % num_files)
 
