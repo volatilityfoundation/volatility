@@ -26,6 +26,7 @@
 """
 
 import volatility.obj as obj
+import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsmod  as linux_lsmod
 
@@ -246,6 +247,12 @@ class linux_check_inline_kernel(linux_common.AbstractLinuxCommand):
                     yield (name, member, hook_type, address)
          
     def _check_inetsw(self, modules):
+        try:
+            self.addr_space.profile.get_obj_offset("inet_protosw", "list")
+        except KeyError:
+            debug.warning("You are using an old Linux profile. Please recreate the profile using the latest Volatility version.")
+            return
+
         proto_members = self.profile.types['proto_ops'].keywords["members"].keys()       
         proto_members.remove('owner')
         proto_members.remove('family')
@@ -283,9 +290,7 @@ class linux_check_inline_kernel(linux_common.AbstractLinuxCommand):
         modules  = linux_lsmod.linux_lsmod(self._config).get_modules()       
  
         funcs = [self._check_file_op_pointers, self._check_afinfo, self._check_inetsw]
-        #funcs = [self._check_known_functions]
         
-
         for func in funcs:
             for hook_info in func(modules):
                 yield hook_info
