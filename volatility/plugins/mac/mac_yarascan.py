@@ -58,7 +58,7 @@ class mac_yarascan(malfind.YaraScan):
     
         ## we need this module imported
         if not has_yara:
-            debug.error("Please install Yara from code.google.com/p/yara-project")
+            debug.error("Please install Yara from https://plusvic.github.io/yara/")
             
         ## leveraged from the windows yarascan plugin
         rules = self._compile_rules()
@@ -81,14 +81,14 @@ class mac_yarascan(malfind.YaraScan):
       
             for hit, address in scanner.scan(start_offset = kernel_start):
                 yield (None, address, hit, 
-                        scanner.address_space.zread(address, 64))
+                        scanner.address_space.zread(address - self._config.REVERSE, self._config.SIZE))
         else:
             # Scan each process memory block 
             for task in pstasks.mac_tasks(self._config).calculate():
                 scanner = MapYaraScanner(task = task, rules = rules)
                 for hit, address in scanner.scan():
                     yield (task, address, hit, 
-                            scanner.address_space.zread(address, 64))
+                            scanner.address_space.zread(address - self._config.REVERSE, self._config.SIZE))
     
     def render_text(self, outfd, data):
         for task, address, hit, buf in data:
