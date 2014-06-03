@@ -32,6 +32,36 @@ import volatility.plugins.linux.pslist as linux_pslist
 class linux_mount(linux_common.AbstractLinuxCommand):
     """Gather mounted fs/devices"""
 
+    def _parse_mnt(self, mnt, ns, fs_types):
+        dev_name = mnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
+
+        if not dev_name.is_valid() or len(dev_name) < 2:
+            return
+
+        fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
+
+        if not fstype.is_valid():
+            return 
+
+        if str(fstype) not in fs_types:
+            return 
+
+        path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
+
+        if path == []:
+            return
+
+        mnt_string = self._calc_mnt_string(mnt)
+
+        if (mnt.mnt_flags & 0x40) or (mnt.mnt_sb.s_flags & 0x1):
+            rr = "ro"
+        else:
+            rr = "rw"
+        
+        print "dev: %x" % mnt.mnt_devname.v()
+
+        yield mnt.mnt_sb, dev_name, path, fstype, rr, mnt_string
+
     def calculate(self):
         linux_common.set_plugin_members(self)
         mntptr = obj.Object("Pointer", offset = self.addr_space.profile.get_symbol("mount_hashtable"), vm = self.addr_space)
@@ -52,6 +82,8 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
         fs_types = self._get_filesystem_types()
 
+        seen = {}
+
         # get each list_head out of the array
         for outerlist in mnt_list:
 
@@ -59,7 +91,19 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                 continue
 
             for mnt in outerlist.list_of_type(mnttype, "mnt_hash"):
-                yield (mnt, ns, fs_types)
+                for (mnt_sb, dev_name, path, fstype, rr, mnt_string) in self._parse_mnt(mnt, ns, fs_types):
+                    if mnt_sb.v() not in seen:
+                        yield (mnt_sb, dev_name, path, fstype, rr, mnt_string)
+                        seen[mnt_sb.v()] = 1
+
+    def _calc_mnt_string(self, mnt):
+        ret = ""
+
+        for mflag in linux_flags.mnt_flags:
+            if mflag & mnt.mnt_flags:
+                ret = ret + linux_flags.mnt_flags[mflag]
+
+        return ret
 
     def _get_filesystem_types(self):
         all_fs = {}
@@ -76,54 +120,8 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
         return all_fs
 
-    def parse_mnt(self, data):
-        '''
-        We use seen for 3.x kernels with mount namespaces 
-        The same mount can be in multiple namespaces and we do not want to repeat output
-        '''
-        for (mnt, ns, fs_types) in data:
-
-            dev_name = mnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
-
-            if not dev_name.is_valid() or len(dev_name) < 2:
-                continue
-
-            fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
-
-            if not fstype.is_valid():
-                continue
-
-            if str(fstype) not in fs_types:
-                continue
-
-            path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
-
-            if path == []:
-                continue
-
-            mnt_string = self.calc_mnt_string(mnt)
-
-            if (mnt.mnt_flags & 0x40) or (mnt.mnt_sb.s_flags & 0x1):
-                rr = "ro"
-            else:
-                rr = "rw"
-
-            if not ns or ns == mnt.mnt_ns:
-                yield mnt.mnt_sb, dev_name, path, fstype, rr, mnt_string
-
     def render_text(self, outfd, data):
-        data = self.parse_mnt(data)
-
         for (_sb, dev_name, path, fstype, rr, mnt_string) in data:
             outfd.write("{0:25s} {1:35s} {2:12s} {3:2s}{4:64s}\n".format(dev_name, path, fstype, rr, mnt_string))
 
-    def calc_mnt_string(self, mnt):
-
-        ret = ""
-
-        for mflag in linux_flags.mnt_flags:
-            if mflag & mnt.mnt_flags:
-                ret = ret + linux_flags.mnt_flags[mflag]
-
-        return ret
 
