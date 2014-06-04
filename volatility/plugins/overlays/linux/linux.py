@@ -895,67 +895,49 @@ class module_struct(obj.CType):
 
         return params
 
+    def get_symbols(self):
+        ret_syms = []
+
+        if self.obj_vm.profile.metadata.get('arch').lower() == 'x64':
+            struct_name = "elf64_sym"
+        else:
+            struct_name = "elf32_sym"
+
+        syms = obj.Object(theType = "Array", targetType = struct_name, offset = self.symtab, count = self.num_symtab + 1, vm = self.obj_vm)           
+
+        for sym_struct in syms:
+            sym_name_addr = self.strtab + sym_struct.st_name
+
+            sym_name = self.obj_vm.read(sym_name_addr, 64)
+            if not sym_name:
+                continue
+            
+            idx = sym_name.index("\x00")
+            if idx != -1:
+                sym_name = sym_name[:idx]
+
+            if sym_name != "":
+                ret_syms.append((str(sym_name), sym_struct.st_value.v()))
+
+        return ret_syms
+
     def get_symbol_for_address(self, wanted_address):
         ret = None
 
-        syms = obj.Object(theType = "Array", targetType = "elf32_sym", offset = self.symtab, count = self.num_symtab + 1, vm = self.obj_vm)           
-
-        for sym_struct in syms:
-            if sym_struct.st_value == wanted_address:
-                sym_name_addr = self.strtab + sym_struct.st_name
-
-                sym_name = self.obj_vm.read(sym_name_addr, 64)
-                if not sym_name:
-                    continue
-                
-                idx = sym_name.index("\x00")
-                if idx != -1:
-                    sym_name = sym_name[:idx]
-
+        for (sym_name, sym_addr) in self.get_symbols():
+            if sym_addr == wanted_address:
                 ret = sym_name
-
                 break
 
         return ret    
 
-    def get_symbols(self):
-        ret_syms = []
-
-        syms = obj.Object(theType = "Array", targetType = "elf32_sym", offset = self.symtab, count = self.num_symtab + 1, vm = self.obj_vm)           
-
-        for sym_struct in syms:
-            sym_name_addr = self.strtab + sym_struct.st_name
-
-            sym_name = self.obj_vm.read(sym_name_addr, 64)
-            if not sym_name:
-                continue
-            
-            idx = sym_name.index("\x00")
-            if idx != -1:
-                sym_name = sym_name[:idx]
-
-            ret_syms.append((sym_name, sym_struct.st_value))
-
-        return ret_syms
-
     def get_symbol(self, wanted_sym_name):
         ret = None
 
-        syms = obj.Object(theType = "Array", targetType = "elf64_sym", offset = self.symtab, count = self.num_symtab + 1, vm = self.obj_vm)           
-
-        for sym_struct in syms:
-            sym_name_addr = self.strtab + sym_struct.st_name
-
-            sym_name = self.obj_vm.read(sym_name_addr, 64)
-            if not sym_name:
-                continue
-            
-            idx = sym_name.index("\x00")
-            if idx != -1:
-                sym_name = sym_name[:idx]
-
-            if wanted_sym_name == str(sym_name):
-                ret = sym_struct.st_value
+        for (sym_name, sym_addr) in self.get_symbols():
+            if wanted_sym_name == sym_name:
+                ret = sym_addr
+                break
 
         return ret       
 
