@@ -82,6 +82,31 @@ class linux_list_promisc(linux_common.AbstractLinuxCommand):
 
         return (task, fd, inode.i_ino)
 
+    def __walk_hlist_node(self, node):    
+        seen = set()
+
+        offset = self.addr_space.profile.get_obj_offset("sock_common", "skc_node")
+
+        nxt = node.next.dereference()
+        
+        while nxt.is_valid() and nxt.obj_offset not in seen:
+            ## Instantiate the object
+            item = obj.Object(obj_type, offset = nxt.obj_offset - offset, vm = self.addr_space)
+
+            seen.add(nxt.obj_offset)
+
+            yield item
+
+            nxt = nxt.next.dereference()
+
+    def _walk_packet_sklist(self):
+        sklist_addr = self.addr_space.profile.get_symbol("packet_sklist")
+    
+        sklist = obj.Object("hlist_head", offset = sklist_addr, vm = self.addr_space)
+
+        for sk in self.__walk_hlist_node(sklist.first):
+            yield self._SOCK_INODE(sk.sk_socket)
+
     def calculate(self):
         linux_common.set_plugin_members(self)
 
@@ -89,7 +114,8 @@ class linux_list_promisc(linux_common.AbstractLinuxCommand):
 
         # old kernels before namespaces
         if sym_addr:
-            print "oldddddddddd"
+            for inode in self._walk_packet_sklist():
+                yield self._find_proc_for_inode(inode) 
         else:
             for inode in self._walk_net_spaces():
                 yield self._find_proc_for_inode(inode)
