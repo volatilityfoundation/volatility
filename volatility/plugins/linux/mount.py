@@ -58,8 +58,6 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         else:
             rr = "rw"
         
-        print "dev: %x" % mnt.mnt_devname.v()
-
         yield mnt.mnt_sb, dev_name, path, fstype, rr, mnt_string
 
     def calculate(self):
