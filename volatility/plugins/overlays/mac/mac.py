@@ -389,6 +389,37 @@ class proc(obj.CType):
                         yield offset + hit
                 offset += min(to_read, scan_blk_sz)
 
+
+    def search_process_memory_rw_nofile(self, s):
+        """Search process memory. 
+
+        @param s: a list of strings like ["one", "two"]
+        """
+
+        # Allow for some overlap in case objects are 
+        # right on page boundaries 
+        overlap = 1024
+
+        scan_blk_sz = 1024 * 1024 * 10
+        addr_space = self.get_process_address_space()
+
+        for vma in self.get_proc_maps():
+            if vma.get_perms() != "rw-" or vma.get_path() != "":
+                continue
+
+            offset = vma.links.start
+            out_of_range = vma.links.start + (vma.links.end - vma.links.start)
+            while offset < out_of_range:
+                # Read some data and match it.
+                to_read = min(scan_blk_sz + overlap, out_of_range - offset)
+                data = addr_space.zread(offset, to_read)
+                if not data:
+                    break
+                for x in s:
+                    for hit in utils.iterfind(data, x):
+                        yield offset + hit
+                offset += min(to_read, scan_blk_sz)
+
     def get_arguments(self):
         proc_as = self.get_process_address_space()
 
