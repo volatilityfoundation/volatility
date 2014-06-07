@@ -175,9 +175,34 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
                     if not mod_re.search(str(module.name)):
                         continue
                 yield module
+    
+    def _get_header_64(self, load_addr, sect_hdr_offset, num_sects):
+        e_ident     = "\x7f\x45\x4c\x46\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        e_type      = "\x01\x00" # relocateble
+        e_machine   = "\x03\x00"
+        e_version   = "\x01\x00\x00\x00"
+        e_entry     = "\x00" * 8
+        e_phoff     = "\x00" * 8
+        e_shoff     = struct.pack("<Q", sect_hdr_offset)
+        e_flags     = "\x00\x00\x00\x00"
+        e_ehsize    = "\x40\x00"
+        e_phentsize = "\x00\x00"
+        e_phnum     = "\x00\x00"
+        e_shentsize = "\x40\x00"
+        e_shnum     = struct.pack("<H", num_sects + 1) # this works as we stick the seciton we create at the end
+        e_shstrndx  = struct.pack("<H", num_sects)
 
-    def _get_header(self, load_addr, sect_hdr_offset, num_sects):
-        e_ident     = "\x7f\x45\x4c\x46\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00" # this needs to fix for 32 bit
+        header = e_ident + e_type + e_machine + e_version + e_entry + e_phoff + e_shoff + e_flags
+    
+        header = header + e_ehsize + e_phentsize + e_phnum + e_shentsize + e_shnum + e_shstrndx
+
+        if len(header) != 64:
+            debug.error("BUG: ELF header not bytes. %d" % len(header))
+
+        return header
+
+    def _get_header_32(self, load_addr, sect_hdr_offset, num_sects):
+        e_ident     = "\x7f\x45\x4c\x46\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         e_type      = "\x01\x00" # relocateble
         e_machine   = "\x03\x00"
         e_version   = "\x01\x00\x00\x00"
@@ -201,6 +226,7 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
 
         return header
 
+    # checked
     def _build_sections_list(self, module):
         sections = []
         
@@ -226,8 +252,11 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
     # 4) with the final list of name,address,size we can read the sections and populate the info in the file
     def _parse_sections(self, module):
         (orig_sections, symtab_idx) = self._build_sections_list(module)
-        
-        sect_bytes = 52
+       
+        if self.addr_space.profile.metadata.get('memory_model', '32bit') == '64bit':
+            sect_bytes = 64
+        else:
+            sect_bytes = 52
 
         updated_sections = []
         tmp_ents = {}
@@ -251,8 +280,6 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
                 str_section_data = self._fix_sym_table(module, sect_sa)
                 str_size = len(str_section_data)
                 size = str_size
-                #address = 0 
-                #print "%x | %8x | %d | %s" % (address, size, sort_idx, name)
             else:
                 try:
                     next_addr = addrs[sort_idx+1]
@@ -279,7 +306,6 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
             if name == ".symtab":
                 print "FIXING 2"
                 size         = str_size
-                #address      = 0
                 section_data = str_section_data
             else:  
                 section_data = module.obj_vm.zread(address, size)
@@ -369,20 +395,44 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
 
         return lnk
 
-    def _calc_entsize(self, name, sect_type):
+    def _calc_entsize(self, name, sect_type, bits):
         # looking for RELA sections
         if name.find(".rela.") != -1: 
             info = 24
 
         elif sect_type == 2: # symtab
-            info = 16
-
+            if bits == 32:
+                info = 16
+            else:
+                info = 24
         else:
             info = 0
 
         return info
+    
+    def _make_sect_header_64(self, name, address, size, file_off, strtab_idx, symtab_idx):
+        int_sh_type = self._calc_sect_type(name)
 
-    def _make_sect_header(self, name, address, size, file_off, strtab_idx, symtab_idx):
+        sh_name       = struct.pack("<I", self._calc_sect_name_idx(name))
+        sh_type       = struct.pack("<I", int_sh_type)
+        sh_flags      = struct.pack("<Q", self._calc_sect_flags(name))
+        sh_addr       = struct.pack("<Q", address)
+        sh_offset     = struct.pack("<Q", file_off)
+        sh_size       = struct.pack("<Q", size)
+        sh_link       = struct.pack("<I", self._calc_link(name, strtab_idx, symtab_idx, int_sh_type))
+        sh_info       = "\x00" * 4 
+        sh_addralign  = "\x01\x00\x00\x00\x00\x00\x00\x00"
+        sh_entsize    = struct.pack("<Q", self._calc_entsize(name, int_sh_type, 64))
+   
+        data = sh_name + sh_type + sh_flags + sh_addr + sh_offset + sh_size
+        data = data + sh_link + sh_info + sh_addralign + sh_entsize
+ 
+        if len(data) != 64:
+            debug.error("Broken section building! %d" % len(data))
+
+        return data
+
+    def _make_sect_header_32(self, name, address, size, file_off, strtab_idx, symtab_idx):
         #print "trying: %-30s | %.16x | %.8x | %d" % (name, address, size, file_off)
 
         int_sh_type = self._calc_sect_type(name)
@@ -396,7 +446,7 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
         sh_link       = struct.pack("<I", self._calc_link(name, strtab_idx, symtab_idx, int_sh_type))
         sh_info       = "\x00" * 4 
         sh_addralign  = "\x01\x00\x00\x00"
-        sh_entsize    = struct.pack("<I", self._calc_entsize(name, int_sh_type))
+        sh_entsize    = struct.pack("<I", self._calc_entsize(name, int_sh_type, 32))
    
         data = sh_name + sh_type + sh_flags + sh_addr + sh_offset + sh_size
         data = data + sh_link + sh_info + sh_addralign + sh_entsize
@@ -406,8 +456,8 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
 
         return data
 
-    def _null_sect_hdr(self):
-        return "\x00" * 40 
+    def _null_sect_hdr(self, sz):
+        return "\x00" * sz
 
     # the shstrtab section is "\x00\x2e" + section name for each section
     def _calc_string_data(self, module):
@@ -438,9 +488,18 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
 
         print "walking %d syms to be fixed...." % module.num_symtab
 
+        if self.addr_space.profile.metadata.get('memory_model', '32bit') == '64bit':
+            sym_type     = "elf64_sym"
+            st_value_fmt = "<Q"
+            st_size_fmt  = "<Q"
+        else:
+            sym_type     = "elf32_sym"
+            st_value_fmt = "<I"
+            st_size_fmt  = "<I"
+              
         val_map      = {}
         name_idx_map = {}
-        syms = obj.Object(theType="Array", targetType="elf32_sym", count=module.num_symtab, vm = module.obj_vm, offset = module.symtab)
+        syms = obj.Object(theType="Array", targetType=sym_type, count=module.num_symtab, vm = module.obj_vm, offset = module.symtab)
         for (e, sym) in enumerate(syms):
             if sym.st_value > 0 and not module.obj_vm.profile.get_symbol_by_address("kernel", sym.st_value):
                 val_map[sym.st_value.v()] = self._find_sec(sections_info, sym.st_value) 
@@ -449,7 +508,7 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
         for (i, sect) in enumerate(module.get_sections()):
             name_idx_map[str(sect.sect_name)] = (i + 1, sect.address) ### account for null segment
       
-        syms = obj.Object(theType="Array", targetType="elf32_sym", count=module.num_symtab, vm = module.obj_vm, offset = module.symtab)
+        syms = obj.Object(theType="Array", targetType=sym_type, count=module.num_symtab, vm = module.obj_vm, offset = module.symtab)
         for sym in syms:
             # fix absolute addresses  
             st_value_int = sym.st_value.v()
@@ -465,7 +524,7 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
                 st_value_sub  = st_value_int
                 st_value_full = st_value_int
             
-            st_value = struct.pack("<I", st_value_sub)
+            st_value = struct.pack(st_value_fmt, st_value_sub)
 
             #### fix bindings ####
                 
@@ -518,14 +577,17 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
             # ones that aren't mangled
             st_name  = struct.pack("<I", sym.st_name)
             st_other = struct.pack("B", sym.st_other)
-            st_size  = struct.pack("<I", sym.st_size)        
+            st_size  = struct.pack(st_size_fmt, sym.st_size)        
    
-            # 64 bit
-            #sec_all = st_name + st_info + st_other + st_shndx + st_value + st_size
+            if sym_type == "elf64_sym": 
+                sec_all = st_name + st_info + st_other + st_shndx + st_value + st_size
+                sec_len = 24 
 
-            sec_all = st_name + st_value + st_size + st_info + st_other + st_shndx
+            else:
+                sec_all = st_name + st_value + st_size + st_info + st_other + st_shndx
+                sec_len = 16
 
-            if len(sec_all) != 16:
+            if len(sec_all) != sec_len:
                 debug.error("Invalid section length: %d" % len(sec_all))
 
             all_sym_data = all_sym_data + sec_all        
@@ -535,7 +597,18 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
     def _get_module_data(self, module):
         (updated_sections, symtab_idx, load_addr) = self._parse_sections(module)
         
-        section_headers = self._null_sect_hdr()
+        if self.addr_space.profile.metadata.get('memory_model', '32bit') == '64bit':
+            hdr_sz = 64
+            sect_sz = 64
+            _get_header       = self._get_header_64
+            _make_sect_header = self._make_sect_header_64
+        else:
+            hdr_sz = 52
+            _get_header       = self._get_header_32
+            _make_sect_header = self._make_sect_header_32
+            sect_sz = 40
+
+        section_headers = self._null_sect_hdr(sect_sz)
         section_data    = ""
 
         strtab_idx = len(updated_sections) 
@@ -543,7 +616,7 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
         print "******************"
 
         for (i, (name, address, size, file_off, sect_data)) in enumerate(updated_sections):
-            section_headers = section_headers + self._make_sect_header(name, address, size, file_off, strtab_idx, symtab_idx)
+            section_headers = section_headers + _make_sect_header(name, address, size, file_off, strtab_idx, symtab_idx)
             
             print "added section %30s with size %6d file offset %6d len(section_data): %6d"  % (name, size, file_off, len(section_data))
 
@@ -552,7 +625,6 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
             last_file_off = file_off
             last_sec_sz   = len(sect_data)
 
-
             if len(sect_data) != size:
                 print "BROKEN SIZE"
                 exit()
@@ -560,18 +632,17 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
         # we need this section, but its not in memory
         # we can manually create it though and add it to our file
         sdata = self._calc_string_data(module)
-        section_headers = section_headers + self._make_sect_header(".shstrtab", 0, len(sdata), last_file_off + last_sec_sz, strtab_idx, symtab_idx)
+        section_headers = section_headers + _make_sect_header(".shstrtab", 0, len(sdata), last_file_off + last_sec_sz, strtab_idx, symtab_idx)
         section_data = section_data + sdata
 
         # we stick it at the end
         num_sects  = len(updated_sections) + 1
-
-        header = self._get_header(load_addr - 52, 52 + len(section_data), num_sects)
+            
+        header = _get_header(load_addr - hdr_sz, hdr_sz + len(section_data), num_sects)
 
         return header + section_data + section_headers 
 
     def render_text(self, outfd, data):
-    
         if not self._config.DUMP_DIR:
             debug.error("You must supply a --dump-dir output directory")
         
