@@ -72,9 +72,8 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
     def _get_sbs(self):
         ret = []
-        mnts = linux_mount.linux_mount(self._config).calculate()
-
-        for (sb, _dev_name, path, fstype, _rr, _mnt_string) in linux_mount.linux_mount(self._config).parse_mnt(mnts):
+        
+        for (sb, _dev_name, path, fstype, _rr, _mnt_string) in linux_mount.linux_mount(self._config).calculate():
             ret.append((sb, path))
 
         return ret
