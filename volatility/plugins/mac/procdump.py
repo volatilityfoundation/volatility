@@ -65,7 +65,7 @@ class mac_procdump(mac_tasks.mac_tasks):
             else:
                 pad = ""
 
-            print "getting for segment: %s | %x | %d" % (seg.segname, seg.vmaddr, seg.filesize)
+            #print "getting for segment: %s | %x | %d" % (seg.segname, seg.vmaddr, seg.filesize)
             buffer = buffer + pad + proc_as.zread(seg.vmaddr, seg.filesize)
  
         return (text_map.start, buffer)
