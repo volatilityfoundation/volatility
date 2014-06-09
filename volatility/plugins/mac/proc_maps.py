@@ -49,11 +49,15 @@ class mac_proc_maps(pstasks.mac_tasks):
                           ("Map Name", "")])
 
         for (proc, map) in data:
+            path = map.get_path()
+            if path == "":
+                path = map.get_special_path()
+
             self.table_row(outfd, 
                            str(proc.p_pid), proc.p_comm, 
                            map.links.start, 
                            map.links.end, 
                            map.get_perms(), 
-                           map.get_path())
+                           path)
 
 

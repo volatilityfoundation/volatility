@@ -655,6 +655,25 @@ class vm_map_entry(obj.CType):
 
         return perms
 
+
+    # used to find heap, stack, etc.
+    def get_special_path(self):
+        # check the heap
+        ret = ""
+
+        for i in [1, 2, 3, 4, 6, 7, 8, 9]:
+            if self.alias == i:
+                ret = "[heap]"
+                break
+
+        if ret != "":
+            return ret
+
+        if self.alias == 30:
+            ret = "[stack]"
+
+        return ret 
+
     def get_path(self):
         vnode = self.get_vnode()
     
