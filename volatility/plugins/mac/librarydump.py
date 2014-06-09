@@ -93,7 +93,7 @@ class mac_librarydump(mac_tasks.mac_tasks):
                 addresses = [self._config.BASE]
             else:
                 for map in proc.get_dyld_maps():        
-                    addresses.append(map.start)
+                    addresses.append(map.imageLoadAddress)
  
             for address in addresses:
                 file_path = self._write_file(proc, address)
