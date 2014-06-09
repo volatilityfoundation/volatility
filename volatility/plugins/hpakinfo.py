@@ -46,8 +46,6 @@ class HPAKExtract(HPAKInfo):
         if not self._config.OUTPUT_FILE:
             debug.error("You must supply --output-file")
             
-        header = data.get_header()
-
-        data.convert_to_raw(outfd)
+        compressed, uncompressed = data.convert_to_raw(outfd)
         
-        print "Done."
+        print "Decompressed {0} bytes into {1} bytes".format(compressed, uncompressed)

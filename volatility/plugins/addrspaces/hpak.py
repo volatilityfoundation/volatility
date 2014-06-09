@@ -97,6 +97,7 @@ class HPAKAddressSpace(standard.FileAddressSpace):
         
         d = zlib.decompressobj(16 + zlib.MAX_WBITS)
         
+        uncompressed_size = 0
         chunk_size = 4096
         chunks = self.physmem.Length / chunk_size
         
@@ -107,10 +108,16 @@ class HPAKAddressSpace(standard.FileAddressSpace):
             return buffer
         
         for i in range(chunks):
-            outfd.write(get_chunk(self.physmem.Offset + i * chunk_size, chunk_size))
-            yield i 
+            data = get_chunk(self.physmem.Offset + i * chunk_size, chunk_size)
+            len_data = len(data)
+            if len_data == 0:
+                break
+            uncompressed_size += len_data 
+            outfd.write(data)
             
         leftover = self.physmem.Length % chunk_size
         
         if leftover > 0:
             outfd.write(get_chunk(self.physmem.Offset + i * chunk_size, leftover))
+
+        return (chunk_size * i) + leftover, uncompressed_size
