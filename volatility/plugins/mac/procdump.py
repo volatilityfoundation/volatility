@@ -50,10 +50,14 @@ class mac_procdump(mac_tasks.mac_tasks):
                 text_map = map
                 break
 
+        if text_map == None:
+            return (0, "")
+
         m = obj.Object("macho_header", offset = text_map.start, vm = proc_as)
 
         buffer = ""
         last_map = None
+        first_vmaddr = 0
 
         for seg in m.segments():
             if str(seg.segname) == "__PAGEZERO":
@@ -65,8 +69,15 @@ class mac_procdump(mac_tasks.mac_tasks):
             else:
                 pad = ""
 
-            #print "getting for segment: %s | %x | %d" % (seg.segname, seg.vmaddr, seg.filesize)
-            buffer = buffer + pad + proc_as.zread(seg.vmaddr, seg.filesize)
+            vstart = seg.vmaddr
+            if first_vmaddr == 0:
+                first_vmaddr = seg.vmaddr
+
+            if vstart < text_map.start:
+                vstart = vstart + text_map.start - first_vmaddr
+
+            print "getting for segment: %s | %x | %x | %x | %d" % (seg.segname, vstart, seg.vmaddr, text_map.start, seg.filesize)
+            buffer = buffer + pad + proc_as.zread(vstart, seg.filesize)
  
         return (text_map.start, buffer)
  
@@ -110,6 +121,9 @@ class mac_procdump(mac_tasks.mac_tasks):
         for proc in data:
             (exe_address, exe_contents) = self._get_executable_contents(proc)
             
+            if exe_contents == "":
+                continue
+
             file_name = "task.{0}.{1:#x}.dmp".format(proc.p_pid, exe_address)
             file_path = os.path.join(self._config.DUMP_DIR, file_name)
 
