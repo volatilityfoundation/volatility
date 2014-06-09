@@ -48,7 +48,11 @@ class DWARFParser(object):
         """Lookup anonymouse member and replace it with a well known one."""
         # Reference to another type
         if isinstance(memb, str) and memb.startswith('<'):
-            resolved = self.id_to_name[memb[1:]]
+
+            try:
+                resolved = self.id_to_name[memb[1:]]
+            except:
+                resolved = 0 
 
             ret = self.resolve(resolved)
 
@@ -260,7 +264,11 @@ class DWARFParser(object):
 
         elif kind == 'TAG_member' and parent_kind == 'TAG_class_type':
             name = data.get('AT_name', "__unnamed_%s" % statement_id)
-            off = int(data['AT_data_member_location'])
+
+            try:
+                off = int(data['AT_data_member_location'])
+            except:
+                off = 0
 
             if 'AT_bit_size' in data and 'AT_bit_offset' in data:
                 full_size = int(data['AT_byte_size'])*8
