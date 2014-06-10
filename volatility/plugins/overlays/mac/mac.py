@@ -201,6 +201,12 @@ class VolatilityMacIntelValidAS(obj.VolatilityMagic):
             yield False
 
 class vnode(obj.CType):
+    def is_dir(self):
+        return self.v_type == 2
+
+    def is_reg(self):
+        return self.v_type == 1
+
     def _do_calc_path(self, ret, vnodeobj, vname):
         if vnodeobj == None:
             return 
@@ -232,6 +238,23 @@ class vnode(obj.CType):
                 ret = "/" + ret
 
         return ret
+
+    def get_contents(self):
+        moc  = self.v_un.vu_ubcinfo.ui_control.moc_object
+        memq = moc.memq 
+
+        cur = memq.m("next").dereference_as("vm_page")
+
+        file_size = self.v_un.vu_ubcinfo.ui_size
+        
+        phys_as = utils.load_as(self.obj_vm.get_config(), astype = 'physical')
+        
+        while cur and cur.is_valid() and cur.offset < file_size:
+            buf = phys_as.zread(cur.phys_page * 4096, 4096)              
+
+            yield (cur.offset.v(), buf)
+ 
+            cur = cur.listq.next.dereference_as("vm_page")
 
 class fileglob(obj.CType):
     

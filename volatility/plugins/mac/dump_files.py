@@ -49,36 +49,9 @@ class mac_dump_file(common.AbstractMacCommand):
         if not vnode_off:
             debug.error("You must specificy a vnode address (-q/--file-offset) from mac_list_files")
 
-        fd = open(outfile, "wb")
-
         vnode = obj.Object("vnode", offset = vnode_off, vm = self.addr_space)
 
-        moc  = vnode.v_un.vu_ubcinfo.ui_control.moc_object
-        memq = moc.memq 
-
-        cur = memq.next.dereference_as("vm_page")
-
-        wrote = 0
-
-        file_size = vnode.v_un.vu_ubcinfo.ui_size
-
-        #print "file size: %d %d" % (vnode.v_un.vu_ubcinfo.ui_size, vnode.v_un.vu_ubcinfo.ui_size/4096)
-        #print "pmapped: %d wire count: %d active: %d inactive: %d offset: %d" % (cur.pmapped, cur.wire_count, cur.active, cur.inactive, cur.offset)
-
-        while cur and cur.is_valid() and cur.offset < file_size:
-            #print "pmapped: %d wire count: %d active: %d inactive: %d offset: %d" % (cur.pmapped, cur.wire_count, cur.active, cur.inactive, cur.offset)
-            # FIXME -- use the proper load_as call
-            buf = self.addr_space.base.zread(cur.phys_page * 4096, 4096)              
-
-            fd.seek(cur.offset.v())
-
-            fd.write(buf) 
-            
-            wrote = wrote + 4096
-
-            cur = cur.listq.next.dereference_as("vm_page")
-
-        fd.close()
+        wrote = common.write_vnode_to_file(vnode, outfile)
 
         yield vnode_off, outfile, wrote
  

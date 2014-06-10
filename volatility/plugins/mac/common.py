@@ -122,3 +122,17 @@ def get_cpp_sym(name, profile):
             return addr
 
     return None
+
+def write_vnode_to_file(vnode, file_path):
+    fd = open(file_path, "wb")
+    wrote = 0 
+
+    for (offset, page) in vnode.get_contents():
+        fd.seek(offset)
+        fd.write(page) 
+        wrote = wrote + len(page)            
+
+    fd.close()
+
+    return wrote
+
