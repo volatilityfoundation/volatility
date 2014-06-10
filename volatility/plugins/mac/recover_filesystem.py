@@ -42,8 +42,8 @@ class mac_recover_filesystem(mac_common.AbstractMacCommand):
 
     def _fix_metadata(self, vnode, path):
         if vnode and vnode.is_valid():
+            # currently can only fix metadata of HFS files
             if vnode.v_tag != 16:
-                print "skipping non-HFS vnode: %s" % path
                 return
             
             cnode = vnode.v_data.dereference_as("cnode")
@@ -105,7 +105,7 @@ class mac_recover_filesystem(mac_common.AbstractMacCommand):
                 if self._write_file(vnode, path):
                     self._fix_metadata(vnode, path)
 
-            num_files = num_files + 1
+                num_files = num_files + 1
 
         yield num_files
 
