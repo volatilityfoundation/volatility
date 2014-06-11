@@ -103,7 +103,7 @@ class mac_check_sysctl(common.AbstractMacCommand):
             if val == "INVALID -1":
                 continue
 
-            (is_known, module_name) = common.is_known_address_name(sysctl.oid_handler, kernel_symbol_addresses, kmods)
+            (is_known, module_name) = common.is_known_address_name(sysctl.oid_handler.v(), kernel_symbol_addresses, kmods)
             
             if is_known:
                 status = "OK"
