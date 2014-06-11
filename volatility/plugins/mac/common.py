@@ -58,12 +58,10 @@ def is_known_address_name(handler, kernel_symbol_addresses, kmods):
     good = 0 
     module = "UNKNOWN"
 
-    handler = handler.v()
-
     if handler in kernel_symbol_addresses:
         good = 1     
         module = "__kernel__"
-    else:
+    elif kmods != []:
         # see if the address fits in any of the known modules
         for (start, end, name) in kmods:
             if start <= handler <= end:
@@ -89,6 +87,16 @@ def is_64bit_capable(addr_space):
         ret = True
 
     return ret
+
+def get_kernel_function_addrs(obj_ref):
+    import volatility.plugins.mac.lsmod as lsmod
+    
+    kernel_symbol_addresses = obj_ref.profile.get_all_function_addresses()
+
+   # TODO -- make sure more stringent and parse each kext in-memory so we only allow whitelist from .text
+    kmods = [(kmod.address, kmod.address + kmod.m('size'), kmod.name) for kmod in lsmod.mac_lsmod(obj_ref._config).calculate() if str(kmod.name) != "com.apple.kpi.unsupported"] 
+
+    return (kernel_symbol_addresses, kmods)
 
 def get_kernel_addrs(obj_ref):
     import volatility.plugins.mac.lsmod as lsmod
