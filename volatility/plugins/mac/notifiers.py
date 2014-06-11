@@ -83,7 +83,7 @@ class mac_notifiers(lsmod.mac_lsmod):
                 # this is the function that handles whatever the notification is for
                 # this should be only in the kernel or in one of the known IOKit 
                 # drivers for the specific kernel
-                handler = notifier.handler
+                handler = notifier.handler.v()
 
                 ch = notifier.compatHandler
 
