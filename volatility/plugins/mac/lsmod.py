@@ -30,6 +30,11 @@ import volatility.plugins.mac.common as common
 class mac_lsmod(common.AbstractMacCommand):
     """ Lists loaded kernel modules """
 
+    def __init__(self, config, *args, **kwargs):
+        common.AbstractMacCommand.__init__(self, config, *args, **kwargs)
+        
+        config.add_option('ADDR', short_option = 'a', default = None, help = 'Show info on VAD at or containing this address', action = 'store', type = 'int')
+
     def calculate(self):
         common.set_plugin_members(self)
 
@@ -38,7 +43,8 @@ class mac_lsmod(common.AbstractMacCommand):
         kmod = kmodaddr.dereference_as("kmod_info") 
 
         while kmod.is_valid():
-            yield kmod
+            if not self._config.ADDR or (kmod.address <= self._config.ADDR <= (kmod.address + kmod.m("size"))):
+                yield kmod
             kmod = kmod.next
 
     def render_text(self, outfd, data):
