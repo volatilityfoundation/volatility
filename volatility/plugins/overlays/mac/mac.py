@@ -918,36 +918,39 @@ def parse_dsymutil(data, module):
 
     want_lower = ["_IdlePML4"]        
 
+    type_map = {}
+    type_map[module] = {}
+
     arch = ""
 
     # get the system map
     for line in data.splitlines():
         ents = line.split()
 
-        match = re.search("\[.*?\)\s+[0-9A-Fa-z]+\s+\d+\s+([0-9A-Fa-f]+)\s'(\w+)'", line)
+        match = re.search("\[.*?\(([^\)]+)\)\s+[0-9A-Fa-z]+\s+\d+\s+([0-9A-Fa-f]+)\s'(\w+)'", line)
 
         if match:
-            (addr, name) = match.groups()
-
+            (sym_type, addr, name) = match.groups()
+            sym_type = sym_type.strip()
+    
             addr = int(addr, 16)
 
-            if addr == 0:
+            if addr == 0 or name == "":
                 continue
 
             if not name in sys_map[module]:
-                sys_map[module][name] = [(0, "default value")]
-
+                sys_map[module][name] = [(addr, sym_type)]
+                
             # every symbol is in the symbol table twice
             # except for the entries in 'want_lower', we need the higher address for all 
-            if name in sys_map[module]:
-                oldaddr = sys_map[module][name][0][0]
-    
-                if oldaddr > addr and name not in want_lower:
-                    pass
-                else:
-                    sys_map[module][name] = [(addr, "sym type?")]
-            else:
-                sys_map[module][name] = [(addr, "sym type?")]
+            oldaddr = sys_map[module][name][0][0]
+            if addr < oldaddr and name in want_lower:
+                sys_map[module][name] = [(addr, sym_type)]
+        
+            if not addr in type_map[module]:
+                type_map[module][addr] = (name, [sym_type])
+
+            type_map[module][addr][1].append(sym_type)
 
         elif line.find("Symbol table for") != -1:
             if line.find("i386") != -1:
@@ -958,23 +961,25 @@ def parse_dsymutil(data, module):
     if arch == "":
         return None
 
-    return arch, sys_map
+    return arch, sys_map, type_map
 
 def MacProfileFactory(profpkg):
 
     vtypesvar = {}
     sysmapvar = {}
+    typesmapvar = {}
 
     memmodel, arch = "32bit", "x86"
     profilename = os.path.splitext(os.path.basename(profpkg.filename))[0]
  
     for f in profpkg.filelist:
         if 'symbol.dsymutil' in f.filename.lower():
-            memmodel, sysmap = parse_dsymutil(profpkg.read(f.filename), "kernel")
+            memmodel, sysmap, typemap = parse_dsymutil(profpkg.read(f.filename), "kernel")
             if memmodel == "64bit":
                 arch = "x64"
             
             sysmapvar.update(sysmap)
+            typesmapvar.update(typemap)
             debug.debug("{2}: Found system file {0} with {1} symbols".format(f.filename, len(sysmapvar.keys()), profilename))
 
         elif f.filename.endswith(".vtypes"):
@@ -995,14 +1000,19 @@ def MacProfileFactory(profpkg):
 
 
         def __init__(self, *args, **kwargs):
-            self.sys_map = {}
-            self.shift_address = 0
-            self.sba_cache = {}
+            self._init_vars()
             obj.Profile.__init__(self, *args, **kwargs)
 
+        def _init_vars(self):
+            self.sys_map = {}
+            self.type_map = {}
+            self.shift_address = 0
+            self.sba_cache = {}
+            self.sbat_cache = {}
+            
         def clear(self):
             """Clear out the system map, and everything else"""
-            self.sys_map = {}
+            self._init_vars() 
             obj.Profile.clear(self)
 
         def reset(self):
@@ -1023,6 +1033,7 @@ def MacProfileFactory(profpkg):
         def load_sysmap(self):
             """Loads up the system map data"""
             self.sys_map.update(sysmapvar)
+            self.type_map.update(typesmapvar)
 
         # Returns a list of (name, addr)
         def get_all_symbols(self, module = "kernel"):
@@ -1041,7 +1052,7 @@ def MacProfileFactory(profpkg):
 
                     ret.append([name, addr])
             else:
-                debug.info("All symbols  requested for non-existent module %s" % module)
+                debug.info("All symbols requested for non-existent module %s" % module)
 
             return ret
 
@@ -1057,6 +1068,69 @@ def MacProfileFactory(profpkg):
                 ret[addr] = 1
 
             return ret
+
+        ############################################
+
+        # Returns a list of (name, addr)
+        def get_all_function_symbols(self, module = "kernel"):
+            """ Gets all the function tuples for the given module """
+            ret = []
+
+            symtable = self.type_map
+
+            if module in symtable:
+                mod = symtable[module]
+
+                for (addr, (name, _sym_types)) in mod.items():
+                    if self.shift_address and addr:
+                        addr = addr + self.shift_address
+
+                    ret.append([name, addr])
+            else:
+                debug.info("All symbols requested for non-existent module %s" % module)
+
+            return ret
+
+        def get_all_function_addresses(self, module = "kernel"):
+            """ Gets all the function addresses for the given module """
+            # returns a hash table for quick looks
+            # the main use of this function is to see if an address is known
+            ret = {}
+
+            symbols = self.get_all_function_symbols(module)
+
+            for (_name, addr) in symbols:
+                ret[addr] = 1
+
+            return ret
+
+        def _get_symbol_by_address_type(self, module, wanted_sym_address, wanted_sym_type):
+            ret = ""
+            
+            symtable = self.type_map
+
+            mod = symtable[module]
+
+            for (addr, (name, sym_types)) in mod.items():
+                for sym_type in sym_types:
+                    key = "%s|%x|%s" % (module, addr, sym_type)
+                    self.sbat_cache[key] = name
+
+                    if (wanted_sym_address == addr or wanted_sym_address == self.shift_address + addr) and wanted_sym_type == sym_type:
+                        ret = name
+                        break
+ 
+            return ret
+        
+        def get_symbol_by_address_type(self, module, sym_address, sym_type):
+            key = "%s|%x|%s" % (module, sym_address, sym_type)
+            if key in self.sbat_cache:
+                ret = self.sbat_cache[key]
+            else:
+                ret = self._get_symbol_by_address_type(module, sym_address, sym_type)
+            
+            return ret
+
 
         def _get_symbol_by_address(self, module, sym_address):
             ret = ""
@@ -1074,7 +1148,6 @@ def MacProfileFactory(profpkg):
                         ret = name
                         break
                     
-
             return ret
         
         def get_symbol_by_address(self, module, sym_address):
