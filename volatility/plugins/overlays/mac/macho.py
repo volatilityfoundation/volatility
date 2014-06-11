@@ -260,8 +260,6 @@ class macho_header(macho):
         
         sym_type = self._get_typename("nlist")
 
-        print "macho: %x symoff: %x" % (self.obj_offset, sym_cmd.symoff)
-
         sym_arr = obj.Object(theType="Array", targetType=sym_type, count=sym_cmd.nsyms, offset = self.obj_offset + sym_cmd.symoff, vm = self.obj_vm)
 
         for sym in sym_arr:
