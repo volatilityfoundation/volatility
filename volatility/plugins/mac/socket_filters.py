@@ -62,7 +62,7 @@ class mac_socket_filters(lsmod.mac_lsmod):
                 if not ptr:
                     continue   
  
-                (good, module) = common.is_known_address_name(ptr, kernel_symbol_addresses, kmods) 
+                (good, module) = common.is_known_address_name(ptr.v(), kernel_symbol_addresses, kmods) 
     
                 yield good, filter, filter_name, filter_socket, member, ptr, module
        
