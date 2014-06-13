@@ -162,7 +162,7 @@ class TimeLiner(common.AbstractWindowsCommand):
         config.remove_option("PID")
         config.remove_option("UNSAFE")
 
-        self.types = ["Process", "ImageDate", "Socket", "Shimcache", "Userassist", "IEHistory", "Registry", "Thread",
+        self.types = ["Process", "ImageDate", "Socket", "Shimcache", "Userassist", "IEHistory", "Thread",
                       "Symlink",
                       "_CM_KEY_BODY", "LoadTime", "TimeDateStamp", "_HBASE_BLOCK", "_CMHIVE", "EvtLog", "ImageDate"]
 
@@ -177,7 +177,7 @@ class TimeLiner(common.AbstractWindowsCommand):
         config.add_option("MACHINE", default = "",
                         help = "Machine name to add to timeline header")
         config.add_option("TYPE", default = "".join([",".join(x for x in sorted(self.types))]),
-                        help = "Type of artifact to use in timeline (default is all)")
+                        help = "Type of artifact to use in timeline (default is all, but \"Registry\")")
         config.add_option("HIGHLIGHT", default = None,
                         help = "Highlight potentially malicious items in xlsx output (experimental)")
 
