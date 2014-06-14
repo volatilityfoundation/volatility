@@ -54,7 +54,7 @@ class ImageCopy(commands.Command):
     def render_text(self, outfd, data):
         """Renders the file to disk"""
         if self._config.OUTPUT_IMAGE is None:
-            debug.error("Please provide an output-image filename")
+            debug.error("Please provide -O/--output-image=FILENAME")
 
         if os.path.exists(self._config.OUTPUT_IMAGE) and (os.path.getsize(self._config.OUTPUT_IMAGE) > 1):
             debug.error("Refusing to overwrite an existing file, please remove it before continuing")
