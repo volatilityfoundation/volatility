@@ -44,10 +44,10 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
         config.add_option('PID', short_option = 'p', default = None,
                           help = 'Operate on these Process IDs (comma-separated)',
                           action = 'store', type = 'str')
-                          	
-    	config.add_option('NAME', short_option = 'n', default = None, 
-    					  help = 'Operate on these process names (regex)', 
-    					  action = 'store', type = 'str')
+                            
+        config.add_option('NAME', short_option = 'n', default = None, 
+                          help = 'Operate on these process names (regex)', 
+                          action = 'store', type = 'str')
 
     def render_text(self, outfd, data):
         for task in data:
@@ -81,22 +81,28 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
         """
         
         if self._config.PID is not None:        
-			try:
-				pidlist = [int(p) for p in self._config.PID.split(',')]
-			except ValueError:
-				debug.error("Invalid PID {0}".format(self._config.PID))
-				
-			return [t for t in tasks if t.UniqueProcessId in pidlist]
+            try:
+                pidlist = [int(p) for p in self._config.PID.split(',')]
+            except ValueError:
+                debug.error("Invalid PID {0}".format(self._config.PID))
+
+            pids = [t for t in tasks if t.UniqueProcessId in pidlist]
+            if len(pids) == 0:
+                debug.error("Cannot find PID {0}. If its terminated or unlinked, use psscan and then supply --offset=OFFSET".format(self._config.PID))
+            return pids
             
         if self._config.NAME is not None:
-			try:
-				name_re = re.compile(self._config.NAME, re.I)
-			except re.error:
-				debug.error("Invalid name {0}".format(self._config.NAME))
+            try:
+                name_re = re.compile(self._config.NAME, re.I)
+            except re.error:
+                debug.error("Invalid name {0}".format(self._config.NAME))
             
-			return [t for t in tasks if name_re.search(str(t.ImageFileName))]
-        	        	
-    	return tasks
+            names = [t for t in tasks if name_re.search(str(t.ImageFileName))]
+            if len(names) == 0:
+                debug.error("Cannot find name {0}. If its terminated or unlinked, use psscan and then supply --offset=OFFSET".format(self._config.NAME))
+            return names
+                        
+        return tasks
 
     @staticmethod
     def virtual_process_from_physical_offset(addr_space, offset):
