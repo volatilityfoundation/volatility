@@ -351,7 +351,7 @@ class volshell(common.AbstractWindowsCommand):
                 nobj = obj.Object(objname, lst.obj_offset - offset, vm)
                 yield nobj
 
-        def dt(objct, address = None, space = None):
+        def dt(objct, address = None, space = None, recursive = False, depth = 0):
             """Describe an object or show type info.
 
             Show the names and values of a complex object (struct). If the name of a
@@ -377,12 +377,16 @@ class volshell(common.AbstractWindowsCommand):
             if isinstance(objct, str):
                 size = profile.get_obj_size(objct)
                 membs = [ (profile.get_obj_offset(objct, m), m, profile.vtypes[objct][1][m][1]) for m in profile.vtypes[objct][1] ]
-                print repr(objct), "({0} bytes)".format(size)
+                print "{0}".format("..." * depth), repr(objct), "({0} bytes)".format(size)
                 for o, m, t in sorted(membs):
-                    print "{0:6}: {1:30} {2}".format(hex(o), m, t)
+                    print "{0}{1:6}: {2:30} {3}".format("..." * depth, hex(o), m, t)
+                    if recursive: 
+                        if t[0] in profile.vtypes:
+                            dt(t[0], recursive = recursive, depth = depth + 1)
             elif isinstance(objct, obj.BaseObject):
                 membs = [ (o, m) for m, (o, _c) in objct.members.items() ]
-                print repr(objct)
+                if not recursive:
+                    print repr(objct)
                 offsets = []
                 for o, m in sorted(membs):
                     val = getattr(objct, m)
@@ -400,9 +404,12 @@ class volshell(common.AbstractWindowsCommand):
 
                 for o, m, val in offsets:
                     try:
-                        print "{0:6}: {1:30} {2}".format(hex(o), m, val)
+                        print "{0}{1:6}: {2:30} {3}".format("..." * depth, hex(o), m, val)
                     except UnicodeDecodeError:
-                        print "{0:6}: {1:30} -".format(hex(o), m)
+                        print "{0}{1:6}: {2:30} -".format("..." * depth, hex(o), m)
+                    if recursive:
+                        if val.obj_type in profile.vtypes:
+                            dt(val, recursive = recursive, depth = depth + 1)
             elif isinstance(objct, obj.NoneObject):
                 print "ERROR: could not instantiate object"
                 print
