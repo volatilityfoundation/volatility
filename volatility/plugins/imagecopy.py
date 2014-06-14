@@ -40,7 +40,12 @@ class ImageCopy(commands.Command):
         blocksize = self._config.BLOCKSIZE
         addr_space = utils.load_as(self._config, astype = 'physical')
 
-        for s, l in addr_space.get_available_addresses():
+        available_addresses = list(addr_space.get_available_addresses())
+
+        if not available_addresses:
+            debug.error("Cannot find any memory ranges to convert. Make sure to specify --profile")
+
+        for s, l in available_addresses:
             for i in range(s, s + l, blocksize):
                 yield i, addr_space.zread(i, min(blocksize, s + l - i))
 
