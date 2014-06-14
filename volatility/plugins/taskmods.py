@@ -137,8 +137,10 @@ class PSList(DllList):
     """ Print all running processes by following the EPROCESS lists """
     def __init__(self, config, *args, **kwargs):
         DllList.__init__(self, config, *args, **kwargs)
-        config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
-                          cache_invalidator = False, help = "Physical Offset", action = "store_true")
+        config.add_option("PHYSICAL-OFFSET", short_option = 'P', 
+                          default = False, cache_invalidator = False, 
+                          help = "Display physical offsets instead of virtual", 
+                          action = "store_true")
 
     def render_text(self, outfd, data):
 
