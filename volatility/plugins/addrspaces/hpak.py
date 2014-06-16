@@ -33,6 +33,7 @@ class HPAKVTypes(obj.ProfileModification):
                 'Length' : [ 0x98, ['unsigned long long']], 
                 'Offset' : [ 0xA8, ['unsigned long long']], 
                 'NextSection' : [ 0xB0, ['unsigned long long']], 
+                'CompressedSize' : [ 0xB8, ['unsigned long long']], 
                 'Name' : [ 0xD4, ['String', dict(length = 12)]], 
                 }], 
             })
@@ -94,30 +95,31 @@ class HPAKAddressSpace(standard.FileAddressSpace):
         """The standard imageinfo plugin won't work on 
         hpak images so we provide this method. It wraps
         the zlib compression if necessary"""
-        
-        d = zlib.decompressobj(16 + zlib.MAX_WBITS)
-        
-        uncompressed_size = 0
+                
+        zlibdec = zlib.decompressobj(16 + zlib.MAX_WBITS)
+
+        if self.physmem.Compressed == 1:
+            length = self.physmem.CompressedSize
+        else:
+            length = self.physmem.Length 
+
         chunk_size = 4096
-        chunks = self.physmem.Length / chunk_size
-        
+        chunks = length / chunk_size
+
         def get_chunk(addr, size):
-            buffer = self.base.read(addr, size)
+            data = self.base.read(addr, size)
             if self.physmem.Compressed == 1:
-                buffer = d.decompress(buffer)
-            return buffer
-        
+                data = zlibdec.decompress(data)
+            return data
+
         for i in range(chunks):
-            data = get_chunk(self.physmem.Offset + i * chunk_size, chunk_size)
-            len_data = len(data)
-            if len_data == 0:
-                break
-            uncompressed_size += len_data 
+            addr = self.physmem.Offset + i * chunk_size
+            data = get_chunk(addr, chunk_size)
             outfd.write(data)
             
-        leftover = self.physmem.Length % chunk_size
-        
+        leftover = length % chunk_size
         if leftover > 0:
-            outfd.write(get_chunk(self.physmem.Offset + i * chunk_size, leftover))
+            data = get_chunk(addr + chunk_size, leftover)
+            outfd.write(data)
 
-        return (chunk_size * i) + leftover, uncompressed_size
+        return True

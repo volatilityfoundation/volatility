@@ -36,6 +36,7 @@ class HPAKInfo(crashinfo.CrashInfo):
             outfd.write("NextOffset: {0:#x}\n".format(section.NextSection))
             outfd.write("Name:       {0}\n".format(section.Name))
             outfd.write("Compressed: {0}\n".format(section.Compressed))
+            outfd.write("Comp. Size: {0:#x}\n".format(section.CompressedSize))
             outfd.write("\n")
             
 class HPAKExtract(HPAKInfo):
@@ -46,6 +47,8 @@ class HPAKExtract(HPAKInfo):
         if not self._config.OUTPUT_FILE:
             debug.error("You must supply --output-file")
             
-        compressed, uncompressed = data.convert_to_raw(outfd)
-        
-        print "Decompressed {0} bytes into {1} bytes".format(compressed, uncompressed)
+        data.convert_to_raw(outfd)
+
+        print "Compressed: {0}".format("Yes" if data.physmem.Compressed == 1 else "No")
+        print "Compressed Size: {0:#x}".format(data.physmem.CompressedSize)
+        print "Final Size: {0:#x}".format(data.physmem.Length)
