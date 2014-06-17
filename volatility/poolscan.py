@@ -320,6 +320,22 @@ class CheckPoolType(scan.ScannerCheck):
                (self.free and pool_hdr.FreePool) or
                (self.paged and pool_hdr.PagedPool))
 
+class CheckPoolSize(scan.ScannerCheck):
+    """ Check pool block size """
+    def __init__(self, address_space, condition = (lambda x: x == 8), **kwargs):
+        scan.ScannerCheck.__init__(self, address_space, **kwargs)
+        self.condition = condition
+
+    def check(self, offset):
+        pool_hdr = obj.Object('_POOL_HEADER', vm = self.address_space,
+                             offset = offset - 4)
+
+        block_size = pool_hdr.BlockSize.v()
+
+        pool_alignment = obj.VolMagic(self.address_space).PoolAlignment.v()
+
+        return self.condition(block_size * pool_alignment)
+
 class SinglePoolScanner(scan.BaseScanner):
 
     def object_offset(self, found, address_space):
