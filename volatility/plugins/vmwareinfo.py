@@ -24,7 +24,7 @@ import volatility.utils as utils
 class VMwareInfo(crashinfo.CrashInfo):
     """Dump VMware VMSS/VMSN information"""
     
-    target_as = ['VMWareAddressSpace']
+    target_as = ['VMWareAddressSpace', 'VMWareMetaAddressSpace']
 
     def __init__(self, config, *args, **kwargs):
         crashinfo.CrashInfo.__init__(self, config, *args, **kwargs)

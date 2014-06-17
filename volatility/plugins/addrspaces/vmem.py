@@ -121,3 +121,4 @@ class VMWareMetaAddressSpace(addrspace.AbstractRunBasedMemory):
             
         ## Make sure we found at least one memory run
         self.as_assert(len(self.runs) > 0, "Cannot find any memory run information")
+        self.header = header
