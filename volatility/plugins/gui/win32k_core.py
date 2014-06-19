@@ -80,7 +80,7 @@ class _MM_SESSION_SPACE(obj.CType):
                 nt_header = dos_header.get_nt_header()
         
                 sections = [
-                    sec for sec in nt_header.get_sections(False)
+                    sec for sec in nt_header.get_sections()
                     if str(sec.Name) == sec_name
                     ]
         

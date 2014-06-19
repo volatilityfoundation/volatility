@@ -408,7 +408,7 @@ class TrueCryptPassphrase(common.AbstractWindowsCommand):
 
             # Finding the PE data section 
             data_section = None
-            for sec in nt_header.get_sections(False):
+            for sec in nt_header.get_sections():
                 if str(sec.Name) == ".data":
                     data_section = sec
                     break

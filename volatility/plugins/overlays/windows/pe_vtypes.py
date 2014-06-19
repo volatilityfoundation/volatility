@@ -687,7 +687,7 @@ class _IMAGE_DOS_HEADER(obj.CType):
             yield (start_addr + (counter * shs), sectheader)
             counter += 1
 
-    def get_image(self, unsafe, memory):
+    def get_image(self, unsafe = False, memory = False):
 
         if memory:
             return self._get_image_mem(unsafe)
@@ -697,7 +697,7 @@ class _IMAGE_DOS_HEADER(obj.CType):
 class _IMAGE_NT_HEADERS(obj.CType):
     """PE header"""
 
-    def get_sections(self, unsafe):
+    def get_sections(self, unsafe = False):
         """Get the PE sections"""
         sect_size = self.obj_vm.profile.get_obj_size("_IMAGE_SECTION_HEADER")
         start_addr = self.FileHeader.SizeOfOptionalHeader + self.OptionalHeader.obj_offset
