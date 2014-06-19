@@ -223,19 +223,6 @@ class VMWareAddressSpace(addrspace.AbstractRunBasedMemory):
         self.as_assert(len(self.runs) > 0,
                        "Cannot find any memory run information")
 
-        ## Find the DTB from CR3. For x86 we grab an int from CR and 
-        ## for x64 we grab a long long from CR64.
-        if self.profile.metadata.get("memory_model", "32bit") == "32bit":
-            self.dtb = self.get_tag(self.header, grp_name = "cpu", tag_name = "CR",
-                                 indices = [0, 3],
-                                 data_type = "unsigned int")
-        else:
-            self.dtb = self.get_tag(self.header, grp_name = "cpu", tag_name = "CR64",
-                                indices = [0, 3],
-                                data_type = "unsigned long long")
-
-        self.as_assert(self.dtb != None, "Cannot find a DTB")
-
     @staticmethod
     def get_tag(header, grp_name, tag_name, indices = None, data_type = None):
         """Get a tag from the VMware headers
