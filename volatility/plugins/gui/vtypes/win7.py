@@ -95,7 +95,7 @@ class Win7GuiOverlay(obj.ProfileModification):
             'tagWINDOWSTATION' : [ None, {
             'pClipBase' : [ None, ['pointer', ['array', lambda x : x.cNumClipFormats, ['tagCLIP']]]],
             }],
-            'tagCLIP': [ None, {
+            'tagCLIP': [ 16, {
             'fmt' : [ None, ['Enumeration', dict(target = 'unsigned long', choices = consts.CLIPBOARD_FORMAT_ENUM)]],
             }]})
 
