@@ -31,6 +31,10 @@ class VMwareInfo(crashinfo.CrashInfo):
         config.add_option('DUMP-DIR', short_option = 'D', default = None,
                           help = 'Directory in which to dump the screenshot (if available)')
         
+    @staticmethod
+    def is_valid_profile(profile):
+        return True
+
     def render_text(self, outfd, data):
     
         header = data.get_header()
