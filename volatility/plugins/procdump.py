@@ -90,9 +90,9 @@ class ProcDump(taskmods.DllList):
             elif task.Peb == None:
                 # we must use m() here, because any other attempt to 
                 # reference task.Peb will try to instantiate the _PEB
-                result = "Error: PEB at {0:#x} is paged".format(task.m('Peb'))
+                result = "Error: PEB at {0:#x} is unavailable (possibly due to paging)".format(task.m('Peb'))
             elif task_space.vtop(task.Peb.ImageBaseAddress) == None:
-                result = "Error: ImageBaseAddress at {0:#x} is paged".format(task.Peb.ImageBaseAddress)
+                result = "Error: ImageBaseAddress at {0:#x} is unavailable (possibly due to paging)".format(task.Peb.ImageBaseAddress)
             else:
                 dump_file = "executable." + str(task.UniqueProcessId) + ".exe"
                 result = self.dump_pe(task_space,

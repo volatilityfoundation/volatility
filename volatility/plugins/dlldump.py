@@ -101,7 +101,7 @@ class DLLDump(procdump.ProcDump):
 
         for proc, ps_ad, mod_base, mod_name in data:
             if not ps_ad.is_valid_address(mod_base):
-                result = "Error: DllBase is paged"
+                result = "Error: DllBase is unavailable (possibly due to paging)"
             else:
                 process_offset = ps_ad.vtop(proc.obj_offset)
                 dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod_base)
