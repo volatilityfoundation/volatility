@@ -48,15 +48,7 @@ class WndScan(common.AbstractScanCommand, sessions.SessionsMixin):
     """Pool scanner for window stations"""
 
     scanners = [PoolScanWind]
-
-    @staticmethod
-    def is_valid_profile(profile):
-        version = (profile.metadata.get('major', 0), 
-                   profile.metadata.get('minor', 0))
-
-        return (profile.metadata.get('os', '') == 'windows' and
-                version < (6, 2))
-
+    
     def calculate(self):
         addr_space = utils.load_as(self._config)
 

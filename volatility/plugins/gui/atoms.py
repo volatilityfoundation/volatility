@@ -66,14 +66,6 @@ class AtomScan(common.AbstractScanCommand):
                           choices = ["atom", "refcount", "offset"], default = "offset",
                           help = "Sort by [offset | atom | refcount]", action = "store")
 
-    @staticmethod
-    def is_valid_profile(profile):
-        version = (profile.metadata.get('major', 0), 
-                   profile.metadata.get('minor', 0))
-
-        return (profile.metadata.get('os', '') == 'windows' and
-                version < (6, 2))
-
     def render_text(self, outfd, data):
 
         self.table_header(outfd,
@@ -111,14 +103,6 @@ class AtomScan(common.AbstractScanCommand):
 
 class Atoms(common.AbstractWindowsCommand):
     """Print session and window station atom tables"""
-
-    @staticmethod
-    def is_valid_profile(profile):
-        version = (profile.metadata.get('major', 0), 
-                   profile.metadata.get('minor', 0))
-
-        return (profile.metadata.get('os', '') == 'windows' and
-                version < (6, 2))
 
     def calculate(self):
         seen = []
