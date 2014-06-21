@@ -24,6 +24,7 @@ import volatility.plugins.overlays.windows.windows as windows
 import volatility.utils as utils
 import volatility.addrspace as addrspace
 import volatility.conf as conf
+import volatility.win32.modules as modules
 
 #--------------------------------------------------------------------------------
 # object classes
@@ -47,14 +48,15 @@ class _MM_SESSION_SPACE(obj.CType):
         into this session's memory. 
 
         Since win32k.sys is always the first image to be 
-        mapped, we can just grab the first list entry."""
+        mapped, we can just grab the first list entry.
+
+        Update: we no longer use the session image list, because
+        it seems to have gone away in Win8/2012."""
         
-        ## An exception may be generated when a process from a terminated
-        ## session still exists in the active process list. 
-        try:
-            return list(self.images())[0].Address
-        except IndexError:
-            return obj.NoneObject("No images mapped in this session")
+        for mod in modules.lsmod(self.obj_vm):
+            if str(mod.BaseDllName or '').lower() == "win32k.sys":
+                return mod.DllBase
+        return obj.Object("Cannot find win32k.sys base address")
 
     def images(self):
         """Generator for images (modules) loaded into 
@@ -138,8 +140,8 @@ class _MM_SESSION_SPACE(obj.CType):
             ## be NULL, the alloc tag will be an empty string, and the creation 
             ## flags will be zero. We also then check the alloc tag of the first
             ## USER handle type which should be Uswd (TYPE_WINDOW). 
-            if (gahti.types[0].fnDestroy == 0 and
-                    str(gahti.types[0].dwAllocTag) == '' and
+            ## Update: fnDestroy is no longer NULL for TYPE_FREE on Win8/2012. 
+            if  (str(gahti.types[0].dwAllocTag) == '' and
                     gahti.types[0].bObjectCreateFlags == 0 and
                     str(gahti.types[1].dwAllocTag) == "Uswd"):
                 return gahti
