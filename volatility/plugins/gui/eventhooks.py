@@ -23,14 +23,6 @@ import volatility.plugins.gui.sessions as sessions
 class EventHooks(sessions.Sessions):
     """Print details on windows event hooks"""
 
-    @staticmethod
-    def is_valid_profile(profile):
-        version = (profile.metadata.get('major', 0), 
-                   profile.metadata.get('minor', 0))
-
-        return (profile.metadata.get('os', '') == 'windows' and
-                version < (6, 2))
-
     def render_text(self, outfd, data):
 
         for session in data:
