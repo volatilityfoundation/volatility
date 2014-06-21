@@ -40,14 +40,6 @@ class UserHandles(sessions.Sessions):
                 help = 'Include free handles', action = 'store_true',
                 default = False)
 
-    @staticmethod
-    def is_valid_profile(profile):
-        version = (profile.metadata.get('major', 0), 
-                   profile.metadata.get('minor', 0))
-
-        return (profile.metadata.get('os', '') == 'windows' and
-                version < (6, 2))
-
     def render_text(self, outfd, data):
 
         for session in data:
