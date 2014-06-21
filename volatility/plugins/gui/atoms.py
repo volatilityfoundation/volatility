@@ -147,7 +147,7 @@ class Atoms(common.AbstractWindowsCommand):
     def render_text(self, outfd, data):
 
         self.table_header(outfd,
-                         [(self.offset_column(), "[addr]"),
+                         [("Offset(V)", "[addr]"),
                           ("Session", "^10"),
                           ("WindowStation", "^18"),
                           ("Atom", "[addr]"),
