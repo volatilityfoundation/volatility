@@ -48,9 +48,7 @@ class Raw2dmp(imagecopy.ImageCopy):
         kuser = obj.Object("_KUSER_SHARED_DATA",
                           offset = obj.VolMagic(vspace).KUSER_SHARED_DATA.v(),
                           vm = vspace)
-        kdbg = obj.Object("_KDDEBUGGER_DATA64",
-                          offset = obj.VolMagic(vspace).KDBG.v(),
-                          vm = vspace)
+        kdbg = obj.VolMagic(vspace).KDBG.v()
 
         # Scanning the memory region near KDDEBUGGER_DATA64 for 
         # DBGKD_GET_VERSION64
@@ -139,9 +137,7 @@ class Raw2dmp(imagecopy.ImageCopy):
         crash_vspace = utils.load_as(self._config)
 
         # The KDBG in the new crash dump
-        crash_kdbg = obj.Object("_KDDEBUGGER_DATA64",
-                          offset = obj.VolMagic(crash_vspace).KDBG.v(),
-                          vm = crash_vspace)
+        crash_kdbg = obj.VolMagic(crash_vspace).KDBG.v()
 
         # The KPCR for the first CPU 
         kpcr = list(crash_kdbg.kpcrs())[0]
