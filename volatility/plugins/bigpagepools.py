@@ -65,11 +65,17 @@ class BigPageTableMagic(obj.ProfileModification):
             (6, 2, '32bit') : [92, 88],
             (6, 2, '64bit') : [-5200, -5224], 
             (6, 3, '32bit') : [116, 120],
-            (6, 3, '64bit') : [-5192, -5200],
         }
 
         version = (m.get('major', 0), m.get('minor', 0), m.get('memory_model', '32bit'))
-        distance = distance_map.get(version, [8, 12])
+        distance = distance_map.get(version)
+
+        if distance == None:
+            if version == (6, 3, '64bit'):
+                if m.get('build', 0) == 9601:
+                    distance = [-5192, -5200]
+                else:
+                    distance = [-5200, -5176]
 
         profile.merge_overlay({
             'VOLATILITY_MAGIC': [ None, {
@@ -136,8 +142,6 @@ class BigPagePoolScanner(object):
             offset = table_base, 
             count = table_size, vm = self.kernel_space
             )
-
-        print hex(table_base)
 
         for pool in pools:
             if pool.Va.is_valid():

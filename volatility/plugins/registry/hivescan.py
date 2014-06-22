@@ -27,8 +27,10 @@
 
 #pylint: disable-msg=C0111
 
+import volatility.utils as utils 
 import volatility.poolscan as poolscan
 import volatility.plugins.common as common
+import volatility.plugins.bigpagepools as bigpools
 
 class PoolScanHive(poolscan.PoolScanner):
     """Pool scanner for registry hives"""
@@ -57,6 +59,20 @@ class HiveScan(common.AbstractScanCommand):
         os = 'WIN_32_XP_SP2',
         version = '1.0',
         )
+
+    def calculate(self):
+        addr_space = utils.load_as(self._config)
+
+        metadata = addr_space.profile.metadata
+        version = (metadata.get("major", 0), metadata.get("minor", 0))
+        arch = metadata.get("memory_model", "32bit")
+
+        if version >= (6, 3) and arch == "64bit":
+            for pool in bigpools.BigPagePoolScanner(addr_space).scan(["CM10"]):
+                yield pool.Va.dereference_as("_CMHIVE")
+        else:
+            for result in self.scan_results(addr_space):
+                yield result
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [('Offset(P)', '[addrpad]')])
