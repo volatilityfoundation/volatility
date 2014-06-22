@@ -39,6 +39,7 @@ class PoolTrackTypeOverlay(obj.ProfileModification):
         profile.merge_overlay({
             '_POOL_TRACKER_BIG_PAGES': [ None, {
             'PoolType': [ None, profile.vtypes['_POOL_DESCRIPTOR'][1]['PoolType'][1]],
+            'Key': [ None, ['String', dict(length = 4)]], 
              }],
         })
 
