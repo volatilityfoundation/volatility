@@ -54,3 +54,4 @@ nosetests.xml
 *.sys
 *.bin
 *.001
+*.raw
