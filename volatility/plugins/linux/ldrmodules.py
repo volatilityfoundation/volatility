@@ -96,8 +96,6 @@ class linux_ldrmodules(linux_pslist.linux_pslist):
                                 ]) 
 
         for task_offset, task, proc_as, vm_start, vma_name, proc_maps, dl_maps in data:
-            print type(vm_start)
-
             if vm_start in proc_maps[task_offset]:
                 pmaps = "True"
             else:
