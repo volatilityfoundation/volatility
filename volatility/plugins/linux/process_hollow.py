@@ -26,6 +26,7 @@
 """
 
 import volatility.obj as obj
+import volatility.debug as debug
 import volatility.addrspace as addrspace
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
