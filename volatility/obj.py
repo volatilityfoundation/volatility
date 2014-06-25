@@ -541,7 +541,7 @@ class Pointer(NativeType):
         result = self.dereference()
         return result.m(memname)
 
-class Pointer32(NativeType):
+class Pointer32(Pointer):
     def __init__(self, theType, offset, vm, target = None, **kwargs):
         # Default to profile-endian address
         # Sometimes we need a 32bit pointer on a 64bit system
@@ -551,55 +551,6 @@ class Pointer32(NativeType):
             self.target = Curry(Object, theType)
         else:
             self.target = target
-
-    def __getstate__(self):
-        ## This one is too complicated to pickle right now
-        raise pickle.PicklingError("Pointer objects do not support caching")
-
-    def is_valid(self):
-        """ Returns if what we are pointing to is valid """
-        return self.obj_native_vm.is_valid_address(self.v())
-
-    def dereference(self):
-        offset = self.v()
-        if self.obj_native_vm.is_valid_address(offset):
-            # Make sure we use self.obj_native_vm to automatically
-            # dereference from the highest available VM
-            result = self.target(offset = offset,
-                                 vm = self.obj_native_vm,
-                                 parent = self.obj_parent,
-                                 name = self.obj_name)
-            return result
-        else:
-            return NoneObject("Pointer {0} invalid".format(self.obj_name), self.obj_vm.profile.strict)
-
-    def cdecl(self):
-        return "Pointer {0}".format(self.v())
-
-    def __nonzero__(self):
-        return bool(self.is_valid())
-
-    def __repr__(self):
-        target = self.dereference()
-        return "<{0} pointer to [0x{1:08X}]>".format(target.__class__.__name__, self.v())
-
-    def d(self):
-        target = self.dereference()
-        return "<{0} {1} pointer to [0x{2:08X}]>".format(target.__class__.__name__, self.obj_name or '', self.v())
-
-    def __getattr__(self, attr):
-        ## We just dereference ourself
-        result = self.dereference()
-
-        #if isinstance(result, CType):
-        #    return result.m(attr)
-        return getattr(result, attr)
-
-    def m(self, memname):
-        # Look for children on the dereferenced object
-        result = self.dereference()
-        return result.m(memname)
-
 
 class Void(NativeType):
     def __init__(self, theType, offset, vm, **kwargs):
