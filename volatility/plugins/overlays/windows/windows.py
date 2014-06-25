@@ -114,7 +114,7 @@ windows_overlay = {
 
     '_CHILD_LIST' : [ None, {
     'List' : [ None, ['pointer', ['array', lambda x: x.Count,
-                                 ['pointer', ['_CM_KEY_VALUE']]]]],
+                                 ['pointer32', ['_CM_KEY_VALUE']]]]],
     }],
 
     '_CM_KEY_VALUE' : [ None, {
