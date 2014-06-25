@@ -83,7 +83,7 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
         if not os.path.isdir(self.edir):
             debug.error(self.edir + " is not a directory")
 
-        for (task, fd_num, inet_sock) in linux_netstat.linux_netstat(self._config).calculate():
+        for (task, fd_num, _, inet_sock) in linux_netstat.linux_netstat(self._config).calculate():
 
             sk = inet_sock.sk
             for msg in self.process_queue("receive", task.pid, fd_num, sk.sk_receive_queue):
