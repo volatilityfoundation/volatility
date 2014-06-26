@@ -136,6 +136,8 @@ def get_bootkey(sysaddr):
     for lk in lsa_keys:
         key = rawreg.open_key(lsa, [lk])
         class_data = sysaddr.read(key.Class, key.ClassLength)
+        if class_data == None:
+            return ""
         bootkey += class_data.decode('utf-16-le').decode('hex')
 
     bootkey_scrambled = ""
@@ -304,6 +306,10 @@ def get_user_desc(user_key):
     return desc
 
 def dump_hashes(sysaddr, samaddr):
+    if sysaddr == None:
+        yield obj.NoneObject("SYSTEM address is None: Did you use the correct profile?")
+    if samaddr == None:
+        yield obj.NoneObject("SAM address is None: Did you use the correct profile?") 
     bootkey = get_bootkey(sysaddr)
     hbootkey = get_hbootkey(samaddr, bootkey)
 
@@ -324,9 +330,11 @@ def dump_hashes(sysaddr, samaddr):
         yield obj.NoneObject("Hbootkey is not valid")
 
 def dump_memory_hashes(addr_space, config, syshive, samhive):
-    sysaddr = hive.HiveAddressSpace(addr_space, config, syshive)
-    samaddr = hive.HiveAddressSpace(addr_space, config, samhive)
-    return dump_hashes(sysaddr, samaddr)
+    if syshive != None and samhive != None:
+        sysaddr = hive.HiveAddressSpace(addr_space, config, syshive)
+        samaddr = hive.HiveAddressSpace(addr_space, config, samhive)
+        return dump_hashes(sysaddr, samaddr)
+    return obj.NoneObject("SYSTEM or SAM address is None: Did you use the correct profile?")
 
 def dump_file_hashes(syshive_fname, samhive_fname):
     sysaddr = hive.HiveFileAddressSpace(syshive_fname)

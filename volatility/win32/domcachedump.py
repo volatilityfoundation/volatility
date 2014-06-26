@@ -128,16 +128,20 @@ def dump_hashes(addr_space, sysaddr, secaddr):
     return hashes
 
 def dump_memory_hashes(addr_space, config, syshive, sechive):
-    sysaddr = hive.HiveAddressSpace(addr_space, config, syshive)
-    secaddr = hive.HiveAddressSpace(addr_space, config, sechive)
+    hashes = []
+    if syshive != None and sechive != None:
+        sysaddr = hive.HiveAddressSpace(addr_space, config, syshive)
+        secaddr = hive.HiveAddressSpace(addr_space, config, sechive)
+        hashes = dump_hashes(addr_space, sysaddr, secaddr)
 
-    hashes = dump_hashes(addr_space, sysaddr, secaddr)
     if hashes == []:
-        yield obj.NoneObject("Unable to find hashes")
+        return obj.NoneObject("Unable to find hashes")
     else:
+        result = []
         for (u, d, dn, hashh) in hashes:
-            yield "{0}:{1}:{2}:{3}".format(u.lower(), hashh.encode('hex'),
-                                       d.lower(), dn.lower())
+            result.append("{0}:{1}:{2}:{3}".format(u.lower(), hashh.encode('hex'),
+                                       d.lower(), dn.lower()))
+        return result 
 '''
 # I don't think this is used anywhere
 def dump_file_hashes(syshive_fname, sechive_fname):
