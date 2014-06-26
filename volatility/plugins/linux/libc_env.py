@@ -90,9 +90,15 @@ class linux_bash_env(linux_pslist.linux_pslist):
                 envars = obj.Object(theType="Array", targetType="Pointer", vm=proc_as, offset=env_start, count=256)
                 for var in envars:
                     if var:
-                        varstr = proc_as.read(var, 256)
+                        varstr = proc_as.read(var, 1600)
+                        eqidx = varstr.find("=")
                         idx = varstr.find("\x00")
+
+                        if idx == -1 or eqidx == -1 or idx < eqidx:
+                            break
+
                         varstr = varstr[:idx]
+
                         procvars.append(varstr) 
 
                 yield task, " ".join(procvars)
