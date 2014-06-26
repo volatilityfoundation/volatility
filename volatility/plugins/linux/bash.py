@@ -143,24 +143,22 @@ class linux_bash(linux_pslist.linux_pslist):
                 else:
                     pack_format = "Q"
 
+                bang_addrs = []
+
                 # Look for strings that begin with pound/hash on the process heap 
                 for ptr_hash in task.search_process_memory(["#"], heap_only = True):
-                    
                     # Find pointers to this strings address, also on the heap 
-                    addr = struct.pack(pack_format, ptr_hash)
+                    bang_addrs.append(struct.pack(pack_format, ptr_hash))
 
-                    for ptr_string in task.search_process_memory([addr], heap_only = True):
-                        
-                        # Check if we found a valid history entry object 
-                        hist = obj.Object("_hist_entry", 
-                                          offset = ptr_string - ts_offset, 
-                                          vm = proc_as)
+                for (idx, ptr_string) in enumerate(task.search_process_memory(bang_addrs, heap_only = True)):   
+                    # Check if we found a valid history entry object 
+                    hist = obj.Object("_hist_entry", 
+                                      offset = ptr_string - ts_offset, 
+                                      vm = proc_as)
 
-                        if hist.is_valid():
-                            history_entries.append(hist)
-                            # We can terminate this inner loop now 
-                            break
-                
+                    if hist.is_valid():
+                        history_entries.append(hist)
+                               
                 # Report everything we found in order
                 for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
                     yield task, hist              
