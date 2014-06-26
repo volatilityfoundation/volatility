@@ -141,7 +141,7 @@ def dump_memory_hashes(addr_space, config, syshive, sechive):
         for (u, d, dn, hashh) in hashes:
             result.append("{0}:{1}:{2}:{3}".format(u.lower(), hashh.encode('hex'),
                                        d.lower(), dn.lower()))
-        return result 
+        return result
 '''
 # I don't think this is used anywhere
 def dump_file_hashes(syshive_fname, sechive_fname):

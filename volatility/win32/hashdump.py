@@ -309,7 +309,7 @@ def dump_hashes(sysaddr, samaddr):
     if sysaddr == None:
         yield obj.NoneObject("SYSTEM address is None: Did you use the correct profile?")
     if samaddr == None:
-        yield obj.NoneObject("SAM address is None: Did you use the correct profile?") 
+        yield obj.NoneObject("SAM address is None: Did you use the correct profile?")
     bootkey = get_bootkey(sysaddr)
     hbootkey = get_hbootkey(samaddr, bootkey)
 
