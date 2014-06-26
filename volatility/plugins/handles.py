@@ -44,7 +44,7 @@ class Handles(taskmods.DllList):
                            ("Pid", ">6"),
                            ("Handle", "[addr]"),
                            ("Access", "[addr]"),
-                           ("Type", "16"),
+                           ("Type", "26"),
                            ("Details", "")
                            ])
 
