@@ -105,7 +105,9 @@ class HashDump(common.AbstractWindowsCommand):
                 elif "sam" == name:
                     self._config.update("SAM_OFFSET", offset)
 
-        return hashdumpmod.dump_memory_hashes(addr_space, self._config, self._config.sys_offset, self._config.sam_offset)
+        hashes = hashdumpmod.dump_memory_hashes(addr_space, self._config, self._config.sys_offset, self._config.sam_offset)
+        if not hashes:
+            debug.error("Unable to read hashes from registry")
 
     def render_text(self, outfd, data):
         for d in data:
@@ -137,7 +139,9 @@ class CacheDump(common.AbstractWindowsCommand):
                 elif "security" == name:
                     self._config.update("SEC_OFFSET", offset)
 
-        return domcachedumpmod.dump_memory_hashes(addr_space, self._config, self._config.sys_offset, self._config.sec_offset)
+        hashes = domcachedumpmod.dump_memory_hashes(addr_space, self._config, self._config.sys_offset, self._config.sec_offset)
+        if hashes == None:
+            debug.error("Unable to read hashes from registry")
 
     def render_text(self, outfd, data):
         for d in data:

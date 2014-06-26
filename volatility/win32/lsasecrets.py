@@ -176,10 +176,12 @@ def get_secrets(addr_space, sysaddr, secaddr):
     return secrets
 
 def get_memory_secrets(addr_space, config, syshive, sechive):
-    sysaddr = hive.HiveAddressSpace(addr_space, config, syshive)
-    secaddr = hive.HiveAddressSpace(addr_space, config, sechive)
+    if syshive != None and sechive != None:
+        sysaddr = hive.HiveAddressSpace(addr_space, config, syshive)
+        secaddr = hive.HiveAddressSpace(addr_space, config, sechive)
 
-    return get_secrets(addr_space, sysaddr, secaddr)
+        return get_secrets(addr_space, sysaddr, secaddr)
+    return None
 
 '''
 def get_file_secrets(sysfile, secfile):
