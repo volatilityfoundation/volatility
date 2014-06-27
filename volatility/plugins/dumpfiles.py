@@ -688,7 +688,7 @@ class DumpFiles(common.AbstractWindowsCommand):
         # Possible filters include:
         # SharedCacheMap,DataSectionObject,ImageSectionObject,HandleTable,VAD
         config.add_option("FILTER", short_option = 'F', default = None,
-                            help = 'Filters to apply (comma-separated)')
+                            help = 'Filters to apply (comma-separated). Possible values:\n\nSharedCacheMap,DataSectionObject,ImageSectionObject,HandleTable,VAD')
 
     def filter_tasks(self, tasks):
         """ Reduce the tasks based on the user selectable PIDS parameter.
