@@ -383,7 +383,7 @@ class _IMAGE_IMPORT_DESCRIPTOR(obj.CType):
             if first_thunk:
                 f = first_thunk.Function.v()
 
-            yield o, f, n
+            yield o, f, str(n or '')
             i += 1
 
     def is_list_end(self):
