@@ -66,7 +66,7 @@ class VadTraverser(obj.CType):
 
         # add this node to those that have been visited
         visited.add(self.obj_offset)
-        
+ 
         # traverse children
         for c in self.LeftChild.traverse(visited = visited, depth = depth + 1):
             yield c
