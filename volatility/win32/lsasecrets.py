@@ -105,8 +105,7 @@ def decrypt_secret(secret, key):
         des_key = hashdump.str_to_key(block_key)
 
         des = DES.new(des_key, DES.MODE_ECB)
-        if len(enc_block) < 8:
-            enc_block = enc_block + "\x00" * int(8 - len(enc_block))
+        enc_block = enc_block + "\x00" * int((8 - len(enc_block)) % 8)
         decrypted_data += des.decrypt(enc_block)
 
         j += 7
