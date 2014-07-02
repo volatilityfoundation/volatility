@@ -50,7 +50,7 @@ class mac_dump_maps(proc_maps.mac_proc_maps):
         if self._config.MAP_ADDRESS:
             map_address = self._config.MAP_ADDRESS
         else:
-            map_adddress = None
+            map_address = None
 
         for proc, map in data: 
             if map_address and map_address != map.links.start:
