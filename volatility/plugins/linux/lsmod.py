@@ -36,7 +36,8 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
     def __init__(self, config, *args, **kwargs):
 
         linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
-        self._config.add_option('SECTIONS', short_option = 'S', default = None, help = 'show section addresses', action = 'store_true')
+      
+        self._config.add_option('SECTIONS', short_option = 'T', default = None, help = 'show section addresses', action = 'store_true')
         self._config.add_option('PARAMS', short_option = 'P', default = None, help = 'show module parameters', action = 'store_true')
         self._config.add_option('BASE', short_option = 'b', default = None, help = 'Dump driver with BASE address (in hex)', action = 'store', type = 'int')
         self._config.add_option('IDC', short_option = 'c', default = None, help = 'Path to IDC file to be created for module', action = 'store', type = 'str')
