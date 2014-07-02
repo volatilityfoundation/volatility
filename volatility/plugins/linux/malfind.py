@@ -89,7 +89,10 @@ class linux_malfind(linux_pslist.linux_pslist):
        
         if flags_str == "VM_READ|VM_WRITE|VM_EXEC":
            ret = True 
- 
+
+        elif flags_str == "VM_READ|VM_EXEC" and not vma.vm_file:
+            ret = True
+
         return ret
 
     def _vma_name(self, task, vma):
@@ -99,6 +102,8 @@ class linux_malfind(linux_pslist.linux_pslist):
             fname = "[heap]"
         elif vma.vm_start <= task.mm.start_stack and vma.vm_end >= task.mm.start_stack:
             fname = "[stack]"
+        elif vma.vm_start == vma.vm_mm.context.vdso:
+            fname = "[vdso]"
         else:
             fname = "Anonymous Mapping"
 
@@ -111,7 +116,10 @@ class linux_malfind(linux_pslist.linux_pslist):
             for vma in task.get_proc_maps():
 
                 if self._is_suspicious(vma):
-                    fname = self._vma_name(task, vma)                    
+                    fname = self._vma_name(task, vma)
+                    if fname == "[vdso]":
+                        continue
+                   
                     prots = self._parse_perms(vma.vm_flags.v() & 0b1111) 
                     flags = self._parse_perms(vma.vm_flags.v())
 
