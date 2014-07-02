@@ -108,6 +108,7 @@ class HashDump(common.AbstractWindowsCommand):
         hashes = hashdumpmod.dump_memory_hashes(addr_space, self._config, self._config.sys_offset, self._config.sam_offset)
         if not hashes:
             debug.error("Unable to read hashes from registry")
+        return hashes
 
     def render_text(self, outfd, data):
         for d in data:
@@ -142,6 +143,7 @@ class CacheDump(common.AbstractWindowsCommand):
         hashes = domcachedumpmod.dump_memory_hashes(addr_space, self._config, self._config.sys_offset, self._config.sec_offset)
         if hashes == None:
             debug.error("Unable to read hashes from registry")
+        return hashes
 
     def render_text(self, outfd, data):
         for d in data:

@@ -64,12 +64,14 @@ class VadTraverser(obj.CType):
         elif depth and str(self.Tag) != "":
             return
 
+        # add this node to those that have been visited
+        visited.add(self.obj_offset)
+ 
+        # traverse children
         for c in self.LeftChild.traverse(visited = visited, depth = depth + 1):
-            visited.add(self.obj_offset)
             yield c
 
         for c in self.RightChild.traverse(visited = visited, depth = depth + 1):
-            visited.add(self.obj_offset)
             yield c
 
 class VadFlags(obj.CType):
