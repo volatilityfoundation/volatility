@@ -37,7 +37,7 @@ class mac_netstat(lsof.mac_lsof):
                                   ("Local Port", "6"),
                                   ("Remote IP", "20"),
                                   ("Remote Port", "6"),
-                                  ("State", "10"),
+                                  ("State", "20"),
                                   ("Process", "24")])
         
         for proc, i, fd, _path in data:
