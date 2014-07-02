@@ -27,6 +27,7 @@
 import os
 
 import volatility.obj as obj
+import volatility.debug as debug
 import volatility.plugins.mac.pstasks as pstasks 
 import volatility.plugins.mac.common as common
 
@@ -45,7 +46,6 @@ class mac_notesapp(pstasks.mac_tasks):
         for proc in procs:
             proc_as = proc.get_process_address_space()
 
-            # 0x0000608000000000
             for map in proc.get_proc_maps():
                 if map.get_perms() != "rw-" or map.get_path() != "":
                     continue
@@ -55,21 +55,32 @@ class mac_notesapp(pstasks.mac_tasks):
                 if not buffer:
                     continue
 
-                idx = buffer.find("<html>")
+                iter_idx = 0
 
-                while idx != -1:
-                    end_idx = buffer[idx:].find("</html>")
+                while 1:
+                    idx = buffer[iter_idx:].find("<html>")
+                    if idx == -1:
+                        break
 
-                    if end_idx != -1:
-                        msg = buffer[idx:idx + end_idx + 7]
+                    iter_idx = iter_idx + idx
 
-                        yield proc, map.start.v() + idx, msg
+                    end_idx = buffer[iter_idx:].find("</html>")
+                    if end_idx == -1:
+                        break
  
-                    idx = idx + 5
-
-                    idx = buffer[idx:].find("<html>")
+                    msg = buffer[iter_idx:iter_idx + end_idx + 7]
+                    
+                    yield proc, map.start.v() + iter_idx, msg
+                    
+                    iter_idx = iter_idx + end_idx
+                        
                     
     def render_text(self, outfd, data):
+        if self._config.DUMP_DIR == None:
+            debug.error("Please specify a dump directory (--dump-dir)")
+        if not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
+
         self.table_header(outfd, [("Pid", "8"), 
                           ("Name", "20"),
                           ("Start", "[addrpad]"),
