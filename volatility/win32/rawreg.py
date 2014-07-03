@@ -151,7 +151,7 @@ def value_data(val):
         if val.DataLength == 0x80000000:
             return ("REG_DWORD", val.Type.v())
         valdata = val.obj_vm.read(val.Data.obj_offset, val.DataLength & 0x7FFFFFFF)
-    elif val.DataLength > 0x4000:
+    elif val.obj_vm.hive.Version == 5 and val.DataLength > 0x4000:
         # Value is a BIG_DATA block, stored in chunked format
         datalen = val.DataLength
         big_data = obj.Object("_CM_BIG_DATA", val.Data, val.obj_vm)
