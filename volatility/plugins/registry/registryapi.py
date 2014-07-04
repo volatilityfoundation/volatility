@@ -43,6 +43,9 @@ class RegistryApi(object):
         self.current_offsets = {}
         self.populate_offsets()
 
+    def remove_unprintable(self, str):
+        return ''.join([c for c in str if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
+
     def print_offsets(self):
         '''
         this is just in case we want to check our offsets and which hive(s) was/were chosen
@@ -139,6 +142,17 @@ class RegistryApi(object):
                     if k:
                         return k
         return None
+
+    def reg_get_key_path(self, key):
+        ''' 
+        Takes in a key object and traverses back through its family to build the path
+        '''
+        path = key.Name
+        while key.Parent:
+            key = key.Parent.dereference()
+            if self.remove_unprintable(str(key.Name)) != "": 
+                path = "{0}\\{1}".format(key.Name, path)
+        return path
 
     def reg_yield_key(self, hive_name, key, user = None, given_root = None):
         ''' 
