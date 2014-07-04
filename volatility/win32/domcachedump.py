@@ -109,6 +109,8 @@ def dump_hashes(addr_space, sysaddr, secaddr):
             continue
 
         data = v.obj_vm.read(v.Data, v.DataLength)
+        if data == None:
+            continue
 
         (uname_len, domain_len, domain_name_len,
             enc_data, ch) = parse_cache_entry(data)
