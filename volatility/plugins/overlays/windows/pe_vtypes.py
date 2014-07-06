@@ -581,24 +581,15 @@ class _IMAGE_DOS_HEADER(obj.CType):
         full_blocks = ((data_size + (data_start % 0x1000)) / 0x1000) - 1
         left_over = (data_size + data_start) % 0x1000
 
-        paddr = self.obj_vm.vtop(data_start)
         code = ""
 
         # Deal with reads that are smaller than a block
         if data_size < first_block:
             data_read = self.obj_vm.zread(data_start, data_size)
-            if paddr == None:
-                pass
-                #if self._config.verbose:
-                #    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(data_start, offset, data_size))
             code += data_read
             return (offset, code)
 
         data_read = self.obj_vm.zread(data_start, first_block)
-        if paddr == None:
-            pass
-            #if self._config.verbose:
-            #    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(data_start, offset, first_block))
         code += data_read
 
         # The middle part of the read
@@ -606,20 +597,12 @@ class _IMAGE_DOS_HEADER(obj.CType):
 
         for _i in range(0, full_blocks):
             data_read = self.obj_vm.zread(new_vaddr, 0x1000)
-            if self.obj_vm.vtop(new_vaddr) == None:
-                pass
-                #if self._config.verbose:
-                #    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(new_vaddr, offset, 0x1000))
             code += data_read
             new_vaddr = new_vaddr + 0x1000
 
         # The last part of the read
         if left_over > 0:
             data_read = self.obj_vm.zread(new_vaddr, left_over)
-            if self.obj_vm.vtop(new_vaddr) == None:
-                pass
-                #if self._config.verbose:
-                #    debug.debug("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(new_vaddr, offset, left_over))
             code += data_read
         return (offset, code)
 
