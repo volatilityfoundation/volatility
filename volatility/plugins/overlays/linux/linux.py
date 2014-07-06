@@ -1105,6 +1105,75 @@ class task_struct(obj.CType):
                         yield offset + hit
                 offset += min(to_read, scan_blk_sz)
 
+    def elfs(self):
+        proc_as = self.get_process_address_space()
+
+        for vma in self.get_proc_maps():
+            elf = obj.Object("elf_hdr", offset = vma.vm_start, vm = proc_as) 
+
+            if not elf.is_valid():
+                continue
+
+            pt_loads = []
+
+            #### Walk pt_load and gather ranges
+            for phdr in elf.program_headers():
+                if not phdr.is_valid():
+                    continue                         
+               
+                if str(phdr.p_type) == 'PT_LOAD':
+                    pt_loads.append((phdr.p_vaddr, phdr.p_vaddr + phdr.p_memsz))
+
+                if str(phdr.p_type) != 'PT_DYNAMIC':
+                    continue                   
+             
+                dt_soname = None
+                dt_strtab = None
+                dt_needed = []
+                for dsec in phdr.dynamic_sections():
+                    if dsec.d_tag == 5:
+                        dt_strtab = dsec.d_ptr
+
+                    elif dsec.d_tag == 14:
+                        dt_soname = dsec.d_ptr
+
+                    elif dsec.d_tag == 1:
+                        dt_needed.append(dsec.d_ptr)
+                            
+            if dt_strtab == None or dt_needed == []:
+                continue
+
+            needed = []
+            for n_idx in dt_needed:
+                buf = proc_as.read(dt_strtab + n_idx, 256)
+                if buf:
+                    idx = buf.find("\x00")
+                    if idx != -1:
+                        buf = buf[:idx]
+
+                    if len(buf) > 0:
+                        needed.append(buf)
+            
+            soname = ""     
+            if dt_soname:
+                soname = proc_as.read(dt_strtab + dt_soname, 256)
+                if soname:
+                    idx = soname.find("\x00")
+                    if idx != -1:
+                        soname = soname[:idx]
+            
+            if not soname or len(soname) == 0:
+                soname = linux_common.get_path(self, vma.vm_file)
+
+            if pt_loads: 
+                (elf_start, elf_end) = (min(s[0] for s in pt_loads), max(s[1] for s in pt_loads))
+            else:
+                continue
+
+            # TODO - test diff without setting soname of vma
+            if soname or needed:
+                yield elf, elf_start, elf_end, soname, needed
+
     def ACTHZ(self, CLOCK_TICK_RATE, HZ):
         LATCH = ((CLOCK_TICK_RATE + HZ/2) / HZ)
         return self.SH_DIV(CLOCK_TICK_RATE, LATCH, 8)

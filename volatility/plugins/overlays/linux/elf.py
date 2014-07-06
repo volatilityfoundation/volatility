@@ -223,10 +223,6 @@ class elf(obj.CType):
     def is_valid(self):
         return self.size_cache in [32, 64, -39]
 
-    def _init_cache(self, offset, vm):
-        self._set_size_cache(offset, vm)
-        self._make_elf_obj(offset, vm) 
-
     def _init_cache_from_parent(self):
         self.size_cache = self.obj_parent.size_cache
         self._make_elf_obj(self.obj_offset, self.obj_vm)
@@ -238,7 +234,7 @@ class elf(obj.CType):
             self.elf_obj = obj.Object(self.name64, offset = offset, vm = vm)
         else:
             self.elf_obj = None
-
+        
     def _set_size_cache(self, offset, vm):
         ei_class = obj.Object("unsigned char", offset = offset + 4, vm = vm)
         if ei_class == 1:
@@ -247,6 +243,10 @@ class elf(obj.CType):
             self.size_cache = 64
         else:
             self.size_cache = -42
+
+    def _init_cache(self, offset, vm):
+        self._set_size_cache(offset, vm)
+        self._make_elf_obj(offset, vm) 
 
     def _get_typename(self, typename):
         if self.size_cache == -39:
@@ -275,6 +275,9 @@ class elf_hdr(elf):
         self.cached_numsyms = 0
 
         elf.__init__(self, 1, "elf32_hdr", "elf64_hdr", theType, offset, vm, name, **kwargs)    
+
+    def is_valid(self):
+        return self.elf_obj != None
         
     def program_headers(self):
         rtname = self._get_typename("phdr")
@@ -386,7 +389,6 @@ class elf_hdr(elf):
 
 
 class elf_shdr(elf):
-
     """ An elf section header """
 
     def __init__(self, theType, offset, vm, name = None, **kwargs):
@@ -406,6 +408,15 @@ class elf_phdr(elf):
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         elf.__init__(self, 0, "elf32_phdr", "elf64_phdr", theType, offset, vm, name, **kwargs)    
 
+    @property
+    def p_vaddr(self):
+        ret = self.__getattr__("p_vaddr")
+
+        if self.obj_parent.e_type == 3: # ET_DYN
+            ret = self.obj_parent.obj_offset + ret
+
+        return ret
+
     def dynamic_sections(self):
         # sanity check
         if str(self.p_type) != 'PT_DYNAMIC':
@@ -418,7 +429,7 @@ class elf_phdr(elf):
         tname = "elf_dyn"
         
         # the buffer of array starts at elf_base + our virtual address ( offset )
-        arr_start = self.obj_parent.obj_offset + self.p_vaddr
+        arr_start = self.p_vaddr
 
         for i in range(256):
             # use the real size
