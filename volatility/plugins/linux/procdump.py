@@ -38,28 +38,23 @@ class linux_procdump(linux_pslist.linux_pslist):
         linux_pslist.linux_pslist.__init__(self, config, *args, **kwargs)
         self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'Output directory', action = 'store', type = 'str')
 
-    def _procexedump(self, task, proc_as, elf_addr):
+    def procdump(self, task, elf_addr):
         sects = {}
         ret = ""
-        use_rel = False        
+
+        proc_as = task.get_process_address_space()
 
         elf_hdr = obj.Object("elf_hdr", offset = elf_addr, vm = proc_as)
 
-        for phdr in elf_hdr.program_headers():
+        if not elf_hdr.is_valid():
+            return ""
 
+        for phdr in elf_hdr.program_headers():
             if str(phdr.p_type) != 'PT_LOAD':
                 continue
 
             start = phdr.p_vaddr
-            
-            if start == 0:
-                use_rel = True
-            
-            if use_rel:
-                start = start + elf_addr
-    
             sz    = phdr.p_memsz
-
             end = start + sz
 
             if start % 4096:
@@ -69,9 +64,6 @@ class linux_procdump(linux_pslist.linux_pslist):
                 end = (end & ~0xfff) + 4096
 
             real_size = end - start
-
-            # print "addr: %8x sz: %8x offset: %8x sz: %8x" % (phdr.p_vaddr, phdr.p_memsz, phdr.p_offset, phdr.p_filesz),
-            # print " | start: %8x sz: %8x end: %8x real_size: %8x" % (start, sz, end, real_size)
 
             sects[start] = real_size
  
@@ -89,6 +81,17 @@ class linux_procdump(linux_pslist.linux_pslist):
 
         return ret
 
+    def write_elf_file(self, task, elf_addr):
+        file_path = os.path.join(self._config.DUMP_DIR, "%s.%d.%#8x" % (task.comm, task.pid, elf_addr))
+
+        file_contents = self.procdump(task, elf_addr)
+
+        fd = open(file_path, "wb")
+        fd.write(file_contents)
+        fd.close()       
+
+        return file_path 
+
     def render_text(self, outfd, data):
         if not self._config.DUMP_DIR:
             debug.error("-D/--dump-dir must given that specifies an existing directory")
@@ -102,21 +105,11 @@ class linux_procdump(linux_pslist.linux_pslist):
             if not task.mm:
                 continue
     
-            proc_as = task.get_process_address_space()
-
-            elf_addr = task.mm.start_code
-
-            file_path = os.path.join(self._config.DUMP_DIR, "%s.%d.%#8x" % (task.comm, task.pid, elf_addr))
-
-            file_contents = self._procexedump(task, proc_as, elf_addr)
-    
-            fd = open(file_path, "wb")
-            fd.write(file_contents)
-            fd.close()        
+            file_path = self.write_elf_file(task, task.mm.start_code)
 
             self.table_row(outfd, task.obj_offset,
                                   task.comm,
                                   str(task.pid),
-                                  elf_addr, 
+                                  task.mm.start_code, 
                                   file_path)
 
