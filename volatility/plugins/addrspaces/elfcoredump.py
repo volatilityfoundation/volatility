@@ -129,6 +129,21 @@ class VirtualBoxCoreDumpElf64(addrspace.AbstractRunBasedMemory):
         self.as_assert(self.header.u32FmtVersion == DBGFCORE_FMT_VERSION, 'Unknown VBox core format version')
         self.as_assert(self.runs, 'ELF error: did not find any LOAD segment with main RAM')
 
+    def write(self, phys_addr, buf):
+        """This is mostly for support of raw2dmp so that 
+        it can modify the kernel CONTEXT after the crash
+        dump has been written to disk"""
+
+        if not self._config.WRITE:
+            return False
+
+        file_addr = self.translate(phys_addr)
+
+        if file_addr is None:
+            return False
+
+        return self.base.write(file_addr, buf)
+
 class QemuCoreDumpElf(VirtualBoxCoreDumpElf64):
     """ This AS supports Qemu ELF32 and ELF64 coredump format """
 
