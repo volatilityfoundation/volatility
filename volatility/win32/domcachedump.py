@@ -73,11 +73,11 @@ def parse_decrypted_cache(dec_data, uname_len,
 
     hashh = dec_data[:0x10]
     username = dec_data[uname_off:uname_off + uname_len]
-    username = username.decode('utf-16-le')
+    username = username.decode('utf-16-le', 'replace')
     domain = dec_data[domain_off:domain_off + domain_len]
-    domain = domain.decode('utf-16-le')
+    domain = domain.decode('utf-16-le', 'replace')
     domain_name = dec_data[domain_name_off:domain_name_off + domain_name_len]
-    domain_name = domain_name.decode('utf-16-le')
+    domain_name = domain_name.decode('utf-16-le', 'replace')
 
     return (username, domain, domain_name, hashh)
 
@@ -109,6 +109,8 @@ def dump_hashes(addr_space, sysaddr, secaddr):
             continue
 
         data = v.obj_vm.read(v.Data, v.DataLength)
+        if data == None:
+            continue
 
         (uname_len, domain_len, domain_name_len,
             enc_data, ch) = parse_cache_entry(data)
@@ -139,8 +141,8 @@ def dump_memory_hashes(addr_space, config, syshive, sechive):
     else:
         result = []
         for (u, d, dn, hashh) in hashes:
-            result.append("{0}:{1}:{2}:{3}".format(u.lower(), hashh.encode('hex'),
-                                       d.lower(), dn.lower()))
+            result.append("{0}:{1}:{2}:{3}".format(u.encode('utf-8', 'ignore').lower(), hashh.encode('hex'),
+                                       d.encode('utf-8', 'ignore').lower(), dn.encode('utf-8', 'ignore').lower()))
         return result
 '''
 # I don't think this is used anywhere

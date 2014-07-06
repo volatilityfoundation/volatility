@@ -106,6 +106,7 @@ windows_overlay = {
     'Signature' : [ None, ['String', dict(length = 2)]],
     'LastWriteTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
     'Name' : [ None, ['String', dict(length = lambda x: x.NameLength)]],
+    'Parent': [ None, ['pointer', ['_CM_KEY_NODE']]],
     }],
 
     '_CM_NAME_CONTROL_BLOCK' : [ None, {
