@@ -38,10 +38,6 @@ class linux_plthook(linux_elfs.linux_elfs):
                 'ALL', short_option = 'a', default = False,
                 help = 'Display all PLT slots (incl. not hooked)', action = 'store_true')
         self._config.add_option( \
-                'WITH-FP', default = False,
-                help = 'Include possible false positives, where a dependency was swapped out;' \
-                        + ' implied by --all', action = 'store_true')
-        self._config.add_option( \
                 'IGNORE', default = [ ],
                 help = 'Ignore mappings backed by this path, ' \
                         +' useful for bad -l compiles (i.e. apache2 modules)',
@@ -59,17 +55,11 @@ class linux_plthook(linux_elfs.linux_elfs):
             task, soname = k
             elf, elf_start, elf_end, needed = v
             
-            print "cccchecking soname: %d | %s" % (task.pid, soname)
-          
             if elf._get_typename("hdr") == "elf32_hdr":
                 elf_arch = 32
             else:
                 elf_arch = 64
  
-            may_fp = list()
-            # we set this to a list of missing dependencies (might be swapped out etc.)
-            # this way we can show a hint to the user
-
             needed_expanded = set([soname])
             if (task, None) in elfs:
                 needed_expanded.add(None)
@@ -82,10 +72,6 @@ class linux_plthook(linux_elfs.linux_elfs):
                     needed += set(elfs[(task, dep)][3]) - needed_expanded
                 except KeyError:
                     needed_expanded.remove(dep)
-                    may_fp.append(dep)
-
-            if not (self._config.WITH_FP or self._config.ALL) and may_fp:
-                continue
 
             for phdr in elf.program_headers():
                 if not phdr.is_valid() or str(phdr.p_type) != 'PT_DYNAMIC':
@@ -101,11 +87,9 @@ class linux_plthook(linux_elfs.linux_elfs):
                         dt_jmprel = dsec.d_ptr
 
                 if dt_strtab == None:
-                    print "no strtab for %s" % soname
                     continue
 
                 if dt_jmprel == None:
-                    print "no jmprel for %s" % soname
                     continue
 
             for reloc in elf.relocations():
@@ -149,12 +133,9 @@ class linux_plthook(linux_elfs.linux_elfs):
                     else:
                         hookdesc = '[{0:x}:{1:x},{2}]'.format(vma.vm_start, vma.vm_end, vma.vm_flags)
  
-                if hookdesc == "" and (self._config.ALL or self._config.WITH_FP):
+                if hookdesc == "":
                         hookdesc = 'invalid memory'
                 
-                if may_fp:
-                    hookdesc += ' (missing ' + ', '.join(may_fp) + ')'
-
                 if match != False:
                     if self._config.ALL and match == soname:
                         hookdesc = '[RTLD_LAZY]'
@@ -175,5 +156,8 @@ class linux_plthook(linux_elfs.linux_elfs):
                                   ("Target Info", "")])
 
         for task, soname, elf, elf_start, elf_end, addr, imp, info, hooked in data:
+            if not hooked and not self._config.ALL:
+                continue
+
             self.table_row(outfd, task.pid, elf_start, soname if soname else '[main]', \
                     imp, addr, '!' if hooked else ' ', info)

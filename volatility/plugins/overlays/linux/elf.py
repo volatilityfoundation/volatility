@@ -464,8 +464,12 @@ class elf_hdr(elf):
     def symbol_name(self, sym):
         addr = self.cached_strtab + sym.st_name
         name = self.obj_vm.read(addr, 255)
-        idx = name.find("\x00")
-        name = name[:idx]
+        if name:
+            idx = name.find("\x00")
+            if idx != -1:
+                name = name[:idx]
+        else:
+            name = "N/A"
         return name
 
     def relocation_symbol(self, reloc):
