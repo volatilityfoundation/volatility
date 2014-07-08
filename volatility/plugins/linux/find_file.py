@@ -171,6 +171,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         while 1:
             idx = (index >> shift) & self.RADIX_TREE_MAP_MASK
             slot = node.slots[idx]
+            node = self.radix_tree_indirect_to_ptr(slot)
             shift = shift - self.RADIX_TREE_MAP_SHIFT
             height = height - 1
             if height <= 0:
