@@ -58,16 +58,13 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                 major, minor = inode.i_sb.major, inode.i_sb.minor
                 ino = inode.i_ino
                 pgoff = vma.vm_pgoff << 12
-                fname = linux_common.get_path(task, vma.vm_file)
             else:
                 (major, minor, ino, pgoff) = [0] * 4
 
-                if vma.vm_start <= task.mm.start_brk and vma.vm_end >= task.mm.brk:
-                    fname = "[heap]"
-                elif vma.vm_start <= task.mm.start_stack and vma.vm_end >= task.mm.start_stack:
-                    fname = "[stack]"
-                else:
-                    fname = ""
+            fname = vma.vm_name(task)
+
+            if fname == "Anonymous Mapping":
+                fname = ""
 
             self.table_row(outfd, task.pid, 
                 vma.vm_start,

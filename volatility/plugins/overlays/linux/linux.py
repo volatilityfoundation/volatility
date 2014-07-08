@@ -941,6 +941,22 @@ class module_struct(obj.CType):
 
         return ret       
 
+
+class vm_area_struct(obj.CType):
+    def vm_name(self, task):
+        if self.vm_file:
+            fname = linux_common.get_path(task, self.vm_file)
+        elif self.vm_start <= task.mm.start_brk and self.vm_end >= task.mm.brk:
+            fname = "[heap]"
+        elif self.vm_start <= task.mm.start_stack and self.vm_end >= task.mm.start_stack:
+            fname = "[stack]"
+        elif self.vm_start == self.vm_mm.context.vdso:
+            fname = "[vdso]"
+        else:
+            fname = "Anonymous Mapping"
+
+        return fname
+
 class task_struct(obj.CType):
     def is_valid_task(self):
 
@@ -1436,6 +1452,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'hlist_node': hlist_node,
             'files_struct': files_struct,
             'task_struct': task_struct,
+            'vm_area_struct': vm_area_struct,
             'module' : module_struct,
             'hlist_bl_node' : hlist_bl_node,
             'net_device' : net_device,

@@ -95,20 +95,6 @@ class linux_malfind(linux_pslist.linux_pslist):
 
         return ret
 
-    def _vma_name(self, task, vma):
-        if vma.vm_file:
-            fname = linux_common.get_path(task, vma.vm_file)
-        elif vma.vm_start <= task.mm.start_brk and vma.vm_end >= task.mm.brk:
-            fname = "[heap]"
-        elif vma.vm_start <= task.mm.start_stack and vma.vm_end >= task.mm.start_stack:
-            fname = "[stack]"
-        elif vma.vm_start == vma.vm_mm.context.vdso:
-            fname = "[vdso]"
-        else:
-            fname = "Anonymous Mapping"
-
-        return fname
-
     def render_text(self, outfd, data):
         for task in data:
             proc_as = task.get_process_address_space()
@@ -116,7 +102,7 @@ class linux_malfind(linux_pslist.linux_pslist):
             for vma in task.get_proc_maps():
 
                 if self._is_suspicious(vma):
-                    fname = self._vma_name(task, vma)
+                    fname = vma.vm_name(task)
                     if fname == "[vdso]":
                         continue
                    
