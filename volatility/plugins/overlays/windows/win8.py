@@ -18,6 +18,14 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+@author:       The Volatility Foundation
+@license:      GNU General Public License 2.0
+@contact:      awalters@4tphi.net
+
+This file provides support for Windows 8.
+"""
+
 import struct
 import volatility.plugins.overlays.windows.windows as windows
 import volatility.obj as obj
