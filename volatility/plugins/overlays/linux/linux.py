@@ -1115,7 +1115,10 @@ class task_struct(obj.CType):
                 continue
 
             pt_loads = []
-
+            dt_soname = None
+            dt_strtab = None
+            dt_needed = []
+             
             #### Walk pt_load and gather ranges
             for phdr in elf.program_headers():
                 if not phdr.is_valid():
@@ -1127,9 +1130,6 @@ class task_struct(obj.CType):
                 if str(phdr.p_type) != 'PT_DYNAMIC':
                     continue                   
              
-                dt_soname = None
-                dt_strtab = None
-                dt_needed = []
                 for dsec in phdr.dynamic_sections():
                     if dsec.d_tag == 5:
                         dt_strtab = dsec.d_ptr
@@ -1139,7 +1139,9 @@ class task_struct(obj.CType):
 
                     elif dsec.d_tag == 1:
                         dt_needed.append(dsec.d_ptr)
-                            
+           
+                break
+                 
             if dt_strtab == None or dt_needed == []:
                 continue
 
