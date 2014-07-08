@@ -160,7 +160,21 @@ def do_get_path(rdentry, rmnt, dentry, vfsmnt):
 
     return ret_val
 
-def get_new_sock_pipe_path(dentry):
+def _get_path_file(task, filp):
+    rdentry = task.fs.get_root_dentry()
+    rmnt    = task.fs.get_root_mnt()
+    dentry  = filp.dentry
+    vfsmnt  = filp.vfsmnt
+    
+    parent_name = vfsmnt.mnt_parent.mnt_mountpoint.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
+    mount_point = vfsmnt.mnt_mountpoint.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
+    mnt_root    = vfsmnt.mnt_root.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
+
+    return do_get_path(rdentry, rmnt, dentry, vfsmnt)
+
+def get_new_sock_pipe_path(task, filp):
+    dentry = filp.dentry
+
     sym = dentry.obj_vm.profile.get_symbol_by_address("kernel", dentry.d_op.d_dname)
     
     if sym:
@@ -172,6 +186,10 @@ def get_new_sock_pipe_path(dentry):
 
         elif sym == "pipefs_dname":
             pre_name = "pipe"
+
+        elif sym == "simple_dname":
+            pre_name = _get_path_file(task, filp)
+
         else:
             print "no handler for %s" % sym
             pre_name = "<BAD>"
@@ -184,19 +202,12 @@ def get_new_sock_pipe_path(dentry):
     return ret
 
 def get_path(task, filp):
-    rdentry = task.fs.get_root_dentry()
-    rmnt    = task.fs.get_root_mnt()
-    dentry  = filp.dentry
-    vfsmnt  = filp.vfsmnt
-    
-    parent_name = vfsmnt.mnt_parent.mnt_mountpoint.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
-    mount_point = vfsmnt.mnt_mountpoint.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
-    mnt_root    = vfsmnt.mnt_root.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
+    dentry = filp.dentry
 
     if dentry.d_op and dentry.d_op.d_dname:
-        ret = get_new_sock_pipe_path(filp.dentry)
+        ret = get_new_sock_pipe_path(task, filp)
     else:
-        ret = do_get_path(rdentry, rmnt, dentry, vfsmnt)
+        ret = _get_path_file(task, filp)
 
     return ret
 
