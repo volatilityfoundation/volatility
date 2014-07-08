@@ -1,6 +1,6 @@
 # Volatility
 # Copyright (C) 2008-2012 Volatile Systems
-# Copyright (C) 2011 Jamie Levy (Gleeda) <jamie.levy@gmail.com>
+# Copyright (C) 2011 Jamie Levy (Gleeda) <jamie@memoryanalysis.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 """
 @author:       Jamie Levy (gleeda)
 @license:      GNU General Public License 2.0 or later
-@contact:      jamie.levy@gmail.com
+@contact:      jamie@memoryanalysis.net
 @organization: Volatile Systems
 """
 

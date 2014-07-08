@@ -1,6 +1,6 @@
 # Volatility
 # Copyright (C) 2011-2013 Volatility Foundation
-# Copyright (C) 2011 Jamie Levy (Gleeda) <jamie.levy@gmail.com>
+# Copyright (C) 2011 Jamie Levy (Gleeda) <jamie@memoryanalysis.net>
 #
 # This file is part of Volatility.
 #
@@ -21,7 +21,7 @@
 """
 @author:       Jamie Levy (Gleeda)
 @license:      GNU General Public License 2.0
-@contact:      jamie.levy@gmail.com
+@contact:      jamie@memoryanalysis.net
 @organization: Volatility Foundation
 """
 
