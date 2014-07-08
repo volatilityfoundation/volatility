@@ -392,8 +392,8 @@ class Win8SP1x64(obj.Profile):
     _md_build = 9600
     _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp1_x64_vtypes'
 
-class Win2012SP0x64(Win8SP0x64):
-    """ A Profile for Windows Server 2012 SP0 x64 """
+class Win2012x64(Win8SP0x64):
+    """ A Profile for Windows Server 2012 x64 """
     _md_build = 9201 ##FIXME: fake build number to indicate server 2012 vs windows 8
 
 class Win2012R2x64(Win8SP1x64):
