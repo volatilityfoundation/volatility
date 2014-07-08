@@ -18,6 +18,14 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+@author:       The Volatility Foundation
+@license:      GNU General Public License 2.0
+@contact:      awalters@4tphi.net
+
+This file provides support for Windows 8.
+"""
+
 import struct
 import volatility.plugins.overlays.windows.windows as windows
 import volatility.obj as obj
@@ -392,8 +400,8 @@ class Win8SP1x64(obj.Profile):
     _md_build = 9600
     _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp1_x64_vtypes'
 
-class Win2012SP0x64(Win8SP0x64):
-    """ A Profile for Windows Server 2012 SP0 x64 """
+class Win2012x64(Win8SP0x64):
+    """ A Profile for Windows Server 2012 x64 """
     _md_build = 9201 ##FIXME: fake build number to indicate server 2012 vs windows 8
 
 class Win2012R2x64(Win8SP1x64):

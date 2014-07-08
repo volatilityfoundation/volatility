@@ -20,7 +20,7 @@
 """
 @author:       Jamie Levy (Gleeda)
 @license:      GNU General Public License 2.0
-@contact:      jamie.levy@gmail.com
+@contact:      jamie@memoryanalysis.net
 
 This file provides support for Windows 2003.
 """

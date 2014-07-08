@@ -22,6 +22,7 @@ import volatility.obj as obj
 import volatility.plugins.gui.constants as consts
 import volatility.plugins.gui.win32k_core as win32k_core
 import volatility.plugins.gui.vtypes.win7_sp0_x86_vtypes_gui as win7_sp0_x86_vtypes_gui
+import volatility.plugins.gui.vtypes.win7_sp0_x64_vtypes_gui as win7_sp0_x64_vtypes_gui
 
 class _RTL_ATOM_TABLE_ENTRY(win32k_core._RTL_ATOM_TABLE_ENTRY):
     """A class for atom table entries"""
@@ -128,3 +129,92 @@ class Win8x86Gui(obj.ProfileModification):
             }],
 
         })
+
+class Win8x64Gui(obj.ProfileModification):
+
+    before = ["Win32KCoreClasses"]
+
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x > 1}
+
+    def modification(self, profile):
+
+        profile.vtypes.update(win7_sp0_x64_vtypes_gui.win32k_types)
+        profile.object_classes.update({'_RTL_ATOM_TABLE_ENTRY': _RTL_ATOM_TABLE_ENTRY})
+
+        profile.merge_overlay({
+
+            'tagWINDOWSTATION': [ None, { 
+            ## _EnumClipboardFormats
+            ## mov     rcx, [rdi+60h]
+            ## test    rcx, rcx
+            'pClipBase' : [ 0x60, ['pointer', ['array', lambda x : x.cNumClipFormats, ['tagCLIP']]]], 
+
+            ## xxxEmptyClipboard
+            ## mov     ebp, [rbx+68h]
+            'cNumClipFormats': [0x68, ['unsigned long']],
+
+            ## xxxEmptyClipboard
+            ## call    HMAssignmentLock
+            ## inc     dword ptr [rbx+6Ch]
+            'iClipSerialNumber': [0x6c, ['unsigned long']],
+
+            ## xxxCreateWindowStation
+            ## add     rcx, 88h
+            ## call    CreateGlobalAtomTable 
+            'pGlobalAtomTable': [ 0x88, ['pointer', ['void']]],
+            }],
+
+            'tagDESKTOP': [ None, {
+            ## ParseDesktop
+            ## mov     rdi, [rdi+10h]
+            'rpdeskNext': [0x10, ['pointer', ['tagDESKTOP']]],
+
+            ## DestroyDesktop
+            ## mov     eax, [rcx+20h]
+            ## mov     rdi, [rcx+18h]
+            'rpwinstaParent': [0x18, ['pointer', ['tagWINDOWSTATION']]],
+
+            ## DesktopAlloc
+            ## mov     rcx, [rcx+78h]
+            ## mov     r8d, edx
+            ## xor     edx, edx
+            'pheapDesktop': [0x78, ['pointer', ['tagWIN32HEAP']]],
+
+            ### xxxCreateDesktopEx2
+            ## add     rax, 0A0h
+            ## mov     [rax+8], rax 
+            'PtiList': [0xA0, ['_LIST_ENTRY']],
+            }],
+
+            'tagTHREADINFO': [ None, {
+            ## xxxCreateWindowStation
+            ## mov     rsi, cs:gptiCurrent
+            ## mov     rax, [r14+10h]
+            ## mov     rcx, [rax+170h]
+            'ppi': [0x170, ['pointer', ['tagPROCESSINFO']]],
+
+            ## zzzReattachThreads
+            ## lea     rsi, [rdi-280h]
+            ## mov     rdx, [rsi+230h] ; struct tagQ *
+            ## cmp     rdx, [rsi+178h]
+            'PtiLink': [0x280, ['_LIST_ENTRY']],
+            }],
+
+            'tagCLIP': [ None, {
+            'fmt' : [ None, ['Enumeration', dict(target = 'unsigned long', choices = consts.CLIPBOARD_FORMAT_ENUM)]],
+            }],
+
+            '_RTL_ATOM_TABLE': [ None, {
+            'NumBuckets': [ 0x1C, ['unsigned long']],
+            'Buckets': [ 0x20, ['array', lambda x : x.NumBuckets,
+                ['pointer', ['_RTL_ATOM_TABLE_ENTRY']]]],
+            }],
+
+            '_HANDLEENTRY': [ None, {
+            'bType': [ None, ['Enumeration', dict(target = 'unsigned char', choices = consts.HANDLE_TYPE_ENUM_SEVEN)]],
+            }],
+
+            })

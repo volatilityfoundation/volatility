@@ -64,21 +64,6 @@ class WindowsCrashDumpSpace32(addrspace.AbstractRunBasedMemory):
     def get_base(self):
         return self.base
 
-    def write(self, phys_addr, buf):
-        """This is mostly for support of raw2dmp so that 
-        it can modify the kernel CONTEXT after the crash
-        dump has been written to disk"""
-
-        if not self._config.WRITE:
-            return False
-
-        file_addr = self.translate(phys_addr)
-
-        if file_addr is None:
-            return False
-
-        return self.base.write(file_addr, buf)
-
     def read_long(self, addr):
         _baseaddr = self.translate(addr)
         string = self.read(addr, 4)
