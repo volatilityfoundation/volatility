@@ -75,6 +75,9 @@ def Hexdump(data, width = 16):
 
         yield offset, hexdata, translated_data
 
+def remove_unprintable(str):
+    return ''.join([c for c in str if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
+
 # Compensate for Windows python not supporting socket.inet_ntop and some
 # Linux systems (i.e. OpenSuSE 11.2 w/ Python 2.6) not supporting IPv6. 
 
