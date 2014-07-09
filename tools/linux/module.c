@@ -502,9 +502,14 @@ struct mount {
 	struct mount *mnt_parent;
 	struct dentry *mnt_mountpoint;
 	struct vfsmount mnt;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0)
+        struct callback_head rcu;
+#endif
 #ifdef CONFIG_SMP
 	struct mnt_pcp __percpu *mnt_pcp;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0)
 	atomic_t mnt_longterm;		/* how many of the refs are longterm */
+#endif
 #else
 	int mnt_count;
 	int mnt_writers;

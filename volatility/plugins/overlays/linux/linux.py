@@ -488,13 +488,12 @@ class linux_file(obj.CType):
 class hlist_node(obj.CType):
     """A hlist_node makes a doubly linked list."""
     def list_of_type(self, obj_type, member, offset = -1, forward = True, head_sentinel = True):
-
         if not self.is_valid():
             return
 
         ## Get the first element
         if forward:
-            nxt = self.next.dereference()
+            nxt = self.m("next").dereference()
         else:
             nxt = self.pprev.dereference().dereference()
 
@@ -517,7 +516,7 @@ class hlist_node(obj.CType):
             yield item
 
             if forward:
-                nxt = item.m(member).next.dereference()
+                nxt = item.m(member).m("next").dereference()
             else:
                 nxt = item.m(member).pprev.dereference().dereference()
 
@@ -560,10 +559,11 @@ class list_head(obj.CType):
             yield item
 
             if forward:
-                nxt = item.m(member).next.dereference()
+                nxt = item.m(member).m("next").dereference()
             else:
                 nxt = item.m(member).prev.dereference()
 
+    
     def __nonzero__(self):
         ## List entries are valid when both Flinks and Blink are valid
         return bool(self.next) or bool(self.prev)
