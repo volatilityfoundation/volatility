@@ -1370,7 +1370,6 @@ class timespec(obj.CType):
         return time_obj
 
 class dentry(obj.CType):
-
     def get_partial_path(self):
         """ we can't get the full path b/c we 
         do not have a ref to the vfsmnt """
@@ -1388,6 +1387,14 @@ class dentry(obj.CType):
         path.reverse()
         str_path = "/".join([p for p in path])
         return str_path
+
+    @property
+    def d_count(self):
+        ret = self.members.get("d_count")
+        if ret is None:
+            ret = self.d_lockref.count
+        else:
+            ret = self.m("d_count")
 
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
