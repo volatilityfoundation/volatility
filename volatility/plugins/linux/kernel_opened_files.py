@@ -44,6 +44,7 @@ class linux_kernel_opened_files(linux_common.AbstractLinuxCommand):
 
             dentry = obj.Object("dentry", offset = node.v() - hash_offset, vm = self.addr_space)
             cnt = cnt + 1
+            last_node = node
             node = dentry.d_hash.next
     
     def _walk_node_node(self, node):
@@ -55,8 +56,9 @@ class linux_kernel_opened_files(linux_common.AbstractLinuxCommand):
                 yield node, cnt
 
             cnt = cnt + 1
+            last_node = node
             node = node.next
-
+            
     def _walk_node(self, node): 
         last_node = None
 
@@ -77,43 +79,45 @@ class linux_kernel_opened_files(linux_common.AbstractLinuxCommand):
         arr = obj.Object(theType = "Array", targetType = "hlist_bl_head", offset = d_htable_ptr, vm = self.addr_space, count = loop_max)
 
         hash_offset = self.addr_space.profile.get_obj_offset("dentry", "d_hash")
-        
+       
+        dents = {}
+
         for list_head in arr:
             if not list_head.first.is_valid():
                 continue
-    
+
+  
             node = obj.Object("hlist_bl_node", offset = list_head.first & ~1, vm = self.addr_space)
             
             for node, cnt in self._walk_node(node):   
-                dentry = obj.Object("dentry", offset = node.v() - hash_offset, vm = self.addr_space)
-                yield dentry.obj_offset
+                dents[node.v() - hash_offset] = 0
+    
+        return dents
 
     def _compare_filps(self):
         dcache = self._gather_dcache()
 
-        active_filps = {}
-
         openfiles = linux_lsof.linux_lsof(self._config).calculate()
         for (task, filp, i) in openfiles:
-            active_filps[filp.dentry.v()] = 1
+            val = filp.dentry.v()
+            if not val in dcache:
+                yield val
 
         procs = linux_pslist.linux_pslist(self._config).calculate()
         for proc in procs:
             for vma in proc.get_proc_maps():
                 if vma.vm_file:
-                    active_filps[vma.vm_file.dentry.v()] = 2
-
-        for cache_dentry in dcache:
-            if cache_dentry not in active_filps:
-                dentry = obj.Object("dentry", offset = cache_dentry, vm = self.addr_space) 
-                if dentry.d_count > 0 and dentry.d_inode.is_reg() and dentry.d_flags == 128:
-                    yield dentry
+                    val = vma.vm_file.dentry.v()
+                    if not val in dcache:
+                        yield val
 
     def calculate(self):
         linux_common.set_plugin_members(self)
 
-        for dentry in self._compare_filps():
-            yield dentry
+        for dentry_offset in self._compare_filps():
+            dentry = obj.Object("dentry", offset = dentry_offset, vm = self.addr_space) 
+            if dentry.d_count > 0 and dentry.d_inode.is_reg() and dentry.d_flags == 128:
+                yield dentry
 
     def render_text(self, outfd, data):
 
