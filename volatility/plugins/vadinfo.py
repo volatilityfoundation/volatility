@@ -337,7 +337,15 @@ class VADDump(VADInfo):
                 continue
 
             max_commit = obj.VolMagic(task_space).MM_MAX_COMMIT.v()
+            # as a first step, we try to get the physical offset of the
+            # _EPROCESS object using the process address space
             offset = task_space.vtop(task.obj_offset)
+            # if this fails, we'll get its physical offset using kernel space
+            if offset == None:
+                offset = task.obj_vm.vtop(task.obj_offset)
+            # if this fails we'll manually set the offset to 0
+            if offset == None:
+                offset = 0
 
             for vad in task.VadRoot.traverse():
                 if not vad.is_valid():

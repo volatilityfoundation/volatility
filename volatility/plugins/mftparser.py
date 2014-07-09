@@ -129,6 +129,8 @@ class MFT_FILE_RECORD(obj.CType):
             MFT_PATHS_FULL[int(self.RecordNumber)] = temp
 
     def get_full_path(self, fileinfo):
+        if self.obj_vm._config.DEBUGOUT:
+            print "Building path for file {0}".format(fileinfo.get_name())
         parent = ""
         path = self.remove_unprintable(fileinfo.get_name()) or "(Null)"
         try:
@@ -137,12 +139,16 @@ class MFT_FILE_RECORD(obj.CType):
             return path
         if int(self.RecordNumber) == 5 or int(self.RecordNumber) == 0:
             return path
+        seen = set()
         while parent != {}:
+            seen.add(parent_id)
             parent = MFT_PATHS_FULL.get(int(parent_id), {})
             if parent == {} or parent["filename"] == "" or int(parent_id) == 0 or int(parent_id) == 5:
                 return path
             path = parent["filename"] + "\\" + path
             parent_id = parent["ParentDirectory"] & 0xffffff
+            if parent_id in seen:
+                return path
         return path
 
     def get_mft_type(self):
@@ -154,14 +160,18 @@ class MFT_FILE_RECORD(obj.CType):
         return thetype.rstrip(" & ")
         
     def parse_attributes(self, mft_buff, check = True, entrysize = 1024):
-
         next_attr = self.ResidentAttributes
         end = mft_buff.find("\xff\xff\xff\xff")
         if end == -1:
             end = entrysize
         attributes = []
         dataseen = False
+        seen = set()
+        maximum = next_attr.obj_offset
         while next_attr != None and next_attr.obj_offset <= end:
+            if next_attr.obj_offset in seen or next_attr.obj_offset <= maximum:
+                break
+            seen.add(next_attr.obj_offset)
             try:
                 attr = ATTRIBUTE_TYPE_ID.get(int(next_attr.Header.Type), None)
             except struct.error:
@@ -176,10 +186,12 @@ class MFT_FILE_RECORD(obj.CType):
                 if not check or next_attr.STDInfo.is_valid():
                     attributes.append((attr, next_attr.STDInfo))
                 next_off = next_attr.STDInfo.obj_offset + next_attr.ContentSize
-                if next_off == next_attr.STDInfo.obj_offset:
+                if next_off <= next_attr.STDInfo.obj_offset:
                     next_attr = None
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
+                if next_attr:
+                    maximum = max(maximum, next_attr.obj_offset)
             elif attr == 'FILE_NAME':
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $FN"
@@ -187,10 +199,12 @@ class MFT_FILE_RECORD(obj.CType):
                 if not check or next_attr.FileName.is_valid():
                     attributes.append((attr, next_attr.FileName))
                 next_off = next_attr.FileName.obj_offset + next_attr.ContentSize
-                if next_off == next_attr.FileName.obj_offset:
+                if next_off <= next_attr.FileName.obj_offset:
                     next_attr = None
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
+                if next_attr:
+                    maximum = max(maximum, next_attr.obj_offset)
             elif attr == "OBJECT_ID":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $ObjectId"
@@ -201,10 +215,12 @@ class MFT_FILE_RECORD(obj.CType):
                 else:
                     attributes.append((attr, next_attr.ObjectID))
                 next_off = next_attr.ObjectID.obj_offset + next_attr.ContentSize
-                if next_off == next_attr.ObjectID.obj_offset:
+                if next_off <= next_attr.ObjectID.obj_offset:
                     next_attr = None
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
+                if next_attr:
+                    maximum = max(maximum, next_attr.obj_offset)
             elif attr == "DATA":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $DATA"
@@ -224,22 +240,22 @@ class MFT_FILE_RECORD(obj.CType):
                 start = next_attr.obj_offset + next_attr.ContentOffset
                 theend = min(start + next_attr.ContentSize, end)
                 if next_attr.Header.NonResidentFlag == 1:
-                    thedata = "" #"Non-Resident"
+                    thedata = "" 
                 else:
                     try:
                         contents = mft_buff[start:theend]
                     except TypeError:
                         next_attr = None
                         continue
-                    thedata = contents #"\n".join(["{0:010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(contents)])
-                    #if len(thedata) == 0:
-                    #    thedata = "(Empty)"
+                    thedata = contents 
                 attributes.append((attr, thedata))
                 next_off = theend
-                if next_off == start:
+                if next_off <= start:
                     next_attr = None
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
+                if next_attr:
+                    maximum = max(maximum, next_attr.obj_offset)
             elif attr == "ATTRIBUTE_LIST":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $AttributeList"
@@ -263,13 +279,6 @@ class MFT_FILE_RECORD(obj.CType):
             return None
 
         while attr == None and cursor <= end:
-            #bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = mft_buff)
-            #item = obj.Object('RESIDENT_ATTRIBUTE', vm = bufferas,
-            #                    offset = next_off + cursor)
-            #try:
-            #    attr = ATTRIBUTE_TYPE_ID.get(int(item.Header.Type), None)
-            #except struct.error:
-            #    return item
             try:
                 val = struct.unpack("<I", mft_buff[next_off + cursor: next_off + cursor + 4])[0]
                 attr = ATTRIBUTE_TYPE_ID.get(val, None)
@@ -302,7 +311,7 @@ class RESIDENT_ATTRIBUTE(obj.CType):
                         attributes.append(("FILE_NAME (AL)", theitem))
             except struct.error:
                 return
-            if item.Length == 0:
+            if item.Length <= 0:
                 return
             start += item.Length
 
