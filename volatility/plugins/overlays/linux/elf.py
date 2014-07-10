@@ -316,7 +316,8 @@ class elf_hdr(elf):
             idx = i * rtsize
 
             phdr = obj.Object("elf_phdr", offset = arr_start + idx, vm = self.obj_vm, parent = self)
-            yield phdr  
+            if phdr.is_valid():
+                yield phdr  
 
     def _section_headers(self):
         rtname = self._get_typename("shdr")

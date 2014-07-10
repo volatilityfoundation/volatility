@@ -53,17 +53,11 @@ class linux_ldrmodules(linux_pslist.linux_pslist):
                     if flags in ["rw-", "r--"]:
                         continue 
 
-                    if vma.vm_file: 
-                        fname = linux_common.get_path(task, vma.vm_file)
-                    elif vma.vm_start <= task.mm.start_brk and vma.vm_end >= task.mm.brk:
-                        fname = "[heap]"
-                    elif vma.vm_start <= task.mm.start_stack and vma.vm_end >= task.mm.start_stack:
-                        fname = "[stack]"
-                    elif vma.vm_start == vma.vm_mm.context.vdso:
+                    fname = vma.vm_name(task)
+
+                    if fname == "[vdso]":
                         continue
-                    else:
-                        fname = ""
-         
+
                     proc_maps[task.obj_offset][vma.vm_start.v()] = (task, proc_as, fname)
 
             dl_maps[task.obj_offset] = {}
