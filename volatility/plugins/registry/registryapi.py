@@ -25,6 +25,7 @@
 @organization: Volatility Foundation
 """
 
+import volatility.utils as utils
 import volatility.win32.hive as hivemod
 import volatility.win32.rawreg as rawreg
 import volatility.win32.hashdump as hashdump
@@ -43,8 +44,6 @@ class RegistryApi(object):
         self.current_offsets = {}
         self.populate_offsets()
 
-    def remove_unprintable(self, str):
-        return ''.join([c for c in str if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
 
     def print_offsets(self):
         '''
@@ -150,7 +149,7 @@ class RegistryApi(object):
         path = key.Name
         while key.Parent:
             key = key.Parent.dereference()
-            if self.remove_unprintable(str(key.Name)) != "": 
+            if utils.remove_unprintable(str(key.Name)) != "": 
                 path = "{0}\\{1}".format(key.Name, path)
         return path
 
