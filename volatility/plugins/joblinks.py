@@ -90,6 +90,6 @@ class JobLinks(taskmods.DllList):
                         "-",
                         "-",
                         "Yes",
-                        item.Peb.ProcessParameters.ImagePathName.v())
+                        item.Peb.ProcessParameters.ImagePathName.v().split("\\")[-1].encode("utf8", "ignore"))
                 outfd.write("{0}\n".format(header))
 
