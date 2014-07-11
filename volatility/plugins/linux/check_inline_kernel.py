@@ -276,10 +276,11 @@ class linux_check_inline_kernel(linux_common.AbstractLinuxCommand):
         for func_name in known_funcs:
             func_addr = self.profile.get_symbol(func_name)
 
-            hook_info = self._is_hooked(func_addr,  modules)
-            if hook_info:
-                (hook_type, hook_address) = hook_info
-                yield (func_name, "", hook_type, hook_address)        
+            if func_addr:
+                hook_info = self._is_hooked(func_addr,  modules)
+                if hook_info:
+                    (hook_type, hook_address) = hook_info
+                    yield (func_name, "", hook_type, hook_address)        
 
     def calculate(self):
         linux_common.set_plugin_members(self)
@@ -289,7 +290,7 @@ class linux_check_inline_kernel(linux_common.AbstractLinuxCommand):
 
         modules  = linux_lsmod.linux_lsmod(self._config).get_modules()       
  
-        funcs = [self._check_file_op_pointers, self._check_afinfo, self._check_inetsw]
+        funcs = [self._check_known_functions, self._check_file_op_pointers, self._check_afinfo, self._check_inetsw]
         
         for func in funcs:
             for hook_info in func(modules):
