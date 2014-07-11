@@ -337,7 +337,9 @@ class VADDump(VADInfo):
                 continue
 
             max_commit = obj.VolMagic(task_space).MM_MAX_COMMIT.v()
-            offset = task_space.vtop(task.obj_offset)
+            offset = task.obj_vm.vtop(task.obj_offset)
+            if offset == None:
+                offset = 0
 
             for vad in task.VadRoot.traverse():
                 if not vad.is_valid():
