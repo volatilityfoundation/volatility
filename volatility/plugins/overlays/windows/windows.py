@@ -672,6 +672,9 @@ class _TOKEN(obj.CType):
                 default = luid.Attributes & 1 != 0
                 yield luid.Luid.LowPart, True, enabled, default
 
+class _OBJECT_TYPE(obj.CType, ExecutiveObjectMixin):
+    pass
+
 class _ETHREAD(obj.CType, ExecutiveObjectMixin):
     """ A class for threads """
 
@@ -1193,6 +1196,7 @@ class WindowsObjectClasses(obj.ProfileModification):
             '_OBJECT_SYMBOLIC_LINK': _OBJECT_SYMBOLIC_LINK,
             '_KMUTANT': _KMUTANT,
             '_CMHIVE': _CMHIVE,
+            '_OBJECT_TYPE': _OBJECT_TYPE,
             })
 
 class VolMagicPoolTag(obj.VolatilityMagic):
@@ -1252,6 +1256,7 @@ class PoolTagModification(obj.ProfileModification):
             'FilePoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "File", protected = protected)]],
             'WindPoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "Wind", protected = protected)]],
             'ThreadPoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "Thre", protected = protected)]],
+            'ObjectTypePoolTag': [ 0x0, ['VolMagicPoolTag', dict(tag = "ObjT", protected = protected)]],
             }]})
 
 class AbstractKDBGMod(obj.ProfileModification):
