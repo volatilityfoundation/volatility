@@ -30,6 +30,8 @@ import volatility.poolscan as poolscan
 class PoolTrackTagOverlay(obj.ProfileModification):
     """Overlays for pool trackers"""
 
+    conditions = {'os': lambda x: x == 'windows'}
+
     def modification(self, profile):
         profile.merge_overlay({
             '_POOL_TRACKER_TABLE': [ None, {
