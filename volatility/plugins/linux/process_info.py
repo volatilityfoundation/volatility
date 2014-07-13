@@ -161,11 +161,10 @@ def read_registers(task, addr_space):
     )
 
 # Main command class
-class linux_process_info(linux_pslist.linux_pslist):
+class linux_process_info:
     """ Plugin to gather info for a task/process. Extends pslist. """
 
     def __init__(self, config, *args, **kwargs):
-        linux_pslist.linux_pslist.__init__(self, config, *args, **kwargs)
         linux_common.set_plugin_members(self)
         global address_size
         if self.profile.metadata.get('memory_model', '32bit') == '32bit':
