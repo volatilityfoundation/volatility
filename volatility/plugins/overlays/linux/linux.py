@@ -973,7 +973,10 @@ class task_struct(obj.CType):
     def uid(self):
         ret = self.members.get("uid")
         if ret is None:
-            ret = self.cred.uid
+            if hasattr(self.cred.uid, "val"):
+                ret = self.cred.uid.val
+            else:
+                ret = self.cred.uid
         else:
             ret = self.m("uid")
 
@@ -986,6 +989,8 @@ class task_struct(obj.CType):
             gid = self.cred.gid
             if hasattr(gid, 'counter'):
                 ret = obj.Object("int", offset = gid.v(), vm = self.obj_vm)
+            elif hasattr(gid, "val"):
+                ret = gid.val
             else:
                 ret = gid
         else:
