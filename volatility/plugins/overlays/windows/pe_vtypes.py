@@ -451,6 +451,10 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
         """Return the IMAGE_DEBUG_DIRECTORY for debug info"""
         return self._directory(6) # IMAGE_DEBUG_DIRECTORY
 
+    def security_dir(self):
+        """Return the IMAGE_SECURITY_DIRECTORY"""
+        return self._directory(4) # IMAGE_DIRECTORY_ENTRY_SECURITY
+
     def get_debug_directory(self):
         """Return the debug directory object for this PE"""
         
