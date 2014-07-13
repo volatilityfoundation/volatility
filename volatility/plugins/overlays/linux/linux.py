@@ -743,7 +743,6 @@ class inet_sock(obj.CType):
 
     @property
     def dst_addr(self):
-
         if self.sk.__sk_common.skc_family == socket.AF_INET:
             # FIXME: Consider using kernel version metadata rather than checking hasattr
             if hasattr(self, "daddr") and self.daddr:
@@ -755,8 +754,11 @@ class inet_sock(obj.CType):
 
             return daddr.cast("IpAddress")
         else:
-            return self.pinet6.daddr.cast("Ipv6Address")
-    
+            if hasattr(self.pinet6, "daddr"):
+                return self.pinet6.daddr.cast("Ipv6Address")
+            else:
+                return self.sk.__sk_common.skc_v6_daddr.cast("Ipv6Address") #pylint: disable-msg=W0212
+
 class tty_ldisc(obj.CType):
 
     @property
