@@ -166,12 +166,7 @@ class MFT_FILE_RECORD(obj.CType):
             end = entrysize
         attributes = []
         dataseen = False
-        seen = set()
-        maximum = next_attr.obj_offset
         while next_attr != None and next_attr.obj_offset <= end:
-            if next_attr.obj_offset in seen or next_attr.obj_offset <= maximum:
-                break
-            seen.add(next_attr.obj_offset)
             try:
                 attr = ATTRIBUTE_TYPE_ID.get(int(next_attr.Header.Type), None)
             except struct.error:
@@ -186,12 +181,10 @@ class MFT_FILE_RECORD(obj.CType):
                 if not check or next_attr.STDInfo.is_valid():
                     attributes.append((attr, next_attr.STDInfo))
                 next_off = next_attr.STDInfo.obj_offset + next_attr.ContentSize
-                if next_off <= next_attr.STDInfo.obj_offset:
+                if next_off == next_attr.STDInfo.obj_offset:
                     next_attr = None
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
-                if next_attr:
-                    maximum = max(maximum, next_attr.obj_offset)
             elif attr == 'FILE_NAME':
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $FN"
@@ -199,12 +192,10 @@ class MFT_FILE_RECORD(obj.CType):
                 if not check or next_attr.FileName.is_valid():
                     attributes.append((attr, next_attr.FileName))
                 next_off = next_attr.FileName.obj_offset + next_attr.ContentSize
-                if next_off <= next_attr.FileName.obj_offset:
+                if next_off == next_attr.FileName.obj_offset:
                     next_attr = None
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
-                if next_attr:
-                    maximum = max(maximum, next_attr.obj_offset)
             elif attr == "OBJECT_ID":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $ObjectId"
@@ -215,12 +206,10 @@ class MFT_FILE_RECORD(obj.CType):
                 else:
                     attributes.append((attr, next_attr.ObjectID))
                 next_off = next_attr.ObjectID.obj_offset + next_attr.ContentSize
-                if next_off <= next_attr.ObjectID.obj_offset:
+                if next_off == next_attr.ObjectID.obj_offset:
                     next_attr = None
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
-                if next_attr:
-                    maximum = max(maximum, next_attr.obj_offset)
             elif attr == "DATA":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $DATA"
@@ -250,12 +239,10 @@ class MFT_FILE_RECORD(obj.CType):
                     thedata = contents 
                 attributes.append((attr, thedata))
                 next_off = theend
-                if next_off <= start:
+                if next_off == start:
                     next_attr = None
                     continue
                 next_attr = self.advance_one(next_off, mft_buff, end)
-                if next_attr:
-                    maximum = max(maximum, next_attr.obj_offset)
             elif attr == "ATTRIBUTE_LIST":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $AttributeList"
