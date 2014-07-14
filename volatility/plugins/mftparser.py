@@ -151,7 +151,7 @@ class MFT_FILE_RECORD(obj.CType):
             parent = MFT_PATHS_FULL.get(int(parent_id), {})
             if parent == {} or parent["filename"] == "" or int(parent_id) == 0 or int(parent_id) == 5:
                 return path
-            path = parent["filename"] + "\\" + path
+            path = "{0}\\{1}".format(parent["filename"], path)
             parent_id = parent["ParentDirectory"] & 0xffffff
             if parent_id in seen:
                 return path
@@ -372,7 +372,7 @@ class STANDARD_INFORMATION(obj.CType):
                 # non-base entry.  the analyst can investigate these types of records
                 # on his/her own by comparing record numbers in output or examining the 
                 # given physical offset in memory for example
-                path = record["filename"] + " {0}".format(path)
+                path = "{0} {1}".format(record["filename"], path)
 
         return "[{9}MFT STD_INFO] {0} (Offset: 0x{1:x})|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
             path,
@@ -776,7 +776,7 @@ class MFTParser(common.AbstractWindowsCommand):
         for offset, mft_entry, attributes in data:
             if len(attributes) == 0:
                 continue
-            outfd.write(border + "\n")
+            outfd.write("{0}\n".format(border))
             outfd.write("MFT entry found at offset 0x{0:x}\n".format(offset))
             outfd.write("Attribute: {0}\n".format(mft_entry.get_mft_type())) 
             outfd.write("Record Number: {0}\n".format(mft_entry.RecordNumber))
@@ -820,4 +820,4 @@ class MFTParser(common.AbstractWindowsCommand):
                 elif a == "OBJECT_ID":
                     outfd.write("\n$OBJECT_ID\n")
                     outfd.write(str(i))
-            outfd.write("\n" + border + "\n") 
+            outfd.write("\n{0}\n".format(border))
