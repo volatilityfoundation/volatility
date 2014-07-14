@@ -77,12 +77,6 @@ class VerInfo(procdump.ProcDump):
                 if pefile.is_valid():
                     yield module, pefile
 
-    def display_unicode(self, string):
-        """Renders a UTF16 string"""
-        if string is None:
-            return ''
-        return string.decode("utf16", "ignore").encode("ascii", 'backslashreplace')
-
     def render_text(self, outfd, data):
         """Renders the text"""
         for module, pefile in data:
@@ -97,12 +91,5 @@ class VerInfo(procdump.ProcDump):
                 outfd.write("  OS              : {0}\n".format(vinfo.FileInfo.FileOS))
                 outfd.write("  File Type       : {0}\n".format(vinfo.FileInfo.file_type()))
                 outfd.write("  File Date       : {0}\n".format(vinfo.FileInfo.FileDate or ''))
-                for name, children in vinfo.get_children():
-                    if name == 'StringFileInfo':
-                        for _codepage, strings in children:
-                            for string, value in strings:
-                                # Make sure value isn't a generator, and we've a subtree to deal with
-                                if isinstance(value, type(strings)):
-                                    outfd.write("  {0} : Subtrees not yet implemented\n".format(string))
-                                else:
-                                    outfd.write("  {0} : {1}\n".format(string, self.display_unicode(value)))
+                for string, value in vinfo.get_file_strings():
+                    outfd.write("  {0} : {1}\n".format(string, value))

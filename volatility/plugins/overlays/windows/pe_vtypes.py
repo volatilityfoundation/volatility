@@ -758,6 +758,24 @@ class VerStruct(obj.CType):
             offset = self.offset_pad(offset + item.Length)
         raise StopIteration("No children")
 
+    def display_unicode(self, string):
+        """Renders a UTF16 string"""
+        if string is None:
+            return ''
+        return string.decode("utf16", "ignore").encode("ascii", 'backslashreplace')
+
+    def get_file_strings(self):
+
+        for name, children in self.get_children():
+            if name == 'StringFileInfo':
+                for _codepage, strings in children:
+                    for string, value in strings:
+                        # Make sure value isn't a generator, and we've a subtree to deal with
+                        if isinstance(value, type(strings)):
+                            debug.debug("  {0} : Subtrees not yet implemented\n".format(string))
+                        else:
+                            yield string, self.display_unicode(value)
+
 class _VS_VERSION_INFO(VerStruct):
     """Version Information"""
 
