@@ -451,6 +451,10 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
         """Return the IMAGE_DEBUG_DIRECTORY for debug info"""
         return self._directory(6) # IMAGE_DEBUG_DIRECTORY
 
+    def security_dir(self):
+        """Return the IMAGE_SECURITY_DIRECTORY"""
+        return self._directory(4) # IMAGE_DIRECTORY_ENTRY_SECURITY
+
     def get_debug_directory(self):
         """Return the debug directory object for this PE"""
         
@@ -753,6 +757,24 @@ class VerStruct(obj.CType):
             yield item.get_key(), item.get_children()
             offset = self.offset_pad(offset + item.Length)
         raise StopIteration("No children")
+
+    def display_unicode(self, string):
+        """Renders a UTF16 string"""
+        if string is None:
+            return ''
+        return string.decode("utf16", "ignore").encode("ascii", 'backslashreplace')
+
+    def get_file_strings(self):
+
+        for name, children in self.get_children():
+            if name == 'StringFileInfo':
+                for _codepage, strings in children:
+                    for string, value in strings:
+                        # Make sure value isn't a generator, and we've a subtree to deal with
+                        if isinstance(value, type(strings)):
+                            debug.debug("  {0} : Subtrees not yet implemented\n".format(string))
+                        else:
+                            yield string, self.display_unicode(value)
 
 class _VS_VERSION_INFO(VerStruct):
     """Version Information"""
