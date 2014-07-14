@@ -52,7 +52,9 @@ class linux_librarydump(linux_pslist.linux_pslist):
         for task in data:
             if not task.mm:
                 continue
-    
+   
+            proc_as = task.get_process_address_space()
+ 
             for vma in task.get_proc_maps():
                 if self._config.BASE and vma.vm_start != self._config.BASE:
                     continue
