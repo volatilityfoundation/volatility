@@ -58,8 +58,6 @@ class mac_bash_hash(mac_pslist.mac_pslist):
 
             proc_as = task.get_process_address_space()
 
-            print "scanning: %d" % task.p_pid
-
             for map in task.get_proc_maps():
                 if map.get_path() != "":
                     continue

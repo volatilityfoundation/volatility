@@ -54,8 +54,6 @@ class mac_bash(mac_tasks.mac_tasks):
                 if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
                     continue
 
-                print "scanning %s | %d" % (task.p_comm, task.p_pid)
-
                 # Keep a bucket of history objects so we can order them
                 history_entries = []
 
