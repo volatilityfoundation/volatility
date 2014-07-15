@@ -49,7 +49,9 @@ class linux_volshell(volshell.volshell):
                                                                         self._proc.pid, dtb)
 
     def set_context(self, offset = None, pid = None, name = None, physical = False):
-        if pid is not None:
+        if physical and offset != None:
+            offset = pslist.linux_pslist(self._config).virtual_process_from_physical_offset(offset).obj_offset  
+        elif pid is not None:
             offsets = []
             for p in self.getpidlist():
                 if p.pid.v() == pid:

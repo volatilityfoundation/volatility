@@ -25,6 +25,7 @@
 """
 
 import volatility.obj as obj
+import volatility.utils as utils
 import volatility.plugins.linux.common as linux_common
 
 class linux_pslist(linux_common.AbstractLinuxCommand):
@@ -35,6 +36,18 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
         config.add_option('PID', short_option = 'p', default = None,
                           help = 'Operate on these Process IDs (comma-separated)',
                           action = 'store', type = 'str')
+
+    def virtual_process_from_physical_offset(self, offset):
+        pspace = utils.load_as(self._config, astype = 'physical')
+        vspace = utils.load_as(self._config)
+        task = obj.Object("task_struct", vm = pspace, offset = offset)
+        parent = obj.Object("task_struct", vm = vspace, offset = task.parent)
+        
+        for child in parent.children.list_of_type("task_struct", "sibling"):
+            if child.obj_vm.vtop(child.obj_offset) == task.obj_offset:
+                return child
+        
+        return obj.NoneObject("Unable to bounce back from task_struct->parent->task_struct")
 
     def calculate(self):
         linux_common.set_plugin_members(self)
