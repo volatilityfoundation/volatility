@@ -54,12 +54,12 @@ class linux_plthook(linux_elfs.linux_elfs):
         for k, v in elfs.iteritems():
             task, soname = k
             elf, elf_start, elf_end, needed = v
-            
+          
             if elf._get_typename("hdr") == "elf32_hdr":
                 elf_arch = 32
             else:
                 elf_arch = 64
- 
+         
             needed_expanded = set([soname])
             if (task, None) in elfs:
                 needed_expanded.add(None)
@@ -72,25 +72,6 @@ class linux_plthook(linux_elfs.linux_elfs):
                     needed += set(elfs[(task, dep)][3]) - needed_expanded
                 except KeyError:
                     needed_expanded.remove(dep)
-
-            for phdr in elf.program_headers():
-                if not phdr.is_valid() or str(phdr.p_type) != 'PT_DYNAMIC':
-                    continue                   
-    
-                dt_strtab = None
-                dt_jmprel = None    
-                for dsec in phdr.dynamic_sections():
-                    if dsec.d_tag == 5:
-                        dt_strtab = dsec.d_ptr
-
-                    elif dsec.d_tag == 23:
-                        dt_jmprel = dsec.d_ptr
-
-                if dt_strtab == None:
-                    continue
-
-                if dt_jmprel == None:
-                    continue
 
             for reloc in elf.relocations():
                 rsym = elf.relocation_symbol(reloc)
@@ -106,7 +87,7 @@ class linux_plthook(linux_elfs.linux_elfs):
                
                 if offset < elf_start:
                     offset = elf_start + offset
-                
+
                 if elf_arch == 32:
                     addr = obj.Object("unsigned int", offset = offset, vm = elf.obj_vm)
                 else:
