@@ -26,6 +26,7 @@
 """
 
 import volatility.obj as obj
+import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsmod as linux_lsmod
 
@@ -41,6 +42,9 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
       
         nf_hooks_addr = self.addr_space.profile.get_symbol("nf_hooks")
 
+        if nf_hooks_addr == None:
+            debug.error("Unable to analyze NetFilter. It is either disabled or compiled as a module.")
+        
         list_head_size = self.addr_space.profile.get_obj_size("list_head")
         
         for outer in range(13):

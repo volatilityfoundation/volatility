@@ -48,7 +48,7 @@ class linux_volshell(volshell.volshell):
         print "Current context: process {0}, pid={1} DTB={2:#x}".format(self._proc.comm,
                                                                         self._proc.pid, dtb)
 
-    def set_context(self, offset = None, pid = None, name = None):
+    def set_context(self, offset = None, pid = None, name = None, physical = False):
         if pid is not None:
             offsets = []
             for p in self.getpidlist():
