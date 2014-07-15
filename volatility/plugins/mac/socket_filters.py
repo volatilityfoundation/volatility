@@ -77,7 +77,7 @@ class mac_socket_filters(lsmod.mac_lsmod):
                                   ("Module", "30"),
                                   ("Status", "")])
 
-        for (good, filter, filter_name, filter_socket, member, ptr) in data:
+        for (good, filter, filter_name, filter_socket, member, ptr, module) in data:
             if good == 0:
                 status = "UNKNOWN"
             else:
