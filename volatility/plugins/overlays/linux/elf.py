@@ -346,61 +346,6 @@ class elf_hdr(elf):
             if shdr.is_valid():
                 yield shdr  
 
-    def _find_symbols_section_headers(self):
-        shstr = self.section_header(self.e_shstrndx)
-        shstr_strs = shstr.sh_offset
-
-        sstrtab = None
-        ssymtab = None
-        dsymtab = None
-        dstrtab = None
-
-        # find the most useful symtab/strtab combo
-        for sect in self.section_headers():
-            sectname_addr = self.obj_offset + shstr_strs + sect.sh_name
-
-            sectname = self.obj_vm.read(sectname_addr, 64)
-            
-            if not sectname:
-                sectname = ""
-            else:
-                idx = sectname.find("\x00")
-                if idx != -1:   
-                    sectname = sectname[:idx]
-
-            if sectname == ".strtab" or sect.sh_type == 3:
-                sstrtab = self.obj_offset + sect.sh_offset
-            elif sectname == ".symtab" or sect.sh_type == 2:
-                ssymtab = self.obj_offset + sect.sh_offset
-                sents   = sect.sh_size / sect.sh_entsize
-            elif sectname == ".dynsym" or sect.sh_type == 11:
-                dsymtab = sect.sh_addr
-                dents   = sect.sh_size / sect.sh_entsize            
-            elif sectname == ".dynstr" or sect.sh_type == 2:            
-                dstrtab = sect.sh_addr
-
-        # we prefer the static table as it has more info
-        # but it is deleted in stripped binaries (very common)
-        if sstrtab and ssymtab:
-            strtab = sstrtab
-            symtab = ssymtab
-            numsyms = sents
-            print "using static"
-
-        elif dsymtab and dstrtab:
-            strtab = dstrtab
-            symtab = dsymtab
-            numsyms = dents     
-            print "using dynamic"      
- 
-        else:
-            return
-
-        print "setting: %s" % symtab
-        self.cached_symtab = symtab
-        self.cached_strtab = strtab
-        self.cached_numsyms = numsyms
-
     def _find_symbols_program_headers(self):
         for phdr in self.program_headers():
             if not phdr.is_valid() or str(phdr.p_type) != 'PT_DYNAMIC':
@@ -408,7 +353,6 @@ class elf_hdr(elf):
     
             dt_strtab = None
             dt_symtab = None    
-            dt_strsz  = None
             dt_strent = None
 
             for dsec in phdr.dynamic_sections():
@@ -418,31 +362,29 @@ class elf_hdr(elf):
                 elif dsec.d_tag == 6:
                     dt_symtab = dsec.d_ptr
 
-                elif dsec.d_tag == 10:
-                    dt_strsz = dsec.d_ptr
-
                 elif dsec.d_tag == 11:
                     dt_strent = dsec.d_ptr
 
-            if dt_strtab == None or dt_symtab == None or dt_strsz == None or dt_strent == None:
+            if dt_strtab == None or dt_symtab == None or dt_strent == None:
                 return None
             
             break
 
         self.cached_symtab  = dt_symtab
         self.cached_strtab  = dt_strtab
-        self.cached_numsyms = dt_strsz / dt_strent  
-            
-    def _find_symbols(self):
-        self._find_symbols_section_headers()
 
-        if self.cached_symtab == None:
-            self._find_symbols_program_headers()
+        if dt_symtab.v() < dt_strtab.v():
+            self.cached_numsyms = (dt_strtab.v() - dt_symtab.v()) / dt_strent 
+        else:
+            self.cached_numsyms = 1024
+    
+    def _find_symbols(self):
+        self._find_symbols_program_headers()
 
     def symbols(self):
         if self.cached_symtab == None:
             self._find_symbols()
-        
+                
         if self.cached_symtab == None:
             return
 
@@ -498,6 +440,7 @@ class elf_hdr(elf):
                     dt_pltrel = dsec.d_ptr                  
 
             if dt_jmprel == None or dt_pltrelsz == None or dt_pltrel == None:
+                print "needed info missing"
                 return
 
             if dt_pltrel == 7:
@@ -506,25 +449,22 @@ class elf_hdr(elf):
                     struct_size = 12                       
                 else:
                     struct_size = 24
-                    struct_name = "elf32_rel"
 
             elif dt_pltrel == 17:
+                struct_name = "elf_rel"
                 if self.size_cache == 32:
                     struct_size = 8          
-                    struct_name = "elf32_rel"
                 else:
-                    struct_name = "elf64_rel"
                     struct_size = 16
             else:   
                 print "unknown relocation type: %d" % dt_pltrel
 
             # arr = obj.Object(theType="Array", targetType=struct_name, parent = self, count = dt_pltrelsz / struct_size, offset = dt_jmprel, vm = self.obj_vm)
 
-            struct_name = "elf_rel"
 
             count = dt_pltrelsz / struct_size
             
-            for idx in range(count):
+            for idx in range(count + 24):
                 offset = dt_jmprel + (idx * struct_size)
 
                 reloc = obj.Object(struct_name, offset = offset, vm = self.obj_vm, parent = self)              
@@ -566,7 +506,7 @@ class elf_rel(elf):
             ret = self.r_info >> 8
         else:
             ret = self.r_info >> 32
-    
+   
         return ret
 
 class elf32_rel(obj.CType):
