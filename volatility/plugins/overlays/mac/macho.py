@@ -214,6 +214,9 @@ class macho_header(macho):
 
         macho.__init__(self, 1, "macho32_header", "macho64_header", theType, offset, vm, name, **kwargs)    
 
+    def is_valid(self):
+        return self.macho_obj != None
+
     def load_commands(self):
         rtname = self._get_typename("load_command")
         rtsize = self.obj_vm.profile.get_obj_size(rtname)
@@ -290,8 +293,6 @@ class macho_header(macho):
          
         name_addr = self.cached_strtab + sym.n_strx
         
-        print "strab: %x name_addr: %x" % (self.cached_strtab, sym.n_strx)
-
         name = self.obj_vm.read(name_addr, 128)
         if name:
             idx = name.find("\x00")
