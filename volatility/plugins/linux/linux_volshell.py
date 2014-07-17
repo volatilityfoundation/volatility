@@ -36,7 +36,7 @@ class linux_volshell(volshell.volshell):
             print "{0:24} {1:d}".format(module.name, module.init_size + module.core_size)
 
     def getpidlist(self):
-        return pslist.linux_pslist(self._config).calculate()
+        return pslist.linux_pslist(self._config).allprocs()
 
     def ps(self, procs = None):
         print "{0:16} {1:6} {2:8}".format("Name", "PID", "Offset")

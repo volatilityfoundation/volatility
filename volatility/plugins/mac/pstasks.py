@@ -32,6 +32,21 @@ class mac_tasks(pslist.mac_pslist):
     def __init__(self, config, *args, **kwargs):
         pslist.mac_pslist.__init__(self, config, *args, **kwargs)
 
+
+    def allprocs(self):
+        common.set_plugin_members(self)
+        tasksaddr = self.addr_space.profile.get_symbol("_tasks")
+        queue_entry = obj.Object("queue_entry", offset = tasksaddr, vm = self.addr_space)
+
+        seen = [tasksaddr]
+
+        for task in queue_entry.walk_list(list_head = tasksaddr):
+            if (task.bsd_info and task.obj_offset not in seen):
+                proc = task.bsd_info.dereference_as("proc") 
+                yield proc
+            
+            seen.append(task.obj_offset)
+
     def calculate(self):
         common.set_plugin_members(self)
         
@@ -41,15 +56,13 @@ class mac_tasks(pslist.mac_pslist):
                 pidlist = [int(p) for p in self._config.PID.split(',')]
         except:
             pass
-        
-        tasksaddr = self.addr_space.profile.get_symbol("_tasks")
-        queue_entry = obj.Object("queue_entry", offset = tasksaddr, vm = self.addr_space)
 
-        seen = [tasksaddr]
+        for proc in self.allprocs():        
+            if not pidlist or proc.p_pid in pidlist:
+                yield proc 
 
-        for task in queue_entry.walk_list(list_head = tasksaddr):
-            if (task.bsd_info and task.obj_offset not in seen):
-                proc = task.bsd_info.dereference_as("proc") 
-                if not pidlist or proc.p_pid in pidlist:
-                    yield proc 
-                seen.append(task.obj_offset)
+
+
+
+
+
