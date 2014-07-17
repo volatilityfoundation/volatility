@@ -159,6 +159,6 @@ class Raw2dmp(imagecopy.ImageCopy):
             kpcr.Prcb.ProcessorState.ContextFrame.SegSs = 0x18   
 
         # Write the decoded KDBG block so Windbg can interpret it properly
-        if kdbg.block_encoded:
+        if hasattr(kdbg, 'block_encoded') and kdbg.block_encoded:
             crash_vspace.write(crash_kdbg.obj_offset, kdbg.obj_vm.data)
         
