@@ -29,10 +29,18 @@ class Raw2dmp(imagecopy.ImageCopy):
 
     def calculate(self):
 
-        blocksize = self._config.BLOCKSIZE
-        self._config.WRITE = True
-        pspace = utils.load_as(self._config, astype = 'physical')
-        vspace = utils.load_as(self._config)
+        config = self._config 
+        output = self._config.OUTPUT_IMAGE 
+
+        return self.convert_to_crash(config, output)
+
+    @staticmethod
+    def convert_to_crash(config, output):
+
+        blocksize = config.BLOCKSIZE
+        config.WRITE = True
+        pspace = utils.load_as(config, astype = 'physical')
+        vspace = utils.load_as(config)
 
         memory_model = pspace.profile.metadata.get('memory_model', '32bit')
 
@@ -42,7 +50,7 @@ class Raw2dmp(imagecopy.ImageCopy):
             header_format = '_DMP_HEADER'
 
         headerlen = pspace.profile.get_obj_size(header_format)
-        headerspace = addrspace.BufferAddressSpace(self._config, 0, "PAGE" * (headerlen / 4))
+        headerspace = addrspace.BufferAddressSpace(config, 0, "PAGE" * (headerlen / 4))
         header = obj.Object(header_format, offset = 0, vm = headerspace)
 
         kuser = obj.Object("_KUSER_SHARED_DATA",
@@ -131,10 +139,10 @@ class Raw2dmp(imagecopy.ImageCopy):
                 yield i + headerlen, pspace.read(i, min(blocksize, s + l - i))
 
         # Reset the config so volatility opens the crash dump 
-        self._config.LOCATION = "file://" + self._config.OUTPUT_IMAGE
+        config.LOCATION = "file://" + output 
 
         # Crash virtual space 
-        crash_vspace = utils.load_as(self._config)
+        crash_vspace = utils.load_as(config)
 
         # The KDBG in the new crash dump
         crash_kdbg = obj.VolMagic(crash_vspace).KDBG.v()
