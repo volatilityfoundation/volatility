@@ -142,7 +142,10 @@ class HiveAddressSpace(addrspace.BaseAddressSpace):
             elif paddr == None:
                 return None
             else:
-                stuff_read = stuff_read + self.base.read(paddr, left_over)
+                new_stuff = self.base.read(paddr, left_over)
+                if new_stuff == None:
+                    return None
+                stuff_read = stuff_read + new_stuff
         return stuff_read
 
     def zread(self, addr, length):

@@ -392,6 +392,12 @@ tc_71a_vtypes_x64 = {
 class TrueCryptPassphrase(common.AbstractWindowsCommand):
     """TrueCrypt Cached Passprhase Finder"""
 
+    def __init__(self, config, *args, **kwargs):
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
+        config.add_option('MIN-LENGTH', short_option = 'M', default = 5,
+                          help = 'Mimumim length of passphrases to identify',
+                          action = 'store', type = 'int')
+
     def calculate(self):
         addr_space = utils.load_as(self._config)
 
@@ -426,7 +432,7 @@ class TrueCryptPassphrase(common.AbstractWindowsCommand):
         
             for length in ints:
                 # Min and max passphrase lengths 
-                if length >= 1 and length <= 64:
+                if length >= self._config.MIN_LENGTH and length <= 64:
                     offset = length.obj_offset + 4
                     passphrase = addr_space.read(offset, length)
                     if not passphrase:

@@ -846,7 +846,7 @@ class _OBJECT_HEADER(obj.CType):
         """Return the object's type as a string"""
         type_obj = obj.Object("_OBJECT_TYPE", self.Type, self.obj_native_vm)
 
-        return type_obj.Name.v()
+        return str(type_obj.Name or '')
 
     def is_valid(self):
         if not obj.CType.is_valid(self):

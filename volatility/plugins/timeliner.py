@@ -278,7 +278,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                 self._config.MACHINE, "" if body else "|"), 
                 im['ImageDatetime'], body = body)
 
-        if "IEHistory" in self._config.TYPE:
+        if version <= (6, 1) and "IEHistory" in self._config.TYPE:
             self._config.update("LEAK", True)
             data = iehistory.IEHistory(self._config).calculate()
             for process, record in data:
@@ -538,7 +538,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                         self.suspicious[line] = {"reason": "LOGIN FAILURE", "color": "TAN"}
                     if fields[1].lower() == "osession.evt" and fields[5] == 7003:
                         self.suspicious[line] = {"reason": "OFFICE APPLICATION FAILURE", "color": "TAN"}
-        else:
+        elif version <= (6, 1):
             # Vista+
             nets = []
             if "Socket" in self._config.TYPE:

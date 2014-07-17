@@ -169,7 +169,12 @@ class VolatilityKDBG(obj.VolatilityMagic):
                     and wait_never != None 
                     and wait_always != None):
             
-            if block_encoded == 1:
+            # some acquisition tools decode the KDBG block but leave 
+            # nt!KdpDataBlockEncoded set, so we handle it here. 
+            tag_offset = addr_space.profile.get_obj_offset("_DBGKD_DEBUG_DATA_HEADER64", "OwnerTag")
+            signature = addr_space.read(kdbg_block + tag_offset, 4)
+
+            if block_encoded == 1 and signature != "KDBG":
                 vals = block_encoded, kdbg_block, wait_never, wait_always
                 data = self.decode_kdbg(vals)
                 buff = addrspace.BufferAddressSpace(
@@ -186,7 +191,7 @@ class VolatilityKDBG(obj.VolatilityMagic):
                             vm = addr_space)
 
             kdbg.newattr('KdCopyDataBlock', full_addr)
-            kdbg.newattr('block_encoded', block_encoded)
+            kdbg.newattr('block_encoded', block_encoded == 1 and signature != "KDBG")
             kdbg.newattr('wait_never', wait_never)
             kdbg.newattr('wait_always', wait_always)                    
 
