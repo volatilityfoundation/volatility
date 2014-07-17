@@ -65,6 +65,31 @@ macho_types = {
     'stroff': [0x10, ['unsigned int']],
     'strsize': [0x14, ['unsigned int']],
 }],
+
+ 'macho64_dysymtab_command': [ 80, {
+    'cmd'        : [0, ['unsigned int']],
+    'cmdsize'    : [4, ['unsigned int']],
+    'ilocalsym'  : [8, ['unsigned int']],
+    'nlocalsym'  : [12, ['unsigned int']],
+    'iextdefsym' : [16, ['unsigned int']],
+    'nextdefsym' : [20, ['unsigned int']],
+    'iundefsym'  : [24, ['unsigned int']],
+    'nundefsym'  : [28, ['unsigned int']],
+    'tocoff'     : [32, ['unsigned int']],
+    'ntoc'       : [36, ['unsigned int']],
+    'modtaboff'  : [40, ['unsigned int']],
+    'nmodtab'        : [44, ['unsigned int']],
+    'extrefsymoff'   : [48, ['unsigned int']],
+    'nextrefsyms'    : [52, ['unsigned int']],
+    'indirectsymoff' : [56, ['unsigned int']],
+    'nindirectsyms'  : [60, ['unsigned int']],
+    'extreloff'      : [64, ['unsigned int']],
+    'nextrel'        : [68, ['unsigned int']],
+    'locreloff'      : [72, ['unsigned int']],
+    'nlocrel'        : [76, ['unsigned int']],
+}],
+
+
 'macho32_load_command': [ 0x8, {
     'cmd': [0x0, ['unsigned int']],
     'cmdsize': [0x4, ['unsigned int']],
@@ -73,6 +98,25 @@ macho_types = {
     'cmd': [0x0, ['unsigned int']],
     'cmdsize': [0x4, ['unsigned int']],
 }],
+
+'macho32_dylib_command': [ 24, {
+    'cmd'       : [0x0, ['unsigned int']],
+    'cmdsize'   : [0x4, ['unsigned int']],
+    'name'      : [0x8, ['unsigned int']],
+    'timestamp'             : [12, ['unsigned int']],
+    'current_version'       : [16, ['unsigned int']],
+    'compatibility_version' : [20, ['unsigned int']],
+}],
+
+'macho64_dylib_command': [ 28, {
+    'cmd'       : [0x0, ['unsigned int']],
+    'cmdsize'   : [0x4, ['unsigned int']],
+    'name'      : [0x8, ['unsigned int']],
+    'timestamp'             : [16, ['unsigned int']],
+    'current_version'       : [20, ['unsigned int']],
+    'compatibility_version' : [24, ['unsigned int']],
+}],
+
 'macho32_segment_command': [ 0x38, {
     'cmd': [0x0, ['unsigned int']],
     'cmdsize': [0x4, ['unsigned int']],
@@ -171,9 +215,9 @@ class macho(obj.CType):
 
     def _make_macho_obj(self, offset, vm):
         if self.size_cache == 32:
-            self.macho_obj = obj.Object(self.name32, offset = offset, vm = vm)
+            self.macho_obj = obj.Object(self.name32, offset = offset, vm = vm, parent = self)
         elif self.size_cache == 64:
-            self.macho_obj = obj.Object(self.name64, offset = offset, vm = vm)
+            self.macho_obj = obj.Object(self.name64, offset = offset, vm = vm, parent = self)
         else:
             self.macho_obj = None
 
@@ -197,6 +241,9 @@ class macho(obj.CType):
 
         return typename
 
+    def get_bits(self):
+        return self.size_cache
+
     def __getattr__(self, attr):
         if self.size_cache == -39:
             self._init_cache_from_parent()
@@ -207,12 +254,14 @@ class macho_header(macho):
     """An macho header"""
     
     def __init__(self, theType, offset, vm, name = None, **kwargs):
-        # these are populaed on the first call to symbols()
-        self.cached_strtab  = None
-        self.cached_syms    = None
-        self.cached_numsyms = 0
+        self.cached_strtab   = None   
+        self.cached_symtab   = None
+        self.cached_dysymtab = None
+        self.cached_syms     = None
 
         macho.__init__(self, 1, "macho32_header", "macho64_header", theType, offset, vm, name, **kwargs)    
+        
+        self._build_symbol_caches()
 
     def is_valid(self):
         return self.macho_obj != None
@@ -256,44 +305,60 @@ class macho_header(macho):
             ret = cmds[0]
 
         return ret
-    
+   
     # used to fill the cache of symbols
-    def _get_syms(self, sym_cmd):
-        syms = []
-        
-        sym_type = self._get_typename("nlist")
+    def get_indirect_syms(self):
+        syms = []        
+        tname = self._get_typename("nlist")
+        obj_size = self.obj_vm.profile.get_obj_size(tname)  
+ 
+        symtab_idxs = obj.Object(theType="Array", targetType="unsigned int", count=self.cached_dysymtab.nindirectsyms, offset = self.obj_offset + self.cached_dysymtab.indirectsymoff, vm = self.obj_vm, parent = self)
 
-        sym_arr = obj.Object(theType="Array", targetType=sym_type, count=sym_cmd.nsyms, offset = self.obj_offset + sym_cmd.symoff, vm = self.obj_vm)
-
-        for sym in sym_arr:
+        for idx in symtab_idxs:
+            sym_addr = self.cached_symtab + (idx * obj_size)
+            sym = obj.Object("macho_nlist", offset = sym_addr, vm = self.obj_vm, parent = self)
             syms.append(sym)
 
         return syms
 
-    def _build_symbol_caches(self):
-        symtab_cmd = self.load_command_of_type(2) # LC_SYMTAB
-        
-        struct_name = self._get_typename("symtab_command")
-    
-        symtab_command = symtab_cmd.cast(struct_name)
+    def _get_symtab_syms(self, sym_command, symtab_addr):
+        syms = []
+        tname = self._get_typename("nlist")
+        obj_size = self.obj_vm.profile.get_obj_size(tname)
 
-        self.cached_strtab  = self.obj_offset + symtab_command.stroff
-        self.cached_numsyms = symtab_command.nsyms
-        self.cached_syms    = self._get_syms(symtab_command) 
+        for i in range(sym_command.nsyms):
+            sym_addr = symtab_addr + (i * obj_size)            
+            sym = obj.Object("macho_nlist", offset = sym_addr, vm = self.obj_vm, parent = self)
+            syms.append(sym)
+    
+        return syms
+
+    def _build_symbol_caches(self):
+        symtab_cmd         = self.load_command_of_type(2) # LC_SYMTAB
+        symtab_struct_name = self._get_typename("symtab_command")
+        symtab_command     = symtab_cmd.cast(symtab_struct_name)
+        str_strtab         = self.obj_offset + symtab_command.stroff
+        symtab_addr        = self.obj_offset + symtab_command.symoff
+      
+        self.cached_syms = self._get_symtab_syms(symtab_command, symtab_addr)
+    
+        dysymtab_cmd     = self.load_command_of_type(0xb) # LC_DYSYMTAB
+        dystruct_name    = self._get_typename("dysymtab_command")
+        dysymtab_command = dysymtab_cmd.cast(dystruct_name)
+
+        self.cached_strtab   = str_strtab    
+        self.cached_symtab   = symtab_addr
+        self.cached_dysymtab = dysymtab_command
+        
+        self.cached_syms    = self.cached_syms + self.get_indirect_syms() 
 
     def symbols(self):
-        if self.cached_strtab == None:
-            self._build_symbol_caches()        
-
         return self.cached_syms         
  
     def symbol_name(self, sym):
-        if self.cached_strtab == None:
-            self._build_symbol_caches()        
-         
         name_addr = self.cached_strtab + sym.n_strx
         
-        name = self.obj_vm.read(name_addr, 128)
+        name = self.obj_vm.read(name_addr, 64)
         if name:
             idx = name.find("\x00")
             if idx != -1:
@@ -311,9 +376,58 @@ class macho_header(macho):
 
         return ret
 
-    def segments(self):
-        seg_struct = self._get_typename("segment_command")
+    def needed_libraries(self):
+        for cmd in self.load_commands_of_type(0xc): # LC_LOAD_DYLIB 
+            tname = self._get_typename("dylib_command")
+            dylib_command = cmd.cast(tname) 
 
+            name_addr = cmd.obj_offset + dylib_command.name
+
+            dylib_name = self.obj_vm.read(name_addr, 256)
+             
+            if dylib_name:
+                idx = dylib_name.find("\x00")
+                if idx != -1:
+                    dylib_name = dylib_name[:idx]
+            
+                yield dylib_name 
+
+    def imports(self): 
+        # TODO add check for bin & lib, and retest:
+        # symbol resolution
+        # symbol ptr mapping
+        # for 64 bit
+        # for 32 bit
+       
+        sect_type = self._get_typename("section")
+        sect_size = self.obj_vm.profile.get_obj_size(sect_type)
+ 
+        if self.get_bits() == 32:
+            idx_type = "unsigned int"
+        else:
+            idx_type = "unsigned long"
+
+        num_idxs = sect_size / (self.get_bits() / 8)
+        
+        for seg in self.segments():
+            if str(seg.segname) == "__DATA":
+                for sect in self.sections_for_segment(seg):
+                    if str(sect.sectname) == "__la_symbol_ptr":
+                        # the array of (potentially) resolved imports
+                        sym_ptr_arr = obj.Object(theType="Array", targetType = idx_type, count = num_idxs, offset = self.obj_offset + sect.offset, vm = self.obj_vm)                                
+                        isyms = self.get_indirect_syms()
+                        num_isyms = len(isyms)
+
+                        for (i, sym_ptr) in enumerate(sym_ptr_arr):
+                            idx = sect.reserved1 + i
+                            if idx >= num_isyms:
+                                continue
+
+                            sym = isyms[idx]
+                            name = self.symbol_name(sym)
+                            yield (name, sym_ptr) 
+
+    def segments(self):
         LC_SEGMENT    = 1    # 32 bit segments
         LC_SEGMENT_64 = 0x19 # 64 bit segments
 
@@ -325,7 +439,7 @@ class macho_header(macho):
         load_commands = self.load_commands_of_type(seg_type) 
 
         for load_command in load_commands:
-            segment = load_command.cast(seg_struct)
+            segment = obj.Object("macho_segment_command", offset = load_command.obj_offset, vm = self.obj_vm, parent = self)
 
             yield segment
 
@@ -341,12 +455,17 @@ class macho_header(macho):
     
     def sections_for_segment(self, segment):
         sect_struct = self._get_typename("section")
-        seg_size = segment.size()
+        sect_size   = self.obj_vm.profile.get_obj_size(sect_struct)
+        
+        seg_struct = self._get_typename("segment_command")
+        seg_size   = self.obj_vm.profile.get_obj_size(seg_struct)
 
-        sect_array = obj.Object(theType="Array", targetType=sect_struct, offset=segment.obj_offset + seg_size, count=segment.nsects, vm = self.obj_vm) 
-
-        for sect in sect_array:
-            yield sect
+        for i in range(segment.nsects):
+            sect_addr = segment.obj_offset + seg_size + (i * sect_size)
+            
+            sect = obj.Object("macho_section", offset = sect_addr, vm = self.obj_vm, parent = self)
+            
+            yield sect     
 
 class macho32_header(obj.CType):
     def __init__(self, theType, offset, vm, name = None, **kwargs):
@@ -373,6 +492,15 @@ class macho_segment_command(macho):
     """ A macho segment command """
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         macho.__init__(self, 0, "macho32_segment_command", "macho64_segment_command", theType, offset, vm, name, **kwargs)    
+
+    @property
+    def vmaddr(self):
+        ret = self.__getattr__("vmaddr")
+        
+        if self.obj_parent.filetype == 2:
+            ret = ret + self.obj_parent.obj_offset  
+
+        return ret
 
 class macho32_segment_command(obj.CType):
     def __init__(self, theType, offset, vm, name = None, **kwargs):
@@ -425,6 +553,19 @@ class macho64_symtab_command(obj.CType):
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         obj.CType.__init__(self, theType, offset, vm, name, **kwargs)
 
+class macho_dysymtab_command(macho):
+    """ A macho symtab command """
+    def __init__(self, theType, offset, vm, name = None, **kwargs):
+        macho.__init__(self, 0, "macho32_dysymtab_command", "macho64_dysymtab_command", theType, offset, vm, name, **kwargs)    
+
+class macho32_dysymtab_command(obj.CType):
+    def __init__(self, theType, offset, vm, name = None, **kwargs):
+        obj.CType.__init__(self, theType, offset, vm, name, **kwargs)
+
+class macho64_dysymtab_command(obj.CType):
+    def __init__(self, theType, offset, vm, name = None, **kwargs):
+        obj.CType.__init__(self, theType, offset, vm, name, **kwargs)
+
 class macho_nlist(macho):
     """ A macho nlist """
     def __init__(self, theType, offset, vm, name = None, **kwargs):
@@ -461,6 +602,9 @@ class MachoModification(obj.ProfileModification):
                     'macho_symtab_command'    : macho_symtab_command,
                     'macho32_symtab_command'  : macho32_symtab_command,
                     'macho64_symtab_command'  : macho64_symtab_command,
+                    'macho_dysymtab_command'   : macho_dysymtab_command,
+                    'macho32_dysymtab_command' : macho32_dysymtab_command,
+                    'macho64_dysymtab_command' : macho64_dysymtab_command,
                     'macho_nlist'             : macho_nlist,
                     'macho32_nlist'           : macho32_nlist,
                     'macho64_nlist'           : macho64_nlist,
