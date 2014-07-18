@@ -258,13 +258,27 @@ class macho_header(macho):
         self.cached_symtab   = None
         self.cached_dysymtab = None
         self.cached_syms     = None
+        self.load_diff       = 0
 
         macho.__init__(self, 1, "macho32_header", "macho64_header", theType, offset, vm, name, **kwargs)    
         
         self._build_symbol_caches()
+        self.calc_load_diff()
 
     def is_valid(self):
         return self.macho_obj != None
+
+    def calc_load_diff(self):
+        #if self.filetype != 2:
+        #    return
+
+        for seg in self.segments():
+            if str(seg.segname) == "__PAGEZERO":
+                continue
+            break
+
+        if seg.vmaddr != self.obj_offset:
+            self.load_diff = self.obj_offset - seg.vmaddr
 
     def load_commands(self):
         rtname = self._get_typename("load_command")
@@ -496,9 +510,12 @@ class macho_segment_command(macho):
     @property
     def vmaddr(self):
         ret = self.__getattr__("vmaddr")
-        
+   
+        if self.obj_parent.load_diff:
+            ret = ret + self.obj_parent.load_diff
+            
         if self.obj_parent.filetype == 2:
-            ret = ret + self.obj_parent.obj_offset  
+            ret = ret + self.obj_parent.obj_offset
 
         return ret
 

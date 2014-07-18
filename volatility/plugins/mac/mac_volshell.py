@@ -36,7 +36,7 @@ class mac_volshell(volshell.volshell):
             print "{3:16x} {0:48} {1:16x} {2:6d}".format(mod.name, mod.address, mod.m('size'), mod.obj_offset)
 
     def getpidlist(self):
-        return pstasks.mac_tasks(self._config).calculate()
+        return list(pstasks.mac_tasks(self._config).allprocs())
 
     def ps(self, procs = None):
         print "{0:16} {1:6} {2:8}".format("Name", "PID", "Offset")
@@ -48,7 +48,7 @@ class mac_volshell(volshell.volshell):
         print "Current context: process {0}, pid={1} DTB={2:#x}".format(self._proc.p_comm,
                                                                         self._proc.p_pid, dtb)
 
-    def set_context(self, offset = None, pid = None, name = None):
+    def set_context(self, offset = None, pid = None, name = None, physical = None):
         if pid is not None:
             offsets = []
             for p in self.getpidlist():

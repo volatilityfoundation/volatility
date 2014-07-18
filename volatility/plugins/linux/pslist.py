@@ -49,21 +49,25 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
         
         return obj.NoneObject("Unable to bounce back from task_struct->parent->task_struct")
 
+    def allprocs(self):
+        linux_common.set_plugin_members(self)
+
+        init_task_addr = self.addr_space.profile.get_symbol("init_task")
+        init_task = obj.Object("task_struct", vm = self.addr_space, offset = init_task_addr)
+
+        # walk the ->tasks list, note that this will *not* display "swapper"
+        for task in init_task.tasks:
+                yield task
+
     def calculate(self):
         linux_common.set_plugin_members(self)
-        init_task_addr = self.addr_space.profile.get_symbol("init_task")
-
-        init_task = obj.Object("task_struct", vm = self.addr_space, offset = init_task_addr)
 
         pidlist = self._config.PID
         if pidlist:
             pidlist = [int(p) for p in self._config.PID.split(',')]
 
-        # walk the ->tasks list, note that this will *not* display "swapper"
-        for task in init_task.tasks:
-
+        for task in self.allprocs():
             if not pidlist or task.pid in pidlist:
-
                 yield task
 
     def render_text(self, outfd, data):

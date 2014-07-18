@@ -36,10 +36,8 @@ class mac_procdump(mac_tasks.mac_tasks):
         mac_tasks.mac_tasks.__init__(self, config, *args, **kwargs)         
         self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'Output directory', action = 'store', type = 'str')
 
-    def _get_executable_contents(self, proc):
+    def _text_map(self, proc):
         text_map = None
-
-        proc_as = proc.get_process_address_space()
 
         wanted_vnode = proc.p_textvp.v()
 
@@ -47,68 +45,36 @@ class mac_procdump(mac_tasks.mac_tasks):
             vnode = map.get_vnode()
 
             if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode:
-                text_map = map
+                text_map = map.start.v()
                 break
 
-        if text_map == None:
-            return (0, "")
+        return text_map
 
-        m = obj.Object("macho_header", offset = text_map.start, vm = proc_as)
+    def get_executable_contents(self, proc, exe_address, path):
+        proc_as = proc.get_process_address_space()
+
+        m = obj.Object("macho_header", offset = exe_address, vm = proc_as)
 
         buffer = ""
-        last_map = None
-        first_vmaddr = 0
 
         for seg in m.segments():
             if str(seg.segname) == "__PAGEZERO":
                 continue
+                
+            # this is related to the shared cache map 
+            # contact Andrew for full details
+            if str(seg.segname) == "__LINKEDIT" and seg.vmsize > 20000000:
+                continue
 
-            if last_map:
-                pad_amt = map.start - last_map.end
-                pad = "\x00" * pad_amt
-            else:
-                pad = ""
-
-            vstart = seg.vmaddr
-            if first_vmaddr == 0:
-                first_vmaddr = seg.vmaddr
-
-            if vstart < text_map.start:
-                vstart = vstart + text_map.start - first_vmaddr
-
-            print "getting for segment: %s | %x | %x | %x | %d" % (seg.segname, vstart, seg.vmaddr, text_map.start, seg.filesize)
-            buffer = buffer + pad + proc_as.zread(vstart, seg.filesize)
+            cur = seg.vmaddr
+            end = seg.vmaddr + seg.vmsize
+        
+            while cur < end:
+                buffer = buffer + proc_as.zread(cur, 4096) 
+                cur = cur + 4096
  
-        return (text_map.start, buffer)
+        return buffer
  
-    def bad_get_executable_contents(self, proc):
-        maps = []
-
-        proc_as = proc.get_process_address_space()
-
-        wanted_vnode = proc.p_textvp.v()
-
-        for map in proc.get_proc_maps():
-            vnode = map.get_vnode()
-
-            if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode:
-                maps.append(map)            
-
-        buffer = ""
-        last_map = None
-        for map in maps:
-            if last_map:
-                pad_amt = map.start - last_map.end
-                pad = "\x00" * pad_amt
-            else:
-                pad = ""
-
-            buffer = buffer + pad + proc_as.zread(map.start, map.end - map.start)
-
-            last_map = map
-
-        return (maps[0].start, buffer)
-
     def render_text(self, outfd, data):
         if (not self._config.DUMP_DIR or not os.path.isdir(self._config.DUMP_DIR)):
             debug.error("Please specify an existing output dir (--dump-dir)")
@@ -119,11 +85,16 @@ class mac_procdump(mac_tasks.mac_tasks):
                                   ("Path", "")])
        
         for proc in data:
-            (exe_address, exe_contents) = self._get_executable_contents(proc)
+            exe_address = self._text_map(proc)
             
-            if exe_contents == "":
+            if exe_address == None:
                 continue
 
+            if not exe_address:
+                exe_contents = ""
+            else:
+                exe_contents = self.get_executable_contents(proc, exe_address, "main")
+           
             file_name = "task.{0}.{1:#x}.dmp".format(proc.p_pid, exe_address)
             file_path = os.path.join(self._config.DUMP_DIR, file_name)
 
