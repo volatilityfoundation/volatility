@@ -147,7 +147,7 @@ class RegistryApi(object):
         Takes in a key object and traverses back through its family to build the path
         '''
         path = key.Name
-        while key.Parent:
+        while key.Parent and key.Parent & 0xffffffff > 0x20:
             key = key.Parent.dereference()
             if utils.remove_unprintable(str(key.Name)) != "": 
                 path = "{0}\\{1}".format(key.Name, path)
