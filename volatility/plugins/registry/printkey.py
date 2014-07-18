@@ -27,7 +27,7 @@
 
 #pylint: disable-msg=C0111
 
-# from volatility.win32.datetime import windows_to_unix_time
+import volatility.obj as obj
 import volatility.win32.hive as hivemod
 import volatility.win32.rawreg as rawreg
 import volatility.debug as debug
@@ -69,12 +69,13 @@ class PrintKey(hivelist.HiveList):
         addr_space = utils.load_as(self._config)
 
         if not self._config.HIVE_OFFSET:
-            hive_offsets = [(self.hive_name(h), h.obj_offset) for h in hivelist.HiveList.calculate(self)]
+            hive_offsets = [h.obj_offset for h in hivelist.HiveList.calculate(self)]
         else:
-            hive_offsets = [("User Specified", self._config.HIVE_OFFSET)]
+            hive_offsets = [self._config.HIVE_OFFSET]
 
-        for name, hoff in set(hive_offsets):
+        for hoff in set(hive_offsets):
             h = hivemod.HiveAddressSpace(addr_space, self._config, hoff)
+            name = self.hive_name(obj.Object("_CMHIVE", vm = addr_space, offset = hoff))
             root = rawreg.get_root(h)
             if not root:
                 if self._config.HIVE_OFFSET:
