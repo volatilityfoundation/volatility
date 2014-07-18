@@ -619,11 +619,13 @@ class _IMAGE_DOS_HEADER(obj.CType):
                 return (addr + (align - (addr % align)))
             return (addr - (addr % align))
 
-    def _get_image_exe(self, unsafe):
+    def _get_image_exe(self, unsafe, fix):
     
         nt_header = self.get_nt_header()
         soh = nt_header.OptionalHeader.SizeOfHeaders
         header = self.obj_vm.zread(self.obj_offset, soh)
+        if fix:
+            header = self._fix_header_image_base(header, nt_header)
         yield (0, header)
 
         fa = nt_header.OptionalHeader.FileAlignment
@@ -644,14 +646,29 @@ class _IMAGE_DOS_HEADER(obj.CType):
         result = header[:start] + newval + header[end:]
         return result
 
-    def _get_image_mem(self, unsafe):
+    def _fix_header_image_base(self, header, nt_header):
+        """
+        returns a modified header buffer with the image base changed to the
+        provided base address
+        """        
+
+        imb_offs = nt_header.OptionalHeader.ImageBase.obj_offset - self.obj_offset      
+        imb = nt_header.OptionalHeader.ImageBase
+        newval = struct.pack(imb.format_string, int(self.obj_offset))
+        return header[:imb_offs] + newval + header[imb_offs+imb.size():]
+
+    def _get_image_mem(self, unsafe, fix):
 
         nt_header = self.get_nt_header()
 
         sa = nt_header.OptionalHeader.SectionAlignment
         shs = self.obj_vm.profile.get_obj_size('_IMAGE_SECTION_HEADER')
 
-        yield self.get_code(self.obj_offset, nt_header.OptionalHeader.SizeOfImage, 0)
+        offset, data = self.get_code(self.obj_offset, nt_header.OptionalHeader.SizeOfImage, 0)
+        if fix:
+            data = self._fix_header_image_base(data, nt_header)
+
+        yield offset, data
 
         prevsect = None
         sect_sizes = []
@@ -674,12 +691,12 @@ class _IMAGE_DOS_HEADER(obj.CType):
             yield (start_addr + (counter * shs), sectheader)
             counter += 1
 
-    def get_image(self, unsafe = False, memory = False):
+    def get_image(self, unsafe = False, memory = False, fix = False):
 
         if memory:
-            return self._get_image_mem(unsafe)
+            return self._get_image_mem(unsafe, fix)
         else:
-            return self._get_image_exe(unsafe)
+            return self._get_image_exe(unsafe, fix)
 
 class _IMAGE_NT_HEADERS(obj.CType):
     """PE header"""

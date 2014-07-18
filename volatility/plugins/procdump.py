@@ -40,6 +40,9 @@ class ProcDump(taskmods.DllList):
                           help = 'Bypasses certain sanity checks when creating image')
         config.add_option("MEMORY", short_option = "m", default = False, action = 'store_true', 
                           help = "Carve as a memory sample rather than exe/disk")
+        config.add_option('FIX', short_option = 'x', default = False,
+                          help = 'Modify the image base of the dump to the im-memory base address',
+                          action = 'store_true')
 
     def dump_pe(self, space, base, dump_file):
         """
@@ -57,7 +60,9 @@ class ProcDump(taskmods.DllList):
         pe_file = obj.Object("_IMAGE_DOS_HEADER", offset = base, vm = space)
 
         try:
-            for offset, code in pe_file.get_image(unsafe = self._config.UNSAFE, memory = self._config.MEMORY):
+            for offset, code in pe_file.get_image(unsafe = self._config.UNSAFE, 
+                                                  memory = self._config.MEMORY, 
+                                                  fix = self._config.FIX):
                 of.seek(offset)
                 of.write(code)
             result = "OK: {0}".format(dump_file)
