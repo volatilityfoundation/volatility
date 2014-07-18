@@ -61,8 +61,15 @@ class _MM_SESSION_SPACE(obj.CType):
     def images(self):
         """Generator for images (modules) loaded into 
         this session's space"""
-        for i in self.ImageList.list_of_type("_IMAGE_ENTRY_IN_SESSION", "Link"):
-            yield i
+
+        metadata = self.obj_vm.profile.metadata
+        version = (metadata.get("major", 0), metadata.get("minor", 0))
+
+        if version >= (6, 2):
+            raise StopIteration 
+        else:
+            for i in self.ImageList.list_of_type("_IMAGE_ENTRY_IN_SESSION", "Link"):
+                yield i
 
     def _section_chunks(self, sec_name):
         """Get the win32k.sys section as an array of 
