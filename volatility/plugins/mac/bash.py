@@ -128,7 +128,6 @@ class bash64_hist_entry(_mac_hist_entry):
 
 class bash32_hist_entry(_mac_hist_entry):
     def read_ptr(self, addr):
-        addr = self.m("line").obj_offset
         addr = self.obj_vm.read(addr, 4)
         addr = struct.unpack("<I", addr)[0]
         return addr

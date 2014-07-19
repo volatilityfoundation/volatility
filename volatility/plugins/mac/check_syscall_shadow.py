@@ -78,7 +78,7 @@ class mac_check_syscall_shadow(common.AbstractMacCommand):
                             yield (shadowtbl_addr, func, op)
 
                     #CMP DWORD [EBP-0x20], 0x82ef20
-                    elif op.mnemonic == 'CMP' and distorm3.Registers[op.operands[0].index] == "EBP" and op.operands[0].disp == -32 and op.operands[0].type == "Immediate":
+                    elif op.mnemonic == 'CMP' and op.operands[0].index != None and distorm3.Registers[op.operands[0].index] == "EBP" and op.operands[0].disp == -32 and op.operands[0].type == "Immediate":
                         if op.operands[1].value != sysents_addr:
                             shadowtbl_addr = op.operands[1].value
                             yield (shadowtbl_addr, func, op)

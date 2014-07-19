@@ -270,15 +270,15 @@ class macho_header(macho):
         return self.macho_obj != None
 
     def calc_load_diff(self):
-        #if self.filetype != 2:
-        #    return
+        seg = None
 
-        for seg in self.segments():
-            if str(seg.segname) == "__PAGEZERO":
+        for s in self.segments():
+            if str(s.segname) == "__PAGEZERO":
                 continue
+            seg = s
             break
 
-        if seg.vmaddr != self.obj_offset:
+        if seg and seg.vmaddr != self.obj_offset:
             self.load_diff = self.obj_offset - seg.vmaddr
 
     def load_commands(self):
@@ -435,7 +435,7 @@ class macho_header(macho):
         if self.get_bits() == 32:
             idx_type = "unsigned int"
         else:
-            idx_type = "unsigned long"
+            idx_type = "unsigned long long"
 
         num_idxs = sect_size / (self.get_bits() / 8)
         

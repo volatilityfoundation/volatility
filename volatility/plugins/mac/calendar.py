@@ -81,6 +81,9 @@ class mac_calendar(pstasks.mac_tasks):
         guid_re2 = re.compile("\x25\x00\x00\x00[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\x00")
 
         for proc in procs:
+            if proc.p_comm.find("Calendar") == -1:
+                continue
+
             space = proc.get_process_address_space()
             for map in proc.get_proc_maps():    
                 # only read/write without filebacks 

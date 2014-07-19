@@ -186,10 +186,10 @@ class mac_apihooks_kernel(common.AbstractMacCommand):
                     # Check for CALL [ADDR]
                     if model == '32bit':
                         const = op.operands[0].disp & 0xFFFFFFFF
-                        d = obj.Object("unsigned int", offset = const, vm = addr_space)
+                        d = obj.Object("unsigned int", offset = const, vm = self.addr_space)
                     else: 
                         const = op.operands[0].disp
-                        d = obj.Object("unsigned long long", offset = const, vm = addr_space)
+                        d = obj.Object("unsigned long long", offset = const, vm = self.addr_space)
                     if self.outside_module(d, kernel_syms, kmods):
                         break
                 elif op.operands[0].type == 'Immediate':

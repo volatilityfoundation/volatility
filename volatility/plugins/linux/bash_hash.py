@@ -85,7 +85,7 @@ class _bash_hash_table(obj.CType):
         return True
         
 class BashHashTypes(obj.ProfileModification):
-    conditions = {"os" : lambda x : x in ["linux", "mac"]}
+    conditions = {"os" : lambda x : x in ["linux"]}
 
     def modification(self, profile):       
         if profile.metadata.get('memory_model', '32bit') == "32bit":

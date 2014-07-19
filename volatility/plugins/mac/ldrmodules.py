@@ -59,7 +59,7 @@ class mac_ldrmodules(mac_pslist.mac_pslist):
 
             dl_maps[task.obj_offset] = {}
             for so in task.get_dyld_maps():
-                dl_maps[task.obj_offset][so.imageLoadAddress.v()] = (task, proc_as, str(so.imageFilePath))
+                dl_maps[task.obj_offset][so.imageLoadAddress] = (task, proc_as, str(so.imageFilePath))
     
         for task_offset in dl_maps:
             for vm_start in dl_maps[task_offset]:

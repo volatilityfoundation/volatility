@@ -536,7 +536,7 @@ class rtentry(obj.CType):
     @property
     def rx(self):
         if hasattr(self, "rt_stats"):
-            ret = self.nstat_rxpackets
+            ret = self.rt_stats.nstat_rxpackets 
         else:
             ret = "N/A"
 
@@ -939,14 +939,20 @@ class sockaddr(obj.CType):
 class dyld32_image_info(obj.CType):
     def _read_ptr(self, addr):
         addr = self.obj_vm.read(addr, 4)
-        addr = struct.unpack("<I", addr)[0]         
-        return addr
+        if not addr:
+            ret = None
+        else:
+            ret = struct.unpack("<I", addr)[0]         
+        return ret
 
     @property
     def imageFilePath(self):
         addr = self.m("imageFilePath").obj_offset
         addr = self._read_ptr(addr)
         
+        if addr == None:
+            return ""
+
         buf = self.obj_vm.read(addr, 256)
         if buf:
             idx = buf.find("\x00")
@@ -965,14 +971,20 @@ class dyld32_image_info(obj.CType):
 class dyld64_image_info(obj.CType):
     def _read_ptr(self, addr):
         addr = self.obj_vm.read(addr, 8)
-        addr = struct.unpack("<Q", addr)[0]         
-        return addr
+        if addr == None:
+            ret = None
+        else:
+            ret = struct.unpack("<Q", addr)[0]         
+        return ret
 
     @property
     def imageFilePath(self):
         addr = self.m("imageFilePath").obj_offset
         addr = self._read_ptr(addr)
-        
+
+        if addr == None:
+            return ""
+
         buf = self.obj_vm.read(addr, 256)
         if buf:
             idx = buf.find("\x00")
