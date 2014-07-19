@@ -43,10 +43,15 @@ class mac_check_trap_table(common.AbstractMacCommand):
             'mach_trap' : [ 40, {
                 'mach_trap_function': [ 8, ['pointer', ['void']]]
                 }]}
+        x64_13_vtypes = { 
+            'mach_trap' : [ 32, {
+                'mach_trap_function': [ 8, ['pointer', ['void']]]
+                }]}
         x64_other_vtypes = { 
             'mach_trap' : [ 16, {
                 'mach_trap_function': [ 8, ['pointer', ['void']]]
                 }]}
+
 
         arch  = self.addr_space.profile.metadata.get('memory_model', '32bit')
         major = self.addr_space.profile.metadata.get('major', 0)
@@ -59,6 +64,10 @@ class mac_check_trap_table(common.AbstractMacCommand):
         else:
             if major == 10:
                 vtypes = x64_10_vtypes
+
+            elif major == 13:
+                vtypes = x64_13_vtypes
+
             else:
                 vtypes = x64_other_vtypes
 
