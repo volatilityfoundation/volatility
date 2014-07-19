@@ -261,9 +261,10 @@ class macho_header(macho):
         self.load_diff       = 0
 
         macho.__init__(self, 1, "macho32_header", "macho64_header", theType, offset, vm, name, **kwargs)    
-        
-        self._build_symbol_caches()
-        self.calc_load_diff()
+      
+        if self.macho_obj:
+            self._build_symbol_caches()
+            self.calc_load_diff()
 
     def is_valid(self):
         return self.macho_obj != None
@@ -315,7 +316,7 @@ class macho_header(macho):
         cmds = self.load_commands_of_type(cmd_type)
         if cmds and len(cmds) > 1:
             debug.error("load_command_of_type: Multiple commands of type %d found!" % cmd_type)
-        else:
+        elif cmds:
             ret = cmds[0]
 
         return ret
@@ -350,6 +351,10 @@ class macho_header(macho):
     def _build_symbol_caches(self):
         symtab_cmd         = self.load_command_of_type(2) # LC_SYMTAB
         symtab_struct_name = self._get_typename("symtab_command")
+ 
+        if symtab_cmd == None:
+            return
+
         symtab_command     = symtab_cmd.cast(symtab_struct_name)
         str_strtab         = self.obj_offset + symtab_command.stroff
         symtab_addr        = self.obj_offset + symtab_command.symoff
@@ -358,6 +363,9 @@ class macho_header(macho):
     
         dysymtab_cmd     = self.load_command_of_type(0xb) # LC_DYSYMTAB
         dystruct_name    = self._get_typename("dysymtab_command")
+        
+        if dysymtab_cmd == None:
+            return
         dysymtab_command = dysymtab_cmd.cast(dystruct_name)
 
         self.cached_strtab   = str_strtab    
@@ -367,11 +375,19 @@ class macho_header(macho):
         self.cached_syms    = self.cached_syms + self.get_indirect_syms() 
 
     def symbols(self):
-        return self.cached_syms         
+        if self.cached_syms == None:
+            ret = []
+        else:
+            ret = self.cached_syms         
  
+        return ret
+
     def symbol_name(self, sym):
+        if self.cached_symtab == None:
+            return ""
+
         name_addr = self.cached_strtab + sym.n_strx
-        
+     
         name = self.obj_vm.read(name_addr, 64)
         if name:
             idx = name.find("\x00")

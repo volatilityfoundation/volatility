@@ -106,7 +106,7 @@ def get_kernel_addrs(obj_ref):
     
     # module addresses, tuple of (start, end)
     # TODO -- make sure more stringent and parse each kext in-memory so we only allow whitelist from .text
-    kmods = [(kmod.address, kmod.address + kmod.m('size'), kmod.name) for kmod in lsmod.mac_lsmod(obj_ref._config).calculate() if str(kmod.name) != "com.apple.kpi.unsupported"] 
+    kmods = [(kmod.address.v(), kmod.address.v() + kmod.m('size'), kmod.name) for kmod in lsmod.mac_lsmod(obj_ref._config).calculate() if str(kmod.name) != "com.apple.kpi.unsupported"] 
 
     return (kernel_symbol_addresses, kmods)
 

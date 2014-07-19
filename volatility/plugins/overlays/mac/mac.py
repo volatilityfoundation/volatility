@@ -40,33 +40,31 @@ x64_native_types = copy.deepcopy(native_types.x64_native_types)
 x64_native_types['long'] = [8, '<q']
 x64_native_types['unsigned long'] = [8, '<Q']
 
-dyld_vtypes_32 = {
-    'dyld_image_info' : [12, {
+dyld_vtypes = {
+    'dyld32_image_info' : [12, {
          'imageLoadAddress' : [0, ['pointer', ['unsigned int']]],
          'imageFilePath'    : [4, ['pointer', ['char']]],
          'imageFileModDate' : [8, ['pointer', ['unsigned int']]],  
          }],
     
-    'dyld_all_image_infos' : [20 , {
+    'dyld32_all_image_infos' : [20 , {
         'version'           : [0, ['unsigned int']],
         'infoArrayCount'    : [4, ['unsigned int']],
-        'infoArray'         : [8, ['pointer', ['dyld_image_info']]],
+        'infoArray'         : [8, ['pointer', ['dyld32_image_info']]],
         'notification'      : [12, ['pointer', ['void']]],
         'processDetachedFromSharedRegion': [16, ['unsigned int']],
     }],
-}
 
-dyld_vtypes_64 = {
-    'dyld_image_info' : [24, {
+    'dyld64_image_info' : [24, {
          'imageLoadAddress' : [0, ['pointer', ['unsigned int']]],
          'imageFilePath'    : [8, ['pointer', ['char']]],
          'imageFileModDate' : [16, ['pointer', ['unsigned int']]],  
          }],
     
-    'dyld_all_image_infos' : [28 , {
+    'dyld64_all_image_infos' : [28 , {
         'version'           : [0,  ['unsigned int']],
         'infoArrayCount'    : [4,  ['unsigned int']],
-        'infoArray'         : [8,  ['pointer', ['dyld_image_info']]],
+        'infoArray'         : [8,  ['pointer', ['dyld64_image_info']]],
         'notification'      : [16, ['pointer', ['void']]],
         'processDetachedFromSharedRegion': [24, ['unsigned int']],
     }],
@@ -76,10 +74,7 @@ class DyldTypes(obj.ProfileModification):
     conditions = {"os" : lambda x : x in ["mac"]}
 
     def modification(self, profile):
-        if profile.metadata.get('memory_model', '32bit') == "32bit":
-            profile.vtypes.update(dyld_vtypes_32)
-        else:
-            profile.vtypes.update(dyld_vtypes_64)
+        profile.vtypes.update(dyld_vtypes)
 
 mig_vtypes_32 = {
     'mig_hash_entry' : [16, {
@@ -270,6 +265,23 @@ class fileglob(obj.CType):
         return ret
         
 class proc(obj.CType):   
+    def __init__(self, theType, offset, vm, name = None, **kwargs):
+        self.pack_fmt  = ""
+        self.pack_size = 0
+        self.addr_type = ""
+ 
+        obj.CType.__init__(self, theType, offset, vm, name, **kwargs)
+        
+        bit_string = str(self.task.map.pmap.pm_task_map or '')[9:]        
+        if bit_string.find("64BIT") == -1:
+            self.pack_fmt = "<I"
+            self.pack_size = 4
+            self.addr_type = "unsigned int"
+        else:
+            self.pack_fmt = "<Q"
+            self.pack_size = 8
+            self.addr_type = "unsigned long long"
+        
     @property
     def p_gid(self):
         cred = self.p_ucred
@@ -369,12 +381,27 @@ class proc(obj.CType):
     def get_dyld_maps(self):        
         proc_as = self.get_process_address_space()
 
-        infos = obj.Object("dyld_all_image_infos", offset=self.task.all_image_info_addr, vm=proc_as)
+        if self.pack_size == 4:
+            dtype = "dyld32_all_image_infos"
+            itype = "dyld32_image_info"
+        else:
+            dtype = "dyld64_all_image_infos"
+            itype = "dyld64_image_info"
 
-        info_arr = obj.Object(theType="Array", targetType="dyld_image_info", offset=infos.infoArray, count=infos.infoArrayCount, vm=proc_as)
+        infos = obj.Object(dtype, offset=self.task.all_image_info_addr, vm=proc_as)
 
-        for info in info_arr:
-            yield info
+        # the pointer address
+        info_buf = proc_as.read(infos.infoArray.obj_offset, self.pack_size)
+        if not info_buf:
+            return
+
+        info_addr = struct.unpack(self.pack_fmt, info_buf)[0] 
+
+        img_infos = obj.Object(theType = "Array", targetType = itype, offset = info_addr, count = infos.infoArrayCount, vm = proc_as)
+        
+        for info_addr in img_infos:
+            yield info_addr
+            #yield obj.Object("dyld_image_info", offset = info_addr, vm = proc_as)   
 
     def get_proc_maps(self):
         map = self.task.map.hdr.links.next
@@ -509,16 +536,24 @@ class rtentry(obj.CType):
     @property
     def rx(self):
         if hasattr(self, "rt_stats"):
-            ret = self.rt_expire
+            ret = self.nstat_rxpackets
         else:
             ret = "N/A"
 
     @property
     def delta(self):
-        if self.rt_expire == 0:
+        if self.expire() == 0:
             ret = 0
         else:
-            ret = self.rt_expire - self.base_uptime
+            ret = self.expire() - self.base_uptime
+
+        return ret
+
+    def expire(self):
+        if hasattr(self, "rt_expire"):
+            ret = self.rt_expire
+        else:
+            ret = 0
 
         return ret
 
@@ -901,10 +936,57 @@ class sockaddr(obj.CType):
 
         return ip
 
-class dyld_image_info(obj.CType):
+class dyld32_image_info(obj.CType):
+    def _read_ptr(self, addr):
+        addr = self.obj_vm.read(addr, 4)
+        addr = struct.unpack("<I", addr)[0]         
+        return addr
+
     @property
     def imageFilePath(self):
-        return str(self.m("imageFilePath").dereference())
+        addr = self.m("imageFilePath").obj_offset
+        addr = self._read_ptr(addr)
+        
+        buf = self.obj_vm.read(addr, 256)
+        if buf:
+            idx = buf.find("\x00")
+            if idx != -1:
+                buf = buf[:idx]
+
+        return buf
+
+    @property
+    def imageLoadAddress(self):
+        addr = self.m("imageLoadAddress").obj_offset
+        addr = self._read_ptr(addr)
+                 
+        return addr
+
+class dyld64_image_info(obj.CType):
+    def _read_ptr(self, addr):
+        addr = self.obj_vm.read(addr, 8)
+        addr = struct.unpack("<Q", addr)[0]         
+        return addr
+
+    @property
+    def imageFilePath(self):
+        addr = self.m("imageFilePath").obj_offset
+        addr = self._read_ptr(addr)
+        
+        buf = self.obj_vm.read(addr, 256)
+        if buf:
+            idx = buf.find("\x00")
+            if idx != -1:
+                buf = buf[:idx]
+
+        return buf
+
+    @property
+    def imageLoadAddress(self):
+        addr = self.m("imageLoadAddress").obj_offset
+        addr = self._read_ptr(addr)
+                 
+        return addr
 
 def exec_vtypes(filename):
     env = {}
@@ -1282,7 +1364,8 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc'  : proc,
-            'dyld_image_info' : dyld_image_info,
+            'dyld32_image_info' : dyld32_image_info,
+            'dyld64_image_info' : dyld64_image_info,
             'fileglob' : fileglob,
             'vnode' : vnode,
             'socket' : socket,
@@ -1348,7 +1431,10 @@ mac_overlay = {
     'sysctl_oid' : [ None, { 
         'oid_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
         }], 
-    'dyld_image_info' : [ None, { 
+    'dyld32_image_info' : [ None, { 
+        'imageFilePath' : [ None, ['pointer', ['String', dict(length = 256)]]], 
+        }], 
+    'dyld64_image_info' : [ None, { 
         'imageFilePath' : [ None, ['pointer', ['String', dict(length = 256)]]], 
         }], 
     'sockaddr_un': [ None, { 

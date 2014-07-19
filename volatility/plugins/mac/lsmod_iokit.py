@@ -25,6 +25,7 @@
 """
 
 import volatility.obj as obj
+import volatility.debug as debug
 import volatility.plugins.mac.common as common
 
 class mac_lsmod_iokit(common.AbstractMacCommand):
@@ -38,6 +39,9 @@ class mac_lsmod_iokit(common.AbstractMacCommand):
         p = obj.Object("Pointer", offset = saddr, vm = self.addr_space) 
 
         kOSArr = obj.Object("OSArray_class", offset = p, vm = self.addr_space)
+
+        if kOSArr == None:
+            debug.error("The OSArray_class type was not found in the profile. Please file a bug if you are running aginst Mac >= 10.7")
 
         kext_arr = obj.Object(theType  = "Array", targetType = "Pointer", offset = kOSArr.array, count = kOSArr.capacity, vm = self.addr_space)
 

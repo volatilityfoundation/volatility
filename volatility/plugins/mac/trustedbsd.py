@@ -64,9 +64,9 @@ class mac_trustedbsd(mac_lsmod):
             # walk each member of the struct
             for check in ops_members:
                 ptr = ops.__getattr__(check)
-                
-                if ptr.dereference().v() != None:
-                    (good, module) = common.is_known_address_name(ptr.dereference().v(), kernel_symbol_addresses, kmods) 
+               
+                if ptr.v() != 0 and ptr.is_valid():
+                    (good, module) = common.is_known_address_name(ptr, kernel_symbol_addresses, kmods) 
 
                     yield (good, check, module, name, ptr)
 

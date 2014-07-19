@@ -104,6 +104,6 @@ class mac_route(common.AbstractMacCommand):
                            rt.name,
                            rt.sent, rt.rx, 
                            rt.get_time(), 
-                           rt.rt_expire, 
+                           rt.expire(), 
                            rt.delta)
                         

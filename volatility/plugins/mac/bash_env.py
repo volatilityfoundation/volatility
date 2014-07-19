@@ -41,21 +41,24 @@ class mac_bash_env(mac_tasks.mac_tasks):
     
         tasks = mac_tasks.mac_tasks(self._config).calculate()
         
-        # Are we dealing with 32 or 64-bit pointers
-        if self.addr_space.profile.metadata.get('memory_model', '32bit') == '32bit':
-            pack_format = "<I"
-            addr_sz = 4
-        else:
-            pack_format = "<Q"
-            addr_sz = 8
-            
         for task in tasks:
             proc_as = task.get_process_address_space()
             
             # In cases when mm is an invalid pointer 
             if not proc_as:
                 continue
-
+            
+            # Are we dealing with 32 or 64-bit pointers
+            bit_string = str(task.task.map.pmap.pm_task_map or '')[9:]
+            if bit_string.find("64BIT") == -1:
+                pack_format = "<I"
+                addr_sz = 4
+                addr_type = "unsigned int"
+            else:
+                pack_format = "<Q"
+                addr_sz = 8
+                addr_type = "unsigned long long"
+     
             procvars = []
             for mapping in task.get_proc_maps():
                 if not str(mapping.get_perms()) == "rw-" or mapping.get_path().find("bash") == -1:
@@ -87,7 +90,7 @@ class mac_bash_env(mac_tasks.mac_tasks):
                 if env_start == 0:
                     continue
 
-                envars = obj.Object(theType="Array", targetType="Pointer", vm=proc_as, offset=env_start, count=256)
+                envars = obj.Object(theType="Array", targetType=addr_type, vm=proc_as, offset=env_start, count=256)
                 for var in envars:
                     if var:
                         sizes = [8, 16, 32, 64, 128, 256, 384, 512, 1024, 2048, 4096]

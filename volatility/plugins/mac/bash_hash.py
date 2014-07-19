@@ -56,6 +56,13 @@ class mac_bash_hash(mac_pslist.mac_pslist):
             if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
                 continue
 
+
+            bit_string = str(task.task.map.pmap.pm_task_map or '')[9:]
+            if bit_string.find("64BIT") == -1:
+                addr_type = "unsigned int"
+            else:
+                addr_type = "unsigned long long"
+
             proc_as = task.get_process_address_space()
 
             for map in task.get_proc_maps():
@@ -80,10 +87,10 @@ class mac_bash_hash(mac_pslist.mac_pslist):
                     htable = obj.Object("_bash_hash_table", offset = off, vm = proc_as)
                     
                     if htable.is_valid():
-                        bucket_array = obj.Object(theType="Array", targetType="Pointer", offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
+                        bucket_array = obj.Object(theType="Array", targetType=addr_type, offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
 
                         for bucket_ptr in bucket_array:
-                            bucket = bucket_ptr.dereference_as("bucket_contents")
+                            bucket = obj.Object("bucket_contents", offset = bucket_ptr, vm = htable.nbuckets.obj_vm)
                             while bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
                                 pdata = bucket.data 
 

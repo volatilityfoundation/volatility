@@ -32,6 +32,114 @@ import volatility.addrspace as addrspace
 import volatility.plugins.mac.common  as mac_common
 import volatility.plugins.mac.pstasks as mac_tasks
 
+bash_vtypes = {
+    'bash32_hist_entry': [ 0xc, {
+    'line': [0x0, ['pointer', ['String', dict(length = 1024)]]],
+    'timestamp': [0x4, ['pointer', ['String', dict(length = 1024)]]],
+    'data': [0x8, ['pointer', ['void']]],
+    }],
+    
+    'bash64_hist_entry': [ 24, {
+    'line': [0, ['pointer', ['String', dict(length = 1024)]]],
+    'timestamp': [8, ['pointer', ['String', dict(length = 1024)]]],
+    'data': [16, ['pointer', ['void']]],
+    }],
+}
+
+class _mac_hist_entry(obj.CType):
+    """A class for history entries"""
+
+    def is_valid(self):
+        line_addr = self.line_ptr()        
+        time_addr = self.time_ptr() 
+ 
+        if (not obj.CType.is_valid(self) or  
+                    not self.obj_vm.is_valid_address(line_addr) or 
+                    not self.obj_vm.is_valid_address(time_addr)):
+            return False
+
+        ts = self.obj_vm.read(time_addr, 256)
+        if not ts:
+            return False
+    
+        idx = ts.find("\x00")
+        if idx != -1:
+            ts = ts[:idx]
+
+        # At this point in time, the epoc integer size will 
+        # never be less than 10 characters, and the stamp is 
+        # always preceded by a pound/hash character. 
+        if len(ts) < 10 or str(ts)[0] != "#":
+            return False
+
+        # The final check is to make sure the entire string
+        # is composed of numbers. Try to convert to an int. 
+        try:
+            int(str(ts)[1:])
+        except ValueError:
+            return False 
+
+        return True
+
+    def line(self):
+        line_addr = self.line_ptr()
+        buf = self.obj_vm.read(line_addr, 256)
+        if buf:
+            idx = buf.find("\x00")
+            if idx != -1:
+                buf = buf[:idx]  
+
+        return buf
+
+    @property
+    def time_as_integer(self):
+        # Get the string and remove the leading "#" from the timestamp
+        time_addr = self.time_ptr()
+        ts = self.obj_vm.read(time_addr, 256)
+        ts = ts[1:] 
+        idx = ts.find("\x00")
+        if idx != -1:
+            ts = ts[:idx]
+ 
+        # Convert the string into an integer (number of seconds)
+        return int(ts)
+
+    def time_object(self):
+        nsecs = self.time_as_integer
+        # Build a timestamp object from the integer 
+        time_val = struct.pack("<I", nsecs)
+        time_buf = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = time_val)
+        time_obj = obj.Object("UnixTimeStamp", offset = 0, vm = time_buf, is_utc = True)
+        return time_obj
+
+    def line_ptr(self):
+        addr = self.m("line").obj_offset
+        return self.read_ptr(addr)
+
+    def time_ptr(self):
+        addr = self.m("timestamp").obj_offset
+        return self.read_ptr(addr)
+
+class bash64_hist_entry(_mac_hist_entry):
+    def read_ptr(self, addr):
+        addr = self.obj_vm.read(addr, 8)
+        addr = struct.unpack("<Q", addr)[0]
+        return addr
+
+class bash32_hist_entry(_mac_hist_entry):
+    def read_ptr(self, addr):
+        addr = self.m("line").obj_offset
+        addr = self.obj_vm.read(addr, 4)
+        addr = struct.unpack("<I", addr)[0]
+        return addr
+
+class MacBashTypes(obj.ProfileModification):
+    conditions = {"os" : lambda x : x in ["mac"]}
+
+    def modification(self, profile):
+        profile.vtypes.update(bash_vtypes)
+        profile.object_classes.update({"bash32_hist_entry": bash32_hist_entry, "bash64_hist_entry": bash64_hist_entry})
+
 class mac_bash(mac_tasks.mac_tasks):
     """Recover bash history from bash process memory"""
 
@@ -54,36 +162,35 @@ class mac_bash(mac_tasks.mac_tasks):
                 if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
                     continue
 
-                # Keep a bucket of history objects so we can order them
-                history_entries = []
+                bit_string = str(task.task.map.pmap.pm_task_map or '')[9:]
+                if bit_string.find("64BIT") == -1:
+                    pack_format = "<I"
+                    hist_struct = "bash32_hist_entry"
+                else:
+                    pack_format = "<Q"
+                    hist_struct = "bash64_hist_entry"
 
                 # Brute force the history list of an address isn't provided 
-                ts_offset = proc_as.profile.get_obj_offset("_hist_entry", "timestamp") 
+                ts_offset = proc_as.profile.get_obj_offset(hist_struct, "timestamp")
 
-                # Are we dealing with 32 or 64-bit pointers
-                if proc_as.profile.metadata.get('memory_model', '32bit') == '32bit':
-                    pack_format = "I"
-                else:
-                    pack_format = "Q"
+                history_entries = [] 
+                bang_addrs = []
 
                 # Look for strings that begin with pound/hash on the process heap 
-                for ptr_hash in task.search_process_memory_rw_nofile(["#"]):                   
- 
+                for ptr_hash in task.search_process_memory_rw_nofile(["#"]):                 
                     # Find pointers to this strings address, also on the heap 
                     addr = struct.pack(pack_format, ptr_hash)
+                    bang_addrs.append(addr)
 
-                    for ptr_string in task.search_process_memory_rw_nofile([addr]):
-                        
-                        # Check if we found a valid history entry object 
-                        hist = obj.Object("_hist_entry", 
-                                          offset = ptr_string - ts_offset, 
-                                          vm = proc_as)
+                for (idx, ptr_string) in enumerate(task.search_process_memory_rw_nofile(bang_addrs)):
+                    # Check if we found a valid history entry object 
+                    hist = obj.Object(hist_struct, 
+                                      offset = ptr_string - ts_offset, 
+                                      vm = proc_as)
 
-                        if hist.is_valid():
-                            history_entries.append(hist)
-                            # We can terminate this inner loop now 
-                            break
-                
+                    if hist.is_valid():
+                        history_entries.append(hist)
+            
                 # Report everything we found in order
                 for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
                     yield task, hist              
@@ -117,7 +224,7 @@ class mac_bash(mac_tasks.mac_tasks):
         for task, hist_entry in data:
             self.table_row(outfd, task.p_pid, task.p_comm, 
                            hist_entry.time_object(), 
-                           hist_entry.line.dereference())
+                           hist_entry.line())
             
 
 

@@ -44,6 +44,9 @@ class mac_notesapp(pstasks.mac_tasks):
         procs = pstasks.mac_tasks.calculate(self)
 
         for proc in procs:
+            if str(proc.p_comm).lower().find("notes") == -1:
+                continue
+
             proc_as = proc.get_process_address_space()
 
             for map in proc.get_proc_maps():

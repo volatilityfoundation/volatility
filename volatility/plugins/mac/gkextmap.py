@@ -48,10 +48,10 @@ class mac_lsmod_kext_map(common.AbstractMacCommand):
 
             macho = obj.Object("macho_header", offset = kext.start, vm = self.addr_space)
 
-            if not macho.is_valid():
-                continue
- 
-            kmod_start = macho.address_for_symbol("_kmod_info")           
+            if macho.is_valid():
+                kmod_start = macho.address_for_symbol("_kmod_info")           
+            else:
+                kmod_start = 0
             
             address  = kext.start
             
@@ -88,8 +88,4 @@ class mac_lsmod_kext_map(common.AbstractMacCommand):
                            ref_cnt, 
                            ver, 
                            name)
-
-
-
-
 
