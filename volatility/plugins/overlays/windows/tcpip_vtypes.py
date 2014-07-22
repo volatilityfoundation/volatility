@@ -340,3 +340,68 @@ class Win7x64Tcpip(obj.ProfileModification):
                 'RemoteAddress' : [ 0x58, ['pointer', ['_IN_ADDR']]],
                 }], 
             })
+
+class Win8Tcpip(obj.ProfileModification):
+    before = ['Vista2008Tcpip']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x >= 2}
+    def modification(self, profile):
+        profile.merge_overlay({
+        '_TCP_ENDPOINT': [ None, {
+            'InetAF' : [ 0x8, ['pointer', ['_INETAF']]],
+            'AddrInfo' : [ 0xC, ['pointer', ['_ADDRINFO']]],
+            'State' : [ 0x38, ['Enumeration', dict(target = 'long', choices = TCP_STATE_ENUM)]],
+            'LocalPort' : [ 0x3C, ['unsigned be short']],
+            'RemotePort' : [ 0x3E, ['unsigned be short']],
+            'Owner' : [ 0x174, ['pointer', ['_EPROCESS']]],
+            }],
+        })
+
+class Win81Tcpip(obj.ProfileModification):
+    before = ['Win8Tcpip']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 3}
+    def modification(self, profile):
+        profile.merge_overlay({
+        '_TCP_ENDPOINT': [ None, {
+            'Owner' : [ 0x1a8, ['pointer', ['_EPROCESS']]],
+            }],
+        })
+
+class Win8x64Tcpip(obj.ProfileModification):
+    before = ['Win7Vista2008x64Tcpip']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x >= 2}
+    def modification(self, profile):
+        profile.merge_overlay({
+            '_INETAF' : [ None, {
+                'AddressFamily' : [ 0x18, ['unsigned short']],
+                }],
+            '_TCP_ENDPOINT': [ None, {
+                'InetAF' : [ 0x10, ['pointer', ['_INETAF']]],
+                'AddrInfo' : [ 0x18, ['pointer', ['_ADDRINFO']]],
+                'State' : [ 0x6C, ['Enumeration', dict(target = 'long', choices = TCP_STATE_ENUM)]],
+                'LocalPort' : [ 0x70, ['unsigned be short']],
+                'RemotePort' : [ 0x72, ['unsigned be short']],
+                'Owner' : [ 0x250, ['pointer', ['_EPROCESS']]],
+                }],
+            })
+
+class Win81x64Tcpip(obj.ProfileModification):
+    before = ['Win8x64Tcpip']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 3}
+    def modification(self, profile):
+        profile.merge_overlay({
+            '_TCP_ENDPOINT': [ None, {
+                'Owner' : [ 0x258, ['pointer', ['_EPROCESS']]],
+                }],
+            })
