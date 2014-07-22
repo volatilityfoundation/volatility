@@ -23,6 +23,7 @@ import volatility.plugins.mac.common as common
 import volatility.utils as utils 
 import volatility.debug as debug
 import volatility.obj as obj
+import re
 
 try:
     import yara
@@ -54,6 +55,33 @@ class mac_yarascan(malfind.YaraScan):
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'mac'
 
+    def filter_tasks(self):
+        tasks = pstasks.mac_tasks(self._config).allprocs()
+
+        if self._config.PID is not None:        
+            try:
+                pidlist = [int(p) for p in self._config.PID.split(',')]
+            except ValueError:
+                debug.error("Invalid PID {0}".format(self._config.PID))
+
+            pids = [t for t in tasks if t.p_pid in pidlist]
+            if len(pids) == 0:
+                debug.error("Cannot find PID {0}. If its terminated or unlinked, use psscan and then supply --offset=OFFSET".format(self._config.PID))
+            return pids
+        
+        if self._config.NAME is not None:        
+            try:
+                name_re = re.compile(self._config.NAME, re.I)
+            except re.error:
+                debug.error("Invalid name {0}".format(self._config.NAME))
+            
+            names = [t for t in tasks if name_re.search(str(t.p_comm))]
+            if len(names) == 0:
+                debug.error("Cannot find name {0}. If its terminated or unlinked, use psscan and then supply --offset=OFFSET".format(self._config.NAME))
+            return names
+
+        return tasks
+         
     def calculate(self):
     
         ## we need this module imported
@@ -84,7 +112,11 @@ class mac_yarascan(malfind.YaraScan):
                         scanner.address_space.zread(address - self._config.REVERSE, self._config.SIZE))
         else:
             # Scan each process memory block 
-            for task in pstasks.mac_tasks(self._config).calculate():
+            tasks = self.filter_tasks()
+            for task in tasks:
+                # skip kernel_task
+                if task.p_pid == 0:
+                    continue
                 scanner = MapYaraScanner(task = task, rules = rules)
                 for hit, address in scanner.scan():
                     yield (task, address, hit, 
