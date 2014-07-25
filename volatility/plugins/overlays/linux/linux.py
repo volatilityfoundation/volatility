@@ -48,6 +48,8 @@ x64_native_types = copy.deepcopy(native_types.x64_native_types)
 x64_native_types['long'] = [8, '<q']
 x64_native_types['unsigned long'] = [8, '<Q']
 
+from operator import attrgetter
+
 class LinuxPermissionFlags(basic.Flags):
     """A Flags object for printing vm_area_struct permissions
     in a format like rwx or r-x"""
@@ -1007,9 +1009,50 @@ class task_struct(obj.CType):
             ret = self.m("euid")
 
         return ret
+            
+    def bash_history_entries(self):
+        proc_as = self.get_process_address_space()
+
+        if not proc_as:
+            return
+
+        # Keep a bucket of history objects so we can order them
+        history_entries = []
+
+        # Brute force the history list of an address isn't provided 
+        ts_offset = proc_as.profile.get_obj_offset("_hist_entry", "timestamp") 
+
+        # Are we dealing with 32 or 64-bit pointers
+        if proc_as.profile.metadata.get('memory_model', '32bit') == '32bit':
+            pack_format = "I"
+        else:
+            pack_format = "Q"
+
+        bang_addrs = []
+
+        # Look for strings that begin with pound/hash on the process heap 
+        for ptr_hash in self.search_process_memory(["#"], heap_only = True):
+            # Find pointers to this strings address, also on the heap 
+            bang_addrs.append(struct.pack(pack_format, ptr_hash))
+
+        for (idx, ptr_string) in enumerate(self.search_process_memory(bang_addrs, heap_only = True)):   
+            # Check if we found a valid history entry object 
+            hist = obj.Object("_hist_entry", 
+                              offset = ptr_string - ts_offset, 
+                              vm = proc_as)
+
+            if hist.is_valid():
+                history_entries.append(hist)
+                       
+        # Report everything we found in order
+        for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
+            yield hist              
 
     def get_process_address_space(self):
         ## If we've got a NoneObject, return it maintain the reason
+        if not self.mm:
+            return self.mm
+
         if self.mm.pgd.v() == None:
             return self.mm.pgd.v()
 
