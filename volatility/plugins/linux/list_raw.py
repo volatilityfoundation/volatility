@@ -31,7 +31,7 @@ import volatility.plugins.linux.lsof as linux_lsof
 import volatility.debug as debug
 import volatility.obj as obj
 
-class linux_list_promisc(linux_common.AbstractLinuxCommand):
+class linux_list_raw(linux_common.AbstractLinuxCommand):
     """List applications with promiscuous sockets"""
 
     def __init__(self, config, *args, **kwargs):
