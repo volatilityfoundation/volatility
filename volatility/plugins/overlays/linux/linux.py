@@ -1009,7 +1009,49 @@ class task_struct(obj.CType):
             ret = self.m("euid")
 
         return ret
+
+    def find_heap_vma(self):
+        ret = None
+
+        for vma in self.get_proc_maps():
+            # find the data section of bash
+            if vma.vm_start <= self.mm.start_brk and vma.vm_end >= self.mm.brk:
+                ret = vma
+                break
+
+        return ret
+
+    def bash_hash_entries(self):
+        nbuckets_offset = self.obj_vm.profile.get_obj_offset("_bash_hash_table", "nbuckets") 
+        
+        heap_vma = self.find_heap_vma()
+
+        if heap_vma == None:
+            debug.debug("Unable to find heap for pid %d" % self.pid)
+            return
+
+        proc_as = self.get_process_address_space()
+
+        for off in self.search_process_memory(["\x40\x00\x00\x00"], heap_only=True):
+            # test the number of buckets
+            htable = obj.Object("_bash_hash_table", offset = off - nbuckets_offset, vm = proc_as)
             
+            if htable.is_valid():
+                bucket_array = obj.Object(theType="Array", targetType="Pointer", offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
+       
+                for bucket_ptr in bucket_array:
+                    bucket = bucket_ptr.dereference_as("bucket_contents")
+                    while bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
+                        pdata = bucket.data 
+
+                        if pdata.path.is_valid() and (0 <= pdata.flags <= 2):
+                            yield bucket
+
+                        bucket = bucket.next
+        
+
+            off = off + 1
+
     def bash_history_entries(self):
         proc_as = self.get_process_address_space()
 

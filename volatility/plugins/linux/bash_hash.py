@@ -107,8 +107,6 @@ class linux_bash_hash(linux_pslist.linux_pslist):
     
         tasks = linux_pslist.linux_pslist(self._config).calculate()
 
-        nbuckets_offset = self.addr_space.profile.get_obj_offset("_bash_hash_table", "nbuckets") 
-
         for task in tasks:
             proc_as = task.get_process_address_space()
             
@@ -120,42 +118,9 @@ class linux_bash_hash(linux_pslist.linux_pslist):
             if not (self._config.SCAN_ALL or str(task.comm) == "bash"):
                 continue
 
-            heap_vma = 0
+            for ent in task.bash_hash_entries():
+                yield task, ent
 
-            for vma in task.get_proc_maps():
-                # find the data section of bash
-                if vma.vm_start <= task.mm.start_brk and vma.vm_end >= task.mm.brk:
-                    heap_vma = vma
-                    break
-
-            if heap_vma == 0:
-                debug.debug("Unable to find heap for pid %d" % task.pid)
-                continue
-
-            proc_as = task.get_process_address_space()
-
-            for off in range(heap_vma.vm_start, heap_vma.vm_end):
-                # test the number of buckets
-                dr = proc_as.zread(off + nbuckets_offset, 4)
-                test = struct.unpack("<I", dr)[0]
-                if test != 64:
-                    continue
-
-                htable = obj.Object("_bash_hash_table", offset = off, vm = proc_as)
-                
-                if htable.is_valid():
-                    bucket_array = obj.Object(theType="Array", targetType="Pointer", offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
-           
-                    for bucket_ptr in bucket_array:
-                        bucket = bucket_ptr.dereference_as("bucket_contents")
-                        while bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
-                            pdata = bucket.data 
-
-                            if pdata.path.is_valid() and (0 <= pdata.flags <= 2):
-                                yield task, bucket
-
-                            bucket = bucket.next
-                       
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Pid", "8"), 
                                   ("Name", "20"),
