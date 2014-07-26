@@ -1049,8 +1049,67 @@ class task_struct(obj.CType):
 
                         bucket = bucket.next
         
-
             off = off + 1
+
+    def ldrmodules(self):
+        proc_maps = {}
+        dl_maps   = {}
+        seen_starts = {}
+
+        proc_as = self.get_process_address_space()        
+
+        if not proc_as:
+            return
+
+        # get libraries from proc_maps
+        for vma in self.get_proc_maps():
+            sig = proc_as.read(vma.vm_start, 4)
+            
+            if sig == "\x7fELF":
+                flags = str(vma.vm_flags)
+       
+                if flags in ["rw-", "r--"]:
+                    continue 
+
+                fname = vma.vm_name(self)
+
+                if fname == "[vdso]":
+                    continue
+
+                start = vma.vm_start.v()
+
+                proc_maps[start]   = fname
+                seen_starts[start] = 1   
+
+        # get libraries from userland
+        for so in self.get_libdl_maps():
+            if so.l_addr == 0x0 or len(str(so.l_name)) == 0:
+                continue
+
+            start = so.l_addr.v()
+
+            dl_maps[start] = str(so.l_name)
+            seen_starts[start] = 1
+
+        for start in seen_starts:
+            vm_name = ""
+            
+            if start in proc_maps:    
+                pmaps = "True"
+                vm_name = proc_maps[start]
+            else:
+                pmaps = "False"
+
+            if start in dl_maps:
+                dmaps = "True"
+                
+                # we prefer the name from proc_maps as it is within kernel memory
+                if vm_name == "":
+                    vm_name = dl_maps[start]
+            else:
+                dmaps = "False"
+
+            yield (start, vm_name, pmaps, dmaps)
 
     def bash_history_entries(self):
         proc_as = self.get_process_address_space()
