@@ -293,8 +293,8 @@ class linux_check_inline_kernel(linux_common.AbstractLinuxCommand):
         funcs = [self._check_known_functions, self._check_file_op_pointers, self._check_afinfo, self._check_inetsw]
         
         for func in funcs:
-            for hook_info in func(modules):
-                yield hook_info
+            for (sym_name, member, hook_type, sym_addr) in func(modules):
+                yield (sym_name, member, hook_type, sym_addr)
 
     def render_text(self, outfd, data):
 
