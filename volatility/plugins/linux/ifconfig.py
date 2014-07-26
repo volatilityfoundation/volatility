@@ -66,17 +66,17 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
 
         # newer kernels
         if self.addr_space.profile.get_symbol("net_namespace_list"):
-            for net_dev in self._get_devs_namespace():
-                for ip_addr_info in self._gather_net_dev_info(net_dev):
-                    yield ip_addr_info
+            func = self._get_devs_namespace
 
         elif self.addr_space.profile.get_symbol("dev_base"):
-            for net_dev in self._get_devs_base():
-                for ip_addr_info in self._gather_net_dev_info(net_dev):
-                    yield ip_addr_info
-        
+            func = self._get_devs_base
+   
         else:
             debug.error("Unable to determine ifconfig information")
+ 
+        for net_dev in func():
+            for (name, ip_addr, mac_addr, promisc) in self._gather_net_dev_info(net_dev):
+                yield (name, ip_addr, mac_addr, promisc) 
         
     def render_text(self, outfd, data):
 
