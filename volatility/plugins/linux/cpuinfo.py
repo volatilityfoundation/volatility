@@ -44,7 +44,8 @@ class linux_cpuinfo(linux_common.AbstractLinuxIntelCommand):
         else:
             raise AttributeError, "Unable to get CPU info for memory capture"
 
-        return func()
+        for (i, cpu) in func():
+            yield i, cpu.x86_vendor_id, cpu.x86_model_id
 
     def get_info_single(self):
 
@@ -122,6 +123,6 @@ class linux_cpuinfo(linux_common.AbstractLinuxIntelCommand):
         self.table_header(outfd, [("Processor", "12"),
                                   ("Vendor", "16"),
                                   ("Model", "")])
-        for i, cpu in data:
-            self.table_row(outfd, str(i), cpu.x86_vendor_id, cpu.x86_model_id)
+        for i, vendor_id, model_id in data:
+            self.table_row(outfd, str(i), vendor_id, model_id)
 
