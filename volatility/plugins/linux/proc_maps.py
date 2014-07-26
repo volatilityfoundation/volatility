@@ -49,7 +49,7 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                                   ("Major", "6"),
                                   ("Minor", "6"),
                                   ("Inode", "10"),
-                                  ("File Path", "80"),                    
+                                  ("File Path", ""),                    
                                  ]) 
         for task, vma in data:
 

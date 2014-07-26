@@ -36,14 +36,15 @@ class linux_ldrmodules(linux_pslist.linux_pslist):
         linux_common.set_plugin_members(self)
 
         procs = linux_pslist.linux_pslist(self._config).calculate()
-        proc_maps = {}
-        dl_maps   = {}
-        seen_starts = []
-
+        
         for task in procs:
-            proc_maps[task.obj_offset] = {}
+            proc_maps = {}
+            dl_maps   = {}
+            seen_starts = {}
+
             proc_as = task.get_process_address_space()        
 
+            # get libraries from proc_maps
             for vma in task.get_proc_maps():
                 sig = proc_as.read(vma.vm_start, 4)
                 
@@ -58,27 +59,40 @@ class linux_ldrmodules(linux_pslist.linux_pslist):
                     if fname == "[vdso]":
                         continue
 
-                    proc_maps[task.obj_offset][vma.vm_start.v()] = (task, proc_as, fname)
+                    start = vma.vm_start.v()
 
-            dl_maps[task.obj_offset] = {}
+                    proc_maps[start]   = fname
+                    seen_starts[start] = 1   
+
+            # get libraries from userland
             for so in task.get_libdl_maps():
                 if so.l_addr == 0x0 or len(str(so.l_name)) == 0:
                     continue
-                dl_maps[task.obj_offset][so.l_addr.v()] = (task, proc_as, str(so.l_name))
     
-        for task_offset in proc_maps:
-            for vm_start in proc_maps[task_offset]:
-                (task, proc_as, vm_name) = proc_maps[task_offset][vm_start]
-                seen_starts.append(vm_start)
-                yield (task_offset, task, proc_as, vm_start, vm_name, proc_maps, dl_maps)
+                start = so.l_addr.v()
 
-        for task_offset in dl_maps:
-            for vm_start in dl_maps[task_offset]:
-                if vm_start in seen_starts:
-                    continue
+                dl_maps[start] = str(so.l_name)
+                seen_starts[start] = 1
 
-                (task, proc_as, vm_name) = dl_maps[task_offset][vm_start] 
-                yield (task_offset, task, proc_as, vm_start, vm_name, proc_maps, dl_maps)
+            for start in seen_starts:
+                vm_name = ""
+                
+                if start in proc_maps:    
+                    pmaps = "True"
+                    vm_name = proc_maps[start]
+                else:
+                    pmaps = "False"
+
+                if start in dl_maps:
+                    dmaps = "True"
+                    
+                    # we prefer the name from proc_maps as it is within kernel memory
+                    if vm_name == "":
+                        vm_name = dl_maps[start]
+                else:
+                    dmaps = "False"
+
+                yield (task, start, vm_name, pmaps, dmaps)
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Pid", "8"),
@@ -89,17 +103,7 @@ class linux_ldrmodules(linux_pslist.linux_pslist):
                                   ("Libc", "6"), 
                                 ]) 
 
-        for task_offset, task, proc_as, vm_start, vma_name, proc_maps, dl_maps in data:
-            if vm_start in proc_maps[task_offset]:
-                pmaps = "True"
-            else:
-                pmaps = "False"
-
-            if vm_start in dl_maps[task_offset]:
-                dmaps = "True"
-            else:
-                dmaps = "False"
-
+        for task, vm_start, vma_name, pmaps, dmaps in data:
             self.table_row(outfd, 
                 task.pid, 
                 str(task.comm),
