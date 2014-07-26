@@ -37,58 +37,22 @@ class linux_netstat(linux_pslist.linux_pslist):
         linux_pslist.linux_pslist.__init__(self, config, *args, **kwargs)
         self._config.add_option('IGNORE_UNIX', short_option = 'U', default = None, help = 'ignore unix sockets', action = 'store_true')
     
-    def calculate(self):
+            # its a socket!
+    def render_text(self, outfd, data):
         linux_common.set_plugin_members(self)
-        if not self.profile.has_type("inet_sock"):
+
+        if not self.addr_space.profile.has_type("inet_sock"):
             # ancient (2.6.9) centos kernels do not have inet_sock in debug info
             raise AttributeError, "Given profile does not have inet_sock, please file a bug if the kernel version is > 2.6.11"
 
-        openfiles = linux_lsof.linux_lsof(self._config).calculate()
+        for task in data:
+            for ents in task.netstat():
+                if ents[0] == socket.AF_INET:
+                    (proto, saddr, sport, daddr, dport, state) = ents[1]
+                    outfd.write("{0:8s} {1:<16}:{2:>5} {3:<16}:{4:>5} {5:<15s} {6:>17s}/{7:<5d}\n".format(proto, saddr, sport, daddr, dport, state, task.comm, task.pid))
 
-        for (task, filp, i) in openfiles:
+                elif ents[0] == socket.AF_UNIX and not self._config.IGNORE_UNIX:
+                    (name, inum) = ents[1]
+                    outfd.write("UNIX {0:<8d} {1:>17s}/{2:<5d} {3:s}\n".format(inum, task.comm, task.pid, name))
+        
 
-            # its a socket!
-            if filp.f_op == self.addr_space.profile.get_symbol("socket_file_ops") or filp.dentry.d_op == self.addr_space.profile.get_symbol("sockfs_dentry_operations"):
-
-                iaddr = filp.dentry.d_inode
-                skt = self.SOCKET_I(iaddr)
-                inet_sock = obj.Object("inet_sock", offset = skt.sk, vm = self.addr_space)
-
-                yield task, i, iaddr, inet_sock
-
-    def render_text(self, outfd, data):
-
-        for task, _fd, inode, inet_sock in data:
-            if inet_sock.protocol in ("TCP", "UDP", "IP", "HOPOPT"): #hopopt is where unix sockets end up on linux
-
-                state = inet_sock.state if inet_sock.protocol == "TCP" else ""
-                family = inet_sock.sk.__sk_common.skc_family #pylint: disable-msg=W0212
-
-                if family == socket.AF_UNIX:
-                    if self._config.IGNORE_UNIX:
-                        continue
-
-                    unix_sock = obj.Object("unix_sock", offset = inet_sock.sk.v(), vm = self.addr_space)
-
-                    if unix_sock.addr:
-                        name_obj = obj.Object("sockaddr_un", offset = unix_sock.addr.name.obj_offset, vm = self.addr_space)
-                        name   = str(name_obj.sun_path)
-                        
-                        outfd.write("UNIX {0:<8d} {1:>17s}/{2:<5d} {3:s}\n".format(inode.i_ino, task.comm, task.pid, name))
-
-                elif family in (socket.AF_INET, socket.AF_INET6):
-
-                    sport = inet_sock.src_port 
-                    dport = inet_sock.dst_port 
-                    saddr = inet_sock.src_addr
-                    daddr = inet_sock.dst_addr
-
-                    outfd.write("{0:8s} {1}:{2:<5} {3}:{4:<5} {5:s} {6:>17s}/{7:<5d}\n".format(inet_sock.protocol, saddr, sport, daddr, dport, state, task.comm, task.pid))
-
-    # has to get the struct socket given an inode (see SOCKET_I in sock.h)
-    def SOCKET_I(self, inode):
-        # if too many of these, write a container_of
-        backsize = self.profile.get_obj_size("socket")
-        addr = inode - backsize
-
-        return obj.Object('socket', offset = addr, vm = self.addr_space)

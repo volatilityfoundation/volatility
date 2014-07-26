@@ -31,26 +31,12 @@ import volatility.plugins.linux.pslist as linux_pslist
 class linux_lsof(linux_pslist.linux_pslist):
     """Lists open files"""
 
-    def calculate(self):
-        linux_common.set_plugin_members(self)
-        tasks = linux_pslist.linux_pslist.calculate(self)
-
-        for task in tasks:
-            fds = task.files.get_fds()
-            max_fds = task.files.get_max_fds()
-
-            fds = obj.Object(theType = 'Array', offset = fds.obj_offset, vm = self.addr_space, targetType = 'Pointer', count = max_fds)
-
-            for i in range(max_fds):
-                if fds[i]:
-                    filp = obj.Object('file', offset = fds[i], vm = self.addr_space)
-                    yield (task, filp, i)
-
     def render_text(self, outfd, data):
 
         self.table_header(outfd, [("Pid", "8"),
                                   ("FD", "8"),
                                   ("Path", "")])
 
-        for (task, filp, fd) in data:
-            self.table_row(outfd, task.pid, fd, linux_common.get_path(task, filp))
+        for task in data:
+            for filp, fd in task.lsof(): 
+                self.table_row(outfd, task.pid, fd, linux_common.get_path(task, filp))

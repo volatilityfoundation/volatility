@@ -44,7 +44,9 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
 
         if nf_hooks_addr == None:
             debug.error("Unable to analyze NetFilter. It is either disabled or compiled as a module.")
-        
+
+        modules  = linux_lsmod.linux_lsmod(self._config).get_modules()
+         
         list_head_size = self.addr_space.profile.get_obj_size("list_head")
         
         for outer in range(13):
@@ -54,23 +56,20 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
                 list_head = obj.Object("list_head", offset = arr + (inner * list_head_size), vm = self.addr_space)
         
                 for hook_ops in list_head.list_of_type("nf_hook_ops", "list"):
-                    yield outer, inner, hook_ops.hook.v()
+                    if self.is_known_address(hook_addr, modules):
+                        hooked = "False"
+                    else:
+                        hooked = "True"
+
+                    yield outer, inner, hook_ops.hook.v(), hooked
 
     def render_text(self, outfd, data):
-        modules  = linux_lsmod.linux_lsmod(self._config).get_modules()
         hook_names = ["PRE_ROUTING", "LOCAL_IN", "FORWARD", "LOCAL_OUT", "POST_ROUTING"]
         proto_names = ["", "", "IPV4", "", "", "", "", "", "", "", "" , "", "", ""]
 
         self.table_header(outfd, [("Proto", "5"), ("Hook", "16"), ("Handler", "[addrpad]"), ("Is Hooked", "5")])
 
-        for outer, inner, hook_addr in data:
-            if self.is_known_address(hook_addr, modules):
-                hooked = "False"
-            else:
-                hooked = "True"
-
-            print "%6d | %6d" % (outer, inner)
-
+        for outer, inner, hook_addr, hooked in data:
             self.table_row(outfd, proto_names[outer], hook_names[inner], hook_addr, hooked)
 
 

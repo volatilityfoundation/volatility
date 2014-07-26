@@ -1149,6 +1149,58 @@ class task_struct(obj.CType):
         for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
             yield hist              
 
+    def lsof(self):
+        fds = self.files.get_fds()
+        max_fds = self.files.get_max_fds()
+
+        fds = obj.Object(theType = 'Array', offset = fds.obj_offset, vm = self.obj_vm, targetType = 'Pointer', count = max_fds)
+
+        for i in range(max_fds):
+            if fds[i]:
+                filp = obj.Object('file', offset = fds[i], vm = self.obj_vm)
+                yield filp, i
+
+    # has to get the struct socket given an inode (see SOCKET_I in sock.h)
+    def SOCKET_I(self, inode):
+        # if too many of these, write a container_of
+        backsize = self.obj_vm.profile.get_obj_size("socket")
+        addr = inode - backsize
+
+        return obj.Object('socket', offset = addr, vm = self.obj_vm)
+
+    def netstat(self):
+        sfop = self.obj_vm.profile.get_symbol("socket_file_ops")
+        dfop = self.obj_vm.profile.get_symbol("sockfs_dentry_operations")
+        
+        for (filp, fdnum) in self.lsof(): 
+            if filp.f_op == sfop or filp.dentry.d_op == dfop:
+                iaddr = filp.dentry.d_inode
+                skt = self.SOCKET_I(iaddr)
+                inet_sock = obj.Object("inet_sock", offset = skt.sk, vm = self.obj_vm)
+
+                if inet_sock.protocol in ("TCP", "UDP", "IP", "HOPOPT"): #hopopt is where unix sockets end up on linux
+                    state = inet_sock.state if inet_sock.protocol == "TCP" else ""
+                    family = inet_sock.sk.__sk_common.skc_family #pylint: disable-msg=W0212
+
+                    if family == socket.AF_UNIX:
+                        unix_sock = obj.Object("unix_sock", offset = inet_sock.sk.v(), vm = self.obj_vm)
+
+                        if unix_sock.addr:
+                            name_obj = obj.Object("sockaddr_un", offset = unix_sock.addr.name.obj_offset, vm = self.obj_vm)
+                            name   = str(name_obj.sun_path)
+                        else:
+                            name = ""
+
+                        yield (socket.AF_UNIX, (name, iaddr.i_ino))
+
+                    elif family in (socket.AF_INET, socket.AF_INET6):
+                        sport = inet_sock.src_port 
+                        dport = inet_sock.dst_port 
+                        saddr = inet_sock.src_addr
+                        daddr = inet_sock.dst_addr
+
+                        yield (socket.AF_INET, (inet_sock.protocol, saddr, sport, daddr, dport, state)) 
+
     def get_process_address_space(self):
         ## If we've got a NoneObject, return it maintain the reason
         if not self.mm:

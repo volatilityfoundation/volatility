@@ -27,7 +27,6 @@
 import os
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
-import volatility.plugins.linux.lsof as linux_lsof
 import volatility.plugins.linux.lsmod as linux_lsmod
 
 class linux_check_afinfo(linux_common.AbstractLinuxCommand):

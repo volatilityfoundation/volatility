@@ -30,7 +30,7 @@ import volatility.obj as obj
 import volatility.debug as debug
 
 import volatility.plugins.linux.common as linux_common
-import volatility.plugins.linux.lsof as linux_lsof
+import volatility.plugins.linux.pslist as linux_pslist
 import volatility.plugins.linux.lsmod as linux_lsmod
 from volatility.plugins.linux.slab_info import linux_slabinfo
 import volatility.plugins.linux.find_file as find_file
@@ -49,12 +49,12 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
 
     def check_open_files_fop(self, f_op_members, modules):
         # get all the members in file_operations, they are all function pointers
-        openfiles = linux_lsof.linux_lsof(self._config).calculate()
-
-        for (task, filp, i) in openfiles:
-            for (hooked_member, hook_address) in self.verify_ops(filp.f_op, f_op_members, modules):
-                name = "{0:s} {1:d} {2:s}".format(task.comm, i, linux_common.get_path(task, filp))
-                yield (name, hooked_member, hook_address)
+        tasks = linux_pslist.linux_pslist(self._config).calculate()
+        for task in tasks:
+            for filp, i in task.lsof():
+                for (hooked_member, hook_address) in self.verify_ops(filp.f_op, f_op_members, modules):
+                    name = "{0:s} {1:d} {2:s}".format(task.comm, i, linux_common.get_path(task, filp))
+                    yield (name, hooked_member, hook_address)
 
     def check_proc_fop(self, f_op_members, modules):
 

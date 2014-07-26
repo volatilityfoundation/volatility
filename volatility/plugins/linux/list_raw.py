@@ -27,7 +27,7 @@
 
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.ifconfig as linux_ifconfig
-import volatility.plugins.linux.lsof as linux_lsof
+import volatility.plugins.linux.pslist as linux_pslist
 import volatility.debug as debug
 import volatility.obj as obj
 
@@ -65,12 +65,13 @@ class linux_list_raw(linux_common.AbstractLinuxCommand):
                 sk = obj.Object("sock", offset = sk.sk_node.next - offset, vm = self.addr_space)
 
     def _fill_cache(self):
-        for (task, filp, fd) in linux_lsof.linux_lsof(self._config).calculate():
-            filepath = linux_common.get_path(task, filp)
-            if type(filepath) == str and filepath.find("socket:[") != -1:
-                to_add = filp.dentry.d_inode.i_ino
-                self.fd_cache[to_add] = [task, filp, fd, filepath]
-                 
+        for task in linux_pslist.linux_pslist(self._config).calculate():
+            for filp, fd in task.lsof():
+                filepath = linux_common.get_path(task, filp)
+                if type(filepath) == str and filepath.find("socket:[") != -1:
+                    to_add = filp.dentry.d_inode.i_ino
+                    self.fd_cache[to_add] = [task, filp, fd, filepath]
+                     
     def _find_proc_for_inode(self, inode):
         if self.fd_cache == {}:
             self._fill_cache()

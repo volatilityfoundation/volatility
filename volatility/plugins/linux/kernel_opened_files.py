@@ -28,7 +28,6 @@
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
-import volatility.plugins.linux.lsof as linux_lsof
 
 class linux_kernel_opened_files(linux_common.AbstractLinuxCommand):
     """Gather active tasks by walking the task_struct->task list"""
@@ -97,11 +96,12 @@ class linux_kernel_opened_files(linux_common.AbstractLinuxCommand):
     def _compare_filps(self):
         dcache = self._gather_dcache()
 
-        openfiles = linux_lsof.linux_lsof(self._config).calculate()
-        for (task, filp, i) in openfiles:
-            val = filp.dentry.v()
-            if not val in dcache:
-                yield val
+        tasks = linux_pslist.linux_pslist(self._config).calculate()
+        for task in tasks:
+            for filp, i in task.lsof():
+                val = filp.dentry.v()
+                if not val in dcache:
+                    yield val
 
         procs = linux_pslist.linux_pslist(self._config).calculate()
         for proc in procs:
