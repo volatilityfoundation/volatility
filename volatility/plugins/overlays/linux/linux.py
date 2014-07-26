@@ -48,6 +48,8 @@ x64_native_types = copy.deepcopy(native_types.x64_native_types)
 x64_native_types['long'] = [8, '<q']
 x64_native_types['unsigned long'] = [8, '<Q']
 
+from operator import attrgetter
+
 class LinuxPermissionFlags(basic.Flags):
     """A Flags object for printing vm_area_struct permissions
     in a format like rwx or r-x"""
@@ -1008,8 +1010,91 @@ class task_struct(obj.CType):
 
         return ret
 
+    def find_heap_vma(self):
+        ret = None
+
+        for vma in self.get_proc_maps():
+            # find the data section of bash
+            if vma.vm_start <= self.mm.start_brk and vma.vm_end >= self.mm.brk:
+                ret = vma
+                break
+
+        return ret
+
+    def bash_hash_entries(self):
+        nbuckets_offset = self.obj_vm.profile.get_obj_offset("_bash_hash_table", "nbuckets") 
+        
+        heap_vma = self.find_heap_vma()
+
+        if heap_vma == None:
+            debug.debug("Unable to find heap for pid %d" % self.pid)
+            return
+
+        proc_as = self.get_process_address_space()
+
+        for off in self.search_process_memory(["\x40\x00\x00\x00"], heap_only=True):
+            # test the number of buckets
+            htable = obj.Object("_bash_hash_table", offset = off - nbuckets_offset, vm = proc_as)
+            
+            if htable.is_valid():
+                bucket_array = obj.Object(theType="Array", targetType="Pointer", offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
+       
+                for bucket_ptr in bucket_array:
+                    bucket = bucket_ptr.dereference_as("bucket_contents")
+                    while bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
+                        pdata = bucket.data 
+
+                        if pdata.path.is_valid() and (0 <= pdata.flags <= 2):
+                            yield bucket
+
+                        bucket = bucket.next
+        
+
+            off = off + 1
+
+    def bash_history_entries(self):
+        proc_as = self.get_process_address_space()
+
+        if not proc_as:
+            return
+
+        # Keep a bucket of history objects so we can order them
+        history_entries = []
+
+        # Brute force the history list of an address isn't provided 
+        ts_offset = proc_as.profile.get_obj_offset("_hist_entry", "timestamp") 
+
+        # Are we dealing with 32 or 64-bit pointers
+        if proc_as.profile.metadata.get('memory_model', '32bit') == '32bit':
+            pack_format = "I"
+        else:
+            pack_format = "Q"
+
+        bang_addrs = []
+
+        # Look for strings that begin with pound/hash on the process heap 
+        for ptr_hash in self.search_process_memory(["#"], heap_only = True):
+            # Find pointers to this strings address, also on the heap 
+            bang_addrs.append(struct.pack(pack_format, ptr_hash))
+
+        for (idx, ptr_string) in enumerate(self.search_process_memory(bang_addrs, heap_only = True)):   
+            # Check if we found a valid history entry object 
+            hist = obj.Object("_hist_entry", 
+                              offset = ptr_string - ts_offset, 
+                              vm = proc_as)
+
+            if hist.is_valid():
+                history_entries.append(hist)
+                       
+        # Report everything we found in order
+        for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
+            yield hist              
+
     def get_process_address_space(self):
         ## If we've got a NoneObject, return it maintain the reason
+        if not self.mm:
+            return self.mm
+
         if self.mm.pgd.v() == None:
             return self.mm.pgd.v()
 
@@ -1060,6 +1145,15 @@ class task_struct(obj.CType):
 
             if found_list:
                 break
+
+    def threads(self):
+        thread_offset = self.obj_vm.profile.get_obj_offset("task_struct", "thread_group")
+        threads = [self]
+        x = obj.Object('task_struct', self.thread_group.next.v() - thread_offset, self.obj_vm)
+        while x not in threads:
+            threads.append(x)
+            x = obj.Object('task_struct', x.thread_group.next.v() - thread_offset, self.obj_vm)
+        return threads
 
     def get_proc_maps(self):
         if not self.mm:

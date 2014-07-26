@@ -46,7 +46,8 @@ class linux_arp(linux_common.AbstractLinuxCommand):
         ntables_ptr = obj.Object("Pointer", offset = self.addr_space.profile.get_symbol("neigh_tables"), vm = self.addr_space)
 
         for ntable in linux_common.walk_internal_list("neigh_table", "next", ntables_ptr):
-            yield self.handle_table(ntable)
+            for aent in self.handle_table(ntable):
+                yield aent
 
     def handle_table(self, ntable):
 
@@ -98,7 +99,5 @@ class linux_arp(linux_common.AbstractLinuxCommand):
         return ret
 
     def render_text(self, outfd, data):
-
-        for arp_list in data:
-            for ent in arp_list:
-                outfd.write("[{0:42s}] at {1:20s} on {2:s}\n".format(ent.ip, ent.mac, ent.devname))
+        for ent in data:
+            outfd.write("[{0:42s}] at {1:20s} on {2:s}\n".format(ent.ip, ent.mac, ent.devname))
