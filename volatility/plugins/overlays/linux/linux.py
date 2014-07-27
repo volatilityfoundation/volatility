@@ -961,6 +961,73 @@ class vm_area_struct(obj.CType):
 
         return fname
 
+    extended_flags = {
+        0x00000001 : "VM_READ",
+        0x00000002 : "VM_WRITE",
+        0x00000004 : "VM_EXEC",
+        0x00000008 : "VM_SHARED",
+        0x00000010 : "VM_MAYREAD",
+        0x00000020 : "VM_MAYWRITE",
+        0x00000040 : "VM_MAYEXEC",
+        0x00000080 : "VM_MAYSHARE",
+        0x00000100 : "VM_GROWSDOWN",
+        0x00000200 : "VM_NOHUGEPAGE",
+        0x00000400 : "VM_PFNMAP",
+        0x00000800 : "VM_DENYWRITE",
+        0x00001000 : "VM_EXECUTABLE",
+        0x00002000 : "VM_LOCKED",
+        0x00004000 : "VM_IO",
+        0x00008000 : "VM_SEQ_READ",
+        0x00010000 : "VM_RAND_READ",        
+        0x00020000 : "VM_DONTCOPY", 
+        0x00040000 : "VM_DONTEXPAND",
+        0x00080000 : "VM_RESERVED",
+        0x00100000 : "VM_ACCOUNT",
+        0x00200000 : "VM_NORESERVE",
+        0x00400000 : "VM_HUGETLB",
+        0x00800000 : "VM_NONLINEAR",        
+        0x01000000 : "VM_MAPPED_COP__VM_HUGEPAGE",
+        0x02000000 : "VM_INSERTPAGE",
+        0x04000000 : "VM_ALWAYSDUMP",
+        0x08000000 : "VM_CAN_NONLINEAR",
+        0x10000000 : "VM_MIXEDMAP",
+        0x20000000 : "VM_SAO",
+        0x40000000 : "VM_PFN_AT_MMAP",
+        0x80000000 : "VM_MERGEABLE",
+    }
+
+    def _parse_perms(self, flags):
+        fstr = ""
+
+        for mask in sorted(self.extended_flags.keys()):
+            if flags & mask == mask:
+                fstr = fstr + self.extended_flags[mask] + "|"
+ 
+        if len(fstr) != 0:
+            fstr = fstr[:-1]
+
+        return fstr
+
+    def protection(self):
+        return self._parse_perms(self.vm_flags.v() & 0b1111) 
+
+    def flags(self):
+        return self._parse_perms(self.vm_flags.v())
+
+    # used by malfind
+    def is_suspicious(self):
+        ret = False        
+
+        flags_str  = self.flags()
+       
+        if flags_str == "VM_READ|VM_WRITE|VM_EXEC":
+           ret = True 
+
+        elif flags_str == "VM_READ|VM_EXEC" and not self.vm_file:
+            ret = True
+
+        return ret
+
 class task_struct(obj.CType):
     def is_valid_task(self):
 
