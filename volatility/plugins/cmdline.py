@@ -20,6 +20,7 @@
 import volatility.plugins.taskmods as taskmods
 
 class Cmdline(taskmods.DllList):
+    """Display process command-line arguments"""
 
     def render_text(self, outfd, data):
         for task in data:
