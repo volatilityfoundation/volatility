@@ -120,7 +120,7 @@ def subkeys(key):
             pass
         else:
             for i in read_sklist(sk):
-                if i.Signature.v() == NK_SIG:
+                if i.Signature.v() == NK_SIG and i.Parent.dereference().Name == key.Name:
                     yield i
 
     if int(key.SubKeyCounts[1]) > 0:
@@ -130,7 +130,7 @@ def subkeys(key):
             pass
         else:
             for i in read_sklist(sk):
-                if i and i.Signature.v() == NK_SIG:
+                if i and i.Signature.v() == NK_SIG and i.Parent.dereference().Name == key.Name:
                     yield i
 
 def values(key):
