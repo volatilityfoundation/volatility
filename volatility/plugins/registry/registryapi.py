@@ -62,13 +62,9 @@ class RegistryApi(object):
         hiveroot = hl.HiveList(self._config).calculate()
 
         for hive in hiveroot:
-            if hive.obj_offset not in hive_offsets:
+            if hive.is_valid() and hive.obj_offset not in hive_offsets:
                 hive_offsets.append(hive.obj_offset)
-                try:
-                    name = hive.FileFullPath.v() or hive.FileUserName.v() or hive.HiveRootPath.v() or "[no name]"
-                # What exception are we expecting here?
-                except:
-                    name = "[no name]"
+                name = hive.get_name()
                 self.all_offsets[hive.obj_offset] = name
 
     def reg_get_currentcontrolset(self, fullname = True):
@@ -189,23 +185,27 @@ class RegistryApi(object):
         '''
         This function enumerates the subkeys of the requested key
         '''
-        k = given_root if given_root != None else self.reg_get_key(hive_name, key)
-        if k:
-            for s in rawreg.subkeys(k):
-                if s.Name:
-                    yield s
+        if key or given_root:
+            k = given_root if given_root != None else self.reg_get_key(hive_name, key)
+            if k:
+                for s in rawreg.subkeys(k):
+                    if s.Name:
+                        yield s
 
-    def reg_yield_values(self, hive_name, key, thetype = None, given_root = None):
+    def reg_yield_values(self, hive_name, key, thetype = None, given_root = None, raw = False):
         '''
         This function yields all values for a  requested registry key
         '''
-        if key:
+        if key or given_root:
             h = given_root if given_root != None else self.reg_get_key(hive_name, key)
             if h != None:
                 for v in rawreg.values(h):
                     tp, dat = rawreg.value_data(v)
                     if thetype == None or tp == thetype:
-                        yield v.Name, dat 
+                        if raw:
+                            yield v, dat
+                        else:
+                            yield v.Name, dat 
 
     def reg_get_value(self, hive_name, key, value, strcmp = None, given_root = None):
         '''
