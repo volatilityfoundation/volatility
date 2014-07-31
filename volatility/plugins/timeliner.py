@@ -162,8 +162,7 @@ class TimeLiner(common.AbstractWindowsCommand):
         config.remove_option("PID")
         config.remove_option("UNSAFE")
 
-        self.types = ["Process", "ImageDate", "Socket", "Shimcache", "Userassist", "IEHistory", "Thread",
-                      "Symlink",
+        self.types = ["Process", "Socket", "Shimcache", "Userassist", "IEHistory", "Thread", "Symlink",
                       "_CM_KEY_BODY", "LoadTime", "TimeDateStamp", "_HBASE_BLOCK", "_CMHIVE", "EvtLog", "ImageDate"]
 
         config.add_option('HIVE', short_option = 'H',
