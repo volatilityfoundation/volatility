@@ -253,7 +253,7 @@ class TimeLiner(common.AbstractWindowsCommand):
             debug.error("You must use --registry in conjuction with -H/--hive and/or -U/--user")
         if self._config.TYPE != None:
             for t in self._config.TYPE.split(","):
-                if t.strip() not in self.types:
+                if t.strip() not in self.types and t.strip() != "Registry":
                     debug.error("You have entered an incorrect type: {0}".format(t))
 
         addr_space = utils.load_as(self._config)
