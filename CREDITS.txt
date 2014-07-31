@@ -20,6 +20,7 @@ Stewart McIntyre for extending apihooks for detecting JMP FAR instructions
 Matt McCormack for supplying a patch to rebase dumped PE files 
 Kevin Marker for contributing over 160 standard build Linux profiles 
 Steven Adair for assistance identifying a large memory PAE bug 
+Cem Gurkok for help updating Mac OS X support for 10.9
 
 Volatility 2.3:
 
