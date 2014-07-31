@@ -37,7 +37,7 @@ class VadTraverser(obj.CType):
     def is_valid(self):
         return (obj.CType.is_valid(self) and
                 self.Start < obj.VolMagic(self.obj_vm).MaxAddress.v() and
-                self.End < (obj.VolMagic(self.obj_vm).MaxAddress.v() << 12))
+                self.End < (obj.VolMagic(self.obj_vm).MaxAddress.v()))
 
     def traverse(self, visited = None, depth = 0):
         """ Traverse the VAD tree by generating all the left items,
