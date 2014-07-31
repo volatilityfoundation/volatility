@@ -18,6 +18,7 @@ Justin Capella and Espen Olsen for their work on the Qemu ELF core dumps
 Sebastien Bourdon-Richard for his work on the VMware vmem/vmss split (with meta) AS 
 Stewart McIntyre for extending apihooks for detecting JMP FAR instructions
 Matt McCormack for supplying a patch to rebase dumped PE files 
+Kevin Marker for contributing over 160 standard build Linux profiles 
 
 Volatility 2.3:
 
