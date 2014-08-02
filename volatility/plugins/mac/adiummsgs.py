@@ -46,7 +46,7 @@ class mac_adium(pstasks.mac_tasks):
         procs = pstasks.mac_tasks.calculate(self)
 
         for proc in procs:
-            if proc.p_comm.lower().find("Adium") == -1:
+            if proc.p_comm.lower().find("adium") == -1:
                 continue
             
             proc_as = proc.get_process_address_space()
