@@ -52,12 +52,12 @@ class CrashInfoModification(obj.ProfileModification):
         profile.merge_overlay({
                 '_DMP_HEADER' : [ None, {
                     'Comment' : [ None, ['String', dict(length = 128)]],
-                    'DumpType' : [ None, ['Enumeration', dict(choices = {0x1: "Full Dump", 0x2: "Kernel Dump"})]],
+                    'DumpType' : [ None, ['Enumeration', dict(choices = {0x1: "Full Dump", 0x2: "Kernel Dump", 0x5: "BitMap Dump"})]],
                     'SystemTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
                 }],
                 '_DMP_HEADER64' : [ None, {
                     'Comment' : [ None, ['String', dict(length = 128)]],
-                    'DumpType' : [ None, ['Enumeration', dict(choices = {0x1: "Full Dump", 0x2: "Kernel Dump"})]],
+                    'DumpType' : [ None, ['Enumeration', dict(choices = {0x1: "Full Dump", 0x2: "Kernel Dump", 0x5: "BitMap Dump"})]],
                     'SystemTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
                 }],
             })
@@ -69,7 +69,7 @@ class CrashInfoModification(obj.ProfileModification):
 class CrashInfo(common.AbstractWindowsCommand):
     """Dump crash-dump information"""
 
-    target_as = ['WindowsCrashDumpSpace32', 'WindowsCrashDumpSpace64']
+    target_as = ['WindowsCrashDumpSpace32', 'WindowsCrashDumpSpace64', 'WindowsCrashDumpSpace64BitMap']
 
     @cache.CacheDecorator("tests/crashinfo")
     def calculate(self):
