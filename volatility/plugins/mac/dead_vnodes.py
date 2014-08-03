@@ -30,7 +30,7 @@ import volatility.plugins.mac.list_zones as list_zones
 import volatility.plugins.mac.pslist as pslist
 
 class mac_dead_vnodes(pslist.mac_pslist):
-    """ Prints terminated/de-allocated processes """
+    """ Lists freed vnode structures """
 
     def calculate(self):
         common.set_plugin_members(self)

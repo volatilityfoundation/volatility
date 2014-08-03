@@ -31,7 +31,7 @@ import volatility.plugins.mac.pstasks as pstasks
 import volatility.plugins.mac.common as common
 
 class mac_adium(pstasks.mac_tasks):
-    """ Gets memory maps of processes """
+    """ Lists Adium messages """
 
     def __init__(self, config, *args, **kwargs):         
         pstasks.mac_tasks.__init__(self, config, *args, **kwargs)         

@@ -29,7 +29,7 @@ import volatility.plugins.mac.common as common
 import volatility.plugins.mac.mount as mac_mount
 
 class mac_list_files(common.AbstractMacCommand):
-    """ Prints mounted device information """
+    """ Lists files in the file cache """
 
     def calculate(self):
         common.set_plugin_members(self)
