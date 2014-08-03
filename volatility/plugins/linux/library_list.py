@@ -27,7 +27,7 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
 
 class linux_library_list(linux_pslist.linux_pslist):
-    """ Prints the Linux banner information """
+    """ Lists libraries loaded into a process """
 
     def calculate(self):
         linux_common.set_plugin_members(self)

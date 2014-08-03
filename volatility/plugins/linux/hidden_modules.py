@@ -30,7 +30,7 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsmod  as linux_lsmod
 
 class linux_hidden_modules(linux_common.AbstractLinuxCommand):
-    """Gather active tasks by walking the task_struct->task list"""
+    """Carves memory to find hidden kernel modules"""
 
     def walk_modules_address_space(self, addr_space):
         mods = [x[0].obj_offset for x in linux_lsmod.linux_lsmod(self._config).calculate()]

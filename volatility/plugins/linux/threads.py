@@ -25,6 +25,7 @@ import volatility.plugins.linux.common as linux_common
 import volatility.obj as obj
 
 class linux_threads(linux_pslist.linux_pslist):
+    """ Prints threads of processes """
     
     def render_text(self, outfd, data):
         for task in data:

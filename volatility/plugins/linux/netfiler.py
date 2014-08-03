@@ -31,7 +31,7 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsmod as linux_lsmod
 
 class linux_netfilter(linux_common.AbstractLinuxCommand):
-    """Gather active tasks by walking the task_struct->task list"""
+    """Lists Netfilter hooks"""
 
     def calculate(self):
         linux_common.set_plugin_members(self)

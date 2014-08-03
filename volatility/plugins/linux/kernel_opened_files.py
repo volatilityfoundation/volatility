@@ -30,7 +30,7 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
 
 class linux_kernel_opened_files(linux_common.AbstractLinuxCommand):
-    """Gather active tasks by walking the task_struct->task list"""
+    """Lists files that are opened from within the kernel"""
 
     def _walk_node_hash(self, node):
         last_node = None
