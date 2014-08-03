@@ -64,8 +64,7 @@ class RegistryApi(object):
         for hive in hiveroot:
             if hive.is_valid() and hive.obj_offset not in hive_offsets:
                 hive_offsets.append(hive.obj_offset)
-                name = hive.get_name()
-                self.all_offsets[hive.obj_offset] = name
+                self.all_offsets[hive.obj_offset] = hive.get_name()
 
     def reg_get_currentcontrolset(self, fullname = True):
         '''
