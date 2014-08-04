@@ -302,6 +302,11 @@ class _SHARED_CACHE_MAP(obj.CType):
         FileSize = self.FileSize.QuadPart
         ValidDataLength = self.ValidDataLength.QuadPart
         SectionSize = self.SectionSize.QuadPart
+       
+        # Corrupted values: Win2003SP0x86.vmem 
+        if FileSize <= 0 or ValidDataLength <= 0:
+            return False
+
         #print "SectionSize 0x%x < 0 or FileSize < 0x%x ValidDataLength 0x%x"%(SectionSize,FileSize,ValidDataLength)
         #if SectionSize < 0 or (FileSize < ValidDataLength):
         if SectionSize < 0 or ((FileSize < ValidDataLength) and (ValidDataLength != 0x7fffffffffffffff)):
