@@ -69,14 +69,14 @@ class BigPageTableMagic(obj.ProfileModification):
         }
 
         version = (m.get('major', 0), m.get('minor', 0), m.get('memory_model', '32bit'))
-        distance = distance_map.get(version)
+        distance = [distance_map.get(version)]
 
         if distance == None:
             if version == (6, 3, '64bit'):
                 if m.get('build', 0) == 9601:
-                    distance = [-5192, -5200]
+                    distance = [[-5192, -5200], [-5224, -5232]]
                 else:
-                    distance = [-5200, -5176]
+                    distance = [[-5200, -5176]]
 
         profile.merge_overlay({
             'VOLATILITY_MAGIC': [ None, {
@@ -104,13 +104,17 @@ class BigPageTable(obj.VolatilityMagic):
 
         track_table = tasks.get_kdbg(self.obj_vm).PoolTrackTable
 
-        table_base = obj.Object("address", 
-            offset = track_table - self.distance[0], 
-            vm = self.obj_vm)
+        for pair in self.distance:
+            table_base = obj.Object("address", 
+                offset = track_table - pair[0], 
+                vm = self.obj_vm)
 
-        table_size = obj.Object("address", 
-            offset = track_table - self.distance[1], 
-            vm = self.obj_vm)
+            table_size = obj.Object("address", 
+                offset = track_table - pair[1], 
+                vm = self.obj_vm)
+
+            if table_size == 0 or not self.obj_vm.is_valid_address(table_base):
+                continue
 
         debug.debug("Distance Map: {0}".format(repr(self.distance)))
         debug.debug("PoolTrackTable: {0:#x}".format(track_table))
