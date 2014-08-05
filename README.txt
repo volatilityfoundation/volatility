@@ -130,65 +130,57 @@ Usage: Volatility - A memory forensics analysis platform.
 
 Profiles
 --------
-VistaSP0x64              - A Profile for Windows Vista SP0 x64
-VistaSP0x86              - A Profile for Windows Vista SP0 x86
-VistaSP1x64              - A Profile for Windows Vista SP1 x64
-VistaSP1x86              - A Profile for Windows Vista SP1 x86
-VistaSP2x64              - A Profile for Windows Vista SP2 x64
-VistaSP2x86              - A Profile for Windows Vista SP2 x86
-Win2003SP0x86            - A Profile for Windows 2003 SP0 x86
-Win2003SP1x64            - A Profile for Windows 2003 SP1 x64
-Win2003SP1x86            - A Profile for Windows 2003 SP1 x86
-Win2003SP2x64            - A Profile for Windows 2003 SP2 x64
-Win2003SP2x86            - A Profile for Windows 2003 SP2 x86
-Win2008R2SP0x64          - A Profile for Windows 2008 R2 SP0 x64
-Win2008R2SP1x64          - A Profile for Windows 2008 R2 SP1 x64
-Win2008SP1x64            - A Profile for Windows 2008 SP1 x64
-Win2008SP1x86            - A Profile for Windows 2008 SP1 x86
-Win2008SP2x64            - A Profile for Windows 2008 SP2 x64
-Win2008SP2x86            - A Profile for Windows 2008 SP2 x86
-Win2012R2x64             - A Profile for Windows Server 2012 R2 x64
-Win2012x64               - A Profile for Windows Server 2012 x64
-Win7SP0x64               - A Profile for Windows 7 SP0 x64
-Win7SP0x86               - A Profile for Windows 7 SP0 x86
-Win7SP1x64               - A Profile for Windows 7 SP1 x64
-Win7SP1x86               - A Profile for Windows 7 SP1 x86
-Win8SP0x64               - A Profile for Windows 8 SP0 x64
-Win8SP0x86               - A Profile for Windows 8 SP0 x86
-Win8SP1x64               - A Profile for Windows 8.1 x64
-Win8SP1x86               - A Profile for Windows 8 SP1 x86
-WinXPSP1x64              - A Profile for Windows XP SP1 x64
-WinXPSP2x64              - A Profile for Windows XP SP2 x64
-WinXPSP2x86              - A Profile for Windows XP SP2 x86
-WinXPSP3x86              - A Profile for Windows XP SP3 x86
-
-Scanner Checks
---------------
-CheckPoolSize          - Check pool block size
-CheckPoolType          - Check the pool type
-KPCRScannerCheck       - Checks the self referential pointers to find KPCRs
-MultiPrefixFinderCheck - Checks for multiple strings per page, finishing at the offset
-MultiStringFinderCheck - Checks for multiple strings per page
-PoolTagCheck           - This scanner checks for the occurance of a pool tag
+VistaSP0x64                - A Profile for Windows Vista SP0 x64
+VistaSP0x86                - A Profile for Windows Vista SP0 x86
+VistaSP1x64                - A Profile for Windows Vista SP1 x64
+VistaSP1x86                - A Profile for Windows Vista SP1 x86
+VistaSP2x64                - A Profile for Windows Vista SP2 x64
+VistaSP2x86                - A Profile for Windows Vista SP2 x86
+Win2003SP0x86              - A Profile for Windows 2003 SP0 x86
+Win2003SP1x64              - A Profile for Windows 2003 SP1 x64
+Win2003SP1x86              - A Profile for Windows 2003 SP1 x86
+Win2003SP2x64              - A Profile for Windows 2003 SP2 x64
+Win2003SP2x86              - A Profile for Windows 2003 SP2 x86
+Win2008R2SP0x64            - A Profile for Windows 2008 R2 SP0 x64
+Win2008R2SP1x64            - A Profile for Windows 2008 R2 SP1 x64
+Win2008SP1x64              - A Profile for Windows 2008 SP1 x64
+Win2008SP1x86              - A Profile for Windows 2008 SP1 x86
+Win2008SP2x64              - A Profile for Windows 2008 SP2 x64
+Win2008SP2x86              - A Profile for Windows 2008 SP2 x86
+Win2012R2x64               - A Profile for Windows Server 2012 R2 x64
+Win2012x64                 - A Profile for Windows Server 2012 x64
+Win7SP0x64                 - A Profile for Windows 7 SP0 x64
+Win7SP0x86                 - A Profile for Windows 7 SP0 x86
+Win7SP1x64                 - A Profile for Windows 7 SP1 x64
+Win7SP1x86                 - A Profile for Windows 7 SP1 x86
+Win8SP0x64                 - A Profile for Windows 8 SP0 x64
+Win8SP0x86                 - A Profile for Windows 8 SP0 x86
+Win8SP1x64                 - A Profile for Windows 8.1 x64
+Win8SP1x86                 - A Profile for Windows 8 SP1 x86
+WinXPSP1x64                - A Profile for Windows XP SP1 x64
+WinXPSP2x64                - A Profile for Windows XP SP2 x64
+WinXPSP2x86                - A Profile for Windows XP SP2 x86
+WinXPSP3x86                - A Profile for Windows XP SP3 x86
 
 Address Spaces
 --------------
-AMD64PagedMemory        - Standard AMD 64-bit address space.
-ArmAddressSpace         - No docs        
-FileAddressSpace        - This is a direct file AS.
-HPAKAddressSpace        - This AS supports the HPAK format
-IA32PagedMemory         - Standard IA-32 paging address space.
-IA32PagedMemoryPae      - This class implements the IA-32 PAE paging address space. It is responsible
-LimeAddressSpace        - Address space for Lime
-MachOAddressSpace       - Address space for mach-o files to support atc-ny memory reader
-OSXPmemELF              - This AS supports VirtualBox ELF64 coredump format
-QemuCoreDumpElf         - This AS supports Qemu ELF32 and ELF64 coredump format
-VMWareAddressSpace      - This AS supports VMware snapshot (VMSS) and saved state (VMSS) files
-VMWareMetaAddressSpace  - This AS supports the VMEM format with VMSN/VMSS metadata
-VirtualBoxCoreDumpElf64 - This AS supports VirtualBox ELF64 coredump format
-WindowsCrashDumpSpace32 - This AS supports windows Crash Dump format
-WindowsCrashDumpSpace64 - This AS supports windows Crash Dump format
-WindowsHiberFileSpace32 - This is a hibernate address space for windows hibernation files.
+AMD64PagedMemory              - Standard AMD 64-bit address space.
+ArmAddressSpace               - No docs        
+FileAddressSpace              - This is a direct file AS.
+HPAKAddressSpace              - This AS supports the HPAK format
+IA32PagedMemory               - Standard IA-32 paging address space.
+IA32PagedMemoryPae            - This class implements the IA-32 PAE paging address space. It is responsible
+LimeAddressSpace              - Address space for Lime
+MachOAddressSpace             - Address space for mach-o files to support atc-ny memory reader
+OSXPmemELF                    - This AS supports VirtualBox ELF64 coredump format
+QemuCoreDumpElf               - This AS supports Qemu ELF32 and ELF64 coredump format
+VMWareAddressSpace            - This AS supports VMware snapshot (VMSS) and saved state (VMSS) files
+VMWareMetaAddressSpace        - This AS supports the VMEM format with VMSN/VMSS metadata
+VirtualBoxCoreDumpElf64       - This AS supports VirtualBox ELF64 coredump format
+WindowsCrashDumpSpace32       - This AS supports windows Crash Dump format
+WindowsCrashDumpSpace64       - This AS supports windows Crash Dump format
+WindowsCrashDumpSpace64BitMap - This AS supports Windows BitMap Crash Dump format
+WindowsHiberFileSpace32       - This is a hibernate address space for windows hibernation files.
 
 Plugins
 -------
@@ -201,7 +193,7 @@ bioskbd                    - Reads the keyboard buffer from Real Mode memory
 cachedump                  - Dumps cached domain hashes from memory
 callbacks                  - Print system-wide notification routines
 clipboard                  - Extract the contents of the windows clipboard
-cmdline                    - No docs        
+cmdline                    - Display process command-line arguments
 cmdscan                    - Extract command history by scanning for _COMMAND_HISTORY
 connections                - Print list of open connections [Windows XP and 2003 Only]
 connscan                   - Pool scanner for tcp connections
@@ -218,6 +210,7 @@ dumpfiles                  - Extract memory mapped and cached files
 envars                     - Display process environment variables
 eventhooks                 - Print details on windows event hooks
 evtlogs                    - Extract Windows Event Logs (XP/2003 only)
+exampleplugin              - This is an example plugin
 filescan                   - Pool scanner for file objects
 gahti                      - Dump the USER handle type information
 gditimers                  - Print installed GDI timers and callbacks
@@ -264,17 +257,17 @@ linux_dmesg                - Gather dmesg buffer
 linux_dump_map             - Writes selected memory mappings to disk
 linux_elfs                 - Find ELF binaries in process mappings
 linux_enumerate_files      - Lists files referenced by the filesystem cache
-linux_find_file            - Recovers tmpfs filesystems from memory
-linux_hidden_modules       - Gather active tasks by walking the task_struct->task list
+linux_find_file            - Lists and recovers files from memory
+linux_hidden_modules       - Carves memory to find hidden kernel modules
 linux_ifconfig             - Gathers active interfaces
 linux_info_regs            - It's like 'info registers' in GDB. It prints out all the
 linux_iomem                - Provides output similar to /proc/iomem
-linux_kernel_opened_files  - Gather active tasks by walking the task_struct->task list
+linux_kernel_opened_files  - Lists files that are opened from within the kernel
 linux_keyboard_notifiers   - Parses the keyboard notifier call chain
 linux_ldrmodules           - Compares the output of proc maps with the list of libraries from libdl
-linux_library_list         - Prints the Linux banner information
+linux_library_list         - Lists libraries loaded into a process
 linux_librarydump          - Dumps shared libraries in process memory to disk
-linux_list_promisc         - List applications with promiscuous sockets
+linux_list_raw             - List applications with promiscuous sockets
 linux_lsmod                - Gather loaded kernel modules
 linux_lsof                 - Lists open files
 linux_malfind              - Looks for suspicious process mappings
@@ -282,7 +275,7 @@ linux_memmap               - Dumps the memory map for linux tasks
 linux_moddump              - Extract loaded kernel modules
 linux_mount                - Gather mounted fs/devices
 linux_mount_cache          - Gather mounted fs/devices from kmem_cache
-linux_netfilter            - Gather active tasks by walking the task_struct->task list
+linux_netfilter            - Lists Netfilter hooks
 linux_netstat              - Lists open sockets
 linux_pidhashtable         - Enumerates processes through the PID hash table
 linux_pkt_queues           - Writes per-process packet queues out to disk
@@ -297,19 +290,19 @@ linux_pslist               - Gather active tasks by walking the task_struct->tas
 linux_pslist_cache         - Gather tasks from the kmem_cache
 linux_pstree               - Shows the parent/child relationship between processes
 linux_psxview              - Find hidden processes with various process listings
-linux_recover_filesystem   - Gather active tasks by walking the task_struct->task list
+linux_recover_filesystem   - Recovers the entire cached file system from memory
 linux_route_cache          - Recovers the routing cache from memory
 linux_sk_buff_cache        - Recovers packets from the sk_buff kmem_cache
 linux_slabinfo             - Mimics /proc/slabinfo on a running machine
 linux_strings              - Match physical offsets to virtual addresses (may take a while, VERY verbose)
-linux_threads              - No docs        
+linux_threads              - Prints threads of processes
 linux_tmpfs                - Recovers tmpfs filesystems from memory
 linux_truecrypt_passphrase - Recovers cached Truecrypt passphrases
 linux_vma_cache            - Gather VMAs from the vm_area_struct cache
 linux_volshell             - Shell in the memory image
 linux_yarascan             - A shell in the Linux memory image
 lsadump                    - Dump (decrypted) LSA secrets from the registry
-mac_adium                  - Gets memory maps of processes
+mac_adium                  - Lists Adium messages
 mac_apihooks               - Checks for API hooks in processes
 mac_apihooks_kernel        - Checks to see if system call and kernel functions are hooked
 mac_arp                    - Prints the arp table
@@ -317,15 +310,15 @@ mac_bash                   - Recover bash history from bash process memory
 mac_bash_env               - Recover bash's environment variables
 mac_bash_hash              - Recover bash hash table from bash process memory
 mac_calendar               - Gets calendar events from Calendar.app
-mac_check_mig_table        - List Running Processes
-mac_check_syscall_shadow   - List Running Processes
+mac_check_mig_table        - Lists entires in the kernel's MIG table
+mac_check_syscall_shadow   - Looks for shadow system call tables
 mac_check_syscalls         - Checks to see if system call table entries are hooked
 mac_check_sysctl           - Checks for unknown sysctl handlers
 mac_check_trap_table       - Checks to see if mach trap table entries are hooked
 mac_contacts               - Gets contact names from Contacts.app
 mac_dead_procs             - Prints terminated/de-allocated processes
 mac_dead_sockets           - Prints terminated/de-allocated network sockets
-mac_dead_vnodes            - Prints terminated/de-allocated processes
+mac_dead_vnodes            - Lists freed vnode structures
 mac_dmesg                  - Prints the kernel debug buffer
 mac_dump_file              - Dumps a specified file
 mac_dump_maps              - Dumps memory ranges of processes
@@ -333,10 +326,10 @@ mac_dyld_maps              - Gets memory maps of processes from dyld data struct
 mac_find_aslr_shift        - Find the ASLR shift value for 10.8+ images
 mac_ifconfig               - Lists network interface information for all devices
 mac_ip_filters             - Reports any hooked IP filters
-mac_keychaindump           - Gets memory maps of processes
+mac_keychaindump           - Recovers possbile keychain keys. Use chainbreaker to open related keychain files
 mac_ldrmodules             - Compares the output of proc maps with the list of libraries from libdl
 mac_librarydump            - Dumps the executable of a process
-mac_list_files             - Prints mounted device information
+mac_list_files             - Lists files in the file cache
 mac_list_sessions          - Enumerates sessions
 mac_list_zones             - Prints active zones
 mac_lsmod                  - Lists loaded kernel modules
@@ -350,7 +343,7 @@ mac_moddump                - Writes the specified kernel extension to disk
 mac_mount                  - Prints mounted device information
 mac_netstat                - Lists active per-process network connections
 mac_network_conns          - Lists network connections from kernel network structures
-mac_notesapp               - Gets memory maps of processes
+mac_notesapp               - Finds contents of Notes messages
 mac_notifiers              - Detects rootkits that add hooks into I/O Kit (e.g. LogKext)
 mac_pgrp_hash_table        - Walks the process group hash table
 mac_pid_hash_table         - Walks the pid hash table
@@ -364,6 +357,7 @@ mac_psxview                - Find hidden processes with various process listings
 mac_recover_filesystem     - Recover the cached filesystem
 mac_route                  - Prints the routing table
 mac_socket_filters         - Reports socket filters
+mac_strings                - Match physical offsets to virtual addresses (may take a while, VERY verbose)
 mac_tasks                  - List Active Tasks
 mac_trustedbsd             - Lists malicious trustedbsd policies
 mac_version                - Prints the Mac version
@@ -395,6 +389,7 @@ psscan                     - Pool scanner for process objects
 pstree                     - Print process list as a tree
 psxview                    - Find hidden processes with various process listings
 raw2dmp                    - Converts a physical memory sample to a windbg crash dump
+rootkitscanner             - Plugin to find rootkit kernel pools
 screenshot                 - Save a pseudo-screenshot based on GDI windows
 sessions                   - List details on _MM_SESSION_SPACE (user logon sessions)
 shellbags                  - Prints ShellBags info
