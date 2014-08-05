@@ -210,7 +210,6 @@ dumpfiles                  - Extract memory mapped and cached files
 envars                     - Display process environment variables
 eventhooks                 - Print details on windows event hooks
 evtlogs                    - Extract Windows Event Logs (XP/2003 only)
-exampleplugin              - This is an example plugin
 filescan                   - Pool scanner for file objects
 gahti                      - Dump the USER handle type information
 gditimers                  - Print installed GDI timers and callbacks
