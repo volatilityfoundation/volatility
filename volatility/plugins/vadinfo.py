@@ -209,7 +209,8 @@ class VADTree(VADInfo):
                 teb = obj.Object("_TEB", 
                                  offset = thread.Tcb.Teb,
                                  vm = task.get_process_address_space())
-                stacks.append(teb.NtTib.StackBase)
+                if teb:
+                    stacks.append(teb.NtTib.StackBase)
             for vad in task.VadRoot.traverse():
                 if vad:
                     if vad.Parent:
