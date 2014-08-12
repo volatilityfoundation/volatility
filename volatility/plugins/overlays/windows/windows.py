@@ -1115,7 +1115,9 @@ class _POOL_HEADER(obj.CType):
             if (header.is_valid() and 
                         header.get_object_type() == object_type):
 
-                return header.dereference_as(object_name)
+                the_object = header.dereference_as(object_name)
+                if the_object.is_valid():
+                    return the_object
 
         return obj.NoneObject("Cannot find object")
 
