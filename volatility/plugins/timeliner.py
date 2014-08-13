@@ -720,7 +720,7 @@ class TimeLiner(common.AbstractWindowsCommand):
             KUSER_SHARED_DATA = obj.Object("_KUSER_SHARED_DATA",
                        offset = volmagic.KUSER_SHARED_DATA.v(),
                        vm = addr_space)
-            interrupt = KUSER_SHARED_DATA.InterruptTime.as_windows_timestamp()
+            interrupt = (KUSER_SHARED_DATA.InterruptTime.High1Time << 32) | KUSER_SHARED_DATA.InterruptTime.LowPart
             now = KUSER_SHARED_DATA.SystemTime.as_windows_timestamp()
             data = timers.Timers(self._config).calculate()
             for timer, module in data:
