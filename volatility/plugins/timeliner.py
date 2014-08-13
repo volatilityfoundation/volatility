@@ -739,7 +739,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                     bufferas = addrspace.BufferAddressSpace(self._config, data = struct.pack('<Q', timer.DueTime.QuadPart - interrupt + now))
                     due_time = obj.Object("WinTimeStamp", is_utc = True, offset = 0, vm = bufferas)
                 except TypeError:
-                    due_time = "{0:#010x}:{1:#010x}".format(timer.DueTime.HighPart, timer.DueTime.LowPart)
+                    due_time = 0
 
                 line = "[{6}TIMER]{0} {1}{0} Signaled: {2}/Routine: 0x{3:x}/Period(ms): {4}/Offset: 0x{5:x}".format(
                         "" if body else "|",
