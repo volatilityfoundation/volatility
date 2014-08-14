@@ -87,7 +87,7 @@ class Win7LdrDataTableEntry(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 1}
+                  'minor': lambda x: x >= 1}
 
     def modification(self, profile):
         overlay = {'_LDR_DATA_TABLE_ENTRY': [ None, {
@@ -107,8 +107,8 @@ class Win7SP1CMHIVE(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 1,
-                  'build': lambda x: x == 7601}
+                  'minor': lambda x: x >= 1,
+                  'build': lambda x: x >= 7601}
 
     def modification(self, profile):
         overlay = {'_CMHIVE': [ None, {
@@ -693,7 +693,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                     yield self.getoutput(line, h.BaseBlock.TimeStamp, body = body)
 
 
-                if "_CMHIVE" in self._config.TYPE and version[0] == 6 and addr_space.profile.metadata.get('build', 0) == 7601:
+                if "_CMHIVE" in self._config.TYPE and version[0] == 6 and addr_space.profile.metadata.get('build', 0) >= 7601:
                     line = line = "[{2}_CMHIVE LastWriteTime]{0} {1}{0} ".format(
                         "" if body else "|",
                         regapi.all_offsets[o],
