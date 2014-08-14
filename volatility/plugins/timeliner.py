@@ -724,15 +724,13 @@ class TimeLiner(common.AbstractWindowsCommand):
             now = KUSER_SHARED_DATA.SystemTime.as_windows_timestamp()
             data = timers.Timers(self._config).calculate()
             for timer, module in data:
+                signaled = "-"
                 if timer.Header.SignalState.v():
                     signaled = "Yes"
-                else:
-                    signaled = "No"
 
+                module_name = "UNKNOWN"
                 if module:
                     module_name = str(module.BaseDllName or '')
-                else:
-                    module_name = "UNKNOWN"
 
                 try:
                     # human readable time taken from http://computer.forensikblog.de/en/2011/10/timers-and-times.html
