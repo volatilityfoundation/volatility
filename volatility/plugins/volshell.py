@@ -375,14 +375,19 @@ class volshell(common.AbstractWindowsCommand):
                 objct = obj.Object(objct, address, space or self._proc.get_process_address_space())
 
             if isinstance(objct, str):
-                size = profile.get_obj_size(objct)
-                membs = [ (profile.get_obj_offset(objct, m), m, profile.vtypes[objct][1][m][1]) for m in profile.vtypes[objct][1] ]
-                print "{0}".format("..." * depth), repr(objct), "({0} bytes)".format(size)
-                for o, m, t in sorted(membs):
-                    print "{0}{1:6}: {2:30} {3}".format("..." * depth, hex(o), m, t)
-                    if recursive: 
-                        if t[0] in profile.vtypes:
-                            dt(t[0], recursive = recursive, depth = depth + 1)
+                try:
+                    size = profile.get_obj_size(objct)
+                    membs = [ (profile.get_obj_offset(objct, m), m, profile.vtypes[objct][1][m][1]) for m in profile.vtypes[objct][1] ]
+                    print "{0}".format("..." * depth), repr(objct), "({0} bytes)".format(size)
+                    for o, m, t in sorted(membs):
+                        print "{0}{1:6}: {2:30} {3}".format("..." * depth, hex(o), m, t)
+                        if recursive: 
+                            if t[0] in profile.vtypes:
+                                dt(t[0], recursive = recursive, depth = depth + 1)
+                except TypeError:
+                    print "Error: could not instantiate object"
+                    print
+                    print "Reason: ", "object likely has dynamic attributes, try supplying an address"
             elif isinstance(objct, obj.BaseObject):
                 membs = [ (o, m) for m, (o, _c) in objct.members.items() ]
                 if not recursive:

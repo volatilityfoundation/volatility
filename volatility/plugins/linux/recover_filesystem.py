@@ -33,7 +33,7 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.find_file as linux_find_file
 
 class linux_recover_filesystem(linux_common.AbstractLinuxCommand):
-    """Gather active tasks by walking the task_struct->task list"""
+    """Recovers the entire cached file system from memory"""
 
     def __init__(self, config, *args, **kwargs):
         linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)

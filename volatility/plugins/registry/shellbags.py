@@ -816,7 +816,7 @@ class ShellBags(common.AbstractWindowsCommand):
                 keys = [(k, bk + "\\" + k.Name) for k in regapi.reg_get_all_subkeys("ntuser.dat", key = None, given_root = cat)]
                 for key, start in keys:
                     if key.Name:
-                        if str(key.Name).lower().find("cmi-create") != -1 or str(key.Name).find("S-") != -1 or seen.get(start + "\\" + k.Name, None) != None:
+                        if seen.get(start + "\\" + k.Name, None) != None:
                             continue
                         seen[start + "\\" + k.Name] = key.obj_offset
                         subkeys = [k for k in regapi.reg_get_all_subkeys("ntuser.dat", key = None, given_root = key)]
@@ -834,7 +834,7 @@ class ShellBags(common.AbstractWindowsCommand):
                     keys = [(k, bk + "\\" + k.Name) for k in regapi.reg_get_all_subkeys("UsrClass.dat", key = None, given_root = cat)]
                     for key, start in keys:
                         if key.Name:
-                            if str(key.Name).lower().find("cmi-create") != -1 or str(key.Name).find("S-") != -1 or seen.get(start + "\\" + k.Name, None) != None:
+                            if seen.get(start + "\\" + k.Name, None) != None:
                                 continue
                             seen[start + "\\" + k.Name] = key.obj_offset
                             subkeys = [k for k in regapi.reg_get_all_subkeys("UsrClass.dat", key = None, given_root = key)]

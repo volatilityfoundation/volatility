@@ -28,7 +28,7 @@ import volatility.plugins.mac.common as common
 import volatility.debug as debug
 
 class mac_check_mig_table(common.AbstractMacCommand):
-    """ List Running Processes """
+    """ Lists entires in the kernel's MIG table """
 
     def calculate(self):
         common.set_plugin_members(self)

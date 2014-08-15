@@ -24,12 +24,14 @@
 @organization: 
 """
 
+### based entirely on keychaindump from volafox
+
 import volatility.obj as obj
 import volatility.plugins.mac.pstasks as pstasks 
 import volatility.plugins.mac.common as common
 
 class mac_keychaindump(pstasks.mac_tasks):
-    """ Gets memory maps of processes """
+    """ Recovers possbile keychain keys. Use chainbreaker to open related keychain files """
 
     def calculate(self):
         common.set_plugin_members(self)

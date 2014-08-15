@@ -6,7 +6,7 @@ def get_plugins(list):
         if item[0].startswith('volatility.plugins') and not (item[0] == 'volatility.plugins' and '__init__.py' in item[1]):
             yield item
 
-exeext = ".exe" if 'win' in sys.platform else ""
+exeext = ".exe" if sys.platform.startswith("win") else ""
 
 a = Analysis([os.path.join(projpath, 'vol.py')],
               pathex = [HOMEPATH],

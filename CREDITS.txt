@@ -18,6 +18,11 @@ Justin Capella and Espen Olsen for their work on the Qemu ELF core dumps
 Sebastien Bourdon-Richard for his work on the VMware vmem/vmss split (with meta) AS 
 Stewart McIntyre for extending apihooks for detecting JMP FAR instructions
 Matt McCormack for supplying a patch to rebase dumped PE files 
+Kevin Marker for contributing over 160 standard build Linux profiles 
+Steven Adair for assistance identifying a large memory PAE bug 
+Cem Gurkok for help updating Mac OS X support for 10.9
+Raphaël Vinot for his patch to fix IPython within volshell
+synack33 for creating various Mac OS X profiles, including initial ones for 10.10 
 
 Volatility 2.3:
 

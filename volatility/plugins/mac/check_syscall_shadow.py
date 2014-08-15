@@ -34,7 +34,7 @@ import volatility.plugins.mac.common as common
 import volatility.debug as debug
 
 class mac_check_syscall_shadow(common.AbstractMacCommand):
-    """ List Running Processes """
+    """ Looks for shadow system call tables """
 
     # https://github.com/siliconblade/volatility/blob/master/mac/check_hooks.py#L216
     def shadowedSyscalls(self, model, distorm_mode, sysents_addr):

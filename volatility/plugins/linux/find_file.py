@@ -34,7 +34,7 @@ import volatility.debug as debug
 import volatility.utils as utils
 
 class linux_find_file(linux_common.AbstractLinuxCommand):
-    '''Recovers tmpfs filesystems from memory'''
+    '''Lists and recovers files from memory'''
 
     def __init__(self, config, *args, **kwargs):
         linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)

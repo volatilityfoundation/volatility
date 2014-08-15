@@ -32,7 +32,7 @@ import volatility.plugins.mac.pstasks as pstasks
 import volatility.plugins.mac.common as common
 
 class mac_notesapp(pstasks.mac_tasks):
-    """ Gets memory maps of processes """
+    """ Finds contents of Notes messages """
 
     def __init__(self, config, *args, **kwargs):         
         pstasks.mac_tasks.__init__(self, config, *args, **kwargs)         

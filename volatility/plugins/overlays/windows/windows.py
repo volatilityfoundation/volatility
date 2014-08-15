@@ -106,7 +106,7 @@ windows_overlay = {
     'Signature' : [ None, ['String', dict(length = 2)]],
     'LastWriteTime' : [ None, ['WinTimeStamp', dict(is_utc = True)]],
     'Name' : [ None, ['String', dict(length = lambda x: x.NameLength)]],
-    'Parent': [ None, ['pointer', ['_CM_KEY_NODE']]],
+    'Parent': [ None, ['pointer32', ['_CM_KEY_NODE']]],
     }],
 
     '_CM_NAME_CONTROL_BLOCK' : [ None, {
@@ -114,7 +114,7 @@ windows_overlay = {
     }],
 
     '_CHILD_LIST' : [ None, {
-    'List' : [ None, ['pointer', ['array', lambda x: x.Count,
+    'List' : [ None, ['pointer32', ['array', lambda x: x.Count,
                                  ['pointer32', ['_CM_KEY_VALUE']]]]],
     }],
 
@@ -125,7 +125,7 @@ windows_overlay = {
 
     '_CM_KEY_INDEX' : [ None, {
     'Signature' : [ None, ['String', dict(length = 2)]],
-    'List' : [ None, ['array', lambda x: x.Count.v() * 2, ['pointer', ['_CM_KEY_NODE']]]],
+    'List' : [ None, ['array', lambda x: x.Count.v() * 2, ['pointer32', ['_CM_KEY_NODE']]]],
     }],
 
     'PO_MEMORY_IMAGE' : [ None, {
@@ -1115,7 +1115,9 @@ class _POOL_HEADER(obj.CType):
             if (header.is_valid() and 
                         header.get_object_type() == object_type):
 
-                return header.dereference_as(object_name)
+                the_object = header.dereference_as(object_name)
+                if the_object.is_valid():
+                    return the_object
 
         return obj.NoneObject("Cannot find object")
 

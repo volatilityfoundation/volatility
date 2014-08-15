@@ -49,6 +49,8 @@ class WindowsCrashDumpSpace32(addrspace.AbstractRunBasedMemory):
         self.as_assert(self.profile.has_type(self.headertype), self.headertype + " not available in profile")
         self.header = obj.Object(self.headertype, 0, base)
 
+        self.as_assert((self.header.DumpType == 0x1), "Unsupported dump format")
+
         offset = self.headerpages
         for x in self.header.PhysicalMemoryBlockBuffer.Run:
             self.runs.append((x.BasePage.v() * 0x1000,

@@ -31,14 +31,18 @@ import volatility.plugins.mac.pstasks as pstasks
 import volatility.plugins.mac.common as common
 
 class mac_adium(pstasks.mac_tasks):
-    """ Gets memory maps of processes """
+    """ Lists Adium messages """
 
     def __init__(self, config, *args, **kwargs):         
         pstasks.mac_tasks.__init__(self, config, *args, **kwargs)         
         self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'Output directory', action = 'store', type = 'str')
+        self._config.add_option('WIDE', short_option = 'W', default = False, help = 'Wide character search', action = 'store_true')
  
     def _make_uni(self, msg):
-        return "\x00".join([m for m in msg])
+        if self._config.WIDE:
+            return "\x00".join([m for m in msg])
+        else:
+            return msg
 
     def calculate(self):
         common.set_plugin_members(self)
@@ -46,7 +50,7 @@ class mac_adium(pstasks.mac_tasks):
         procs = pstasks.mac_tasks.calculate(self)
 
         for proc in procs:
-            if proc.p_comm.lower().find("Adium") == -1:
+            if proc.p_comm.lower().find("adium") == -1:
                 continue
             
             proc_as = proc.get_process_address_space()

@@ -703,8 +703,13 @@ class MFTParser(common.AbstractWindowsCommand):
                 temp = mft_entry.advance_one(mft_entry.ResidentAttributes.STDInfo.obj_offset + mft_entry.ResidentAttributes.ContentSize, mft_buff, self._config.ENTRYSIZE)
                 name = ""
                 if temp != None:
-                    mft_entry.add_path(temp.FileName)
-                    name = temp.FileName.get_name()
+                    try:
+                        mft_entry.add_path(temp.FileName)
+                        name = temp.FileName.get_name()
+                    except struct.error:
+                        if self._config.DEBUGOUT:
+                            print "Problem entry at offset:", hex(offset)
+                        continue
                 if (int(mft_entry.RecordNumber), name) in seen:
                     continue
                 else:

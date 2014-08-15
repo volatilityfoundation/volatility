@@ -247,6 +247,9 @@ class IA32PagedMemoryPae(IA32PagedMemory):
         return retVal
 
     def _read_long_long_phys(self, addr):
+        if not addr:
+            return obj.NoneObject("Unable to read None")
+
         try:
             string = self.base.read(addr, 8)
         except IOError:
