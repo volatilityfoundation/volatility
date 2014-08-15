@@ -1028,6 +1028,22 @@ class vm_area_struct(obj.CType):
 
         return ret
 
+    def info(self, task):
+        if self.vm_file:
+            inode = self.vm_file.dentry.d_inode
+            major, minor = inode.i_sb.major, inode.i_sb.minor
+            ino = inode.i_ino
+            pgoff = self.vm_pgoff << 12
+        else:
+            (major, minor, ino, pgoff) = [0] * 4
+
+        fname = self.vm_name(task)
+
+        if fname == "Anonymous Mapping":
+            fname = ""
+
+        return fname, major, minor, ino, pgoff 
+
 class task_struct(obj.CType):
     def is_valid_task(self):
 
@@ -1178,6 +1194,85 @@ class task_struct(obj.CType):
 
             yield (start, vm_name, pmaps, dmaps)
 
+    def plt_hook_info(self):
+        elfs = dict()
+
+        for elf, elf_start, elf_end, soname, needed in self.elfs():
+            elfs[(self, soname)] = (elf, elf_start, elf_end, needed)
+
+        for k, v in elfs.iteritems():
+            task, soname = k
+            elf, elf_start, elf_end, needed = v
+          
+            if elf._get_typename("hdr") == "elf32_hdr":
+                elf_arch = 32
+            else:
+                elf_arch = 64
+         
+            needed_expanded = set([soname])
+            if (task, None) in elfs:
+                needed_expanded.add(None)
+            # jmp slot can point to ELF itself if the fn hasn't been called yet (RTLD_LAZY)
+            # can point to main binary (None above) if this is a plugin-style symbol
+            while len(needed) > 0:
+                dep = needed.pop(0)
+                needed_expanded.add(dep)
+                try:
+                    needed += set(elfs[(task, dep)][3]) - needed_expanded
+                except KeyError:
+                    needed_expanded.remove(dep)
+
+            for reloc in elf.relocations():
+                rsym = elf.relocation_symbol(reloc)
+
+                if rsym == None:
+                    continue
+
+                symbol_name = elf.symbol_name(rsym)
+                if symbol_name == None:
+                    symbol_name = "<N/A>"
+
+                offset = reloc.r_offset
+               
+                if offset < elf_start:
+                    offset = elf_start + offset
+
+                if elf_arch == 32:
+                    addr = obj.Object("unsigned int", offset = offset, vm = elf.obj_vm)
+                else:
+                    addr = obj.Object("unsigned long long", offset = offset, vm = elf.obj_vm)
+                
+                match = False
+                for dep in needed_expanded:
+                    _, dep_start, dep_end, _ = elfs[(task, dep)]
+                    if addr >= dep_start and addr < dep_end:
+                        match = dep
+
+                hookdesc = ''
+                vma = None
+                for i in task.get_proc_maps():
+                    if addr >= i.vm_start and addr < i.vm_end:
+                        vma = i
+                        break                    
+                if vma:
+                    if vma.vm_file:
+                        hookdesc = linux_common.get_path(task, vma.vm_file)
+                    else:
+                        hookdesc = '[{0:x}:{1:x},{2}]'.format(vma.vm_start, vma.vm_end, vma.vm_flags)
+ 
+                if hookdesc == "":
+                        hookdesc = 'invalid memory'
+                
+                if match != False:
+                    if match == soname:
+                        hookdesc = '[RTLD_LAZY]'
+                    hooked = False 
+                
+                else:
+                    hooked = True
+
+                yield soname, elf, elf_start, elf_end, addr, symbol_name, hookdesc, hooked
+
     def bash_history_entries(self):
         proc_as = self.get_process_address_space()
 
@@ -1216,6 +1311,101 @@ class task_struct(obj.CType):
         for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
             yield hist              
 
+    def psenv(self):
+        env = ""
+
+        if self.mm:
+            # set the as with our new dtb so we can read from userland
+            proc_as = self.get_process_address_space()
+
+            # read argv from userland
+            start = self.mm.env_start.v()
+
+            argv = proc_as.read(start, self.mm.env_end - self.mm.env_start + 10)
+            
+            if argv:
+                # split the \x00 buffer into args
+                env = argv
+        
+        if env != "":
+            ents = env.split("\x00")
+            for varstr in ents:
+                eqidx = varstr.find("=")
+                idx = varstr.find("\x00")
+
+                if idx == -1 or eqidx == -1 or idx < eqidx:
+                    continue
+
+                varstr = varstr[:idx]
+
+                key = varstr[:eqidx]
+                val = varstr[eqidx+1:]
+
+                yield (key, val) 
+
+    def bash_environment(self):
+        # Are we dealing with 32 or 64-bit pointers
+        if self.obj_vm.profile.metadata.get('memory_model', '32bit') == '32bit':
+            pack_format = "<I"
+            addr_sz = 4
+        else:
+            pack_format = "<Q"
+            addr_sz = 8
+
+        proc_as = self.get_process_address_space()
+        
+        # In cases when mm is an invalid pointer 
+        if not proc_as:
+            return
+
+        procvars = []
+        for vma in self.get_proc_maps():
+            if not (vma.vm_file and str(vma.vm_flags) == "rw-"):
+                continue
+
+            env_start = 0
+            for off in range(vma.vm_start, vma.vm_end):
+                # check the first index
+                addrstr = proc_as.read(off, addr_sz)
+                if not addrstr or len(addrstr) != addr_sz:
+                    continue
+                addr = struct.unpack(pack_format, addrstr)[0]
+                # check first idx...
+                if addr:
+                    firstaddrstr = proc_as.read(addr, addr_sz)
+                    if not firstaddrstr or len(firstaddrstr) != addr_sz:
+                        continue
+                    firstaddr = struct.unpack(pack_format, firstaddrstr)[0]
+                    buf = proc_as.read(firstaddr, 64)
+                    if not buf:
+                        continue
+                    eqidx = buf.find("=")
+                    if eqidx > 0:
+                        nullidx = buf.find("\x00")
+                        # single char name, =
+                        if nullidx >= eqidx:
+                            env_start = addr
+
+            if env_start == 0:
+                continue
+
+            envars = obj.Object(theType="Array", targetType="Pointer", vm=proc_as, offset=env_start, count=256)
+            for var in envars:
+                if var:
+                    varstr = proc_as.read(var, 1600)
+                    eqidx = varstr.find("=")
+                    idx = varstr.find("\x00")
+
+                    if idx == -1 or eqidx == -1 or idx < eqidx:
+                        break
+
+                    varstr = varstr[:idx]
+
+                    key = varstr[:eqidx]
+                    val = varstr[eqidx+1:]
+
+                    yield (key, val) 
+                    
     def lsof(self):
         fds = self.files.get_fds()
         max_fds = self.files.get_max_fds()
@@ -1550,7 +1740,7 @@ class task_struct(obj.CType):
             data = struct.pack("<I", sec)
         except struct.error:
             # in case we exceed 0 <= number <= 4294967295
-            return ""
+            return 0
 
         bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = data)
         dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)

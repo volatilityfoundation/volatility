@@ -36,10 +36,13 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
     def calculate(self):
         linux_common.set_plugin_members(self)
 
+        hook_names = ["PRE_ROUTING", "LOCAL_IN", "FORWARD", "LOCAL_OUT", "POST_ROUTING"]
+        proto_names = ["", "", "IPV4", "", "", "", "", "", "", "", "" , "", "", ""]
+
         # struct list_head nf_hooks[NFPROTO_NUMPROTO][NF_MAX_HOOKS]
         # NFPROTO_NUMPROTO = 12
         # NF_MAX_HOOKS = 7
-      
+     
         nf_hooks_addr = self.addr_space.profile.get_symbol("nf_hooks")
 
         if nf_hooks_addr == None:
@@ -61,15 +64,12 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
                     else:
                         hooked = "True"
 
-                    yield outer, inner, hook_ops.hook.v(), hooked
+                    yield proto_names[outer], hook_names[inner], hook_ops.hook.v(), hooked
 
     def render_text(self, outfd, data):
-        hook_names = ["PRE_ROUTING", "LOCAL_IN", "FORWARD", "LOCAL_OUT", "POST_ROUTING"]
-        proto_names = ["", "", "IPV4", "", "", "", "", "", "", "", "" , "", "", ""]
-
         self.table_header(outfd, [("Proto", "5"), ("Hook", "16"), ("Handler", "[addrpad]"), ("Is Hooked", "5")])
 
         for outer, inner, hook_addr, hooked in data:
-            self.table_row(outfd, proto_names[outer], hook_names[inner], hook_addr, hooked)
+            self.table_row(outfd, outer, inner, hook_addr, hooked)
 
 
