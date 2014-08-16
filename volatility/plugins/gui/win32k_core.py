@@ -380,7 +380,7 @@ class tagWINDOWSTATION(obj.CType, windows.ExecutiveObjectMixin):
     def desktops(self):
         """A generator that yields the window station's desktops"""
         desk = self.rpdeskList.dereference()
-        while desk.is_valid() and desk.v() != 0:
+        while desk.is_valid() and desk.v() != 0 and desk.Name:
             yield desk
             desk = desk.rpdeskNext.dereference()
 
