@@ -715,7 +715,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                         
                 yield self.getoutput(line, lwtime, body = body)
 
-        if "Timers" in self._config.TYPE:
+        if "Timer" in self._config.TYPE:
             volmagic = obj.VolMagic(addr_space)
             KUSER_SHARED_DATA = obj.Object("_KUSER_SHARED_DATA",
                        offset = volmagic.KUSER_SHARED_DATA.v(),
