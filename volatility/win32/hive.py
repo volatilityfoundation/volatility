@@ -72,25 +72,6 @@ class HiveAddressSpace(addrspace.BaseAddressSpace):
 
         return block + ci_off + 4
 
-    #def hentry(self, vaddr):
-    #    ci_type = (vaddr & CI_TYPE_MASK) >> CI_TYPE_SHIFT
-    #    ci_table = (vaddr & CI_TABLE_MASK) >> CI_TABLE_SHIFT
-    #    ci_block = (vaddr & CI_BLOCK_MASK) >> CI_BLOCK_SHIFT
-    #    ci_off = (vaddr & CI_OFF_MASK) >> CI_OFF_SHIFT
-
-    #    dir_map = read_obj(self.base, self.types, ['_HHIVE', 'Storage', ci_type, 'Map'],
-    #        self.hive)
-    #    if not dir_map:
-    #        return None
-    #    table = read_obj(self.base, self.types, ['_HMAP_DIRECTORY', 'Directory', ci_table],
-    #        dir_map)
-    #    if not table:
-    #        return None
-    #    #block = read_obj(self.base, self.types, ['_HMAP_TABLE', 'Table', ci_block, 'BlockAddress'],
-    #    #    table)
-    #    
-    #    return Obj("_HMAP_ENTRY", table, self.base)
-
     def read(self, vaddr, length, zero = False):
         length = int(length)
         vaddr = int(vaddr)
@@ -187,6 +168,7 @@ class HiveAddressSpace(addrspace.BaseAddressSpace):
                 data = '\0' * BLOCK_SIZE
 
             outf.write(data)
+        outf.close()
 
     def stats(self, stable = True):
         if stable:
