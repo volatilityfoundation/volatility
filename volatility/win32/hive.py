@@ -29,6 +29,7 @@
 import volatility.obj as obj
 import volatility.addrspace as addrspace
 import struct
+import sys
 
 FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
 
@@ -145,7 +146,7 @@ class HiveAddressSpace(addrspace.BaseAddressSpace):
             return False
         return self.base.is_valid_address(vaddr)
 
-    def save(self, outf):
+    def save(self, outf, summary = sys.stdout):
         baseblock = self.base.read(self.baseblock, BLOCK_SIZE)
         if baseblock:
             outf.write(baseblock)
@@ -161,14 +162,13 @@ class HiveAddressSpace(addrspace.BaseAddressSpace):
                 paddr = paddr - 4
                 data = self.base.read(paddr, BLOCK_SIZE)
             else:
-                print "No mapping found for index {0:x}, filling with NULLs".format(i)
+                summary.write("No mapping found for index {0:x}, filling with NULLs\n".format(i))
 
             if not data:
-                print "Physical layer returned None for index {0:x}, filling with NULL".format(i)
+                summary.write("Physical layer returned None for index {0:x}, filling with NULL\n".format(i))
                 data = '\0' * BLOCK_SIZE
 
             outf.write(data)
-        outf.close()
 
     def stats(self, stable = True):
         if stable:
