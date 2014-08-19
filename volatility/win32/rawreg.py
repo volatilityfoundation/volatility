@@ -113,25 +113,16 @@ def subkeys(key):
     if not key.is_valid():
         return
 
-    if int(key.SubKeyCounts[0]) > 0:
-        sk_off = key.SubKeyLists[0]
-        sk = obj.Object("_CM_KEY_INDEX", sk_off, key.obj_vm)
-        if not sk or not sk.is_valid():
-            pass
-        else:
-            for i in read_sklist(sk):
-                if i.Signature.v() == NK_SIG and i.Parent.dereference().Name == key.Name:
-                    yield i
-
-    if int(key.SubKeyCounts[1]) > 0:
-        sk_off = key.SubKeyLists[1]
-        sk = obj.Object("_CM_KEY_INDEX", sk_off, key.obj_vm)
-        if not sk or not sk.is_valid():
-            pass
-        else:
-            for i in read_sklist(sk):
-                if i and i.Signature.v() == NK_SIG and i.Parent.dereference().Name == key.Name:
-                    yield i
+    for index in range(2):
+        if int(key.SubKeyCounts[index]) > 0:
+            sk_off = key.SubKeyLists[index]
+            sk = obj.Object("_CM_KEY_INDEX", sk_off, key.obj_vm)
+            if not sk or not sk.is_valid():
+                pass
+            else:
+                for i in read_sklist(sk):
+                    if i.Signature.v() == NK_SIG and i.Parent.dereference().Name == key.Name:
+                        yield i
 
 def values(key):
     return [ v for v in key.ValueList.List.dereference()
