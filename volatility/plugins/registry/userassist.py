@@ -26,14 +26,12 @@
 
 #pylint: disable-msg=C0111
 
-import volatility.plugins.registry.printkey as printkey
-import volatility.win32.hive as hivemod
-import volatility.win32.rawreg as rawreg
+import volatility.plugins.registry.registryapi as registryapi
+import volatility.plugins.common as common
 import volatility.addrspace as addrspace
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.utils as utils
-import volatility.plugins.registry.hivelist as hivelist
 import datetime
 
 # for Windows 7 userassist info check out Didier Stevens' article
@@ -175,42 +173,32 @@ folder_guids = {
     "{F38BF404-1D43-42F2-9305-67DE0B28FC23}":"%windir%",
 }
 
-class UserAssist(printkey.PrintKey, hivelist.HiveList):
+class UserAssist(common.AbstractWindowsCommand):
     "Print userassist registry keys and information"
 
     def __init__(self, config, *args, **kwargs):
-        printkey.PrintKey.__init__(self, config, *args, **kwargs)
-        hivelist.HiveList.__init__(self, config, *args, **kwargs)
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
         config.add_option('HIVE-OFFSET', short_option = 'o',
                           help = 'Hive offset (virtual)', type = 'int')
+        self.regapi = registryapi.RegistryApi(self._config)
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
         win7 = addr_space.profile.metadata.get('major', 0) == 6 and addr_space.profile.metadata.get('minor', 0) >= 1
-
+        skey = "software\\microsoft\\windows\\currentversion\\explorer\\userassist"
+ 
         if not self._config.HIVE_OFFSET:
-            hive_offsets = [(self.hive_name(h), h.obj_offset) for h in hivelist.HiveList.calculate(self)]
+            self.regapi.set_current("ntuser.dat")
         else:
-            hive_offsets = [("User Specified", self._config.HIVE_OFFSET)]
-
-        for name, hoff in set(hive_offsets):
-            h = hivemod.HiveAddressSpace(addr_space, self._config, hoff)
-            root = rawreg.get_root(h)
-            if not root:
-                if self._config.HIVE_OFFSET:
-                    debug.error("Unable to find root key. Is the hive offset correct?")
-            else:
-                skey = "software\\microsoft\\windows\\currentversion\\explorer\\userassist\\"
-                if win7:
-                    uakey = skey + "{CEBFF5CD-ACE2-4F4F-9178-9926F41749EA}\\Count"
-                    yield win7, name, rawreg.open_key(root, uakey.split('\\'))
-                    uakey = skey + "{F4E57C4B-2036-45F0-A9AB-443BCFE33D9F}\\Count"
-                    yield win7, name, rawreg.open_key(root, uakey.split('\\'))
-                else:
-                    uakey = skey + "{75048700-EF1F-11D0-9888-006097DEACF9}\\Count"
-                    yield win7, name, rawreg.open_key(root, uakey.split('\\'))
-                    uakey = skey + "{5E6AB780-7743-11CF-A12B-00AA004AE837}\\Count"
-                    yield win7, name, rawreg.open_key(root, uakey.split('\\'))
+            name = obj.Object("_CMHIVE", vm = addr_space, offset = self._config.HIVE_OFFSET).get_name()
+            self.regapi.all_offsets[self._config.HIVE_OFFSET] = name
+            self.regapi.current_offsets[self._config.HIVE_OFFSET] = name
+ 
+        for key, name in self.regapi.reg_yield_key(None, skey):
+            for guidkey in self.regapi.reg_get_all_subkeys(None, None, given_root = key):
+                for count in self.regapi.reg_get_all_subkeys(None, None, given_root = guidkey):
+                    if count.Name == "Count":
+                        yield win7, name, count
 
     def parse_data(self, dat_raw):
         bufferas = addrspace.BufferAddressSpace(self._config, data = dat_raw)
@@ -240,42 +228,33 @@ class UserAssist(printkey.PrintKey, hivelist.HiveList):
                 keyfound = True
                 outfd.write("----------------------------\n")
                 outfd.write("Registry: {0}\n".format(reg))
-                outfd.write("Key name: {0}\n".format(key.Name))
+                outfd.write("Path: {0}\n".format(self.regapi.reg_get_key_path(key)))
                 outfd.write("Last updated: {0}\n".format(key.LastWriteTime))
                 outfd.write("\n")
                 outfd.write("Subkeys:\n")
-                for s in rawreg.subkeys(key):
+                for s in self.regapi.reg_get_all_subkeys(None, None, given_root = key):
                     if s.Name == None:
                         outfd.write("  Unknown subkey: " + s.Name.reason + "\n")
                     else:
                         outfd.write("  {0}\n".format(s.Name))
                 outfd.write("\n")
                 outfd.write("Values:\n")
-                for v in rawreg.values(key):
-                    tp, dat = rawreg.value_data(v)
-                    subname = v.Name
-                    if tp == 'REG_BINARY':
-                        dat_raw = dat
-                        dat = "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(dat)])
-                        try:
-                            subname = subname.encode('rot_13')
-                        except UnicodeDecodeError:
-                            pass
-                        if win7:
-                            guid = subname.split("\\")[0]
-                            if guid in folder_guids:
-                                subname = subname.replace(guid, folder_guids[guid])
-                        d = self.parse_data(dat_raw)
-                        if d != None:
-                            dat = d + dat
-                        else:
-                            dat = "\n" + dat
-                    #these types shouldn't be encountered, but are just left here in case:
-                    if tp in ['REG_SZ', 'REG_EXPAND_SZ', 'REG_LINK']:
-                        dat = dat.encode("ascii", 'backslashreplace')
-                    if tp == 'REG_MULTI_SZ':
-                        for i in range(len(dat)):
-                            dat[i] = dat[i].encode("ascii", 'backslashreplace')
-                    outfd.write("\n{0:13} {1:15} : {2}\n".format(tp, subname, dat))
+                for subname, dat in self.regapi.reg_yield_values(None, None, given_root = key, thetype = "REG_BINARY"):
+                    dat_raw = dat
+                    dat = "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(dat)])
+                    try:
+                        subname = subname.encode('rot_13')
+                    except UnicodeDecodeError:
+                        pass
+                    if win7:
+                        guid = subname.split("\\")[0]
+                        if guid in folder_guids:
+                            subname = subname.replace(guid, folder_guids[guid])
+                    d = self.parse_data(dat_raw)
+                    if d != None:
+                        dat = "{0}Raw Data:\n{1}".format(d, dat)
+                    else:
+                        dat = "Raw Data:\n{0}".format(dat)
+                    outfd.write("\n{0:13} {1:15} : {2}\n".format("REG_BINARY", subname, dat))
         if not keyfound:
             outfd.write("The requested key could not be found in the hive(s) searched\n")
