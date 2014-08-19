@@ -62,7 +62,6 @@ class DumpRegistry(common.AbstractWindowsCommand):
         if self._config.HIVE_OFFSET:
             name = obj.Object("_CMHIVE", vm = addr_space, offset = self._config.HIVE_OFFSET).get_name()
             yield self.fixname(name, self._config.HIVE_OFFSET), hivemod.HiveAddressSpace(addr_space, self._config, self._config.HIVE_OFFSET)
-            
         else:
             regapi = registryapi.RegistryApi(self._config)
             for offset in regapi.all_offsets:
