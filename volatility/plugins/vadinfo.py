@@ -209,7 +209,8 @@ class VADTree(VADInfo):
                 teb = obj.Object("_TEB", 
                                  offset = thread.Tcb.Teb,
                                  vm = task.get_process_address_space())
-                stacks.append(teb.NtTib.StackBase)
+                if teb:
+                    stacks.append(teb.NtTib.StackBase)
             for vad in task.VadRoot.traverse():
                 if vad:
                     if vad.Parent:
@@ -336,7 +337,6 @@ class VADDump(VADInfo):
                 outfd.write("Unable to get process AS for {0}\n".format(task.UniqueProcessId))
                 continue
 
-            max_commit = obj.VolMagic(task_space).MM_MAX_COMMIT.v()
             # as a first step, we try to get the physical offset of the
             # _EPROCESS object using the process address space
             offset = task_space.vtop(task.obj_offset)
@@ -347,9 +347,7 @@ class VADDump(VADInfo):
             if offset == None:
                 offset = 0
 
-            for vad in task.VadRoot.traverse():
-                if not vad.is_valid():
-                    continue
+            for vad, _addrspace in task.get_vads(skip_max_commit = True):
 
                 if self._config.BASE and vad.Start != self._config.BASE:
                     continue
@@ -363,11 +361,7 @@ class VADDump(VADInfo):
                     self._config.DUMP_DIR, "{0}.{1:x}.{2}-{3}.dmp".format(
                     task.ImageFileName, offset, vad_start, vad_end))
 
-                if (task.IsWow64 and vad.CommitCharge == max_commit and 
-                        vad.End > 0x7fffffff):
-                    result = "Skipping Wow64 MM_MAX_COMMIT range"
-                else:
-                    result = self.dump_vad(path, vad, task_space)
+                result = self.dump_vad(path, vad, task_space)
 
                 self.table_row(outfd, 
                                task.UniqueProcessId, 

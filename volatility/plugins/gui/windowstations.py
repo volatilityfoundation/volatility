@@ -68,7 +68,7 @@ class WndScan(common.AbstractScanCommand, sessions.SessionsMixin):
             wind.set_native_vm(session.obj_vm)
 
             for winsta in wind.traverse():
-                if winsta.is_valid():
+                if winsta.is_valid() and len([desk for desk in winsta.desktops()]) > 0:
 
                     offset = winsta.PhysicalAddress
                     if offset in seen:

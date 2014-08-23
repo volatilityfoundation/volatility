@@ -38,6 +38,7 @@ import volatility.plugins.netscan as netscan
 import volatility.plugins.evtlogs as evtlogs
 import volatility.plugins.malware.psxview as psxview
 import volatility.plugins.malware.malfind as malfind
+import volatility.plugins.malware.timers as timers
 import volatility.plugins.registry.userassist as userassist
 import volatility.plugins.imageinfo as imageinfo
 import volatility.win32.rawreg as rawreg
@@ -86,7 +87,7 @@ class Win7LdrDataTableEntry(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 1}
+                  'minor': lambda x: x >= 1}
 
     def modification(self, profile):
         overlay = {'_LDR_DATA_TABLE_ENTRY': [ None, {
@@ -106,8 +107,8 @@ class Win7SP1CMHIVE(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 1,
-                  'build': lambda x: x == 7601}
+                  'minor': lambda x: x >= 1,
+                  'build': lambda x: x >= 7601}
 
     def modification(self, profile):
         overlay = {'_CMHIVE': [ None, {
@@ -162,7 +163,7 @@ class TimeLiner(common.AbstractWindowsCommand):
         config.remove_option("PID")
         config.remove_option("UNSAFE")
 
-        self.types = ["Process", "Socket", "Shimcache", "Userassist", "IEHistory", "Thread", "Symlink",
+        self.types = ["Process", "Socket", "Shimcache", "Userassist", "IEHistory", "Thread", "Symlink", "Timer",
                       "_CM_KEY_BODY", "LoadTime", "TimeDateStamp", "_HBASE_BLOCK", "_CMHIVE", "EvtLog", "ImageDate"]
 
         config.add_option('HIVE', short_option = 'H',
@@ -692,7 +693,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                     yield self.getoutput(line, h.BaseBlock.TimeStamp, body = body)
 
 
-                if "_CMHIVE" in self._config.TYPE and version[0] == 6 and addr_space.profile.metadata.get('build', 0) == 7601:
+                if "_CMHIVE" in self._config.TYPE and version[0] == 6 and addr_space.profile.metadata.get('build', 0) >= 7601:
                     line = line = "[{2}_CMHIVE LastWriteTime]{0} {1}{0} ".format(
                         "" if body else "|",
                         regapi.all_offsets[o],
@@ -714,3 +715,37 @@ class TimeLiner(common.AbstractWindowsCommand):
                         
                 yield self.getoutput(line, lwtime, body = body)
 
+        if "Timer" in self._config.TYPE:
+            volmagic = obj.VolMagic(addr_space)
+            KUSER_SHARED_DATA = obj.Object("_KUSER_SHARED_DATA",
+                       offset = volmagic.KUSER_SHARED_DATA.v(),
+                       vm = addr_space)
+            interrupt = (KUSER_SHARED_DATA.InterruptTime.High1Time << 32) | KUSER_SHARED_DATA.InterruptTime.LowPart
+            now = KUSER_SHARED_DATA.SystemTime.as_windows_timestamp()
+            data = timers.Timers(self._config).calculate()
+            for timer, module in data:
+                signaled = "-"
+                if timer.Header.SignalState.v():
+                    signaled = "Yes"
+
+                module_name = "UNKNOWN"
+                if module:
+                    module_name = str(module.BaseDllName or '')
+
+                try:
+                    # human readable time taken from http://computer.forensikblog.de/en/2011/10/timers-and-times.html
+                    bufferas = addrspace.BufferAddressSpace(self._config, data = struct.pack('<Q', timer.DueTime.QuadPart - interrupt + now))
+                    due_time = obj.Object("WinTimeStamp", is_utc = True, offset = 0, vm = bufferas)
+                except TypeError:
+                    due_time = 0
+
+                line = "[{6}TIMER]{0} {1}{0} Signaled: {2}/Routine: 0x{3:x}/Period(ms): {4}/Offset: 0x{5:x}".format(
+                        "" if body else "|",
+                        module_name,
+                        signaled,
+                        timer.Dpc.DeferredRoutine,
+                        timer.Period,
+                        timer.obj_offset,
+                        self._config.MACHINE)
+
+                yield self.getoutput(line, due_time, body = body)

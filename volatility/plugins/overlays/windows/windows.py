@@ -484,10 +484,14 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         for vad in self.VadRoot.traverse():
             if not vad.is_valid():
                 continue
+
             # Skip Wow64 MM_MAX_COMMIT range
-            if (skip_max_commit and self.IsWow64 and vad.CommitCharge == max_commit and 
-                    vad.End > 0x7fffffff):
-                continue
+            if skip_max_commit: 
+                if self.IsWow64 and vad.CommitCharge == max_commit and vad.End > 0x7fffffff:
+                    continue
+                elif vad.Length > 0x7f000000000: # see issue #70
+                    continue
+
             # Apply the meta filter if one is supplied
             if vad_filter:
                 if not vad_filter(vad):
@@ -1115,7 +1119,9 @@ class _POOL_HEADER(obj.CType):
             if (header.is_valid() and 
                         header.get_object_type() == object_type):
 
-                return header.dereference_as(object_name)
+                the_object = header.dereference_as(object_name)
+                if the_object.is_valid():
+                    return the_object
 
         return obj.NoneObject("Cannot find object")
 

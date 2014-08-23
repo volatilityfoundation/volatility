@@ -120,24 +120,27 @@ class KDBGScan(common.AbstractWindowsCommand):
                     encrypted_kdbg_profiles.append(p)
                     
         self._config.update('PROFILE', origprofile)
-
-        scanner = KDBGScanner(needles = proflens.values())
-
-        aspace = utils.load_as(self._config, astype = 'any')
-
         # keep track of the number of potential KDBGs we find
         count = 0
-        for offset in scanner.scan(aspace):
-            val = aspace.read(offset, maxlen + 0x10)
-            for l in proflens:
-                if val.find(proflens[l]) >= 0:
-                    kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = offset, vm = aspace)
-                    yield l, kdbg
-                    count += 1
+
+        if origprofile not in encrypted_kdbg_profiles:
+            scanner = KDBGScanner(needles = proflens.values())
+
+            aspace = utils.load_as(self._config, astype = 'any')
+
+            for offset in scanner.scan(aspace):
+                val = aspace.read(offset, maxlen + 0x10)
+                for l in proflens:
+                    if val.find(proflens[l]) >= 0:
+                        kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = offset, vm = aspace)
+                        yield l, kdbg
+                        count += 1
 
         # only perform the special win8/2012 scan if we didn't find 
         # any others and if a virtual x64 address space is available 
         if count == 0:
+            if origprofile in encrypted_kdbg_profiles:
+                encrypted_kdbg_profiles = [origprofile]
             for profile in encrypted_kdbg_profiles:
                 self._config.update('PROFILE', profile)
                 aspace = utils.load_as(self._config, astype = 'any')

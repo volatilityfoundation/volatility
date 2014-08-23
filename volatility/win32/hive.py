@@ -29,6 +29,7 @@
 import volatility.obj as obj
 import volatility.addrspace as addrspace
 import struct
+import sys
 
 FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
 
@@ -71,25 +72,6 @@ class HiveAddressSpace(addrspace.BaseAddressSpace):
         block = self.hive.Storage[ci_type].Map.Directory[ci_table].Table[ci_block].BlockAddress
 
         return block + ci_off + 4
-
-    #def hentry(self, vaddr):
-    #    ci_type = (vaddr & CI_TYPE_MASK) >> CI_TYPE_SHIFT
-    #    ci_table = (vaddr & CI_TABLE_MASK) >> CI_TABLE_SHIFT
-    #    ci_block = (vaddr & CI_BLOCK_MASK) >> CI_BLOCK_SHIFT
-    #    ci_off = (vaddr & CI_OFF_MASK) >> CI_OFF_SHIFT
-
-    #    dir_map = read_obj(self.base, self.types, ['_HHIVE', 'Storage', ci_type, 'Map'],
-    #        self.hive)
-    #    if not dir_map:
-    #        return None
-    #    table = read_obj(self.base, self.types, ['_HMAP_DIRECTORY', 'Directory', ci_table],
-    #        dir_map)
-    #    if not table:
-    #        return None
-    #    #block = read_obj(self.base, self.types, ['_HMAP_TABLE', 'Table', ci_block, 'BlockAddress'],
-    #    #    table)
-    #    
-    #    return Obj("_HMAP_ENTRY", table, self.base)
 
     def read(self, vaddr, length, zero = False):
         length = int(length)
@@ -164,7 +146,7 @@ class HiveAddressSpace(addrspace.BaseAddressSpace):
             return False
         return self.base.is_valid_address(vaddr)
 
-    def save(self, outf):
+    def save(self, outf, summary = sys.stdout):
         baseblock = self.base.read(self.baseblock, BLOCK_SIZE)
         if baseblock:
             outf.write(baseblock)
@@ -180,10 +162,10 @@ class HiveAddressSpace(addrspace.BaseAddressSpace):
                 paddr = paddr - 4
                 data = self.base.read(paddr, BLOCK_SIZE)
             else:
-                print "No mapping found for index {0:x}, filling with NULLs".format(i)
+                summary.write("No mapping found for index {0:x}, filling with NULLs\n".format(i))
 
             if not data:
-                print "Physical layer returned None for index {0:x}, filling with NULL".format(i)
+                summary.write("Physical layer returned None for index {0:x}, filling with NULL\n".format(i))
                 data = '\0' * BLOCK_SIZE
 
             outf.write(data)

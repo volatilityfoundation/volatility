@@ -41,7 +41,7 @@ class BitmapDmpVTypes(obj.ProfileModification):
                 'BitmapSize' : [ 0x28, ['unsigned long long']],  
                 'Pages' : [ 0x30, ['unsigned long long']], 
                 'Buffer' : [ 0x38, ['array', lambda x: (x.BitmapSize+7) / 0x8, ['unsigned char']]],
-                'Buffer2' : [ 0x38, ['array', lambda x: (x.BitmapSize + 31)/32, ['unsigned long']]],
+                'Buffer2' : [ 0x38, ['array', lambda x: (x.BitmapSize + 31) / 32, ['unsigned long']]],
             } ],
             })
 
@@ -84,11 +84,11 @@ class WindowsCrashDumpSpace64BitMap(crash.WindowsCrashDumpSpace32):
         lastbitseen = 0        				# Most recent bit processed
         offset = self.bitmaphdr2.HeaderSize		# Size of file headers
 
-        for i in range(0,((self.bitmaphdr2.BitmapSize + 31) / 32)):
+        for i in range(0, ((self.bitmaphdr2.BitmapSize + 31) / 32)):
             if self.bitmaphdr.Buffer2[i] == 0:
                  if firstbit != None:
-                    lastbit = ((i-1) * 32) + 31
-                    self.runs.append((firstbit *0x1000, firstoffset, (lastbit-firstbit+1) * 0x1000))
+                    lastbit = ((i - 1) * 32) + 31
+                    self.runs.append((firstbit * 0x1000, firstoffset, (lastbit - firstbit + 1) * 0x1000))
                     firstbit = None
             elif self.bitmaphdr.Buffer2[i] == 0xFFFFFFFF:
                  if firstbit == None:
@@ -97,7 +97,7 @@ class WindowsCrashDumpSpace64BitMap(crash.WindowsCrashDumpSpace32):
                  offset = offset + (32 * 0x1000)
             else:
                  wordoffset = i * 32
-                 for j in range(0,32):
+                 for j in range(0, 32):
                      BitAddr = wordoffset + j 
                      ByteOffset = BitAddr >> 3
                      ByteAddress = (self.bitmaphdr2.Buffer[ByteOffset])
@@ -109,12 +109,12 @@ class WindowsCrashDumpSpace64BitMap(crash.WindowsCrashDumpSpace32):
                          offset = offset + 0x1000
                      else:
                          if firstbit != None:
-                             lastbit = BitAddr-1
-                             self.runs.append((firstbit *0x1000, firstoffset, (lastbit-firstbit+1) * 0x1000))
+                             lastbit = BitAddr - 1
+                             self.runs.append((firstbit * 0x1000, firstoffset, (lastbit - firstbit + 1) * 0x1000))
                              firstbit = None
             lastbitseen = (i * 32) + 31
 
         if firstbit != None:
-            self.runs.append((firstbit *0x1000, firstoffset, (lastbitseen-firstbit+1) * 0x1000))        
+            self.runs.append((firstbit * 0x1000, firstoffset, (lastbitseen - firstbit + 1) * 0x1000))
 
         self.dtb = self.header.DirectoryTableBase.v()
