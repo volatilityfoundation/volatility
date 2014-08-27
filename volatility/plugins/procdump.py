@@ -41,7 +41,7 @@ class ProcDump(taskmods.DllList):
         config.add_option("MEMORY", short_option = "m", default = False, action = 'store_true', 
                           help = "Carve as a memory sample rather than exe/disk")
         config.add_option('FIX', short_option = 'x', default = False,
-                          help = 'Modify the image base of the dump to the im-memory base address',
+                          help = 'Modify the image base of the dump to the in-memory base address',
                           action = 'store_true')
 
     def dump_pe(self, space, base, dump_file):
