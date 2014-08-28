@@ -44,16 +44,21 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         
         config.remove_option("LIST_SBS")
         config.add_option('LISTFILES', short_option = 'L', default = None, help = 'list all files cached in memory', action = 'count')
-
-    def _walk_sb(self, dentry_param, last_dentry, parent):
+        
+    def _walk_sb(self, dentry_param, last_dentry, parent, seen):
         if last_dentry == None or last_dentry != dentry_param.v():
             last_dentry = dentry_param
         else:
             return
 
         ret = None
-        
+
         for dentry in dentry_param.d_subdirs.list_of_type("dentry", "d_u"):
+            if dentry.obj_offset in seen:
+                return
+
+            seen[dentry.obj_offset] = 1
+    
             if not dentry.d_name.name.is_valid():
                 continue
 
@@ -67,7 +72,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             yield new_file, dentry
 
             if inode and inode.is_dir():
-                for new_file, dentry in self._walk_sb(dentry, last_dentry, new_file):
+                for new_file, dentry in self._walk_sb(dentry, last_dentry, new_file, seen):
                     yield new_file, dentry
 
     def _get_sbs(self):
@@ -79,6 +84,8 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         return ret
 
     def walk_sbs(self):
+        linux_common.set_plugin_members(self)
+        
         ret = None
         sbs = self._get_sbs()
 
@@ -92,7 +99,8 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             if rname and len(rname) > 0:
                 yield (sb, sb_path, rname, sb.s_root)
 
-            for vals in self._walk_sb(sb.s_root, None, parent):
+            seen = {}
+            for vals in self._walk_sb(sb.s_root, None, parent, seen):
                 if vals:
                     (file_path, file_dentry) = vals
                     yield (sb, sb_path, file_path, file_dentry)
