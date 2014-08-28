@@ -784,15 +784,17 @@ class in_device(obj.CType):
 class net_device(obj.CType):
     
     @property
-    def mac_addr(self):
+    def mac_addr(self):        
+        macaddr = "00:00:00:00:00:00"
 
         if self.members.has_key("perm_addr"):
             hwaddr = self.perm_addr
-        else:
-            hwaddr = self.dev_addr
-
-        macaddr = ":".join(["{0:02x}".format(x) for x in hwaddr][:6])
-
+            macaddr = ":".join(["{0:02x}".format(x) for x in hwaddr][:6])
+        
+        if macaddr == "00:00:00:00:00:00":
+            hwaddr = self.obj_vm.zread(self.dev_addr, 6)
+            macaddr = ":".join(["{0:02x}".format(ord(x)) for x in hwaddr][:6])
+                        
         return macaddr
 
     @property
