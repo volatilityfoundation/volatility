@@ -1323,22 +1323,15 @@ class task_struct(obj.CType):
             # read argv from userland
             start = self.mm.env_start.v()
 
-            argv = proc_as.read(start, self.mm.env_end - self.mm.env_start + 10)
+            env = proc_as.read(start, self.mm.env_end - self.mm.env_start + 10)
             
-            if argv:
-                # split the \x00 buffer into args
-                env = argv
-        
-        if env != "":
+        if env:
             ents = env.split("\x00")
             for varstr in ents:
                 eqidx = varstr.find("=")
-                idx = varstr.find("\x00")
 
-                if idx == -1 or eqidx == -1 or idx < eqidx:
+                if eqidx == -1:
                     continue
-
-                varstr = varstr[:idx]
 
                 key = varstr[:eqidx]
                 val = varstr[eqidx+1:]
