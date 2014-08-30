@@ -160,8 +160,8 @@ class ConfObject(object):
             self.optparser.add_option("-h", "--help", action = "store_true", default = False,
                             help = "list all available options and their default values. Default values may be set in the configuration file (" + default_config + ")")
 
-            self.optparser.add_option("-s", "--save", action = "store_true", default = False,
-                            help = "Save command line options to ./volatilityrc (overwrite existing)")
+            self.optparser.add_option("-s", "--save", dest = "save_config",
+                            help = "Save command line options to a specified directory or file.  Default filename is volatilityrc.")
 
             ConfObject.initialised = True
 
@@ -265,17 +265,23 @@ class ConfObject(object):
                     sys.exit(0)
 
                 ## Check if "--save" was passed
-                if getattr(self.optparse_opts, "save"):
+                if getattr(self.optparse_opts, "save_config"):
                     new_config = ConfigParser.RawConfigParser()
+                    save_location = getattr(self.optparse_opts, "save_config")
                     ## Generate new config file from command line options
                     for k in dir(opts):
                         v = getattr(opts, k)
                         if k in self.options and not v == None:
                             new_config.set('DEFAULT', str(k), str(self.opts[k]))
                     ## Save command line options to ./volatilityrc
-                    with open('volatilityrc', 'wb') as configfile:
+                    if os.path.isdir(save_location):
+                        save_file = os.path.join(save_location, "volatilityrc")
+                    else:
+                        save_file = save_location
+
+                    with open(save_file, 'wb') as configfile:
                         new_config.write(configfile)
-                        print("Saved command line options to ./volatilityrc")
+                        print("Saved command line options to " + save_file)
 
                     ## Exit if nothing else to do
                     if len(self.args) == 0:
