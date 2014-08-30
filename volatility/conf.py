@@ -160,6 +160,9 @@ class ConfObject(object):
             self.optparser.add_option("-h", "--help", action = "store_true", default = False,
                             help = "list all available options and their default values. Default values may be set in the configuration file (" + default_config + ")")
 
+            self.optparser.add_option("-s", "--save", action = "store_true", default = False,
+                            help = "Save command line options to location specified by --new ")
+
             ConfObject.initialised = True
 
     def set_usage(self, usage = None, version = None):
@@ -248,6 +251,12 @@ class ConfObject(object):
             self.add_file(self._filename)
 
             try:
+                if getattr(self.optparse_opts, "save"):
+                    for k in dir(opts):
+                        v = getattr(opts, k)
+                        if k in self.options and not v == None:
+                            print("Saving " + k + "=" + self.opts[k] + " to " + config.NEW_CONF)
+
                 ## Help can only be set on the command line
                 if getattr(self.optparse_opts, "help"):
 
@@ -460,3 +469,4 @@ config.add_option("CONF-FILE", default = default_conf_path,
                   help = "User based configuration file")
 
 config.add_file(config.CONF_FILE)
+config.add_option("NEW-CONF", default = "volatilityrc", cache_invalidator = False, help = "Location of saved configuration (for use with --save)")
