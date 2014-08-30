@@ -161,10 +161,15 @@ class ConfObject(object):
                             help = "list all available options and their default values. Default values may be set in the configuration file (" + default_config + ")")
 
             self.optparser.add_option("-s", "--save", action = "store_true", default = False,
-                            help = "Save command line options to location specified by --new ")
+                            help = "Save command line options to a volatilityrc configuration file in the current directory")
 
             ConfObject.initialised = True
 
+    def set_new_conf(self, _option, _opt_str, value, parser):
+        print("Help set as: " + value)
+        self.new_conf = value
+        print self.new_conf
+    
     def set_usage(self, usage = None, version = None):
         if usage:
             self.optparser.set_usage(usage)
@@ -255,7 +260,12 @@ class ConfObject(object):
                     for k in dir(opts):
                         v = getattr(opts, k)
                         if k in self.options and not v == None:
-                            print("Saving " + k + "=" + self.opts[k] + " to " + config.NEW_CONF)
+                            print("Saving " + k + "=" + self.opts[k] + " to " + self.new_conf)
+                            new_config = ConfigParser.RawConfigParser()
+                            #new_config.add_section('Default')
+                            new_config.set('DEFAULT', str(k), str(self.opts[k]))
+                    with open('volatilityrc', 'wb') as configfile:
+                        new_config.write(configfile)
 
                 ## Help can only be set on the command line
                 if getattr(self.optparse_opts, "help"):
