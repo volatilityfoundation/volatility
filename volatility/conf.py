@@ -163,9 +163,6 @@ class ConfObject(object):
             self.optparser.add_option("-s", "--save", action = "store_true", default = False,
                             help = "Save command line options to ./volatilityrc (overwrite)")
 
-            self.optparser.add_option("-m", "--modify", action = "store_true", default=False,
-                            help = "Modify ./volatilityrc with new command line options")
-
             ConfObject.initialised = True
 
     def set_new_conf(self, _option, _opt_str, value, parser):
@@ -255,19 +252,18 @@ class ConfObject(object):
         self.args = args
 
         if final:
+            print("in final!")
             ## Reparse the config file again:
             self.add_file(self._filename)
 
             try:
-                if getattr(self.optparse_opts, "save") or getattr(self.optparse_opts, "modify"):
+                if getattr(self.optparse_opts, "save"):
                     new_config = ConfigParser.RawConfigParser()
-                    if (self.optparse_opts, "modify"):
-                        config.read('volatilityrc')
-
+                    print("in save!")
                     for k in dir(opts):
                         v = getattr(opts, k)
                         if k in self.options and not v == None:
-                            print("Saving " + k + "=" + self.opts[k] + " to " + self.new_conf)
+                            print("Saving " + str(k) + "=" + str(self.opts[k]) + " to volatilityrc" )
                             new_config.set('DEFAULT', str(k), str(self.opts[k]))
                     with open('volatilityrc', 'wb') as configfile:
                         new_config.write(configfile)
@@ -482,6 +478,3 @@ except KeyError:
 config.add_option("CONF-FILE", default = default_conf_path,
                   cache_invalidator = False,
                   help = "User based configuration file")
-
-#config.add_file(config.CONF_FILE)
-#config.add_option("NEW-CONF", default = "volatilityrc", cache_invalidator = False, help = "Location of saved configuration (for use with --save)")
