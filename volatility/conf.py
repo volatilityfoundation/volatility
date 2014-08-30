@@ -266,17 +266,18 @@ class ConfObject(object):
 
                 ## Check if "--save" was passed
                 if getattr(self.optparse_opts, "save"):
-                    ## Saves command line options to ./volatilityrc
                     new_config = ConfigParser.RawConfigParser()
+                    ## Generate new config file from command line options
                     for k in dir(opts):
                         v = getattr(opts, k)
                         if k in self.options and not v == None:
                             new_config.set('DEFAULT', str(k), str(self.opts[k]))
+                    ## Save command line options to ./volatilityrc
                     with open('volatilityrc', 'wb') as configfile:
                         new_config.write(configfile)
                         print("Saved command line options to ./volatilityrc")
 
-                ## Check if nothing else to do
+                    ## Exit if nothing else to do
                     if len(self.args) == 0:
                         sys.exit()
 
