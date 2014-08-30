@@ -273,7 +273,7 @@ class ConfObject(object):
                         v = getattr(opts, k)
                         if k in self.options and not v == None:
                             new_config.set('DEFAULT', str(k), str(self.opts[k]))
-                    ## Save command line options to ./volatilityrc
+                    ## Save command line options to save_location/volatilityrc or specified directory/filename
                     if os.path.isdir(save_location):
                         save_file = os.path.join(save_location, "volatilityrc")
                     else:
