@@ -165,11 +165,6 @@ class ConfObject(object):
 
             ConfObject.initialised = True
 
-    def set_new_conf(self, _option, _opt_str, value, parser):
-        print("Help set as: " + value)
-        self.new_conf = value
-        print self.new_conf
-
     def set_usage(self, usage = None, version = None):
         if usage:
             self.optparser.set_usage(usage)
@@ -256,20 +251,8 @@ class ConfObject(object):
             self.add_file(self._filename)
 
             try:
-                ## Check if "--save" was passed
-                if getattr(self.optparse_opts, "save"):
-                    ## Saves command line options to ./volatilityrc
-                    new_config = ConfigParser.RawConfigParser()
-                    for k in dir(opts):
-                        v = getattr(opts, k)
-                        if k in self.options and not v == None:
-                            new_config.set('DEFAULT', str(k), str(self.opts[k]))
-                    with open('volatilityrc', 'wb') as configfile:
-                        new_config.write(configfile)
-
                 ## Help can only be set on the command line
                 if getattr(self.optparse_opts, "help"):
-
                 ## Populate the metavars with the default values:
                     for opt in self.optparser.option_list:
                         try:
@@ -280,6 +263,24 @@ class ConfObject(object):
 
                     self.optparser.print_help()
                     sys.exit(0)
+
+                ## Check if "--save" was passed
+                if getattr(self.optparse_opts, "save"):
+                    ## Saves command line options to ./volatilityrc
+                    new_config = ConfigParser.RawConfigParser()
+                    for k in dir(opts):
+                        v = getattr(opts, k)
+                        if k in self.options and not v == None:
+                            new_config.set('DEFAULT', str(k), str(self.opts[k]))
+                    with open('volatilityrc', 'wb') as configfile:
+                        new_config.write(configfile)
+                        print("Saved command line options to ./volatilityrc")
+
+                ## Check if nothing else to do
+                    if len(self.args) == 0:
+                        sys.exit()
+
+
             except AttributeError:
                 pass
 
