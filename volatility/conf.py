@@ -478,3 +478,5 @@ except KeyError:
 config.add_option("CONF-FILE", default = default_conf_path,
                   cache_invalidator = False,
                   help = "User based configuration file")
+
+config.add_file(config.CONF_FILE)
