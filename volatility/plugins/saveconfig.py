@@ -29,7 +29,7 @@ class SaveConfig(common.AbstractWindowsCommand):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
 
         config.add_option("DEST", default = "./volatilityrc", short_option = "D",
-            help = "Destination of saved configuration file")
+            help = "Full path to save generated configuration file")
 
         config.add_option("EXCLUDE-CONF", default = False, short_option = "E",
             action = "store_true", help = "Exclude settings from configuration files")
