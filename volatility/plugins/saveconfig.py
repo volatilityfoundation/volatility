@@ -65,10 +65,27 @@ class SaveConfig(common.AbstractWindowsCommand):
         with open(self.save_location, "wb") as configfile:
             self.new_config.write(configfile)
 
+    def max_width(self):
+        """ Return length of the longest key and longest value """
+        max_key_width = 0
+        max_val_width = 0
+
+        for key, val in self.new_config.items("DEFAULT"):
+            if len(str(key)) > max_key_width:
+                max_key_width = len(str(key))
+            if len(str(val)) > max_val_width:
+                max_val_width = len(str(val))
+
+        if max_key_width > 50:
+            max_key_width = 50
+        if max_val_width > 50:
+            max_val_width = 50
+
+        return (str(max_key_width), str(max_val_width))
+
     def render_text(self, outfd, data):
         outfd.write("\n")
-        self.table_header(outfd, [("Option", "20"), ("Value", "75")])
-
+        self.table_header(outfd, [("Option", self.max_width()[0]), ("Value", self.max_width()[1])])
         ## Print out the final saved configuration
         for opt, val in self.new_config.items("DEFAULT"):
             self.table_row(outfd, opt, val)
