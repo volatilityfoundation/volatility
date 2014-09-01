@@ -19,10 +19,11 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import volatility.obj as obj
+#import volatility.obj as obj
 #import volatility.scan as scan
 #import volatility.cache as cache
 import volatility.plugins.common as common
+import volatility.conf as conf
 #import volatility.addrspace as addrspace
 #import volatility.registry as registry
 #import volatility.utils as utils
@@ -31,8 +32,15 @@ import ConfigParser
 #import os
 #import sys
 
+config = conf.ConfObject()
 
 class SaveConfig(common.AbstractWindowsCommand):
+
+    def __init__(self, config, *args, **kwargs):
+        config.add_option("SAVE-FILE", default = 'volatilityrc',
+            cache_invalidator = False, help = "User based configuration file")
+
+
     def calculate(self):
         
         new_config = ConfigParser.RawConfigParser()
@@ -47,3 +55,5 @@ class SaveConfig(common.AbstractWindowsCommand):
 
     def render_text(self, outfd, data):
         pass
+
+
