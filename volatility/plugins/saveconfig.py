@@ -38,19 +38,23 @@ class SaveConfig(common.AbstractWindowsCommand):
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
 
-        config.add_option("SAVE-FILE", default = './volatilityrc',
-            cache_invalidator = False, help = "Saved configuration file")
+        config.add_option("DEST", default = './volatilityrc',
+            cache_invalidator = False, help = "Destination of saved configuration file")
 
 
     def calculate(self):
         new_config = ConfigParser.RawConfigParser()
-        save_location = self._config.SAVE_FILE
+        save_location = self._config.DEST
 
         for key in self._config.cnf_opts:
-            print(key, self._config.cnf_opts[key])
+            yield key, self._config.cnf_opts[key]
             new_config.set('DEFAULT', str(key), str(self._config.cnf_opts[key]))
 
         with open(save_location, 'wb') as configfile:
             new_config.write(configfile)
             print("Saved command line options to " + save_location)
+
+    def render_text(self, outfd, data):
+        for option in data:
+            outfd.write("{0}={1}\n".format(option[0],option[1]))
 
