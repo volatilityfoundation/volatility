@@ -37,7 +37,7 @@ class SaveConfig(common.AbstractWindowsCommand):
         config.add_option("MODIFY", default = False, short_option = "M",
             action = "store_true", help = "Modify (rather than override) the generated configuration file")
 
-        ## Used to make sure we don"t save our own options and options that are already saved
+        ## Used to make sure we do not save our own options and options that are already saved
         self._exclude_options = ["dest", "exclude_conf", "modify"]
 
     def calculate(self):
@@ -52,7 +52,7 @@ class SaveConfig(common.AbstractWindowsCommand):
         for key in self._config.opts:
             if key not in self._exclude_options:
                 self.new_config.set("DEFAULT", key, self._config.opts[key])
-                ## Add to excluded list so we don"t overwrite them later
+                ## Add to excluded list so we do not overwrite them later
                 self._exclude_options.append(key)
 
         ## Save options from configuration files (unless excluded by user)
