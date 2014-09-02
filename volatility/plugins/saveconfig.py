@@ -74,11 +74,6 @@ class SaveConfig(common.AbstractWindowsCommand):
             max_key_width = max(len(str(key)), max_key_width)
             max_val_width = max(len(str(val)), max_val_width)
 
-        if max_key_width > 50:
-            max_key_width = 50
-        if max_val_width > 50:
-            max_val_width = 50
-
         return (str(max_key_width), str(max_val_width))
 
     def render_text(self, outfd, data):
