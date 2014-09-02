@@ -1387,20 +1387,33 @@ class task_struct(obj.CType):
             envars = obj.Object(theType="Array", targetType="Pointer", vm=proc_as, offset=env_start, count=256)
             for var in envars:
                 if var:
-                    varstr = proc_as.read(var, 1600)
-                    eqidx = varstr.find("=")
-                    idx = varstr.find("\x00")
+                    sizes = [8, 16, 32, 64, 128, 256, 384, 512, 1024, 2048, 4096]
+                    good_varstr = None
 
-                    if idx == -1 or eqidx == -1 or idx < eqidx:
-                        break
+                    for size in sizes:
+                        varstr = proc_as.read(var, size)
+                        if not varstr:
+                            continue
 
-                    varstr = varstr[:idx]
+                        eqidx = varstr.find("=")
+                        idx = varstr.find("\x00")
 
-                    key = varstr[:eqidx]
-                    val = varstr[eqidx+1:]
-
-                    yield (key, val) 
+                        if idx == -1 or eqidx == -1 or idx < eqidx:
+                            continue
                     
+                        good_varstr = varstr
+                        break
+                
+                    if good_varstr:        
+                        good_varstr = good_varstr[:idx]
+
+                        key = good_varstr[:eqidx]
+                        val = good_varstr[eqidx+1:]
+
+                        yield (key, val) 
+                    else:
+                        break
+ 
     def lsof(self):
         fds = self.files.get_fds()
         max_fds = self.files.get_max_fds()
