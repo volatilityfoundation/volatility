@@ -21,6 +21,8 @@
 
 import volatility.plugins.common as common
 import volatility.conf as conf
+import volatility.win32.tasks as tasks
+import volatility.utils as utils
 import ConfigParser
 
 class SaveConfig(common.AbstractWindowsCommand):
@@ -37,8 +39,11 @@ class SaveConfig(common.AbstractWindowsCommand):
         config.add_option("MODIFY", default = False, short_option = "M",
             action = "store_true", help = "Modify (rather than override) the generated configuration file")
 
+        config.add_option("OFFSETS", default = False,
+            action = "store_true", help = "Get offsets, like KDBG and DTB")
+
         ## Used to make sure we do not save our own options and options that are already saved
-        self._exclude_options = ["dest", "exclude_conf", "modify"]
+        self._exclude_options = ["dest", "exclude_conf", "modify", "offsets"]
 
     def calculate(self):
         self.new_config = ConfigParser.RawConfigParser()
@@ -60,6 +65,13 @@ class SaveConfig(common.AbstractWindowsCommand):
             for key in self._config.cnf_opts:
                 if key not in self._exclude_options:
                     self.new_config.set("DEFAULT", key, self._config.cnf_opts[key])
+
+        if self._config.OFFSETS:
+            addr_space = utils.load_as(self._config)
+            kdbg = tasks.get_kdbg(addr_space)
+            self.new_config.set("DEFAULT", "kdbg", str(hex(kdbg.v())))
+            if hasattr(addr_space, "dtb"):
+                self.new_config.set("DEFAULT", "dtb", str(hex(addr_space.dtb)))
 
         ## Write the actual configuration file
         with open(self.save_location, "wb") as configfile:
