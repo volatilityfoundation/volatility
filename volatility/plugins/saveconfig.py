@@ -71,10 +71,8 @@ class SaveConfig(common.AbstractWindowsCommand):
         max_val_width = 0
 
         for key, val in self.new_config.items("DEFAULT"):
-            if len(str(key)) > max_key_width:
-                max_key_width = len(str(key))
-            if len(str(val)) > max_val_width:
-                max_val_width = len(str(val))
+            max_key_width = max(len(str(key)), max_key_width)
+            max_val_width = max(len(str(val)), max_val_width)
 
         if max_key_width > 50:
             max_key_width = 50
