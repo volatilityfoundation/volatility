@@ -52,9 +52,16 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
         ## Used to make sure we do not save our own options and options that are already saved
         self._exclude_options = ["dest", "exclude_conf", "modify", "offsets", "auto"]
 
-    def calculate(self):
+        ## Used to store suggested profiles based on kdbg search
+        self.suglist = []
+
+        ## Used to save the generated configuration
         self.new_config = ConfigParser.RawConfigParser()
+
+        ## Where to output the generated configuration file
         self.save_location = self._config.DEST
+
+    def calculate(self):
 
         ## Read from existing target configuration (if modifying)
         if self._config.MODIFY:
@@ -92,11 +99,10 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
             if hasattr(addr_space, "dtb"):
                 self.new_config.set("DEFAULT", "dtb", str(hex(addr_space.dtb)))
 
-
-
         ## Write the actual configuration file
         with open(self.save_location, "wb") as configfile:
             self.new_config.write(configfile)
+
 
     def max_width(self):
         """ Return length of the longest key and longest value """
