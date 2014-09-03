@@ -98,6 +98,7 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
                         self.comments += line
 
 
+
         ## Attempt to automatically determine profile
         if self._config.AUTO:
             print("Determining profile based on KDBG search...")
@@ -123,12 +124,28 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
                 if key not in self._exclude_options:
                     self.new_config.set("DEFAULT", key, self._config.cnf_opts[key])
 
+        ## Get offsets (KDBG and DTB)
         if self._config.OFFSETS:
             addr_space = utils.load_as(self._config)
             kdbg = tasks.get_kdbg(addr_space)
-            self.new_config.set("DEFAULT", "kdbg", str(hex(kdbg.v())))
+            self.new_config.set("DEFAULT", "kdbg", str(kdbg.v()))
             if hasattr(addr_space, "dtb"):
-                self.new_config.set("DEFAULT", "dtb", str(hex(addr_space.dtb)))
+                self.new_config.set("DEFAULT", "dtb", str(addr_space.dtb))
+
+
+        ## Ensure DTB and KDBG are converted properly at the last moment:
+        ## Note, volatility will convert these to int when read from CNF_OPTS
+        try:
+            kdbg = self.new_config.get("DEFAULT", "kdbg")
+            self.new_config.set("DEFAULT", "kdbg", str(hex(int(kdbg))))
+        except ConfigParser.NoOptionError:
+            pass
+        try:
+            dtb = self.new_config.get("DEFAULT", "dtb")
+            self.new_config.set("DEFAULT", "dtb", str(hex(int(dtb))))
+        except ConfigParser.NoOptionError:
+            pass
+
 
         ## Update/Set the comments
         self.comments = self.set_comments(self.comments)
