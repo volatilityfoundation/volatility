@@ -117,4 +117,9 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
         for opt, val in self.new_config.items("DEFAULT"):
             self.table_row(outfd, opt, val)
 
+        if len(self.suglist) > 1:
+            outfd.write("\nSuggested profiles: {}\n".format(", ".join(self.suglist)))
+        if self.suglist:
+            outfd.write("Selected profile: {}\n".format(self.suglist[0]))
+
         outfd.write("\nConfiguration saved to {}\n".format(self.save_location))
