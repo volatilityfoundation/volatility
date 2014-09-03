@@ -135,7 +135,8 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
 
         ## Write the actual configuration file
         with open(self.save_location, "wb") as configfile:
-            configfile.write(self.comments)
+            if self.comments != "\n":
+                configfile.write(self.comments)
             self.new_config.write(configfile)
 
       #  self.put_date()
