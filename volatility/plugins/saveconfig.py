@@ -66,7 +66,12 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
             print("Determining profile based on KDBG search...")
             self.suglist = [ s for s, _ in kdbgscan.KDBGScan.calculate(self)]
             if self.suglist:
-                self.new_config.set("DEFAULT", "profile", self.suglist[0])        ## Save current command line options first (these take precedence)
+                self.new_config.set("DEFAULT", "profile", self.suglist[0])
+                ## Update profile so --offsets will work
+                self._config.PROFILE = self.suglist[0]
+                self._exclude_options.append('profile')
+            else:
+                print("Failed to determine profile")
 
         ## Read in current command line (precedence over settings in configs)
         for key in self._config.opts:
