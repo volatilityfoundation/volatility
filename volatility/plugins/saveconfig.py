@@ -65,7 +65,7 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
         self.save_location = self._config.DEST
 
     def set_comments(self, comments):
-        has_date = False
+        has_date = False  # Avoid making duplicate comments with Date
         new_comments = ""
         date_line = "# Date: " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -96,7 +96,6 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
                 for line in oldconfig:
                     if line.startswith("#"):
                         self.comments += line
-            print self.comments
 
 
         ## Attempt to automatically determine profile
