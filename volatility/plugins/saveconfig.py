@@ -27,6 +27,7 @@ import volatility.plugins.kdbgscan as kdbgscan
 import volatility.obj as obj
 import volatility.cache as cache
 import volatility.registry as registry
+from datetime import datetime
 import ConfigParser
 
 class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
@@ -49,23 +50,54 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
         config.add_option("AUTO", default = False,
             action = "store_true", help = "Attempt to automatically determine profile")
 
+        config.add_option("DATE", default = False,
+            action = "store_true", help = "Include current date/time comment in configuration file")
+
         ## Used to make sure we do not save our own options and options that are already saved
         self._exclude_options = ["dest", "exclude_conf", "modify", "offsets", "auto"]
-
         ## Used to store suggested profiles based on kdbg search
         self.suglist = []
-
+        ## Store comments starting with '#'
+        self.comments = ""
         ## Used to save the generated configuration
         self.new_config = ConfigParser.RawConfigParser()
-
         ## Where to output the generated configuration file
         self.save_location = self._config.DEST
 
-    def calculate(self):
+    def set_comments(self, comments):
+        has_date = False
+        new_comments = ""
+        date_line = "# Date: " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
+        for line in comments.split("\n"):
+            if line.startswith("# Date:") and self._config.DATE:
+                line = date_line   # Change line if DATE was already included as a comment
+                has_date = True
+            if line[:-1] != "\n":
+                line += "\n"
+            new_comments += line
+
+        if not has_date and self._config.DATE:  # Include DATE if it was not already changed
+            new_comments = date_line + new_comments
+
+        return new_comments
+
+    def calculate(self):
         ## Read from existing target configuration (if modifying)
         if self._config.MODIFY:
             self.new_config.read(self.save_location)
+
+            ## Get comments
+            try:
+                oldconfig = open(self.save_location, "r")
+            except IOError:
+                pass
+            else:
+                for line in oldconfig:
+                    if line.startswith("#"):
+                        self.comments += line
+            print self.comments
+
 
         ## Attempt to automatically determine profile
         if self._config.AUTO:
@@ -99,10 +131,15 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
             if hasattr(addr_space, "dtb"):
                 self.new_config.set("DEFAULT", "dtb", str(hex(addr_space.dtb)))
 
+        ## Update/Set the comments
+        self.comments = self.set_comments(self.comments)
+
         ## Write the actual configuration file
         with open(self.save_location, "wb") as configfile:
+            configfile.write(self.comments)
             self.new_config.write(configfile)
 
+      #  self.put_date()
 
     def max_width(self):
         """ Return length of the longest key and longest value """
