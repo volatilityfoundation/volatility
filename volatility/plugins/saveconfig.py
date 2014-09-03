@@ -27,7 +27,6 @@ import volatility.plugins.kdbgscan as kdbgscan
 import volatility.obj as obj
 import volatility.cache as cache
 import volatility.registry as registry
-
 import ConfigParser
 
 class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
