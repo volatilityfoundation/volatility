@@ -54,7 +54,7 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
             action = "store_true", help = "Include current date/time comment in configuration file")
 
         ## Used to make sure we do not save our own options and options that are already saved
-        self._exclude_options = ["dest", "exclude_conf", "modify", "offsets", "auto"]
+        self._exclude_options = ["dest", "exclude_conf", "modify", "offsets", "auto", "date"]
         ## Used to store suggested profiles based on kdbg search
         self.suglist = []
         ## Store comments starting with '#'
