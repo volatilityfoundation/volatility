@@ -23,9 +23,14 @@ import volatility.plugins.common as common
 import volatility.conf as conf
 import volatility.win32.tasks as tasks
 import volatility.utils as utils
+import volatility.plugins.kdbgscan as kdbgscan
+import volatility.obj as obj
+import volatility.cache as cache
+import volatility.registry as registry
+
 import ConfigParser
 
-class SaveConfig(common.AbstractWindowsCommand):
+class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
     """Generates Volatility configuration files"""
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
@@ -42,8 +47,11 @@ class SaveConfig(common.AbstractWindowsCommand):
         config.add_option("OFFSETS", default = False,
             action = "store_true", help = "Get offsets, like KDBG and DTB")
 
+        config.add_option("AUTO", default = False,
+            action = "store_true", help = "Attempt to automatically determine profile")
+
         ## Used to make sure we do not save our own options and options that are already saved
-        self._exclude_options = ["dest", "exclude_conf", "modify", "offsets"]
+        self._exclude_options = ["dest", "exclude_conf", "modify", "offsets", "auto"]
 
     def calculate(self):
         self.new_config = ConfigParser.RawConfigParser()
@@ -53,7 +61,14 @@ class SaveConfig(common.AbstractWindowsCommand):
         if self._config.MODIFY:
             self.new_config.read(self.save_location)
 
-        ## Save current command line options first (these take precedence)
+        ## Attempt to automatically determine profile
+        if self._config.AUTO:
+            print("Determining profile based on KDBG search...")
+            self.suglist = [ s for s, _ in kdbgscan.KDBGScan.calculate(self)]
+            if self.suglist:
+                self.new_config.set("DEFAULT", "profile", self.suglist[0])        ## Save current command line options first (these take precedence)
+
+        ## Read in current command line (precedence over settings in configs)
         for key in self._config.opts:
             if key not in self._exclude_options:
                 self.new_config.set("DEFAULT", key, self._config.opts[key])
@@ -72,6 +87,8 @@ class SaveConfig(common.AbstractWindowsCommand):
             self.new_config.set("DEFAULT", "kdbg", str(hex(kdbg.v())))
             if hasattr(addr_space, "dtb"):
                 self.new_config.set("DEFAULT", "dtb", str(hex(addr_space.dtb)))
+
+
 
         ## Write the actual configuration file
         with open(self.save_location, "wb") as configfile:
