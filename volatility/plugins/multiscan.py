@@ -12,17 +12,20 @@ import volatility.plugins.malware.callbacks as callbacks
 class MultiScan(common.AbstractScanCommand):
     """Scan for various objects at once"""
 
-    scanners = [
-        filescan.PoolScanFile,
-        filescan.PoolScanDriver,
-        filescan.PoolScanSymlink,
-        filescan.PoolScanMutant,
-        filescan.PoolScanProcess,
-        modscan.PoolScanModule,
-        modscan.PoolScanThread,
-        atoms.PoolScanAtom,
-        windowstations.PoolScanWind,
-        ]
+    def __init__(self, config, *args, **kwargs):
+        common.AbstractScanCommand.__init__(self, config, *args, **kwargs)
+
+        self.scanners = [
+            filescan.PoolScanFile,
+            filescan.PoolScanDriver,
+            filescan.PoolScanSymlink,
+            filescan.PoolScanMutant,
+            filescan.PoolScanProcess,
+            modscan.PoolScanModule,
+            modscan.PoolScanThread,
+            atoms.PoolScanAtom,
+            windowstations.PoolScanWind,
+            ]
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
