@@ -388,7 +388,6 @@ psscan                     - Pool scanner for process objects
 pstree                     - Print process list as a tree
 psxview                    - Find hidden processes with various process listings
 raw2dmp                    - Converts a physical memory sample to a windbg crash dump
-rootkitscanner             - Plugin to find rootkit kernel pools
 screenshot                 - Save a pseudo-screenshot based on GDI windows
 sessions                   - List details on _MM_SESSION_SPACE (user logon sessions)
 shellbags                  - Prints ShellBags info
