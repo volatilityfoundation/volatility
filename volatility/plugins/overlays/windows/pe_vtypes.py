@@ -798,6 +798,8 @@ class _VS_VERSION_INFO(VerStruct):
 
     def get_children(self):
         """Recurses through the children of a Version Info records"""
+        if not self.FileInfo:
+            raise StopIteration("No children")
         offset = self.offset_pad(self.FileInfo.obj_offset + self.ValueLength)
         return self._recurse_children(offset)
 
