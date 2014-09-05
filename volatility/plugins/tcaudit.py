@@ -399,6 +399,49 @@ class TrueCryptPassphrase(common.AbstractWindowsCommand):
                           help = 'Mimumim length of passphrases to identify',
                           action = 'store', type = 'int')
 
+    @staticmethod
+    def scan_module(addr_space, module_base, min_length):
+        
+        dos_header = obj.Object("_IMAGE_DOS_HEADER", 
+                                offset = module_base, 
+                                vm = addr_space)
+
+        nt_header = dos_header.get_nt_header()
+
+        # Finding the PE data section 
+        data_section = None
+        for sec in nt_header.get_sections():
+            if str(sec.Name) == ".data":
+                data_section = sec
+                break
+
+        if not data_section:
+            raise StopIteration
+
+        base = sec.VirtualAddress + module_base
+        size = sec.Misc.VirtualSize
+
+        # Looking for the Length member, DWORD-aligned 
+        ints = obj.Object("Array", targetType = "int", 
+                          offset = base, count = size / 4, 
+                          vm = addr_space)
+    
+        for length in ints:
+            # Min and max passphrase lengths 
+            if length >= min_length and length <= 64:
+                offset = length.obj_offset + 4
+                passphrase = addr_space.read(offset, length)
+                if not passphrase:
+                    continue
+                # All characters in the range must be ASCII
+                chars = [c for c in passphrase if ord(c) >= 0x20 and ord(c) <= 0x7F]
+                if len(chars) != length:
+                    continue
+                # At least three zero-bad bytes must follow 
+                if addr_space.read(offset + length, 3) != "\x00" * 3:
+                    continue
+                yield offset, passphrase 
+
     def calculate(self):
         addr_space = utils.load_as(self._config)
 
@@ -408,44 +451,8 @@ class TrueCryptPassphrase(common.AbstractWindowsCommand):
             if str(mod.BaseDllName).lower() != "truecrypt.sys":
                 continue
 
-            dos_header = obj.Object("_IMAGE_DOS_HEADER", 
-                                    offset = mod.DllBase, 
-                                    vm = addr_space)
-            nt_header = dos_header.get_nt_header()
-
-            # Finding the PE data section 
-            data_section = None
-            for sec in nt_header.get_sections():
-                if str(sec.Name) == ".data":
-                    data_section = sec
-                    break
- 
-            if not data_section:
-                break
-
-            base = sec.VirtualAddress + mod.DllBase
-            size = sec.Misc.VirtualSize
-
-            # Looking for the Length member, DWORD-aligned 
-            ints = obj.Object("Array", targetType = "int", 
-                              offset = base, count = size / 4, 
-                              vm = addr_space)
-        
-            for length in ints:
-                # Min and max passphrase lengths 
-                if length >= self._config.MIN_LENGTH and length <= 64:
-                    offset = length.obj_offset + 4
-                    passphrase = addr_space.read(offset, length)
-                    if not passphrase:
-                        continue
-                    # All characters in the range must be ASCII
-                    chars = [c for c in passphrase if ord(c) >= 0x20 and ord(c) <= 0x7F]
-                    if len(chars) != length:
-                        continue
-                    # At least three zero-bad bytes must follow 
-                    if addr_space.read(offset + length, 3) != "\x00" * 3:
-                        continue
-                    yield offset, passphrase 
+            for offset, password in self.scan_module(addr_space, mod.DllBase, self._config.MIN_LENGTH):
+                yield offset, password
 
     def render_text(self, outfd, data):
         for offset, passphrase in data:
@@ -575,6 +582,15 @@ class TrueCryptSummary(common.AbstractWindowsCommand):
 
 class TrueCryptMaster(common.AbstractWindowsCommand):
     """Recover TrueCrypt 7.1a Master Keys"""
+
+    version_map = {
+            # the most recent - released feb 2012
+            '7.1a' : {'32bit': tc_71a_vtypes_x86, '64bit': tc_71a_vtypes_x64}, 
+            # released july 2010. also supports 6.3a from 
+            # november 2009, so its likely all versions between
+            # 6.3a and 7.0a are supported by these vtypes
+            '7.0a' : {'32bit': tc_70a_vtypes_x86, '64bit': tc_70a_vtypes_x64}, 
+            }
     
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
@@ -583,24 +599,17 @@ class TrueCryptMaster(common.AbstractWindowsCommand):
         config.add_option('VERSION', short_option = 'T', default = '7.1a', 
                         help = 'Truecrypt version string (default: 7.1a)')
 
-        self.version_map = {
-            # the most recent - released feb 2012
-            '7.1a' : {'32bit': tc_71a_vtypes_x86, '64bit': tc_71a_vtypes_x64}, 
-            # released july 2010. also supports 6.3a from 
-            # november 2009, so its likely all versions between
-            # 6.3a and 7.0a are supported by these vtypes
-            '7.0a' : {'32bit': tc_70a_vtypes_x86, '64bit': tc_70a_vtypes_x64}, 
-            }
-
-    def apply_types(self, addr_space):
+    @staticmethod
+    def apply_types(addr_space, ver):
         """Apply the TrueCrypt types for a specific version of TC. 
 
         @param addr_space: <volatility.BaseAddressSpace>
+        @param ver: <string> version 
         """
 
         mm_model = addr_space.profile.metadata.get('memory_model', '32bit')
         try:
-            vtypes = self.version_map[self._config.VERSION][mm_model]
+            vtypes = TrueCryptMaster.version_map[ver][mm_model]
             addr_space.profile.vtypes.update(vtypes)
             addr_space.profile.merge_overlay({
             'EXTENSION' : [ None, {
@@ -623,12 +632,11 @@ class TrueCryptMaster(common.AbstractWindowsCommand):
             }]})
             addr_space.profile.compile()
         except KeyError:
-            ver = self._config.VERSION
             debug.error("Truecrypt version {0} is not supported".format(ver))
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
-        self.apply_types(addr_space)
+        self.apply_types(addr_space, self._config.VERSION)
         scanner = filescan.DriverScan(self._config)
         for driver in scanner.calculate():    
             drivername = str(driver.DriverName or '')
