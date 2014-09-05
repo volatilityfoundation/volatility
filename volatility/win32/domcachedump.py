@@ -53,7 +53,7 @@ def decrypt_hash(edata, nlkm, ch, xp = True):
             buf = edata[i : i + 16]
             if len(buf) < 16:
                 buf += (16 - len(buf)) * "\00"
-                data += aes.decrypt(buf) 
+            data += aes.decrypt(buf)
     return data
 
 def parse_cache_entry(cache_data):
