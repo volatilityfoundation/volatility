@@ -1,0 +1,4 @@
+var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1win8__kdbg_1_1_win8x64_volatility_k_d_b_g =
+[
+    [ "modification", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1win8__kdbg_1_1_win8x64_volatility_k_d_b_g.html#a83b60527025e6895b831a4a39a70fc0a", null ]
+];

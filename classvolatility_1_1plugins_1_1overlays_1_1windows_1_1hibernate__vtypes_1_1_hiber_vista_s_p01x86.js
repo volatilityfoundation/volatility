@@ -1,0 +1,4 @@
+var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1hibernate__vtypes_1_1_hiber_vista_s_p01x86 =
+[
+    [ "modification", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1hibernate__vtypes_1_1_hiber_vista_s_p01x86.html#a42333c80409e682a68996325f76e4720", null ]
+];

@@ -1,0 +1,4 @@
+var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1windows_1_1___o_b_j_e_c_t___s_y_m_b_o_l_i_c___l_i_n_k =
+[
+    [ "is_valid", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1windows_1_1___o_b_j_e_c_t___s_y_m_b_o_l_i_c___l_i_n_k.html#a0917170cfc92ad435c61d1fc48014e78", null ]
+];

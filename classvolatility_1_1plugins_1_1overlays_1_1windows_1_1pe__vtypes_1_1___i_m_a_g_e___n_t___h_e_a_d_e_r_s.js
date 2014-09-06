@@ -1,0 +1,4 @@
+var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1pe__vtypes_1_1___i_m_a_g_e___n_t___h_e_a_d_e_r_s =
+[
+    [ "get_sections", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1pe__vtypes_1_1___i_m_a_g_e___n_t___h_e_a_d_e_r_s.html#a0e471a715bfdf1879a8ee175310bd4ef", null ]
+];

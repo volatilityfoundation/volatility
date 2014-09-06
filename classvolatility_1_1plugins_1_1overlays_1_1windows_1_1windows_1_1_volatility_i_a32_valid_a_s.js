@@ -1,0 +1,4 @@
+var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1windows_1_1_volatility_i_a32_valid_a_s =
+[
+    [ "generate_suggestions", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1windows_1_1_volatility_i_a32_valid_a_s.html#ae9f54cc32968ddbd82ec62e8e8167a04", null ]
+];
