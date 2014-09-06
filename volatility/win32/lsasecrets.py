@@ -134,10 +134,10 @@ def get_secret_by_name(addr_space, secaddr, name, lsakey):
         return None
 
     if addr_space.profile.metadata.get('major', 0) == 5:
-        secret = enc_secret[0xC:]
+        secret = decrypt_secret(enc_secret[0xC:], lsakey)
     else:
-        secret = enc_secret
-    return decrypt_secret(secret, lsakey)
+        secret = decrypt_aes(enc_secret, lsakey)
+    return secret
 
 def get_secrets(addr_space, sysaddr, secaddr):
     root = rawreg.get_root(secaddr)
@@ -169,9 +169,9 @@ def get_secrets(addr_space, sysaddr, secaddr):
             continue
 
         if addr_space.profile.metadata.get('major', 0) == 5:
-            secret = enc_secret[0xC:]
+            secret = decrypt_secret(enc_secret[0xC:], lsakey)
         else:
-            secret = enc_secret
+            secret = decrypt_aes(enc_secret, lsakey)
         secrets[key.Name] = secret
 
     return secrets
