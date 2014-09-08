@@ -22,6 +22,7 @@ import volatility.debug as debug
 import volatility.fmtspec as fmtspec
 import volatility.obj as obj
 import volatility.registry as registry
+import volatility.renderers as renderers
 import volatility.addrspace as addrspace
 
 class Command(object):
@@ -38,7 +39,7 @@ class Command(object):
 
     def __init__(self, config, *_args, **_kwargs):
         """ Constructor uses args as an initializer. It creates an instance
-        of OptionParser, populates the options, and finally parses the 
+        of OptionParser, populates the options, and finally parses the
         command line. Options are stored in the self.opts attribute.
         """
         self._config = config
@@ -88,7 +89,7 @@ class Command(object):
         """ Executes the plugin command."""
         # Check we can support the plugins
         profs = registry.get_plugin_classes(obj.Profile)
-        # force user to give a profile if a plugin 
+        # force user to give a profile if a plugin
         #  other than kdbgscan or imageinfo are given:
         if self.__class__.__name__.lower() in ["kdbgscan", "imageinfo"] and self._config.PROFILE == None:
             self._config.update("PROFILE", "WinXPSP2x86")
@@ -107,7 +108,7 @@ class Command(object):
         function_name = "render_{0}".format(self._config.OUTPUT)
         if self._config.OUTPUT_FILE:
             outfd = open(self._config.OUTPUT_FILE, 'w')
-            # TODO: We should probably check that this won't blat over an existing file 
+            # TODO: We should probably check that this won't blat over an existing file
         else:
             outfd = sys.stdout
 
@@ -217,3 +218,11 @@ class Command(object):
             result = self._elide(("{0:" + spec.to_string() + "}").format(args[index]), spec.minwidth)
             reslist.append(result)
         outfd.write(self.tablesep.join(reslist) + "\n")
+
+    def render_text(self, outfd, data):
+        if not hasattr(self, "unified_output"):
+            raise NotImplementedError("Render text using the unified output format has not been implemented for this plugin.")
+        output = self.unified_output(data)
+
+        if isinstance(output, renderers.TreeGrid):
+            pass
