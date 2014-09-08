@@ -61,38 +61,33 @@ class TreeRow(validity.ValidityRoutines):
                 yield grandchild
 
 
-Column = collections.namedtuple('Column', ['index', 'name', 'type', 'format'])
+Column = collections.namedtuple('Column', ['index', 'name', 'type'])
 
 
 class TreeGrid(TreeRow):
     """Class providing the interface for a TreeGrid (which contains TreeRows)"""
 
-    simple_types = set((int, str, float, bytes))
+    simple_types = {int, str, float, bytes}
 
     def __init__(self, columns):
         """Constructs a TreeGrid object using a specific set of columns
 
         The TreeGrid itself is a root element, that can have children but no values.
-        The format_hint is a suggestion to the renderer as to how the field should be portrayed as a string,
-        but it should be noted that the renderer is not under obligation to use it.
+        The TreeGrid does *not* contain any information about formatting,
+        these are up to the renderers and plugins.
 
-        :param columns: A list of column tuples made up of (name, type and format_hint).
+        :param columns: A list of column tuples made up of (name, type).
         """
         self.type_check(columns, list)
         converted_columns = []
-        for (name, column_type, column_format) in columns:
+        for (name, column_type) in columns:
             is_simple_type = False
             for stype in self.simple_types:
                 is_simple_type = is_simple_type or issubclass(column_type, stype)
             if not is_simple_type:
                 raise TypeError("Column " + name + "'s type " + column_type.__class__.__name__ +
                                 " is not a simple type")
-            if isinstance(column_format, str):
-                column_format = fmtspec.FormatSpecification.from_specification(column_format)
-            if not (column_format is None or isinstance(column_format, fmtspec.FormatSpecification)):
-                raise TypeError(
-                    "Column " + name + "'s format " + repr(column_format) + " is not an accepted formatter.")
-            converted_columns.append(Column(len(converted_columns), name, column_type, column_format))
+            converted_columns.append(Column(len(converted_columns), name, column_type))
         self._columns = converted_columns
 
         # We can use the special type None because we're the top level node without values
