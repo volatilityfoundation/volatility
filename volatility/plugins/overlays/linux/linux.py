@@ -1464,7 +1464,7 @@ class task_struct(obj.CType):
                         saddr = inet_sock.src_addr
                         daddr = inet_sock.dst_addr
 
-                        yield (socket.AF_INET, (inet_sock.protocol, saddr, sport, daddr, dport, state)) 
+                        yield (socket.AF_INET, (inet_sock, inet_sock.protocol, saddr, sport, daddr, dport, state)) 
 
     def get_process_address_space(self):
         ## If we've got a NoneObject, return it maintain the reason
