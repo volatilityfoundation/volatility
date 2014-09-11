@@ -138,6 +138,6 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
     def render_text(self, outfd, data):
         for (_sb, dev_name, path, fstype, rr, mnt_string) in data:
-            outfd.write("{5:x} {0:25s} {1:35s} {2:12s} {3:2s}{4:64s}\n".format(dev_name, path, fstype, rr, mnt_string, _sb.obj_offset))
+            outfd.write("{0:25s} {1:35s} {2:12s} {3:2s}{4:64s}\n".format(dev_name, path, fstype, rr, mnt_string))
 
 
