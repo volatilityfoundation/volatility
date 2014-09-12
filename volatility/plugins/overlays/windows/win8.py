@@ -405,7 +405,7 @@ class Win8ObjectClasses(obj.ProfileModification):
                 })
 
 class Win8SP0x64(obj.Profile):
-    """ A Profile for Windows 8 SP0 x64 """
+    """ A Profile for Windows 8 x64 """
     _md_memory_model = '64bit'
     _md_os = 'windows'
     _md_major = 6
@@ -431,7 +431,7 @@ class Win2012R2x64(Win8SP1x64):
     _md_build = 9601 ##FIXME: fake build number to indicate server 2012 R2 vs windows 8.1
 
 class Win8SP0x86(obj.Profile):
-    """ A Profile for Windows 8 SP0 x86 """
+    """ A Profile for Windows 8 x86 """
     _md_memory_model = '32bit'
     _md_os = 'windows'
     _md_major = 6
@@ -440,7 +440,7 @@ class Win8SP0x86(obj.Profile):
     _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp0_x86_vtypes'
 
 class Win8SP1x86(obj.Profile):
-    """ A Profile for Windows 8 SP1 x86 """
+    """ A Profile for Windows 8.1 x86 """
     _md_memory_model = '32bit'
     _md_os = 'windows'
     _md_major = 6

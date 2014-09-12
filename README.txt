@@ -153,10 +153,10 @@ Win7SP0x64                 - A Profile for Windows 7 SP0 x64
 Win7SP0x86                 - A Profile for Windows 7 SP0 x86
 Win7SP1x64                 - A Profile for Windows 7 SP1 x64
 Win7SP1x86                 - A Profile for Windows 7 SP1 x86
-Win8SP0x64                 - A Profile for Windows 8 SP0 x64
-Win8SP0x86                 - A Profile for Windows 8 SP0 x86
+Win8SP0x64                 - A Profile for Windows 8 x64
+Win8SP0x86                 - A Profile for Windows 8 x86
 Win8SP1x64                 - A Profile for Windows 8.1 x64
-Win8SP1x86                 - A Profile for Windows 8 SP1 x86
+Win8SP1x86                 - A Profile for Windows 8.1 x86
 WinXPSP1x64                - A Profile for Windows XP SP1 x64
 WinXPSP2x64                - A Profile for Windows XP SP2 x64
 WinXPSP2x86                - A Profile for Windows XP SP2 x86
