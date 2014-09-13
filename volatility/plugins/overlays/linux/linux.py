@@ -1872,6 +1872,7 @@ class dentry(obj.CType):
             ret = self.d_lockref.count
         else:
             ret = self.m("d_count")
+        return ret
 
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
