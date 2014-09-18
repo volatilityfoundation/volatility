@@ -68,14 +68,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
 
     def entry_present(self, entry):
         if entry:
-            if (entry & 1):
-                return True
-
-            # The page is in transition and not a prototype.
-            # Thus, we will treat it as present.
-            if (entry & (1 << 11)) and not (entry & (1 << 10)):
-                return True
-
+            return (entry & 1) or ((entry & 2048) and not(entry & 1024))
         return False
 
     def page_size_flag(self, entry):
