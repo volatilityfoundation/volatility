@@ -90,6 +90,7 @@ class Raw2dmp(imagecopy.ImageCopy):
         header.PsLoadedModuleList = kdbg.PsLoadedModuleList
         header.PsActiveProcessHead = kdbg.PsActiveProcessHead
         header.MachineImageType = dbgkd.MachineType
+        headerspace.write(header.DumpType.obj_offset, "\x01\x00\x00\x00")
 
         # Find the number of processors 
         header.NumberProcessors = len(list(kdbg.kpcrs()))
