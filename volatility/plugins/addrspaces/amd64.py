@@ -231,17 +231,27 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
                     continue
 
                 pgd_curr = self.pdba_base(pdpte_value)
+                pgd_curr_raw = self.base.read(pgd_curr, 8 * ptrs_per_pae_pgd)
+                pgd_strings = [pgd_curr_raw[x*8:(x*8)+8] for x in xrange(ptrs_per_pae_pgd)]
+                pgd_curr_list = [self.ltQstruct.unpack(s)[0] for s in pgd_strings]
+                # Here we saved 512x 8 byte reads, and replaced them by 1 bgi 4k read.
                 for j in range(0, ptrs_per_pae_pgd):
                     soffset = vaddr + (j * ptrs_per_pae_pgd * ptrs_per_pae_pte * 8)
-                    entry = self.read_long_long_phys(pgd_curr)
-                    pgd_curr = pgd_curr + 8
+                    #entry = self.read_long_long_phys(pgd_curr)
+                    #pgd_curr = pgd_curr + 8
+                    entry = pgd_curr_list[j]
                     if self.entry_present(entry) and self.page_size_flag(entry):
                         yield (soffset, 0x200000)
                     elif self.entry_present(entry):
                         pte_curr = entry & 0xFFFFFFFFFF000
+                        pte_curr_raw = self.base.read(pte_curr, 8 * ptrs_per_pae_pgd)
+                        pte_strings = [pte_curr_raw[x*8:(x*8)+8] for x in xrange(ptrs_per_pae_pte)]
+                        pte_curr_list = [self.ltQstruct.unpack(s)[0] for s in pte_strings]
+                        # And here we saved another 512x 8 byte reads.
                         for k in range(0, ptrs_per_pae_pte):
-                            pte_entry = self.read_long_long_phys(pte_curr)
-                            pte_curr = pte_curr + 8
+                            pte_entry = pte_curr_list[k]
+                            #pte_entry = self.read_long_long_phys(pte_curr)
+                            #pte_curr = pte_curr + 8
                             if self.entry_present(pte_entry):
                                 yield (soffset + k * 0x1000, 0x1000)
 
