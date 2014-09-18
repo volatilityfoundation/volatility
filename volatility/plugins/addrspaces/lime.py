@@ -62,7 +62,6 @@ class LimeAddressSpace(addrspace.AbstractRunBasedMemory):
         self.parse_lime()
 
     def parse_lime(self):
-        self.runs = []
 
         offset = 0
 

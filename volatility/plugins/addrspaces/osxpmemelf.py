@@ -51,9 +51,6 @@ class OSXPmemELF(addrspace.AbstractRunBasedMemory):
         ## Base AS should be a file AS
         elf = obj.Object("elf_hdr", offset = 0, vm = base)
 
-        ## Tuple of (physical memory address, file offset, length)
-        self.runs = []
-
         ## The PT_NOTE core descriptor structure 
         self.header = None
 
