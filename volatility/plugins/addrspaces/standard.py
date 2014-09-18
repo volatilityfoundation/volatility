@@ -92,7 +92,7 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
                           help = "Enable write support", callback = write_callback)
 
     def fread(self, length):
-        length = int(length)
+        #length = int(length) # unnecesary "cast"
         return self.fhandle.read(length)
 
     def read(self, addr, length):
@@ -119,7 +119,7 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
         yield (0, self.fsize)
 
     def is_valid_address(self, addr):
-        if addr == None:
+        if addr is None: # is None is faster than == None
             return False
         return 0 <= addr < self.fsize
 
