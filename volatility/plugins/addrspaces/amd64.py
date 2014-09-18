@@ -64,6 +64,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     paging_address_space = True
     minimum_size = 0x1000
     alignment_gcd = 0x1000
+    ltQstruct = struct.Struct('<Q')
 
     def entry_present(self, entry):
         if entry:
@@ -208,7 +209,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
             string = None
         if not string:
             return obj.NoneObject("Unable to read_long_long_phys at " + hex(addr))
-        (longlongval,) = struct.unpack('<Q', string)
+        longlongval, = ltQstruct.unpack(string)
         return longlongval
 
     def get_available_pages(self):
