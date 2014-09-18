@@ -187,7 +187,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
                     retVal = self.get_paddr(vaddr, pte)
         return retVal
 
-    def read_long_long_phys(self, addr):
+    def read_long_long_phys(self, addr, cache = {}):
         '''
         This method returns a 64-bit little endian
         unsigned integer from the specified address in the
@@ -196,11 +196,15 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
 
         This code was derived directly from legacyintel.py
         '''
+        cache_page = addr >> 12 << 12
         try:
-            string = self.base.read(addr, 8)
-        except IOError:
-            string = None
-        if not string:
+            data = cache[cache_page]
+        except KeyError:
+            data = self.base.read(cache_page, 4096+16) # +16 is for border case padding, just to be sure
+            cache[cache_page] = data
+        pos = addr - cache_page
+        string = data[pos : pos + 8]
+        if len(string) < 8:
             return obj.NoneObject("Unable to read_long_long_phys at " + hex(addr))
         longlongval, = ltQstruct.unpack(string)
         return longlongval
