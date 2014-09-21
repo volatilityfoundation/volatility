@@ -404,46 +404,64 @@ class Win8ObjectClasses(obj.ProfileModification):
                 "_PSP_CID_TABLE": pspcidtable,
                 })
 
-class Win8SP0x64(obj.Profile):
+class Win8x64(obj.Profile):
     """ A Profile for Windows 8 x64 """
     _md_memory_model = '64bit'
     _md_os = 'windows'
     _md_major = 6
     _md_minor = 2
     _md_build = 9200
-    _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp0_x64_vtypes'
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win8_x64_vtypes'
 
-class Win8SP1x64(obj.Profile):
+class Win81x64(obj.Profile):
     """ A Profile for Windows 8.1 x64 """
     _md_memory_model = '64bit'
     _md_os = 'windows'
     _md_major = 6
     _md_minor = 3
     _md_build = 9600
-    _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp1_x64_vtypes'
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win81_x64_vtypes'
 
-class Win2012x64(Win8SP0x64):
+class Win81U1x64(obj.Profile):
+    """ A Profile for Windows 8.1 Update 1 x64 """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 3
+    _md_build = 9601 # fake
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win81_u1_x64_vtypes'
+
+class Win2012x64(Win8x64):
     """ A Profile for Windows Server 2012 x64 """
     _md_build = 9201 ##FIXME: fake build number to indicate server 2012 vs windows 8
 
-class Win2012R2x64(Win8SP1x64):
+class Win2012R2x64(Win8x64):
     """ A Profile for Windows Server 2012 R2 x64 """
     _md_build = 9601 ##FIXME: fake build number to indicate server 2012 R2 vs windows 8.1
 
-class Win8SP0x86(obj.Profile):
+class Win8x86(obj.Profile):
     """ A Profile for Windows 8 x86 """
     _md_memory_model = '32bit'
     _md_os = 'windows'
     _md_major = 6
     _md_minor = 2
     _md_build = 9200
-    _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp0_x86_vtypes'
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win8_x86_vtypes'
 
-class Win8SP1x86(obj.Profile):
+class Win81x86(obj.Profile):
     """ A Profile for Windows 8.1 x86 """
     _md_memory_model = '32bit'
     _md_os = 'windows'
     _md_major = 6
     _md_minor = 3
     _md_build = 9600
-    _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp1_x86_vtypes'
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win81_x86_vtypes'
+
+class Win81U1x86(obj.Profile):
+    """ A Profile for Windows 8.1 Update 1 x86 """
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 3
+    _md_build = 9601 # fake 
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win81_u1_x86_vtypes'
