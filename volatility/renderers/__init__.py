@@ -18,6 +18,10 @@ class TreeRow(object):
         return "<TreeRow [" + self._path + "] - " + repr(self._data) + ">"
 
     @property
+    def data(self):
+        return self._data
+
+    @property
     def path(self):
         return self._path
 
@@ -30,7 +34,6 @@ class TreeRow(object):
         return len(self.path.split(TreeGrid.path_sep))
 
     def path_changed(self, path, added = False):
-        print "Updating path for", self.path, "based on path", path, "adding", added
         components = self._path.split(TreeGrid.path_sep)
         changed = path.split(TreeGrid.path_sep)
         changed_index = len(changed) - 1
@@ -68,6 +71,10 @@ class TreeGrid(object):
             converted_columns.append(Column(len(converted_columns), name, column_type))
         self._columns = converted_columns
 
+    @property
+    def columns(self):
+        """Returns the available columns and their ordering and types"""
+        return self._columns
 
     def _find_rows(self, node):
         """Returns the rows list associated with a particular node
@@ -82,6 +89,27 @@ class TreeGrid(object):
         except IndexError:
             return None
         return rows
+
+    def values(self, node):
+        """Returns the values for the row"""
+        rows = self._rows
+        if node is None:
+            raise ValueError("Node must be a valid node within the TreeGrid")
+        try:
+            for path_component in node.path.split(self.path_sep):
+                node, rows = rows[int(path_component)]
+        except IndexError:
+            return None
+        return node.data
+
+    def _validate_row(self, row):
+        if not (isinstance(row, list) and len(row) == len(self.columns)):
+            raise TypeError("Row must be a list of objects made up of simple types and number the same as the columns")
+        for index in range(len(self.columns)):
+            column = self.columns[index]
+            if not isinstance(row[index], column.type):
+                raise TypeError("Row item with index " + repr(index) + " is the wrong type for column " + repr(column.name))
+
 
     def append(self, parent, row = None):
         """Adds a new row at the top level if parent is None, or under the parent row
@@ -106,9 +134,10 @@ class TreeGrid(object):
         if rows is None:
             raise IndexError("Invalid parent node")
         newpath = parent_path + str(position)
+        self._validate_row(row)
         tree_item = TreeRow(newpath, self, parent, row)
         for node, _ in rows[position:]:
-            self.visit(node, lambda child: child.path_changed(newpath, True))
+            self.visit(node, lambda child, _: child.path_changed(newpath, True))
         rows.insert(position, (tree_item, []))
         return tree_item
 
@@ -164,7 +193,7 @@ class TreeGrid(object):
         return node in self._find_rows(node.parent)
 
     def prepend(self, parent, row = None):
-        self.insert(parent, 0, row = None)
+        return self.insert(parent, 0, row)
 
     def remove(self, node):
         rows = self._find_rows(node.parent)
@@ -173,41 +202,48 @@ class TreeGrid(object):
         deletion = None
         i = 0
         for i in range(len(rows)):
-            if rows[i] == node:
+            potential_node, subrows = rows[i]
+            if potential_node == node:
                 deletion = i
             if deletion is not None:
-                node, children = rows[i]
-                self.visit(node, lambda grandchild: grandchild.path_changed(node.path, False))
+                self.visit(potential_node, lambda grandchild, _: grandchild.path_changed(node.path, False))
         if deletion is None:
             raise ValueError("Invalid node path")
-        del rows[i]
+        del rows[deletion]
 
-    def visit(self, node, function):
+    def visit(self, node, function, accumulator = None):
         """Visits all the nodes in a tree, calling function on each one"""
         # Find_rows is path dependent, whereas _visit is not
         # So in case the function modifies the node's path, find the rows first
         rows = self._find_rows(node)
-        function(node)
+        function(node, accumulator)
         if rows is not None:
-            self._visit(rows, function)
+            self._visit(rows, function, accumulator)
 
-    def _visit(self, list_of_children, function):
+    def _visit(self, list_of_children, function, accumulator):
         """Visits all the nodes in a tree, calling function on each one"""
         if list_of_children is not None:
             for n, children in list_of_children:
-                function(n)
-                self._visit(children, function)
+                function(n, accumulator)
+                self._visit(children, function, accumulator)
 
-def pretty_print(node):
+def pretty_print(node, _accumulator):
     if node is not None:
         print "  " * node.path_depth, node._data, node.path
 
-if __name__ == '__main__':
+def build_example_treegrid():
     tg = TreeGrid([("Offset (V)", int), ("Offset (P)", int)])
     row = tg.append(None, [100, 200])
-    three = tg.append(row, [200,300])
+    three = tg.append(row, [200, 300])
     two = tg.append(None, [110, 210])
     tg.append(two, [210, 310])
-    tg.visit(None, pretty_print)
-    tg.insert_before(None, two, [105, 205])
+    four = tg.insert_before(None, two, [105, 205])
+    tg.insert_after(None, four, [106, 206])
+    tg.prepend(three, [300, 400])
+    five = tg.prepend(row, [199, 299])
+    # tg.remove(five)
+    return tg
+
+if __name__ == '__main__':
+    tg = build_example_treegrid()
     tg.visit(None, pretty_print)
