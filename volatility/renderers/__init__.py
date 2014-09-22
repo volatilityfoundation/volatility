@@ -3,71 +3,46 @@
 Renderers display the unified output format in some manner (be it text or file or graphical output"""
 
 import collections
-from volatility import validity, fmtspec
-
-
-class TreeRow(validity.ValidityRoutines):
-    """Class providing the interface for an individual Row of the TreeGrid"""
-
-    def __init__(self, treegrid, values):
-        self.type_check(treegrid, TreeGrid)
-        if not isinstance(self, TreeGrid):
-            self.type_check(values, list)
-            treegrid.validate_values(values)
-        self._treegrid = treegrid
-        self._children = []
-        self._values = values
-
-    def add_child(self, child):
-        """Appends a child to the current Row"""
-        self.type_check(child, TreeRow)
-        self._children += [child]
-
-    def insert_child(self, child, position):
-        """Inserts a child at a specific position in the current Row"""
-        self.type_check(child, TreeRow)
-        self._children = self._children[:position] + [child] + self._children[:position]
-
-    def clear(self):
-        """Removes all children from this row
-
-        :rtype : None
-        """
-        self._children = []
-
-    @property
-    def values(self):
-        """The individual cell values of the row"""
-        return self._values
-
-    @property
-    def children(self):
-        """Returns an iterator of the children of the current row
-
-        :rtype : iterator of TreeRows
-        """
-        for child in self._children:
-            yield child
-
-    def iterator(self, level = 0):
-        """Returns an iterator of all rows with their depths
-
-        :type level: int
-        :param level: Indicates the depth of the current iterator
-        """
-        yield (level, self)
-        for child in self.children:
-            for grandchild in child.iterator(level + 1):
-                yield grandchild
-
 
 Column = collections.namedtuple('Column', ['index', 'name', 'type'])
 
+class TreeRow(object):
+    def __init__(self, path, treegrid, parent, data):
+        self._treegrid = treegrid
+        self._parent = parent
+        self._path = path
+        # TODO: Validate data
+        self._data = data
 
-class TreeGrid(TreeRow):
+    def __repr__(self):
+        return "<TreeRow [" + self._path + "] - " + repr(self._data) + ">"
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @property
+    def path_depth(self):
+        return len(self.path.split(TreeGrid.path_sep))
+
+    def path_changed(self, path, added = False):
+        print "Updating path for", self.path, "based on path", path, "adding", added
+        components = self._path.split(TreeGrid.path_sep)
+        changed = path.split(TreeGrid.path_sep)
+        changed_index = len(changed) - 1
+        if int(components[changed_index]) >= int(changed[-1]):
+            components[changed_index] = str(int(components[changed_index]) + (1 if added else -1))
+        self._path = TreeGrid.path_sep.join(components)
+
+class TreeGrid(object):
     """Class providing the interface for a TreeGrid (which contains TreeRows)"""
 
     simple_types = {int, str, float, bytes}
+    path_sep = "|"
 
     def __init__(self, columns):
         """Constructs a TreeGrid object using a specific set of columns
@@ -78,8 +53,11 @@ class TreeGrid(TreeRow):
 
         :param columns: A list of column tuples made up of (name, type).
         """
-        self.type_check(columns, list)
+        # TODO: Type check columns
+        self._rows = []
         converted_columns = []
+        if len(columns) < 1:
+            raise ValueError("Columns must be a list containing at least one column")
         for (name, column_type) in columns:
             is_simple_type = False
             for stype in self.simple_types:
@@ -90,29 +68,146 @@ class TreeGrid(TreeRow):
             converted_columns.append(Column(len(converted_columns), name, column_type))
         self._columns = converted_columns
 
-        # We can use the special type None because we're the top level node without values
-        TreeRow.__init__(self, self, None)
 
-    @property
-    def columns(self):
-        """Returns list of tuples of (name, type and format_hint)"""
-        for column in self._columns:
-            yield column
+    def _find_rows(self, node):
+        """Returns the rows list associated with a particular node
 
-    def validate_values(self, values):
-        """Takes a list of values and verified them against the column types"""
-        if len(values) != len(self._columns):
-            raise ValueError("The length of the values provided does not match the number of columns.")
-        for column in self._columns:
-            if not isinstance(values[column.index], column.type):
-                raise TypeError("Column type " + str(column.index) + " is incorrect.")
-
-    def iterator(self, level = 0):
-        """Returns an iterator of all rows with their depths
-
-        :type level: int
-        :param level: Indicates the depth of the current iterator
+           Returns None if the node does not exist
         """
-        for child in self.children:
-            for grandchild in child.iterator(level + 1):
-                yield grandchild
+        rows = self._rows
+        try:
+            if node is not None:
+                for path_component in node.path.split(self.path_sep):
+                    _, rows = rows[int(path_component)]
+        except IndexError:
+            return None
+        return rows
+
+    def append(self, parent, row = None):
+        """Adds a new row at the top level if parent is None, or under the parent row
+
+           The row values will be empty until the values are set using .set or .set_value
+        """
+        rows = self._find_rows(parent)
+        if rows is None:
+            rows = []
+        return self.insert(parent, len(rows), row)
+
+    def clear(self):
+        """Clears all rows from the TreeModel"""
+        self._rows = []
+
+    def insert(self, parent, position, row = None):
+        """Inserts an element into the tree at a specific position"""
+        parent_path = ""
+        rows = self._find_rows(parent)
+        if parent is not None:
+            parent_path = parent.path + self.path_sep
+        if rows is None:
+            raise IndexError("Invalid parent node")
+        newpath = parent_path + str(position)
+        tree_item = TreeRow(newpath, self, parent, row)
+        for node, _ in rows[position:]:
+            self.visit(node, lambda child: child.path_changed(newpath, True))
+        rows.insert(position, (tree_item, []))
+        return tree_item
+
+    def _insert_sibling(self, parent, sibling, row = None, before = True):
+        """Inserts an element into the tree, after the sibling.
+
+        If parent is None, then the sibling must be in the top level
+        If sibling is None, then the row will be inserted at the end of the parent's children
+        """
+        # Get the parent sorted out first
+        if sibling is not None:
+            if parent is None:
+                parent = sibling.parent
+            else:
+                if sibling.parent is not parent:
+                    raise ValueError("Sibling's parent is not parent")
+
+        rows = self._rows
+        if parent is not None:
+            rows = self._find_rows(parent)
+            if rows is None:
+                raise ValueError("Invalid parent node")
+
+        if sibling is None:
+            i = 0 if before else len(rows)
+
+        for i in range(len(rows)):
+            testnode, _ = rows[i]
+            if testnode == sibling:
+                if not before:
+                    i = i+1
+                break
+        else:
+            raise ValueError("Sibling is not in parent's children")
+        return self.insert(parent, i, row)
+
+
+    def insert_after(self, parent, sibling, row = None):
+        return self._insert_sibling(parent, sibling, row, False)
+
+    def insert_before(self, parent, sibling, row = None):
+        return self._insert_sibling(parent, sibling, row, True)
+
+    def is_ancestor(self, node, descendant):
+        """Returns true if descendent is a child, grandchild, etc of node"""
+        return descendant.path.startswith(node.path)
+
+    def path_depth(self, node):
+        return node.path_depth
+
+    def path_is_valid(self, node):
+        """Returns True is a given path is valid for this treegrid"""
+        return node in self._find_rows(node.parent)
+
+    def prepend(self, parent, row = None):
+        self.insert(parent, 0, row = None)
+
+    def remove(self, node):
+        rows = self._find_rows(node.parent)
+        if rows is None or len(rows) < 1:
+            raise ValueError("Invalid node or node parent")
+        deletion = None
+        i = 0
+        for i in range(len(rows)):
+            if rows[i] == node:
+                deletion = i
+            if deletion is not None:
+                node, children = rows[i]
+                self.visit(node, lambda grandchild: grandchild.path_changed(node.path, False))
+        if deletion is None:
+            raise ValueError("Invalid node path")
+        del rows[i]
+
+    def visit(self, node, function):
+        """Visits all the nodes in a tree, calling function on each one"""
+        # Find_rows is path dependent, whereas _visit is not
+        # So in case the function modifies the node's path, find the rows first
+        rows = self._find_rows(node)
+        function(node)
+        if rows is not None:
+            self._visit(rows, function)
+
+    def _visit(self, list_of_children, function):
+        """Visits all the nodes in a tree, calling function on each one"""
+        if list_of_children is not None:
+            for n, children in list_of_children:
+                function(n)
+                self._visit(children, function)
+
+def pretty_print(node):
+    if node is not None:
+        print "  " * node.path_depth, node._data, node.path
+
+if __name__ == '__main__':
+    tg = TreeGrid([("Offset (V)", int), ("Offset (P)", int)])
+    row = tg.append(None, [100, 200])
+    three = tg.append(row, [200,300])
+    two = tg.append(None, [110, 210])
+    tg.append(two, [210, 310])
+    tg.visit(None, pretty_print)
+    tg.insert_before(None, two, [105, 205])
+    tg.visit(None, pretty_print)
