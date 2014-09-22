@@ -211,21 +211,23 @@ class TreeGrid(object):
             raise ValueError("Invalid node path")
         del rows[deletion]
 
-    def visit(self, node, function, accumulator = None):
+    def visit(self, node, function, initial_accumulator = None):
         """Visits all the nodes in a tree, calling function on each one"""
         # Find_rows is path dependent, whereas _visit is not
         # So in case the function modifies the node's path, find the rows first
         rows = self._find_rows(node)
-        function(node, accumulator)
+        accumulator = function(node, initial_accumulator)
         if rows is not None:
-            self._visit(rows, function, accumulator)
+            accumulator = self._visit(rows, function, accumulator)
+        return accumulator
 
     def _visit(self, list_of_children, function, accumulator):
         """Visits all the nodes in a tree, calling function on each one"""
         if list_of_children is not None:
             for n, children in list_of_children:
-                function(n, accumulator)
-                self._visit(children, function, accumulator)
+                accumulator = function(n, accumulator)
+                accumulator = self._visit(children, function, accumulator)
+        return accumulator
 
 def pretty_print(node, _accumulator):
     if node is not None:
