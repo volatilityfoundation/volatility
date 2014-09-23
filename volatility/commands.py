@@ -24,6 +24,8 @@ import volatility.obj as obj
 import volatility.registry as registry
 import volatility.renderers as renderers
 import volatility.addrspace as addrspace
+from volatility.renderers.basic import TextRenderer, CellRenderer, Address, Address64, Hex
+
 
 class Command(object):
     """ Base class for each plugin command """
@@ -219,10 +221,30 @@ class Command(object):
             reslist.append(result)
         outfd.write(self.tablesep.join(reslist) + "\n")
 
+    stock_renderers = {Hex: CellRenderer("x"),
+                       Address: CellRenderer("8x"),
+                       Address64: CellRenderer("12x"),
+                       int: CellRenderer(""),
+                       str: CellRenderer("<"),
+                       float: CellRenderer(".2"),
+                       bytes: CellRenderer("")}
+
+    def text_cell_renderers(self, columns):
+        """Returns default renderers for the columns listed"""
+        renderlist = [CellRenderer("x")] * len(columns)
+        for column in columns:
+            if not isinstance(column, renderers.Column):
+                raise TypeError("Columns must be a list of Column objects")
+            renderlist[column.index] = self.stock_renderers[column.type]
+        return renderlist
+
     def render_text(self, outfd, data):
         if not hasattr(self, "unified_output"):
             raise NotImplementedError("Render text using the unified output format has not been implemented for this plugin.")
         output = self.unified_output(data)
 
         if isinstance(output, renderers.TreeGrid):
-            pass
+            tr = TextRenderer(self.text_cell_renderers(output.columns))
+            tr.render(outfd, output)
+        else:
+            raise TypeError("Unified Output must return a TreeGrid object")

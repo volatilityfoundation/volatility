@@ -25,6 +25,8 @@
 
 import os, re
 import volatility.plugins.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 import volatility.win32 as win32
 import volatility.obj as obj
 import volatility.debug as debug
@@ -44,43 +46,35 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
         config.add_option('PID', short_option = 'p', default = None,
                           help = 'Operate on these Process IDs (comma-separated)',
                           action = 'store', type = 'str')
-                            
-        config.add_option('NAME', short_option = 'n', default = None, 
-                          help = 'Operate on these process names (regex)', 
+
+        config.add_option('NAME', short_option = 'n', default = None,
+                          help = 'Operate on these process names (regex)',
                           action = 'store', type = 'str')
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        tg = TreeGrid([("Pid", int),
+                       ("Base", int),
+                       ("Size", int),
+                       ("LoadCount", int),
+                       ("Path", str)])
+
         for task in data:
             pid = task.UniqueProcessId
 
-            outfd.write("*" * 72 + "\n")
-            outfd.write("{0} pid: {1:6}\n".format(task.ImageFileName, pid))
-
             if task.Peb:
-                ## REMOVE this after 2.4, since we have the cmdline plugin now
-                outfd.write("Command line : {0}\n".format(str(task.Peb.ProcessParameters.CommandLine or '')))
-                if task.IsWow64:
-                    outfd.write("Note: use ldrmodules for listing DLLs in Wow64 processes\n")
-                outfd.write("{0}\n".format(str(task.Peb.CSDVersion or '')))
-                outfd.write("\n")
-                self.table_header(outfd,
-                                  [("Base", "[addrpad]"),
-                                   ("Size", "[addr]"),
-                                   ("LoadCount", "[addr]"), 
-                                   ("Path", ""),
-                                   ])
                 for m in task.get_load_modules():
-                    self.table_row(outfd, m.DllBase, m.SizeOfImage, m.LoadCount, str(m.FullDllName or ''))
+                    tg.append(None, [int(pid), int(m.DllBase), int(m.SizeOfImage), int(m.LoadCount), str(m.FullDllName or '')])
             else:
-                outfd.write("Unable to read PEB for task.\n")
+                tg.append(None, [int(pid), 0, 0, 0, "Error reading PEB for pid"])
+        return tg
 
     def filter_tasks(self, tasks):
         """ Reduce the tasks based on the user selectable PIDS parameter.
 
         Returns a reduced list or the full list if config.PIDS not specified.
         """
-        
-        if self._config.PID is not None:        
+
+        if self._config.PID is not None:
             try:
                 pidlist = [int(p) for p in self._config.PID.split(',')]
             except ValueError:
@@ -90,18 +84,18 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
             if len(pids) == 0:
                 debug.error("Cannot find PID {0}. If its terminated or unlinked, use psscan and then supply --offset=OFFSET".format(self._config.PID))
             return pids
-            
+
         if self._config.NAME is not None:
             try:
                 name_re = re.compile(self._config.NAME, re.I)
             except re.error:
                 debug.error("Invalid name {0}".format(self._config.NAME))
-            
+
             names = [t for t in tasks if name_re.search(str(t.ImageFileName))]
             if len(names) == 0:
                 debug.error("Cannot find name {0}. If its terminated or unlinked, use psscan and then supply --offset=OFFSET".format(self._config.NAME))
             return names
-                        
+
         return tasks
 
     @staticmethod
@@ -116,7 +110,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
         ethread = obj.Object("_ETHREAD", offset = flateproc.ThreadListHead.Flink.v() - tleoffset, vm = addr_space)
         # and ask for the thread's process to get an _EPROCESS with a virtual address space
         virtual_process = ethread.owning_process()
-        # Sanity check the bounce. See Issue 154. 
+        # Sanity check the bounce. See Issue 154.
         if virtual_process and offset == addr_space.vtop(virtual_process.obj_offset):
             return virtual_process
         return obj.NoneObject("Unable to bounce back from virtual _ETHREAD to virtual _EPROCESS")
@@ -137,9 +131,9 @@ class PSList(DllList):
     """ Print all running processes by following the EPROCESS lists """
     def __init__(self, config, *args, **kwargs):
         DllList.__init__(self, config, *args, **kwargs)
-        config.add_option("PHYSICAL-OFFSET", short_option = 'P', 
-                          default = False, cache_invalidator = False, 
-                          help = "Display physical offsets instead of virtual", 
+        config.add_option("PHYSICAL-OFFSET", short_option = 'P',
+                          default = False, cache_invalidator = False,
+                          help = "Display physical offsets instead of virtual",
                           action = "store_true")
 
     def render_text(self, outfd, data):
