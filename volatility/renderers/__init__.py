@@ -7,19 +7,19 @@ import collections
 Column = collections.namedtuple('Column', ['index', 'name', 'type'])
 
 class TreeRow(object):
-    def __init__(self, path, treegrid, parent, data):
+    def __init__(self, path, treegrid, parent, values):
         self._treegrid = treegrid
         self._parent = parent
         self._path = path
         # TODO: Validate data
-        self._data = data
+        self._values = values
 
     def __repr__(self):
-        return "<TreeRow [" + self._path + "] - " + repr(self._data) + ">"
+        return "<TreeRow [" + self._path + "] - " + repr(self._values) + ">"
 
     @property
-    def data(self):
-        return self._data
+    def values(self):
+        return self._values
 
     @property
     def path(self):
@@ -100,7 +100,7 @@ class TreeGrid(object):
                 node, rows = rows[int(path_component)]
         except IndexError:
             return None
-        return node.data
+        return node.values
 
     def _validate_row(self, row):
         if not (isinstance(row, list) and len(row) == len(self.columns)):
@@ -190,7 +190,7 @@ class TreeGrid(object):
 
     def path_is_valid(self, node):
         """Returns True is a given path is valid for this treegrid"""
-        return node in self._find_rows(node.parent)
+        return node in [ n for n, _ in self._find_rows(node.parent)]
 
     def prepend(self, parent, row = None):
         return self.insert(parent, 0, row)
@@ -216,7 +216,9 @@ class TreeGrid(object):
         # Find_rows is path dependent, whereas _visit is not
         # So in case the function modifies the node's path, find the rows first
         rows = self._find_rows(node)
-        accumulator = function(node, initial_accumulator)
+        accumulator = initial_accumulator
+        if node is not None:
+            accumulator = function(node, initial_accumulator)
         if rows is not None:
             accumulator = self._visit(rows, function, accumulator)
         return accumulator
@@ -231,7 +233,7 @@ class TreeGrid(object):
 
 def pretty_print(node, _accumulator):
     if node is not None:
-        print "  " * node.path_depth, node._data, node.path
+        print "  " * node.path_depth, node.values, node.path
 
 def build_example_treegrid():
     tg = TreeGrid([("Offset (V)", int), ("Offset (P)", int)])
