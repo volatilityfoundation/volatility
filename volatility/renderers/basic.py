@@ -7,10 +7,22 @@ from volatility import renderers
 
 class Address(int):
     """Integer class to allow renderers to differentiate between addresses and numbers"""
-    def __new__(cls, number, *args, **kwargs):
-        return number
+    def __new__(cls, number):
+        return int.__new__(cls, number)
 
-Hex = Address64 = Address
+class Address64(int):
+    """Integer class to allow renderers to differentiate between addresses and numbers"""
+
+    def __new__(cls, number):
+        return int.__new__(cls, number)
+
+
+class Hex(int):
+    """Integer class to allow renderers to differentiate between addresses and numbers"""
+
+    def __new__(cls, number):
+        return int.__new__(cls, number)
+
 
 class CellRenderer(object):
     """Class to handle rendering each cell of a grid"""
@@ -25,6 +37,12 @@ class CellRenderer(object):
     def render(self, value):
         """Render an individual cell"""
         return ("{0:" + str(self.format_spec) + "}").format(value)
+
+    def set_width(self, value):
+        self.format_spec.minwidth = value
+
+    def __repr__(self):
+        return "<CellRenderer (" + repr(self.format_spec) + ")>"
 
 class TextRenderer(object):
 
@@ -99,6 +117,11 @@ class TextRenderer(object):
                 index = i + (1 if grid_depth > 1 else 0)
                 grid_widths[index] = max(grid_widths[index], len(grid.columns[i].name))
 
+        for i in range(len(grid.columns)):
+            index = i + (1 if grid_depth > 1 else 0)
+            self._cell_renderers[i].set_width(grid_widths[index])
+            print repr(self._cell_renderers[i]), grid_widths[index]
+
         cols = []
         for index in range(len(grid_widths)):
             if grid_depth > 1:
@@ -109,7 +132,7 @@ class TextRenderer(object):
                     column = grid.columns[index - 1]
             else:
                 column = grid.columns[index]
-            cols += [self._elide(self._cell_renderers[column.index].render(column.name), grid_widths[index])]
+            cols += [self._elide(("{:<" + str(grid_widths[index]) + "}").format(column.name), grid_widths[index])]
         fdout.write(" ".join(cols) + "\n")
 
         def print_row(node, accumulator = None):
@@ -126,6 +149,8 @@ class TextRenderer(object):
                     column = grid.columns[index]
 
                 column_text = self._cell_renderers[column.index].render(node.values[column.index])
+                if column.name == 'Path':
+                    print repr(column_text)
                 row += [self._elide(column_text, grid_widths[index])]
             accumulator += [" ".join(row)]
             return accumulator

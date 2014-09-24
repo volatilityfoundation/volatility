@@ -53,7 +53,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
 
     def unified_output(self, data):
         tg = TreeGrid([("Pid", int),
-                       ("Base", int),
+                       ("Base", Address),
                        ("Size", int),
                        ("LoadCount", int),
                        ("Path", str)])
@@ -63,9 +63,9 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
 
             if task.Peb:
                 for m in task.get_load_modules():
-                    tg.append(None, [int(pid), int(m.DllBase), int(m.SizeOfImage), int(m.LoadCount), str(m.FullDllName or '')])
+                    tg.append(None, [int(pid), Address(m.DllBase), int(m.SizeOfImage), int(m.LoadCount), str(m.FullDllName or '')])
             else:
-                tg.append(None, [int(pid), 0, 0, 0, "Error reading PEB for pid"])
+                tg.append(None, [int(pid), Address(0), 0, 0, "Error reading PEB for pid"])
         return tg
 
     def filter_tasks(self, tasks):

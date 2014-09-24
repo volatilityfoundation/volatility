@@ -222,8 +222,8 @@ class Command(object):
         outfd.write(self.tablesep.join(reslist) + "\n")
 
     stock_renderers = {Hex: CellRenderer("x"),
-                       Address: CellRenderer("8x"),
-                       Address64: CellRenderer("12x"),
+                       Address: CellRenderer("08x"),
+                       Address64: CellRenderer("012x"),
                        int: CellRenderer(""),
                        str: CellRenderer("<"),
                        float: CellRenderer(".2"),
@@ -231,7 +231,7 @@ class Command(object):
 
     def text_cell_renderers(self, columns):
         """Returns default renderers for the columns listed"""
-        renderlist = [CellRenderer("x")] * len(columns)
+        renderlist = [CellRenderer("")] * len(columns)
         for column in columns:
             if not isinstance(column, renderers.Column):
                 raise TypeError("Columns must be a list of Column objects")

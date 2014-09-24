@@ -110,7 +110,6 @@ class TreeGrid(object):
             if not isinstance(row[index], column.type):
                 raise TypeError("Row item with index " + repr(index) + " is the wrong type for column " + repr(column.name))
 
-
     def append(self, parent, row = None):
         """Adds a new row at the top level if parent is None, or under the parent row
 
