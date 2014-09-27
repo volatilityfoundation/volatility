@@ -40,17 +40,22 @@ class FormatCellRenderer(CellRenderer):
             fs = FormatSpec()
             fs.from_string(format_spec)
             format_spec = fs
-        self.format_spec = format_spec
+        self._format_spec = format_spec
 
     def render(self, value):
         """Render an individual cell"""
-        return ("{0:" + str(self.format_spec) + "}").format(value)
+        return ("{0:" + str(self._format_spec) + "}").format(value)
 
-    def set_width(self, value):
-        self.format_spec.minwidth = value
+    @property
+    def width(self):
+        return self._format_spec.minwidth
+
+    @width.setter
+    def width(self, value):
+        self._format_spec.minwidth = max(value, self._format_spec.minwidth)
 
     def __repr__(self):
-        return "<CellRenderer (" + repr(self.format_spec) + ")>"
+        return "<FormatCellRenderer (" + repr(self._format_spec) + ")>"
 
 class TextRenderer(object):
 
@@ -69,11 +74,11 @@ class TextRenderer(object):
     def partition_width(self, widths):
         """Determines if the widths are over the maximum available space, and if so shrinks them"""
         if math.fsum(widths) + (len(widths) - 1) > self.max_width:
-            remainder = self.max_width - (int(math.fsum(widths)) + (len(widths) - 1))
+            remainder = (int(math.fsum(widths)) + (len(widths) - 1)) - self.max_width
+            # Take from the largest column first, eventually evening out
             for i in range(remainder):
-                widths[i % len(widths)] -= 1
-                if widths[i % len(widths)] < self.min_column_width:
-                    widths[i % len(widths)] = self.min_column_width
+                col_index = widths.index(max(widths))
+                widths[col_index] -= 1
         return widths
 
     def _elide(self, string, length):
@@ -104,7 +109,7 @@ class TextRenderer(object):
         grid_depth = grid.visit(None, lambda x, y: max(y, grid.path_depth(x)), 0)
 
         # Determine max width of each column
-        grid_widths = [0] * len(grid.columns)
+        grid_max_widths = [0] * len(grid.columns)
 
         def gridwidth(node, accumulator = None):
             for vindex in range(len(node.values)):
@@ -112,44 +117,43 @@ class TextRenderer(object):
                 accumulator[vindex] = max(len(entry), accumulator[vindex])
             return accumulator
 
-        grid.visit(None, gridwidth, grid_widths)
+        grid.visit(None, gridwidth, grid_max_widths)
         if grid_depth > 1:
-            grid_widths = [grid_depth * 1] + grid_widths
+            grid_max_widths = [grid_depth * 1] + grid_max_widths
 
         # Figure out how to partition the available widths
-        new_grid_widths = self.partition_width(grid_widths)
+        new_grid_widths = self.partition_width(grid_max_widths)
 
-        # If the grid_widths have not been limited,
-        if new_grid_widths == grid_widths:
+        # If the grid_max_widths have not been limited,
+        if new_grid_widths == grid_max_widths:
             for i in range(len(grid.columns)):
                 index = i + (1 if grid_depth > 1 else 0)
-                grid_widths[index] = max(grid_widths[index], len(grid.columns[i].name))
+                grid_max_widths[index] = max(grid_max_widths[index], len(grid.columns[i].name))
 
         for i in range(len(grid.columns)):
             index = i + (1 if grid_depth > 1 else 0)
-            self._cell_renderers[i].set_width(grid_widths[index])
-            print repr(self._cell_renderers[i]), grid_widths[index]
+            self._cell_renderers[i].width = grid_max_widths[index]
+            grid_max_widths[index] = self._cell_renderers[i].width
 
         cols = []
-        for index in range(len(grid_widths)):
+        for index in range(len(grid_max_widths)):
             if grid_depth > 1:
                 if index != 0:
-                    cols += [" " * grid_widths[index]]
+                    cols += [" " * grid_max_widths[index]]
                     continue
                 else:
                     column = grid.columns[index - 1]
             else:
                 column = grid.columns[index]
-            cols += [self._elide(("{:<" + str(grid_widths[index]) + "}").format(column.name), grid_widths[index])]
+            cols += [self._elide(("{:<" + str(grid_max_widths[index]) + "}").format(column.name), grid_max_widths[index])]
         fdout.write(" ".join(cols) + "\n")
 
         def print_row(node, accumulator = None):
             row = []
-
-            for index in range(len(grid_widths)):
+            for index in range(len(grid_max_widths)):
                 if grid_depth > 1:
                     if index == 0:
-                        row += [(" " * (grid.path_depth(node) - 1)) + ">" + (" " * (grid_widths[0] - grid.path_depth(node)))]
+                        row += [(" " * (grid.path_depth(node) - 1)) + ">" + (" " * (grid_max_widths[0] - grid.path_depth(node)))]
                         continue
                     else:
                         column = grid.columns[index - 1]
@@ -157,13 +161,10 @@ class TextRenderer(object):
                     column = grid.columns[index]
 
                 column_text = self._cell_renderers[column.index].render(node.values[column.index])
-                if column.name == 'Path':
-                    print repr(column_text)
-                row += [self._elide(column_text, grid_widths[index])]
+                row += [self._elide(column_text, grid_max_widths[index])]
             accumulator += [" ".join(row)]
             return accumulator
 
         output = []
         grid.visit(None, print_row, output)
         fdout.write("\n".join(output))
-
