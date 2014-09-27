@@ -20,6 +20,8 @@
 #
 
 """pstree example file"""
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 import volatility.win32.tasks as tasks
 import volatility.utils as utils
@@ -55,55 +57,57 @@ class PSTree(common.AbstractWindowsCommand):
 
         return pid
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
 
-        self.table_header(outfd, 
-                         [("Name", "<50"), 
-                          ("Pid", ">6"),
-                          ("PPid", ">6"),
-                          ("Thds", ">6"),
-                          ("Hnds", ">6"),
-                          ("Time", "")])
+        cols = [("Offset", Address),
+                ("Name", str),
+                ("Pid", int),
+                ("PPid", int),
+                ("Thds", int),
+                ("Hnds", int),
+                ("Time", str)]
 
-        def draw_branch(pad, inherited_from):
+        if self._config.VERBOSE:
+            cols += [("Audit", str),
+                     ("Cmd", str),
+                     ("Path", str)]
+
+        tg = TreeGrid(cols)
+
+        def draw_branch(parent, inherited_from):
             for task in data.values():
                 if task.InheritedFromUniqueProcessId == inherited_from:
 
-                    first_column = "{0} {1:#x}:{2:20}".format(
-                                        "." * pad, 
-                                        task.obj_offset, 
-                                        str(task.ImageFileName or '')
-                                        )
-
-                    self.table_row(outfd, 
-                        first_column,
-                        task.UniqueProcessId,
-                        task.InheritedFromUniqueProcessId,
-                        task.ActiveThreads,
-                        task.ObjectTable.HandleCount,
-                        task.CreateTime)
+                    row = [Address(task.obj_offset),
+                           str(task.ImageFileName or ''),
+                           int(task.UniqueProcessId),
+                           int(task.InheritedFromUniqueProcessId),
+                           int(task.ActiveThreads),
+                           int(task.ObjectTable.HandleCount),
+                           str(task.CreateTime)]
 
                     if self._config.VERBOSE:
-                        outfd.write("{0}    audit: {1}\n".format(
-                                ' ' * pad, str(task.SeAuditProcessCreationInfo.ImageFileName.Name or '')))
+                        row += [str(task.SeAuditProcessCreationInfo.ImageFileName.Name or '')]
                         process_params = task.Peb.ProcessParameters
-                        if process_params:
-                            outfd.write("{0}    cmd: {1}\n".format(
-                                ' ' * pad, str(process_params.CommandLine or '')))
-                            outfd.write("{0}    path: {1}\n".format(
-                                ' ' * pad, str(process_params.ImagePathName or '')))
+                        if not process_params:
+                            row += [str("-"), str("-")]
+                        else:
+                            row += [str(process_params.CommandLine or ''),
+                                    str(process_params.ImagePathName or '')]
+                    node = tg.append(parent, row)
 
                     try:
                         del data[int(task.UniqueProcessId)]
                     except KeyError:
                         debug.warning("PID {0} PPID {1} has already been seen".format(task.UniqueProcessId, task.InheritedFromUniqueProcessId))
 
-                    draw_branch(pad + 1, task.UniqueProcessId) 
+                    draw_branch(node, task.UniqueProcessId)
 
         while len(data.keys()) > 0:
             keys = data.keys()
             root = self.find_root(data, keys[0])
-            draw_branch(0, root)
+            draw_branch(None, root)
+        return tg
 
     @cache.CacheDecorator(lambda self: "tests/pstree/verbose={0}".format(self._config.VERBOSE))
     def calculate(self):
@@ -112,6 +116,6 @@ class PSTree(common.AbstractWindowsCommand):
         addr_space = utils.load_as(self._config)
 
         return dict(
-                (int(task.UniqueProcessId), task) 
+                (int(task.UniqueProcessId), task)
                 for task in tasks.pslist(addr_space)
                 )
