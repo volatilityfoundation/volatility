@@ -221,9 +221,9 @@ class Command(object):
             reslist.append(result)
         outfd.write(self.tablesep.join(reslist) + "\n")
 
-    stock_renderers = {Hex: "x",
-                       Address: "08x",
-                       Address64: "012x",
+    stock_renderers = {Hex: "#x",
+                       Address: "#8x",
+                       Address64: "#12x",
                        int: "",
                        str: "<",
                        float: ".2",
