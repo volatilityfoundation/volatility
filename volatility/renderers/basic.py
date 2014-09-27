@@ -59,10 +59,9 @@ class FormatCellRenderer(CellRenderer):
 
 class TextRenderer(object):
 
-    max_width = 80
     min_column_width = 5
 
-    def __init__(self, cell_renderers):
+    def __init__(self, cell_renderers, max_width = 200):
 
         if not isinstance(cell_renderers, list):
             raise TypeError("cell_renderers must be of type list")
@@ -70,6 +69,7 @@ class TextRenderer(object):
             if not isinstance(item, CellRenderer):
                 raise TypeError("Items within the cell_renderers list must be of type CellRenderer")
         self._cell_renderers = cell_renderers
+        self.max_width = max_width
 
     def partition_width(self, widths):
         """Determines if the widths are over the maximum available space, and if so shrinks them"""
@@ -167,4 +167,4 @@ class TextRenderer(object):
 
         output = []
         grid.visit(None, print_row, output)
-        fdout.write("\n".join(output))
+        fdout.write("\n".join(output) + "\n")
