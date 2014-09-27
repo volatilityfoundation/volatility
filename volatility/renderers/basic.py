@@ -138,7 +138,7 @@ class TextRenderer(object):
         cols = []
         for index in range(len(grid_max_widths)):
             if grid_depth > 1:
-                if index != 0:
+                if index == 0:
                     cols += [" " * grid_max_widths[index]]
                     continue
                 else:
