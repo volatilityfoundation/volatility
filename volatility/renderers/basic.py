@@ -23,8 +23,16 @@ class Hex(int):
     def __new__(cls, number):
         return int.__new__(cls, number)
 
-
 class CellRenderer(object):
+    """Class to handle rendering of a particular cell in a text grid"""
+    # The minimum width that the renderer will produce for a value
+    width = 0
+
+    def render(self, value):
+        """Returns the rendering of an individual value"""
+        return value
+
+class FormatCellRenderer(CellRenderer):
     """Class to handle rendering each cell of a grid"""
 
     def __init__(self, format_spec):

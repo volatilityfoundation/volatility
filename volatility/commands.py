@@ -24,7 +24,7 @@ import volatility.obj as obj
 import volatility.registry as registry
 import volatility.renderers as renderers
 import volatility.addrspace as addrspace
-from volatility.renderers.basic import TextRenderer, CellRenderer, Address, Address64, Hex
+from volatility.renderers.basic import TextRenderer, FormatCellRenderer, Address, Address64, Hex
 
 
 class Command(object):
@@ -221,21 +221,21 @@ class Command(object):
             reslist.append(result)
         outfd.write(self.tablesep.join(reslist) + "\n")
 
-    stock_renderers = {Hex: CellRenderer("x"),
-                       Address: CellRenderer("08x"),
-                       Address64: CellRenderer("012x"),
-                       int: CellRenderer(""),
-                       str: CellRenderer("<"),
-                       float: CellRenderer(".2"),
-                       bytes: CellRenderer("")}
+    stock_renderers = {Hex: "x",
+                       Address: "08x",
+                       Address64: "012x",
+                       int: "",
+                       str: "<",
+                       float: ".2",
+                       bytes: ""}
 
     def text_cell_renderers(self, columns):
         """Returns default renderers for the columns listed"""
-        renderlist = [CellRenderer("")] * len(columns)
+        renderlist = [FormatCellRenderer("")] * len(columns)
         for column in columns:
             if not isinstance(column, renderers.Column):
                 raise TypeError("Columns must be a list of Column objects")
-            renderlist[column.index] = self.stock_renderers[column.type]
+            renderlist[column.index] = FormatCellRenderer(self.stock_renderers[column.type])
         return renderlist
 
     def render_text(self, outfd, data):
