@@ -784,15 +784,17 @@ class in_device(obj.CType):
 class net_device(obj.CType):
     
     @property
-    def mac_addr(self):
+    def mac_addr(self):        
+        macaddr = "00:00:00:00:00:00"
 
         if self.members.has_key("perm_addr"):
             hwaddr = self.perm_addr
-        else:
-            hwaddr = self.dev_addr
-
-        macaddr = ":".join(["{0:02x}".format(x) for x in hwaddr][:6])
-
+            macaddr = ":".join(["{0:02x}".format(x) for x in hwaddr][:6])
+        
+        if macaddr == "00:00:00:00:00:00":
+            hwaddr = self.obj_vm.zread(self.dev_addr, 6)
+            macaddr = ":".join(["{0:02x}".format(ord(x)) for x in hwaddr][:6])
+                        
         return macaddr
 
     @property
@@ -1321,22 +1323,15 @@ class task_struct(obj.CType):
             # read argv from userland
             start = self.mm.env_start.v()
 
-            argv = proc_as.read(start, self.mm.env_end - self.mm.env_start + 10)
+            env = proc_as.read(start, self.mm.env_end - self.mm.env_start + 10)
             
-            if argv:
-                # split the \x00 buffer into args
-                env = argv
-        
-        if env != "":
+        if env:
             ents = env.split("\x00")
             for varstr in ents:
                 eqidx = varstr.find("=")
-                idx = varstr.find("\x00")
 
-                if idx == -1 or eqidx == -1 or idx < eqidx:
+                if eqidx == -1:
                     continue
-
-                varstr = varstr[:idx]
 
                 key = varstr[:eqidx]
                 val = varstr[eqidx+1:]
@@ -1392,20 +1387,33 @@ class task_struct(obj.CType):
             envars = obj.Object(theType="Array", targetType="Pointer", vm=proc_as, offset=env_start, count=256)
             for var in envars:
                 if var:
-                    varstr = proc_as.read(var, 1600)
-                    eqidx = varstr.find("=")
-                    idx = varstr.find("\x00")
+                    sizes = [8, 16, 32, 64, 128, 256, 384, 512, 1024, 2048, 4096]
+                    good_varstr = None
 
-                    if idx == -1 or eqidx == -1 or idx < eqidx:
-                        break
+                    for size in sizes:
+                        varstr = proc_as.read(var, size)
+                        if not varstr:
+                            continue
 
-                    varstr = varstr[:idx]
+                        eqidx = varstr.find("=")
+                        idx = varstr.find("\x00")
 
-                    key = varstr[:eqidx]
-                    val = varstr[eqidx+1:]
-
-                    yield (key, val) 
+                        if idx == -1 or eqidx == -1 or idx < eqidx:
+                            continue
                     
+                        good_varstr = varstr
+                        break
+                
+                    if good_varstr:        
+                        good_varstr = good_varstr[:idx]
+
+                        key = good_varstr[:eqidx]
+                        val = good_varstr[eqidx+1:]
+
+                        yield (key, val) 
+                    else:
+                        break
+ 
     def lsof(self):
         fds = self.files.get_fds()
         max_fds = self.files.get_max_fds()
@@ -1456,7 +1464,7 @@ class task_struct(obj.CType):
                         saddr = inet_sock.src_addr
                         daddr = inet_sock.dst_addr
 
-                        yield (socket.AF_INET, (inet_sock.protocol, saddr, sport, daddr, dport, state)) 
+                        yield (socket.AF_INET, (inet_sock, inet_sock.protocol, saddr, sport, daddr, dport, state)) 
 
     def get_process_address_space(self):
         ## If we've got a NoneObject, return it maintain the reason
@@ -1864,6 +1872,7 @@ class dentry(obj.CType):
             ret = self.d_lockref.count
         else:
             ret = self.m("d_count")
+        return ret
 
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""

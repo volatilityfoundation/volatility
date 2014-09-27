@@ -56,7 +56,12 @@ def generate_profile(temp_dir, volatility_dir, profile_dir, profile):
     run_cmd(args)
 
     dwarf_info = os.path.join(temp_dir, "dwarf.txt")
-    args = ["/usr/bin/dwarfdump", "-arch", arch, "-i", "/Volumes/KernelDebugKit/mach_kernel.dSYM"]
+    # handle the change in filenames in 10.10
+    if os.path.isfile("/Volumes/KernelDebugKit/kernel.dSYM"):
+        kernel = "/Volumes/KernelDebugKit/kernel.dSYM"
+    else:
+        kernel = "/Volumes/KernelDebugKit/mach_kernel.dSYM"
+    args = ["/usr/bin/dwarfdump", "-arch", arch, "-i", kernel]
     run_cmd(args, output_file = dwarf_info)
 
     convert_py = os.path.join(volatility_dir, "tools/mac/convert.py")
@@ -69,7 +74,12 @@ def generate_profile(temp_dir, volatility_dir, profile_dir, profile):
     run_cmd(args, output_file = vtypes_file)
 
     symbol_file = dwarf_info + ".symbol.dsymutil"
-    args = ["/usr/bin/dsymutil", "-s", "-arch", arch, "/Volumes/KernelDebugKit/mach_kernel"]
+     handle the change in filenames in 10.10
+    if os.path.isfile("/Volumes/KernelDebugKit/mach_kernel"):
+        kernel = "/Volumes/KernelDebugKit/mach_kernel"
+    else:
+        kernel = "/Volumes/KernelDebugKit/kernel"
+    args = ["/usr/bin/dsymutil", "-s", "-arch", arch, kernel]
     run_cmd(args, output_file = symbol_file)    
 
     profile_name = osx_name + "_" + version
@@ -121,6 +131,9 @@ def main():
             profile_runs.append((full_path, "x86_64", osx_name, version, build))
         elif version.startswith("10.9"):
             osx_name = "Mavericks"
+            profile_runs.append((full_path, "x86_64", osx_name, version, build))
+        elif version.startswith("10.10"):
+            osx_name = "Yosemite"
             profile_runs.append((full_path, "x86_64", osx_name, version, build))
 
     for profile in profile_runs:

@@ -52,7 +52,6 @@ windows_overlay = {
     #hibrfil.sys values
     'HibrProcPage': [0x0, ['VolatilityMagic', dict(value = 0x0)]],
     'HibrEntryCount': [0x0, ['VolatilityMagic', dict(value = 0x0)]],
-    'MaxAddress': [0x0, ['VolatilityMaxAddress']],
     'MM_MAX_COMMIT': [ 0x0, ['VolatilityMagic', dict(value = 0x7ffffffffffff)]],
     'PolicyKey': [0x0, ['VolatilityMagic', dict(value = "PolSecretEncryptionKey")]],
     }],
@@ -931,22 +930,6 @@ class VolatilityKPCR(obj.VolatilityMagic):
         for val in scanner.scan(self.obj_vm):
             yield val
 
-class VolatilityMaxAddress(obj.VolatilityMagic):
-    """The maximum address of a profile's 
-    underlying AS. 
-
-    On x86 this is 0xFFFFFFFF (2 ** 32) - 1
-    On x64 this is 0xFFFFFFFFFFFFFFFF (2 ** 64) - 1 
-
-    We use a VolatilityMagic to calculate this 
-    based on the size of an address, since that's 
-    something we can already rely on being set
-    properly for the AS. 
-    """
-
-    def generate_suggestions(self):
-        yield 2 ** (self.obj_vm.profile.get_obj_size("address") * 8) - 1
-
 class VolatilityKDBG(obj.VolatilityMagic):
     """A Scanner for KDBG data within an address space"""
 
@@ -1195,7 +1178,6 @@ class WindowsObjectClasses(obj.ProfileModification):
             'VolatilityKDBG': VolatilityKDBG,
             'VolatilityIA32ValidAS': VolatilityIA32ValidAS,
             'VolatilityAMD64ValidAS': VolatilityAMD64ValidAS,
-            'VolatilityMaxAddress': VolatilityMaxAddress,
             '_CM_KEY_BODY': _CM_KEY_BODY,
             '_TOKEN': _TOKEN,
             '_POOL_HEADER': _POOL_HEADER,

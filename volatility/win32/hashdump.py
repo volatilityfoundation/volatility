@@ -324,7 +324,10 @@ def dump_hashes(sysaddr, samaddr):
                     lmhash = empty_lm
                 if not nthash:
                     nthash = empty_nt
-                yield "{0}:{1}:{2}:{3}:::".format(get_user_name(user), int(str(user.Name), 16),
+                ## temporary fix to prevent UnicodeDecodeError backtraces 
+                ## however this can cause truncated user names as a result
+                name = get_user_name(user).encode('ascii', 'ignore')
+                yield "{0}:{1}:{2}:{3}:::".format(name, int(str(user.Name), 16),
                                                   lmhash.encode('hex'), nthash.encode('hex'))
     else:
         yield obj.NoneObject("Hbootkey is not valid")

@@ -256,6 +256,22 @@ class UnixTimeStamp(obj.NativeType):
             return format(timefmt.display_datetime(dt), formatspec)
         return "-"
 
+class VolatilityMaxAddress(obj.VolatilityMagic):
+    """The maximum address of a profile's 
+    underlying AS. 
+
+    On x86 this is 0xFFFFFFFF (2 ** 32) - 1
+    On x64 this is 0xFFFFFFFFFFFFFFFF (2 ** 64) - 1 
+
+    We use a VolatilityMagic to calculate this 
+    based on the size of an address, since that's 
+    something we can already rely on being set
+    properly for the AS. 
+    """
+
+    def generate_suggestions(self):
+        yield 2 ** (self.obj_vm.profile.get_obj_size("address") * 8) - 1
+
 class BasicObjectClasses(obj.ProfileModification):
 
     def modification(self, profile):
@@ -266,8 +282,12 @@ class BasicObjectClasses(obj.ProfileModification):
             'VOLATILITY_MAGIC': VOLATILITY_MAGIC,
             'VolatilityDTB': VolatilityDTB,
             'UnixTimeStamp': UnixTimeStamp,
+            'VolatilityMaxAddress': VolatilityMaxAddress,
             })
 
+        profile.merge_overlay({'VOLATILITY_MAGIC': [None, {
+            'MaxAddress': [0x0, ['VolatilityMaxAddress']],
+            }]})
 
 ### DEPRECATED FEATURES ###
 #

@@ -54,9 +54,6 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
             # walk the modules list
             for module in modules.list_of_type("module", "list"):
-                if str(module.name) == "rootkit":
-                    continue
-            
                 yield module
 
     def calculate(self):
