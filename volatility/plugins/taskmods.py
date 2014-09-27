@@ -136,21 +136,19 @@ class PSList(DllList):
                           help = "Display physical offsets instead of virtual",
                           action = "store_true")
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
 
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        self.table_header(outfd,
-                          [("Offset{0}".format(offsettype), "[addrpad]"),
-                           ("Name", "20s"),
-                           ("PID", ">6"),
-                           ("PPID", ">6"),
-                           ("Thds", ">6"),
-                           ("Hnds", ">8"),
-                           ("Sess", ">6"),
-                           ("Wow64", ">6"),
-                           ("Start", "30"),
-                           ("Exit", "30")]
-                          )
+        tg = TreeGrid([("Offset{0}".format(offsettype), Address),
+                        ("Name", str),
+                        ("PID", int),
+                        ("PPID", int),
+                        ("Thds", int),
+                        ("Hnds", int),
+                        ("Sess", int),
+                        ("Wow64", int),
+                        ("Start", str),
+                        ("Exit", str)])
 
         for task in data:
             # PHYSICAL_OFFSET must STRICTLY only be used in the results.  If it's used for anything else,
@@ -159,19 +157,17 @@ class PSList(DllList):
                 offset = task.obj_offset
             else:
                 offset = task.obj_vm.vtop(task.obj_offset)
-            self.table_row(outfd,
-                offset,
-                task.ImageFileName,
-                task.UniqueProcessId,
-                task.InheritedFromUniqueProcessId,
-                task.ActiveThreads,
-                task.ObjectTable.HandleCount,
-                task.SessionId,
-                task.IsWow64,
-                str(task.CreateTime or ''),
-                str(task.ExitTime or ''),
-                )
-
+            tg.append(None, [Address(offset),
+                             str(task.ImageFileName),
+                             int(task.UniqueProcessId),
+                             int(task.InheritedFromUniqueProcessId),
+                             int(task.ActiveThreads),
+                             int(task.ObjectTable.HandleCount),
+                             int(task.SessionId),
+                             int(task.IsWow64),
+                             str(task.CreateTime or ''),
+                             str(task.ExitTime or '')])
+        return tg
 
 # Inherit from files just for the config options (__init__)
 class MemMap(DllList):
