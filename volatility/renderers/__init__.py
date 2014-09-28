@@ -238,24 +238,37 @@ class TreeGrid(object):
             raise ValueError("Invalid node path")
         del children[deletion]
 
-    def visit(self, node, function, initial_accumulator = None):
-        """Visits all the nodes in a tree, calling function on each one"""
+    def visit(self, node, function, initial_accumulator = None, sort_key = None):
+        """Visits all the nodes in a tree, calling function on each one.
+
+           function should have the signature function(node, accumulator) and return new_accumulator
+           If accumulators are not needed, the function must still accept a second parameter.
+
+           The order of that the nodes are visited is always depth first, however, the order children are traversed can
+           be set based on a sort_key function which should accept a node's values and return something that can be
+           sorted to receive the desired order (similar to the sort/sorted key).
+        """
         # Find_nodes is path dependent, whereas _visit is not
         # So in case the function modifies the node's path, find the nodes first
         children = self._find_children(node)
         accumulator = initial_accumulator
+        # We split visit into two, so that we don't have to keep calling find_children to traverse the tree
         if node is not None:
             accumulator = function(node, initial_accumulator)
         if children is not None:
-            accumulator = self._visit(children, function, accumulator)
+            if sort_key is not None:
+                children = sorted(children, key = lambda (x, y): sort_key(x.values))
+            accumulator = self._visit(children, function, accumulator, sort_key)
         return accumulator
 
-    def _visit(self, list_of_children, function, accumulator):
+    def _visit(self, list_of_children, function, accumulator, sort_key = None):
         """Visits all the nodes in a tree, calling function on each one"""
         if list_of_children is not None:
             for n, children in list_of_children:
                 accumulator = function(n, accumulator)
-                accumulator = self._visit(children, function, accumulator)
+                if sort_key is not None:
+                    children = sorted(children, key = lambda (x, y): sort_key(x.values))
+                accumulator = self._visit(children, function, accumulator, sort_key)
         return accumulator
 
 def pretty_print(node, _accumulator):
