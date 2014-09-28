@@ -38,6 +38,7 @@ class Command(object):
     # Make these class variables so they can be modified across every plugin
     elide_data = True
     tablesep = " "
+    text_sort_column = None
 
     def __init__(self, config, *_args, **_kwargs):
         """ Constructor uses args as an initializer. It creates an instance
@@ -244,7 +245,7 @@ class Command(object):
         output = self.unified_output(data)
 
         if isinstance(output, renderers.TreeGrid):
-            tr = TextRenderer(self.text_cell_renderers(output.columns))
+            tr = TextRenderer(self.text_cell_renderers(output.columns), sort_column = self.text_sort_column)
             tr.render(outfd, output)
         else:
             raise TypeError("Unified Output must return a TreeGrid object")

@@ -271,6 +271,19 @@ class TreeGrid(object):
                 accumulator = self._visit(children, function, accumulator, sort_key)
         return accumulator
 
+class ColumnSortKey(object):
+    def __init__(self, treegrid, column_name):
+        self._index = None
+        for i in treegrid.columns:
+            if i.name.lower() == column_name.lower():
+                self._index = i.index
+        if self._index is None:
+            raise ValueError("Column " + column_name + " not found in TreeGrid columns")
+
+    def key(self, values):
+        """The key function passed as the sort key"""
+        return values[self._index]
+
 def pretty_print(node, _accumulator):
     if node is not None:
         print "  " * node.path_depth, node.values, node.path

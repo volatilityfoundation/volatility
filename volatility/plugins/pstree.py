@@ -47,6 +47,8 @@ class ProcessAuditVTypes(obj.ProfileModification):
 class PSTree(common.AbstractWindowsCommand):
     """Print process list as a tree"""
 
+    text_sort_column = "Pid"
+
     def find_root(self, pid_dict, pid):
         # Prevent circular loops.
         seen = set()

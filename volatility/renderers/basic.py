@@ -1,5 +1,6 @@
 import math
 from volatility.fmtspec import FormatSpec
+from volatility.renderers import ColumnSortKey
 
 __author__ = 'mike'
 
@@ -61,7 +62,7 @@ class TextRenderer(object):
 
     min_column_width = 5
 
-    def __init__(self, cell_renderers, max_width = 200):
+    def __init__(self, cell_renderers, max_width = 200, sort_column = None):
 
         if not isinstance(cell_renderers, list):
             raise TypeError("cell_renderers must be of type list")
@@ -70,6 +71,7 @@ class TextRenderer(object):
                 raise TypeError("Items within the cell_renderers list must be of type CellRenderer")
         self._cell_renderers = cell_renderers
         self.max_width = max_width
+        self.sort_column = sort_column
 
     def partition_width(self, widths):
         """Determines if the widths are over the maximum available space, and if so shrinks them"""
@@ -102,8 +104,8 @@ class TextRenderer(object):
         if not isinstance(grid, renderers.TreeGrid):
             raise TypeError("Grid must be of type TreeGrid")
         if len(grid.columns) != len(self._cell_renderers):
-            raise ValueError("The number of cell_renderers (" + len(self._cell_renderers) +
-                             ") must match the number of columns in the grid (" + len(grid.columns) + ").")
+            raise ValueError("The number of cell_renderers (" + str(len(self._cell_renderers)) +
+                             ") must match the number of columns in the grid (" + str(len(grid.columns)) + ").")
 
         # Determine number of columns
         grid_depth = grid.visit(None, lambda x, y: max(y, grid.path_depth(x)), 0)
@@ -166,5 +168,8 @@ class TextRenderer(object):
             return accumulator
 
         output = []
-        grid.visit(None, print_row, output)
+        sort_key = None
+        if self.sort_column:
+            sort_key = ColumnSortKey(grid, self.sort_column).key
+        grid.visit(None, print_row, output, sort_key = sort_key)
         fdout.write("\n".join(output) + "\n")
