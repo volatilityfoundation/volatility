@@ -15,7 +15,7 @@ class TreeNode(object):
         self._parent = parent
         self._path = path
         self._validate_values(values)
-        self._values = values
+        self._values = treegrid.RowTuple(*values)
 
     def __repr__(self):
         return "<TreeNode [" + self._path + "] - " + repr(self._values) + ">"
@@ -94,7 +94,15 @@ class TreeGrid(object):
                 raise TypeError("Column " + name + "'s type " + column_type.__class__.__name__ +
                                 " is not a simple type")
             converted_columns.append(Column(len(converted_columns), name, column_type))
+        self.RowTuple = collections.namedtuple("RowTuple", [self._sanitize(column.name) for column in converted_columns])
         self._columns = converted_columns
+
+    def _sanitize(self, text):
+        output = ""
+        for letter in text.lower():
+            if letter != ' ':
+                output += (letter if letter in 'abcdefghiljklmnopqrstuvwxyz_' else '_')
+        return output
 
     @property
     def columns(self):
