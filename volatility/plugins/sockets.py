@@ -20,9 +20,11 @@
 #
 
 #pylint: disable-msg=C0111
+from volatility import renderers
 
 import volatility.plugins.common as common
 import volatility.debug as debug
+from volatility.renderers.basic import Address
 import volatility.win32 as win32
 import volatility.utils as utils
 import volatility.protos as protos
@@ -40,16 +42,18 @@ class Sockets(common.AbstractWindowsCommand):
         return (profile.metadata.get('os', 'unknown') == 'windows' and
                 profile.metadata.get('major', 0) == 5)
 
-    def render_text(self, outfd, data):
+    text_sort_column = "port"
+
+    def unified_output(self, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        self.table_header(outfd,
-                          [("Offset{0}".format(offsettype), "[addrpad]"),
-                           ("PID", ">8"),
-                           ("Port", ">6"),
-                           ("Proto", ">6"),
-                           ("Protocol", "15"),
-                           ("Address", "15"),
-                           ("Create Time", "")
+        tg = renderers.TreeGrid(
+                          [("Offset{0}".format(offsettype), Address),
+                           ("PID", int),
+                           ("Port", int),
+                           ("Proto", int),
+                           ("Protocol", str),
+                           ("Address", str),
+                           ("Create Time", str)
                            ])
 
         for sock in data:
@@ -58,9 +62,14 @@ class Sockets(common.AbstractWindowsCommand):
             else:
                 offset = sock.obj_vm.vtop(sock.obj_offset)
 
-            self.table_row(outfd, offset, sock.Pid, sock.LocalPort, sock.Protocol,
-                           protos.protos.get(sock.Protocol.v(), "-"),
-                           sock.LocalIpAddress, sock.CreateTime)
+            tg.append(None, [Address(offset),
+                             int(sock.Pid),
+                             int(sock.LocalPort),
+                             int(sock.Protocol),
+                             str(protos.protos.get(sock.Protocol.v(), "-")),
+                             str(sock.LocalIpAddress),
+                             str(sock.CreateTime)])
+        return tg
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
