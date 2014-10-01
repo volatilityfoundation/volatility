@@ -17,7 +17,7 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import sys, textwrap
+import os, sys, textwrap
 import volatility.debug as debug
 import volatility.fmtspec as fmtspec
 import volatility.obj as obj
@@ -25,6 +25,7 @@ import volatility.registry as registry
 import volatility.renderers as renderers
 import volatility.addrspace as addrspace
 from volatility.renderers.basic import TextRenderer, FormatCellRenderer, Address, Address64, Hex
+from volatility.renderers.sqlite import SqliteRenderer
 
 
 class Command(object):
@@ -109,8 +110,10 @@ class Command(object):
         ## Then we render the result in some way based on the
         ## requested output mode:
         function_name = "render_{0}".format(self._config.OUTPUT)
-        if self._config.OUTPUT_FILE:
-            outfd = open(self._config.OUTPUT_FILE, 'w')
+        if os.path.exists(self._config.OUTPUT_FILE):
+            debug.error("File " + self._config.OUTPUT_FILE + " already exists.  Cowardly refusing to overwrite it...")
+        if self._config.OUTPUT_FILE and not os.path.exists(self._config.OUTPUT_FILE):
+            outfd = open(self._config.OUTPUT_FILE, 'wb')
             # TODO: We should probably check that this won't blat over an existing file
         else:
             outfd = sys.stdout
@@ -222,7 +225,7 @@ class Command(object):
             reslist.append(result)
         outfd.write(self.tablesep.join(reslist) + "\n")
 
-    stock_renderers = {Hex: "#x",
+    text_stock_renderers = {Hex: "#x",
                        Address: "#8x",
                        Address64: "#12x",
                        int: "",
@@ -236,7 +239,7 @@ class Command(object):
         for column in columns:
             if not isinstance(column, renderers.Column):
                 raise TypeError("Columns must be a list of Column objects")
-            renderlist[column.index] = FormatCellRenderer(self.stock_renderers[column.type])
+            renderlist[column.index] = FormatCellRenderer(self.text_stock_renderers[column.type])
         return renderlist
 
     def render_text(self, outfd, data):
@@ -247,5 +250,16 @@ class Command(object):
         if isinstance(output, renderers.TreeGrid):
             tr = TextRenderer(self.text_cell_renderers(output.columns), sort_column = self.text_sort_column)
             tr.render(outfd, output)
+        else:
+            raise TypeError("Unified Output must return a TreeGrid object")
+
+    def render_sqlite(self, outfd, data):
+        if not hasattr(self, "unified_output"):
+            raise NotImplementedError("Render text using the unified output format has not been implemented for this plugin.")
+        output = self.unified_output(data)
+
+        if isinstance(output, renderers.TreeGrid):
+            sr = SqliteRenderer(self.__class__.__name__, self._config)
+            sr.render(outfd, output)
         else:
             raise TypeError("Unified Output must return a TreeGrid object")
