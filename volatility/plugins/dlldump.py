@@ -23,7 +23,9 @@
 
 import os
 import re
+from volatility import renderers
 import volatility.plugins.procdump as procdump
+from volatility.renderers.basic import Address
 import volatility.win32.tasks as tasks
 import volatility.debug as debug
 import volatility.utils as utils
@@ -51,6 +53,11 @@ class DLLDump(procdump.ProcDump):
     @cache.CacheDecorator(lambda self: "tests/dlldump/regex={0}/ignore_case={1}/offset={2}/base={3}".format(self._config.REGEX, self._config.IGNORE_CASE, self._config.OFFSET, self._config.BASE))
     def calculate(self):
         addr_space = utils.load_as(self._config)
+
+        if self._config.DUMP_DIR == None:
+            debug.error("Please specify a dump directory (--dump-dir)")
+        if not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
 
         if self._config.OFFSET != None:
             data = [self.virtual_process_from_physical_offset(addr_space, self._config.OFFSET)]
@@ -86,18 +93,14 @@ class DLLDump(procdump.ProcDump):
                             continue
                     yield proc, ps_ad, mod.DllBase.v(), mod.BaseDllName
 
-    def render_text(self, outfd, data):
-        if self._config.DUMP_DIR == None:
-            debug.error("Please specify a dump directory (--dump-dir)")
-        if not os.path.isdir(self._config.DUMP_DIR):
-            debug.error(self._config.DUMP_DIR + " is not a directory")
+    def unified_output(self, data):
 
-        self.table_header(outfd,
-                          [("Process(V)", "[addrpad]"),
-                           ("Name", "20"),
-                           ("Module Base", "[addrpad]"),
-                           ("Module Name", "20"),
-                           ("Result", "")])
+        tg = renderers.TreeGrid(
+                          [("Process(V)", Address),
+                           ("Name", str),
+                           ("Module Base", Address),
+                           ("Module Name", str),
+                           ("Result", str)])
 
         for proc, ps_ad, mod_base, mod_name in data:
             if not ps_ad.is_valid_address(mod_base):
@@ -106,7 +109,10 @@ class DLLDump(procdump.ProcDump):
                 process_offset = ps_ad.vtop(proc.obj_offset)
                 dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod_base)
                 result = self.dump_pe(ps_ad, mod_base, dump_file)
-            self.table_row(outfd,
-                    proc.obj_offset,
-                    proc.ImageFileName,
-                    mod_base, str(mod_name or ''), result)
+            tg.append(None,
+                    [Address(proc.obj_offset),
+                    str(proc.ImageFileName),
+                    Address(mod_base),
+                    str(mod_name or ''),
+                    str(result)])
+        return tg

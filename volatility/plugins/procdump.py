@@ -23,10 +23,14 @@
 
 import os
 import struct
+from volatility import renderers
+from volatility.commands import Command
 import volatility.plugins.taskmods as taskmods
 import volatility.debug as debug
 import volatility.obj as obj
 import volatility.exceptions as exceptions
+from volatility.renderers.basic import Address
+
 
 class ProcDump(taskmods.DllList):
     """Dump a process to an executable file sample"""
@@ -38,7 +42,7 @@ class ProcDump(taskmods.DllList):
 
         config.add_option("UNSAFE", short_option = "u", default = False, action = 'store_true',
                           help = 'Bypasses certain sanity checks when creating image')
-        config.add_option("MEMORY", short_option = "m", default = False, action = 'store_true', 
+        config.add_option("MEMORY", short_option = "m", default = False, action = 'store_true',
                           help = "Carve as a memory sample rather than exe/disk")
         config.add_option('FIX', short_option = 'x', default = False,
                           help = 'Modify the image base of the dump to the in-memory base address',
@@ -46,13 +50,13 @@ class ProcDump(taskmods.DllList):
 
     def dump_pe(self, space, base, dump_file):
         """
-        Dump a PE from an AS into a file. 
-        
+        Dump a PE from an AS into a file.
+
         @param space: an AS to use
         @param base: PE base address
         @param dump_file: dumped file name
 
-        @returns a string status message 
+        @returns a string status message
         """
 
         of = open(os.path.join(self._config.DUMP_DIR, dump_file), 'wb')
@@ -60,8 +64,8 @@ class ProcDump(taskmods.DllList):
         pe_file = obj.Object("_IMAGE_DOS_HEADER", offset = base, vm = space)
 
         try:
-            for offset, code in pe_file.get_image(unsafe = self._config.UNSAFE, 
-                                                  memory = self._config.MEMORY, 
+            for offset, code in pe_file.get_image(unsafe = self._config.UNSAFE,
+                                                  memory = self._config.MEMORY,
                                                   fix = self._config.FIX):
                 of.seek(offset)
                 of.write(code)
@@ -75,25 +79,28 @@ class ProcDump(taskmods.DllList):
 
         return result
 
-    def render_text(self, outfd, data):
-        """Renders the tasks to disk images, outputting progress as they go"""
+    def calculate(self):
         if self._config.DUMP_DIR == None:
             debug.error("Please specify a dump directory (--dump-dir)")
         if not os.path.isdir(self._config.DUMP_DIR):
             debug.error(self._config.DUMP_DIR + " is not a directory")
 
-        self.table_header(outfd,
-                          [("Process(V)", "[addrpad]"),
-                           ("ImageBase", "[addrpad]"),
-                           ("Name", "20"),
-                           ("Result", "")])
+        return taskmods.DllList.calculate(self)
+
+    def unified_output(self, data):
+        """Renders the tasks to disk images, outputting progress as they go"""
+        tg = renderers.TreeGrid(
+                          [("Process(V)", Address),
+                           ("ImageBase", Address),
+                           ("Name", str),
+                           ("Result", str)])
 
         for task in data:
             task_space = task.get_process_address_space()
             if task_space == None:
                 result = "Error: Cannot acquire process AS"
             elif task.Peb == None:
-                # we must use m() here, because any other attempt to 
+                # we must use m() here, because any other attempt to
                 # reference task.Peb will try to instantiate the _PEB
                 result = "Error: PEB at {0:#x} is unavailable (possibly due to paging)".format(task.m('Peb'))
             elif task_space.vtop(task.Peb.ImageBaseAddress) == None:
@@ -103,8 +110,9 @@ class ProcDump(taskmods.DllList):
                 result = self.dump_pe(task_space,
                                 task.Peb.ImageBaseAddress,
                                 dump_file)
-            self.table_row(outfd,
-                            task.obj_offset,
-                            task.Peb.ImageBaseAddress,
-                            task.ImageFileName,
-                            result)
+            tg.append(None,
+                            [Address(task.obj_offset),
+                            Address(task.Peb.ImageBaseAddress),
+                            str(task.ImageFileName),
+                            str(result)])
+        return tg
