@@ -21,6 +21,8 @@
 #
 
 import volatility.plugins.taskmods as taskmods
+from volatility import renderers
+from volatility.renderers.basic import Address, Hex
 
 # Inherit from Dlllist for command line options
 class Handles(taskmods.DllList):
@@ -36,16 +38,15 @@ class Handles(taskmods.DllList):
         config.add_option("SILENT", short_option = 's', default = False,
                           action = 'store_true', help = 'Suppress less meaningful results')
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-
-        self.table_header(outfd,
-                          [("Offset{0}".format(offsettype), "[addrpad]"),
-                           ("Pid", ">6"),
-                           ("Handle", "[addr]"),
-                           ("Access", "[addr]"),
-                           ("Type", "26"),
-                           ("Details", "")
+        tg = renderers.TreeGrid(
+                          [("Offset{0}".format(offsettype), Address),
+                           ("Pid", int),
+                           ("Handle", Hex),
+                           ("Access", Hex),
+                           ("Type", str),
+                           ("Details", str),
                            ])
 
         if self._config.OBJECT_TYPE:
@@ -63,8 +64,14 @@ class Handles(taskmods.DllList):
                 offset = handle.Body.obj_offset
             else:
                 offset = handle.obj_vm.vtop(handle.Body.obj_offset)
-
-            self.table_row(outfd, offset, pid, handle.HandleValue, handle.GrantedAccess, object_type, name)
+        
+            tg.append(None, [Address(offset),
+                             int(pid),
+                             Hex(handle.HandleValue),
+                             Hex(handle.GrantedAccess),
+                             str(object_type),
+                             str(name)])
+        return tg
 
     def calculate(self):
 
