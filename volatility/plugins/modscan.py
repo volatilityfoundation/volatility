@@ -30,20 +30,23 @@ This module implements the fast module scanning
 #pylint: disable-msg=C0111
 
 import common
+from volatility import renderers
 import volatility.plugins.filescan as filescan
 import volatility.obj as obj
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.poolscan as poolscan
+from volatility.renderers.basic import Address, Hex
+
 
 class PoolScanModule(poolscan.PoolScanner):
     """Pool scanner for kernel modules"""
 
     def __init__(self, address_space):
         poolscan.PoolScanner.__init__(self, address_space)
-        
+
         self.struct_name = "_LDR_DATA_TABLE_ENTRY"
         self.pooltag = "MmLd"
-        self.checks = [ 
+        self.checks = [
                ('CheckPoolSize', dict(condition = lambda x: x >= 0x4C)),
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
                ('CheckPoolIndex', dict(value = 0)),
@@ -54,7 +57,7 @@ class ModScan(common.AbstractScanCommand):
 
     scanners = [PoolScanModule]
 
-    # Declare meta information associated with this plugin    
+    # Declare meta information associated with this plugin
     meta_info = dict(
         author = 'Brendan Dolan-Gavitt',
         copyright = 'Copyright (c) 2007,2008 Brendan Dolan-Gavitt',
@@ -65,21 +68,22 @@ class ModScan(common.AbstractScanCommand):
         version = '1.0',
         )
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd,
-                          [(self.offset_column(), "#018x"),
-                           ('Name', "20"),
-                           ('Base', "[addrpad]"),
-                           ('Size', "[addr]"),
-                           ('File', "")
+    def unified_output(self, data):
+        tg = renderers.TreeGrid(
+                          [(self.offset_column(), Address),
+                           ('Name', str),
+                           ('Base', Address),
+                           ('Size', Hex),
+                           ('File', str)
                            ])
         for ldr_entry in data:
-            self.table_row(outfd,
-                         ldr_entry.obj_offset,
+            tg.append(None,
+                         [Address(ldr_entry.obj_offset),
                          str(ldr_entry.BaseDllName or ''),
-                         ldr_entry.DllBase,
-                         ldr_entry.SizeOfImage,
-                         str(ldr_entry.FullDllName or ''))
+                         Address(ldr_entry.DllBase),
+                         Hex(ldr_entry.SizeOfImage),
+                         str(ldr_entry.FullDllName or '')])
+        return tg
 
 class PoolScanThread(poolscan.PoolScanner):
     """Pool scanner for thread objects"""
@@ -89,12 +93,12 @@ class PoolScanThread(poolscan.PoolScanner):
 
         self.struct_name = "_ETHREAD"
         self.object_type = "Thread"
-        # this allows us to find terminated threads 
+        # this allows us to find terminated threads
         self.skip_type_check = True
         self.pooltag = obj.VolMagic(address_space).ThreadPoolTag.v()
         size = 0x278 # self.address_space.profile.get_obj_size("_ETHREAD")
 
-        self.checks = [ 
+        self.checks = [
                ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
                ('CheckPoolIndex', dict(value = 0)),
