@@ -109,21 +109,22 @@ class ThrdScan(common.AbstractScanCommand):
 
     scanners = [PoolScanThread]
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd,
-                          [(self.offset_column(), "#018x"),
-                           ("PID", ">6"),
-                           ("TID", ">6"),
-                           ("Start Address", "[addr]"),
-                           ("Create Time", "30"),
-                           ("Exit Time", "30"),
+    def unified_output(self, data):
+        tg = renderers.TreeGrid(
+                          [(self.offset_column(), Address),
+                           ("PID", int),
+                           ("TID", int),
+                           ("Start Address", Address),
+                           ("Create Time", str),
+                           ("Exit Time", str),
                            ])
 
         for thread in data:
-            self.table_row(outfd, thread.obj_offset,
-                           thread.Cid.UniqueProcess,
-                           thread.Cid.UniqueThread,
-                           thread.StartAddress,
-                           thread.CreateTime or '',
-                           thread.ExitTime or '',
+            tg.append(None, [Address(thread.obj_offset),
+                           int(thread.Cid.UniqueProcess),
+                           int(thread.Cid.UniqueThread),
+                           Address(thread.StartAddress),
+                           str(thread.CreateTime or ''),
+                           str(thread.ExitTime or '')]
                            )
+        return tg
