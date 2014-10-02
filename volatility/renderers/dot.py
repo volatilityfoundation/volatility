@@ -1,3 +1,5 @@
+from volatility import debug
+
 __author__ = 'mike'
 
 class DotRenderer(object):
@@ -16,13 +18,16 @@ class DotRenderer(object):
     def _add_node(self, node, data):
         outfd, accumulator = data
         accumulator[node] = max(accumulator.values()) + 1
-        outfd.write("  Node" + str(accumulator[node]) + " [label=\"" + self.description(node) + "\"];\n")
+        outfd.write("  Node" + str(accumulator[node]) + " [label=\"{" + self.description(node) + "}\"];\n")
         if accumulator[node.parent] != 0:
             outfd.write("  Node" + str(accumulator[node.parent]) + " -> Node" + str(accumulator[node]) + ";\n")
         return (outfd, accumulator)
 
     def render(self, outfd, grid):
         """Renders the TreeGrid in data out to the output file from the config options"""
-        outfd.write("digraph output {\n  node[shape = Mrecord];\n  rankdir=LR;")
+        max_depth = grid.visit(None, lambda n, a: max(a, grid.path_depth(n)), )
+        if max_depth <= 1:
+            debug.warning("Dot output will be unhelpful since the TreeGrid is a flat list")
+        outfd.write("digraph output {\n  node[shape = Mrecord];\n  # rankdir=LR;\n")
         grid.visit(None, self._add_node, (outfd, {None: 0}))
         outfd.write("}\n")
