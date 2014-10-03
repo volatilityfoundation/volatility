@@ -23,8 +23,10 @@
 
 import os
 import re
+from volatility import renderers
 import volatility.plugins.procdump as procdump
 import volatility.cache as cache
+from volatility.renderers.basic import Address
 import volatility.win32.modules as modules
 import volatility.win32.tasks as tasks
 import volatility.utils as utils
@@ -49,6 +51,11 @@ class ModDump(procdump.ProcDump):
 
     @cache.CacheDecorator(lambda self: "tests/moddump/regex={0}/ignore-case={1}/base={2}".format(self._config.REGEX, self._config.IGNORE_CASE, self._config.BASE))
     def calculate(self):
+        if self._config.DUMP_DIR == None:
+            debug.error("Please specify a dump directory (--dump-dir)")
+        if not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
+
         addr_space = utils.load_as(self._config)
 
         if self._config.REGEX:
@@ -62,7 +69,7 @@ class ModDump(procdump.ProcDump):
 
         mods = dict((mod.DllBase.v(), mod) for mod in modules.lsmod(addr_space))
         # We need the process list to find spaces for some drivers. Enumerate them here
-        # instead of inside the find_space function, so we only have to do it once. 
+        # instead of inside the find_space function, so we only have to do it once.
         procs = list(tasks.pslist(addr_space))
 
         if self._config.BASE:
@@ -78,15 +85,11 @@ class ModDump(procdump.ProcDump):
                         continue
                 yield addr_space, procs, mod.DllBase.v(), mod.BaseDllName
 
-    def render_text(self, outfd, data):
-        if self._config.DUMP_DIR == None:
-            debug.error("Please specify a dump directory (--dump-dir)")
-        if not os.path.isdir(self._config.DUMP_DIR):
-            debug.error(self._config.DUMP_DIR + " is not a directory")
+    def unified_output(self, data):
 
-        self.table_header(outfd, [("Module Base", "[addrpad]"),
-                           ("Module Name", "20"),
-                           ("Result", "")])
+        tg = renderers.TreeGrid([("Module Base", Address),
+                                 ("Module Name", str),
+                                 ("Result", str)])
 
         for addr_space, procs, mod_base, mod_name in data:
             space = tasks.find_space(addr_space, procs, mod_base)
@@ -95,4 +98,7 @@ class ModDump(procdump.ProcDump):
             else:
                 dump_file = "driver.{0:x}.sys".format(mod_base)
                 result = self.dump_pe(space, mod_base, dump_file)
-            self.table_row(outfd, mod_base, mod_name, result)
+            tg.append(None, [Address(mod_base),
+                             str(mod_name),
+                             str(result)])
+        return tg
