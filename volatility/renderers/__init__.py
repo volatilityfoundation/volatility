@@ -70,7 +70,7 @@ class TreeNode(object):
 class TreeGrid(object):
     """Class providing the interface for a TreeGrid (which contains TreeNodes)"""
 
-    simple_types = {int, str, float, bytes}
+    simple_types = {int, long, str, float, bytes}
     path_sep = "|"
 
     def __init__(self, columns):
