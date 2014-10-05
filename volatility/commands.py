@@ -229,7 +229,7 @@ class Command(object):
 
     text_stock_renderers = {Hex: "#x",
                             Address: "#8x",
-                            Address64: "#12x",
+                            Address64: "#16x",
                             int: "",
                             str: "<",
                             float: ".2",
@@ -239,10 +239,20 @@ class Command(object):
     def text_cell_renderers(self, columns):
         """Returns default renderers for the columns listed"""
         renderlist = [FormatCellRenderer("")] * len(columns)
+
+        # FIXME: Really, this should be handled by the plugin knowning what type of AS each object comes from
+        # However, as a nasty workaround, we can force all x64 profiles to produce addresses that are 64-bit in length
+        # It does not deal with PAE address spaces, or WoW64 addresses, or anything else weird or wonderful
+        # This will NOT be in volatility 3.0
+        x64 = False
+        if self._config.PROFILE.endswith("x64"):
+            x64 = True
+
         for column in columns:
             if not isinstance(column, renderers.Column):
                 raise TypeError("Columns must be a list of Column objects")
-            renderlist[column.index] = FormatCellRenderer(self.text_stock_renderers[column.type])
+            columntype = column.type if not x64 or column.type != Address else Address64
+            renderlist[column.index] = FormatCellRenderer(self.text_stock_renderers[columntype])
         return renderlist
 
     def render_text(self, outfd, data):
