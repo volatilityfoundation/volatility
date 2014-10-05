@@ -1,12 +1,14 @@
 from volatility import debug
+from volatility.renderers.basic import Renderer
 
 __author__ = 'mike'
 
-class DotRenderer(object):
-    def __init__(self, columns, renderers, config):
+class DotRenderer(Renderer):
+    def __init__(self, renderers_func, config):
         self._config = config
-        self._columns = columns
-        self._text_cell_renderers = renderers
+        self._columns = None
+        self._text_cell_renderers_func = renderers_func
+        self._text_cell_renderers = None
 
     def description(self, node):
         output = []
@@ -25,8 +27,10 @@ class DotRenderer(object):
 
     def render(self, outfd, grid):
         """Renders the TreeGrid in data out to the output file from the config options"""
-        max_depth = grid.visit(None, lambda n, a: max(a, grid.path_depth(n)), )
-        if max_depth <= 1:
+        self._columns = grid.columns
+        self._text_cell_renderers = self._text_cell_renderers_func(self._columns)
+
+        if grid.max_depth() <= 1:
             debug.warning("Dot output will be unhelpful since the TreeGrid is a flat list")
         outfd.write("digraph output {\n  node[shape = Mrecord];\n  # rankdir=LR;\n")
         grid.visit(None, self._add_node, (outfd, {None: 0}))

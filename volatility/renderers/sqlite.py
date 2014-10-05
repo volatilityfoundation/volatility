@@ -1,8 +1,9 @@
-__author__ = 'mike'
-
+from volatility.renderers.basic import Renderer
 import sqlite3
 
-class SqliteRenderer(object):
+__author__ = 'mike'
+
+class SqliteRenderer(Renderer):
 
     def __init__(self, plugin_name, config):
         self._plugin_name = plugin_name

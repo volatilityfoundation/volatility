@@ -17,7 +17,9 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import os, sys, textwrap
+import os
+import sys
+import textwrap
 import volatility.debug as debug
 import volatility.fmtspec as fmtspec
 import volatility.obj as obj
@@ -255,36 +257,23 @@ class Command(object):
             renderlist[column.index] = FormatCellRenderer(self.text_stock_renderers[columntype])
         return renderlist
 
-    def render_text(self, outfd, data):
-        if not hasattr(self, "unified_output"):
-            raise NotImplementedError("Render text using the unified output format has not been implemented for this plugin.")
+    def unified_output(self, data):
+        raise NotImplementedError("Rendering using the unified output format has not been implemented for this plugin.")
+
+    def _render(self, outfd, renderer, data):
         output = self.unified_output(data)
 
         if isinstance(output, renderers.TreeGrid):
-            tr = TextRenderer(self.text_cell_renderers(output.columns), sort_column = self.text_sort_column)
-            tr.render(outfd, output)
+            renderer.render(outfd, output)
         else:
             raise TypeError("Unified Output must return a TreeGrid object")
+
+    def render_text(self, outfd, data):
+        self._render(outfd, TextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
 
     def render_sqlite(self, outfd, data):
-        if not hasattr(self, "unified_output"):
-            raise NotImplementedError("Render text using the unified output format has not been implemented for this plugin.")
-        output = self.unified_output(data)
-
-        if isinstance(output, renderers.TreeGrid):
-            sr = SqliteRenderer(self.__class__.__name__, self._config)
-            sr.render(outfd, output)
-        else:
-            raise TypeError("Unified Output must return a TreeGrid object")
+        self._render(outfd, SqliteRenderer(self.__class__.__name__, self._config), data)
 
     def render_dot(self, outfd, data):
-        if not hasattr(self, "unified_output"):
-            raise NotImplementedError(
-                "Render text using the unified output format has not been implemented for this plugin.")
-        output = self.unified_output(data)
+        self._render(outfd, DotRenderer(self.text_cell_renderers, self._config), data)
 
-        if isinstance(output, renderers.TreeGrid):
-            dr = DotRenderer(output.columns, self.text_cell_renderers(output.columns), self._config)
-            dr.render(outfd, output)
-        else:
-            raise TypeError("Unified Output must return a TreeGrid object")

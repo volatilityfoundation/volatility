@@ -2,7 +2,7 @@ import math
 from volatility import renderers
 from volatility.fmtspec import FormatSpec
 from volatility.renderers import ColumnSortKey
-from volatility.renderers.basic import Address, Address64, Hex
+from volatility.renderers.basic import Address, Address64, Hex, Renderer
 
 __author__ = 'mike'
 
@@ -42,17 +42,12 @@ class FormatCellRenderer(CellRenderer):
         return "<FormatCellRenderer (" + repr(self._format_spec) + ")>"
 
 
-class TextRenderer(object):
+class TextRenderer(Renderer):
     min_column_width = 5
 
-    def __init__(self, cell_renderers, max_width = 200, sort_column = None):
-
-        if not isinstance(cell_renderers, list):
-            raise TypeError("cell_renderers must be of type list")
-        for item in cell_renderers:
-            if not isinstance(item, CellRenderer):
-                raise TypeError("Items within the cell_renderers list must be of type CellRenderer")
-        self._cell_renderers = cell_renderers
+    def __init__(self, cell_renderers_func, max_width = 200, sort_column = None):
+        self._cell_renderers_func = cell_renderers_func
+        self._cell_renderers = None
         self.max_width = max_width
         self.sort_column = sort_column
 
@@ -82,13 +77,17 @@ class TextRenderer(object):
             return string[:length + even] + "..." + string[-length:]
 
 
-    def render(self, fdout, grid):
+    def render(self, outfd, grid):
         """Renders a text grid based on the contents of each element"""
         if not isinstance(grid, renderers.TreeGrid):
             raise TypeError("Grid must be of type TreeGrid")
-        if len(grid.columns) != len(self._cell_renderers):
-            raise ValueError("The number of cell_renderers (" + str(len(self._cell_renderers)) +
-                             ") must match the number of columns in the grid (" + str(len(grid.columns)) + ").")
+
+        self._cell_renderers = self._cell_renderers_func(grid.columns)
+        if not isinstance(self._cell_renderers, list):
+            raise TypeError("cell_renderers must be of type list")
+        for item in self._cell_renderers:
+            if not isinstance(item, CellRenderer):
+                raise TypeError("Items within the cell_renderers list must be of type CellRenderer")
 
         # Determine number of columns
         grid_depth = grid.visit(None, lambda x, y: max(y, grid.path_depth(x)), 0)
