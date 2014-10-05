@@ -222,6 +222,10 @@ class TreeGrid(object):
         """Returns the path depth of a particular node"""
         return node.path_depth
 
+    def max_depth(self):
+        """Returns the maximum depth of the tree"""
+        return self.visit(None, lambda n, a: max(a, self.path_depth(n)), )
+
     def path_is_valid(self, node):
         """Returns True is a given path is valid for this treegrid"""
         return node in [ n for n, _ in self._find_children(node.parent)]
