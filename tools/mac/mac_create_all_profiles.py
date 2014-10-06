@@ -74,7 +74,7 @@ def generate_profile(temp_dir, volatility_dir, profile_dir, profile):
     run_cmd(args, output_file = vtypes_file)
 
     symbol_file = dwarf_info + ".symbol.dsymutil"
-     handle the change in filenames in 10.10
+    # handle the change in filenames in 10.10
     if os.path.isfile("/Volumes/KernelDebugKit/mach_kernel"):
         kernel = "/Volumes/KernelDebugKit/mach_kernel"
     else:
