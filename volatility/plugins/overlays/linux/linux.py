@@ -963,7 +963,7 @@ class vm_area_struct(obj.CType):
             fname = "[heap]"
         elif self.vm_start <= task.mm.start_stack and self.vm_end >= task.mm.start_stack:
             fname = "[stack]"
-        elif self.vm_start == self.vm_mm.context.vdso:
+        elif hasattr(self.vm_mm.context, "vdso") and self.vm_start == self.vm_mm.context.vdso:
             fname = "[vdso]"
         else:
             fname = "Anonymous Mapping"
