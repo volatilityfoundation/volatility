@@ -50,6 +50,13 @@ x64_native_types['unsigned long'] = [8, '<Q']
 
 from operator import attrgetter
 
+# Not entirely happy with this, but an overlay needs it
+# The plugin (linux_apihooks) that uses the overlay checks for the distorm install
+try:
+    import distorm3
+except ImportError:
+    pass
+
 class LinuxPermissionFlags(basic.Flags):
     """A Flags object for printing vm_area_struct permissions
     in a format like rwx or r-x"""
@@ -1274,6 +1281,105 @@ class task_struct(obj.CType):
                     hooked = True
 
                 yield soname, elf, elf_start, elf_end, addr, symbol_name, hookdesc, hooked
+    
+    def _is_api_hooked(self, sym_addr, proc_as):
+        hook_type = None 
+        addr = None    
+        counter   = 1 
+        prev_op = None
+
+        if self.obj_vm.profile.metadata.get('memory_model', '32bit') == '32bit':
+            mode = distorm3.Decode32Bits
+        else:
+            mode = distorm3.Decode64Bits
+
+        data = proc_as.read(sym_addr, 24)
+    
+        for op in distorm3.Decompose(sym_addr, data, mode):
+            if not op or not op.valid:
+                continue
+
+            if op.mnemonic == "JMP":
+                hook_type = "JMP"
+                addr = 0 # default in case we cannot extract               
+
+                # check for a mov reg, addr; jmp reg;
+                if prev_op and prev_op.mnemonic == "MOV" and prev_op.operands[0].type == 'Register' and op.operands[0].type == 'Register':
+                    prev_name = prev_op.operands[0].name
+                    
+                    # same register
+                    if prev_name == op.operands[0].name:
+                        addr = prev_op.operands[1].value                        
+
+                else:
+                    addr = op.operands[0].value
+
+            elif op.mnemonic == "CALL":
+                hook_type = "CALL"
+                addr = op.operands[0].value
+
+            # push xxxx; ret;
+            elif counter == 2 and op.mnemonic == "RET":
+                if prev_op.mnemonic == "MOV" and prev_op.operands[0].type == 'Register' and  prev_op.operands[0].name in ["RAX", "EAX"]:
+                    break
+
+                elif prev_op.mnemonic == "XOR" and prev_op.operands[0].type == 'Register' and prev_op.operands[1].type == 'Register':
+                    break
+
+                elif prev_op.mnemonic == "MOV" and prev_op.operands[0].type == 'Register' and  prev_op.operands[1].type == 'Register':
+                    break
+                
+                hook_type = "RET"
+                addr = sym_addr
+
+            if hook_type:
+                break
+
+            counter = counter + 1
+            if counter == 4:
+                break
+
+            prev_op = op
+
+        if hook_type and addr:
+            ret = hook_type, addr
+        else:
+            ret = None
+
+        return ret
+
+    def _get_hooked_name(self, addr):
+        hook_vma = None        
+        hookdesc = "<Unknown mapping>"
+
+        for i in self.get_proc_maps():
+            if addr >= i.vm_start and addr < i.vm_end:
+                hook_vma = i
+                break          
+          
+        if hook_vma:
+            if hook_vma.vm_file:
+                hookdesc = linux_common.get_path(self, hook_vma.vm_file)
+            else:
+                hookdesc = '[{0:x}:{1:x},{2}]'.format(hook_vma.vm_start, hook_vma.vm_end, hook_vma.vm_flags)
+        
+        return (hook_vma, hookdesc)
+
+    def apihook_info(self):
+        for soname, elf, elf_start, elf_end, addr, symbol_name, _, plt_hooked in self.plt_hook_info():
+               
+            is_hooked = self._is_api_hooked(addr, elf.obj_vm)
+
+            if is_hooked:
+                hook_type, hook_addr = is_hooked
+            else:
+                continue
+
+            (hook_vma, hookdesc) = self._get_hooked_name(addr)
+            (hook_func_vma, hookfuncdesc) = self._get_hooked_name(hook_addr)
+
+            if not hook_vma or not hook_func_vma or hook_vma.vm_start != hook_func_vma.vm_start:
+                yield hookdesc, symbol_name, addr, hook_type, hook_addr, hookfuncdesc
 
     def bash_history_entries(self):
         proc_as = self.get_process_address_space()
