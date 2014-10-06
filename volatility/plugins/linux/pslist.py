@@ -37,11 +37,11 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
                           help = 'Operate on these Process IDs (comma-separated)',
                           action = 'store', type = 'str')
 
-    def virtual_process_from_physical_offset(self, offset):
-        pspace = utils.load_as(self._config, astype = 'physical')
-        vspace = utils.load_as(self._config)
+    @staticmethod
+    def virtual_process_from_physical_offset(addr_space, offset):
+        pspace = utils.load_as(addr_space.get_config(), astype = 'physical')
         task = obj.Object("task_struct", vm = pspace, offset = offset)
-        parent = obj.Object("task_struct", vm = vspace, offset = task.parent)
+        parent = obj.Object("task_struct", vm = addr_space, offset = task.parent)
         
         for child in parent.children.list_of_type("task_struct", "sibling"):
             if child.obj_vm.vtop(child.obj_offset) == task.obj_offset:

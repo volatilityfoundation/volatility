@@ -50,7 +50,7 @@ class linux_volshell(volshell.volshell):
 
     def set_context(self, offset = None, pid = None, name = None, physical = False):
         if physical and offset != None:
-            offset = pslist.linux_pslist(self._config).virtual_process_from_physical_offset(offset).obj_offset  
+            offset = pslist.linux_pslist.virtual_process_from_physical_offset(self._addrspace, offset).obj_offset  
         elif pid is not None:
             offsets = []
             for p in self.getpidlist():
