@@ -1420,6 +1420,10 @@ class task_struct(obj.CType):
 
         fds = obj.Object(theType = 'Array', offset = fds.obj_offset, vm = self.obj_vm, targetType = 'Pointer', count = max_fds)
 
+        # mem corruption check
+        if max_fds > 500000:
+            return 
+
         for i in range(max_fds):
             if fds[i]:
                 filp = obj.Object('file', offset = fds[i], vm = self.obj_vm)
