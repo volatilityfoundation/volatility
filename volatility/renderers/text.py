@@ -131,7 +131,7 @@ class TextRenderer(Renderer):
                 column = grid.columns[index]
             cols += [
                 self._elide(("{:<" + str(grid_max_widths[index]) + "}").format(column.name), grid_max_widths[index])]
-        fdout.write(" ".join(cols) + "\n")
+        outfd.write(" ".join(cols) + "\n")
 
         def print_row(node, accumulator = None):
             row = []
@@ -156,4 +156,4 @@ class TextRenderer(Renderer):
         if self.sort_column:
             sort_key = ColumnSortKey(grid, self.sort_column).key
         grid.visit(None, print_row, output, sort_key = sort_key)
-        fdout.write("\n".join(output) + "\n")
+        outfd.write("\n".join(output) + "\n")
