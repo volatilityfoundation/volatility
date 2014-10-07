@@ -80,6 +80,9 @@ class TreeGrid(object):
     For this reason each TreeNode does not hold its children, they are managed by the top level object.
     This leaves the Nodes as simple data carries and prevents them being used to manipulate the tree as a whole.
     This is a data structure, and is not expected to be modified much once created.
+
+    There is no easy way to maintain a simple parent link from the child, if children are carried out in the structure
+    of the parent itself.
     """
 
     simple_types = {int, long, str, float, bytes}
