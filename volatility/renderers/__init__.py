@@ -6,7 +6,7 @@ import collections
 
 Column = collections.namedtuple('Column', ['index', 'name', 'type'])
 
-class TreeNode(object):
+class TreeNode(collections.Sequence):
     """Class representing a particular node in a tree grid"""
     def __init__(self, path, treegrid, parent, values):
         if not isinstance(treegrid, TreeGrid):
@@ -19,6 +19,12 @@ class TreeNode(object):
 
     def __repr__(self):
         return "<TreeNode [" + self._path + "] - " + repr(self._values) + ">"
+
+    def __getitem__(self, item):
+        return self._treegrid.children(self).__getitem__(item)
+
+    def __len__(self):
+        return len(self._treegrid.children(self))
 
     def _validate_values(self, values):
         """A function for raising exceptions if a given set of values is invalid according to the column properties."""
@@ -68,7 +74,13 @@ class TreeNode(object):
         self._path = TreeGrid.path_sep.join(components)
 
 class TreeGrid(object):
-    """Class providing the interface for a TreeGrid (which contains TreeNodes)"""
+    """Class providing the interface for a TreeGrid (which contains TreeNodes)
+
+    The structure of a TreeGrid is designed to maintain the structure of the tree in the single object.
+    For this reason each TreeNode does not hold its children, they are managed by the top level object.
+    This leaves the Nodes as simple data carries and prevents them being used to manipulate the tree as a whole.
+    This is a data structure, and is not expected to be modified much once created.
+    """
 
     simple_types = {int, long, str, float, bytes}
     path_sep = "|"
@@ -109,6 +121,10 @@ class TreeGrid(object):
         """Returns the available columns and their ordering and types"""
         return self._columns
 
+    def children(self, node):
+        """Returns the subnodes of a particular node in order"""
+        return [node for node, _ in self._find_children(node)]
+
     def _find_children(self, node):
         """Returns the children list associated with a particular node
 
@@ -120,7 +136,7 @@ class TreeGrid(object):
                 for path_component in node.path.split(self.path_sep):
                     _, children = children[int(path_component)]
         except IndexError:
-            return None
+            return []
         return children
 
     def values(self, node):
@@ -128,21 +144,13 @@ class TreeGrid(object):
 
            The values returned are mutable,
         """
-        children = self._children
         if node is None:
             raise ValueError("Node must be a valid node within the TreeGrid")
-        try:
-            for path_component in node.path.split(self.path_sep):
-                node, children = children[int(path_component)]
-        except IndexError:
-            return None
         return node.values
 
     def append(self, parent, values):
         """Adds a new node at the top level if parent is None, or under the parent node otherwise, after all other children."""
-        children = self._find_children(parent)
-        if children is None:
-            children = []
+        children = self.children(parent)
         return self.insert(parent, len(children), values)
 
     def clear(self):
@@ -155,8 +163,6 @@ class TreeGrid(object):
         children = self._find_children(parent)
         if parent is not None:
             parent_path = parent.path + self.path_sep
-        if children is None:
-            raise IndexError("Invalid parent node")
         newpath = parent_path + str(position)
         tree_item = TreeNode(newpath, self, parent, values)
         for node, _ in children[position:]:
@@ -178,18 +184,15 @@ class TreeGrid(object):
                 if sibling.parent is not parent:
                     raise ValueError("Sibling's parent is not parent")
 
-        children = self._children
+        children = [node for node, _ in self._children]
         if parent is not None:
-            children = self._find_children(parent)
-            if children is None:
-                raise ValueError("Invalid parent node")
+            children = self.children(parent)
 
         if sibling is None:
             i = 0 if before else len(children)
 
         for i in range(len(children)):
-            testnode, _ = children[i]
-            if testnode == sibling:
+            if children[i] == sibling:
                 if not before:
                     i = i+1
                 break
@@ -228,24 +231,23 @@ class TreeGrid(object):
 
     def path_is_valid(self, node):
         """Returns True is a given path is valid for this treegrid"""
-        return node in [ n for n, _ in self._find_children(node.parent)]
+        return node in self.children(node.parent)
 
     def prepend(self, parent, values):
         """Inserts a new node (with values) before any other children of parent"""
         return self.insert(parent, 0, values)
 
     def remove(self, node):
-        children = self._find_children(node.parent)
-        if children is None or len(children) < 1:
+        children = self.children(node.parent)
+        if len(children) < 1:
             raise ValueError("Invalid node or node parent")
         deletion = None
         i = 0
         for i in range(len(children)):
-            potential_node, _ = children[i]
-            if potential_node == node:
+            if children[i] == node:
                 deletion = i
             if deletion is not None:
-                self.visit(potential_node, lambda grandchild, _: grandchild.path_changed(node.path, False))
+                self.visit(children[i], lambda grandchild, _: grandchild.path_changed(node.path, False))
         if deletion is None:
             raise ValueError("Invalid node path")
         del children[deletion]
@@ -259,6 +261,9 @@ class TreeGrid(object):
            The order of that the nodes are visited is always depth first, however, the order children are traversed can
            be set based on a sort_key function which should accept a node's values and return something that can be
            sorted to receive the desired order (similar to the sort/sorted key).
+
+           We use the private _find_children function so that we don't have to re-traverse the tree
+           for every node we descend further down
         """
         # Find_nodes is path dependent, whereas _visit is not
         # So in case the function modifies the node's path, find the nodes first
@@ -306,6 +311,7 @@ def build_example_treegrid():
     three = tg.append(row, [200, 300])
     two = tg.append(None, [110, 210])
     tg.append(two, [210, 310])
+    print repr(tg._children), two[0]
     four = tg.insert_before(None, two, [105, 205])
     tg.insert_after(None, four, [106, 206])
     tg.prepend(three, [300, 400])
