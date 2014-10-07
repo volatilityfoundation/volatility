@@ -32,6 +32,7 @@ import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsmod as linux_lsmod
 import volatility.plugins.linux.hidden_modules as linux_hidden_modules
+import volatility.plugins.linux.find_file as linux_find_file
 
 try:
     import distorm3
@@ -45,7 +46,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
     def __init__(self, config, *args, **kwargs):
         linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
-        self._config.add_option('syscall-indexes', short_option = 'i', default = None, help = 'Path to unistd_{32,64}.h from the target machine', action = 'store', type = 'str')
+        self._config.add_option('syscall-indexes', short_option = 'I', default = None, help = 'Path to unistd_{32,64}.h from the target machine', action = 'store', type = 'str')
 
     def _get_table_size(self, table_addr, table_name):
         """
@@ -173,24 +174,24 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
         return ret
 
-    def calculate(self):
-        """ 
-        This works by walking the system call table 
-        and verifies that each is a symbol in the kernel
-        """
+    def get_syscalls(self, index_lines = None, get_hidden = False):
         linux_common.set_plugin_members(self)
 
-        if not has_distorm:
-            debug.warning("distorm not installed. The best method to calculate the system call table size will not be used.")
-                        
-        if self._config.SYSCALL_INDEXES:
-            if not os.path.exists(self._config.SYSCALL_INDEXES):
-                debug.error("Given syscall indexes file does not exist!")
+        if get_hidden:
+            hidden_mods = list(linux_hidden_modules.linux_hidden_modules(self._config).calculate())
+        else:
+            hidden_mods = []    
+    
+        visible_mods = linux_lsmod.linux_lsmod(self._config).calculate()
 
+        if not index_lines:
+            index_lines = self._find_and_parse_index_file()
+
+        if index_lines:
             index_names = {}
-
-            for line in open(self._config.SYSCALL_INDEXES, "r").readlines():
+            for line in index_lines.split("\n"): 
                 ents = line.split()
+
                 if len(ents) == 3 and ents[0] == "#define":
                     name  = ents[1].replace("__NR_", "")
 
@@ -200,13 +201,10 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                         index = self._find_index(index_names, index)
                     else:
                         index = int(index)
-                    
+        
                     index_names[index] = name
         else:
             index_names = None
-
-        hidden_mods = list(linux_hidden_modules.linux_hidden_modules(self._config).calculate())
-        visible_mods = linux_lsmod.linux_lsmod(self._config).calculate()
 
         table_name = self.addr_space.profile.metadata.get('memory_model', '32bit')
         sym_addrs = self.profile.get_all_addresses()
@@ -240,9 +238,59 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                 else:
                     hooked = 0 
                     sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
-                
+
                 yield (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked)
-    
+ 
+    def _find_and_parse_index_file(self):
+        memory_model = self.addr_space.profile.metadata.get('memory_model', '32bit')
+
+        if memory_model == '32bit':
+            header_path = "unistd_32.h"
+        else:
+            header_path = "unistd_64.h"
+
+        find_file = linux_find_file.linux_find_file(self._config)
+
+        inodes = []
+        for (_, _, file_path, file_dentry) in find_file.walk_sbs():
+            ents = file_path.split("/") 
+            if len(ents) > 1 and ents[-1] == header_path:
+                inode = file_dentry.d_inode
+                inodes.append(inode)
+
+        ret = None
+        for inode in inodes:
+            buf = ""
+            for page in find_file.get_file_contents(inode):
+                buf = buf + page
+            
+            if len(buf) > 4096:
+                ret = buf
+                break
+
+        return ret
+
+    def calculate(self):
+        """ 
+        This works by walking the system call table 
+        and verifies that each is a symbol in the kernel
+        """
+        linux_common.set_plugin_members(self)
+
+        if not has_distorm:
+            debug.warning("distorm not installed. The best method to calculate the system call table size will not be used.")
+                        
+        if self._config.SYSCALL_INDEXES:
+            if not os.path.exists(self._config.SYSCALL_INDEXES):
+                debug.error("Given syscall indexes file does not exist!")
+
+            index_lines = open(self._config.SYSCALL_INDEXES, "r").read()
+        else:
+            index_lines = None
+
+        for (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked) in self.get_syscalls(index_lines, True): 
+            yield (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked)
+ 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Table Name", "6"), ("Index", "5"), ("System Call", "24"), ("Handler Address", "[addrpad]"), ("Symbol", "<60")])
         for (tableaddr, table_name, i, idx_name, call_addr, sym_name, _) in data:
