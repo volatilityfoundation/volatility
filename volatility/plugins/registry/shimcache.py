@@ -26,10 +26,11 @@
 """
 
 import volatility.plugins.registry.registryapi as registryapi
+from volatility.renderers import TreeGrid
 import volatility.debug as debug
 import volatility.utils as utils
 import volatility.obj as obj
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.addrspace as addrspace
 
 # Structures taken from the ShimCache Whitepaper: https://blog.mandiant.com/archives/2459
@@ -211,8 +212,11 @@ class ShimCacheTypesWin7x64(obj.ProfileModification):
         profile.vtypes.update(appcompat_type_win7_x64)
 
 
-class ShimCache(commands.Command):
+class ShimCache(common.AbstractWindowsCommand):
     """Parses the Application Compatibility Shim Cache registry key"""
+    def __init__(self, config, *args, **kwargs):
+        self._addrspace = None
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
 
     @staticmethod
     def is_valid_profile(profile):
@@ -222,22 +226,22 @@ class ShimCache(commands.Command):
         return ''.join([str(c) for c in item if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
 
     def calculate(self):
-        addr_space = utils.load_as(self._config)
+        self._addrspace = utils.load_as(self._config)
         regapi = registryapi.RegistryApi(self._config)
         regapi.reset_current()
         currentcs = regapi.reg_get_currentcontrolset()
         if currentcs == None:
             currentcs = "ControlSet001"
 
-        version = (addr_space.profile.metadata.get('major', 0),
-                   addr_space.profile.metadata.get('minor', 0))
+        version = (self._addrspace.profile.metadata.get('major', 0),
+                   self._addrspace.profile.metadata.get('minor', 0))
         xp = False
 
         if version <= (5, 1):
-            key = currentcs + '\\' + "Control\\Session Manager\\AppCompatibility"
+            key = currentcs + "\\Control\\Session Manager\\AppCompatibility"
             xp = True
         else:
-            key = currentcs + '\\' + "Control\\Session Manager\\AppCompatCache"
+            key = currentcs + "\\Control\\Session Manager\\AppCompatCache"
 
         data_raw = regapi.reg_get_value('system', key, "AppCompatCache")
         if data_raw == None or len(data_raw) < 0x1c:
@@ -256,21 +260,26 @@ class ShimCache(commands.Command):
             else:
                 yield self.remove_unprintable(bufferas.read(int(e.PathOffset), int(e.Length))), e.LastModified, None
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        # blank header in case there is no shimcache data
+        tg = TreeGrid([("Last Modified", str),
+                      ("Path", str),
+                      ])
         first = True
         for path, lm, lu in data:
             if lu:
                 if first:
-                    self.table_header(outfd, [("Last Modified", "30"),
-                                              ("Last Update", "30"),
-                                              ("Path", ""),
-                                             ])
+                    tg = TreeGrid([("Last Modified", str),
+                        ("Last Update", str),
+                        ("Path", str),
+                        ])   
                     first = False
-                outfd.write("{0:30} {1:30} {2}\n".format(lm, lu, path))
+                tg.append(None, [str(lm), str(lu), str(path).strip()])
             else:
                 if first:
-                    self.table_header(outfd, [("Last Modified", "30"),
-                                              ("Path", ""),
-                                             ])
+                    tg = TreeGrid([("Last Modified", str),
+                        ("Path", str),
+                        ])
                     first = False
-                outfd.write("{0:30} {1}\n".format(lm, path))
+                tg.append(None, [str(lm), str(path)])
+        return tg
