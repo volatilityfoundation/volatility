@@ -27,6 +27,7 @@
 #pylint: disable-msg=C0111
 
 import volatility.plugins.registry.registryapi as registryapi
+from volatility.renderers import TreeGrid
 import volatility.plugins.common as common
 import volatility.addrspace as addrspace
 import volatility.obj as obj
@@ -221,27 +222,26 @@ class UserAssist(common.AbstractWindowsCommand):
 
         return output
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
         keyfound = False
+        tg = TreeGrid([("Registry", str),
+                      ("Path", str),
+                      ("LastWrite", str),
+                      ("Subkey", str),
+                      ("Value", str),
+                      ("Data", str),
+                      ])
         for win7, reg, key in data:
             if key:
                 keyfound = True
-                outfd.write("----------------------------\n")
-                outfd.write("Registry: {0}\n".format(reg))
-                outfd.write("Path: {0}\n".format(self.regapi.reg_get_key_path(key)))
-                outfd.write("Last updated: {0}\n".format(key.LastWriteTime))
-                outfd.write("\n")
-                outfd.write("Subkeys:\n")
                 for s in self.regapi.reg_get_all_subkeys(None, None, given_root = key):
                     if s.Name == None:
-                        outfd.write("  Unknown subkey: " + s.Name.reason + "\n")
+                        item = "Unknown subkey: " + s.Name.reason
                     else:
-                        outfd.write("  {0}\n".format(s.Name))
-                outfd.write("\n")
-                outfd.write("Values:\n")
+                        item = s.Name
+                    tg.append(None, [str(reg), str(self.regapi.reg_get_key_path(key)), str(key.LastWriteTime), str(item), "", ""])
                 for subname, dat in self.regapi.reg_yield_values(None, None, given_root = key, thetype = "REG_BINARY"):
                     dat_raw = dat
-                    dat = "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(dat)])
                     try:
                         subname = subname.encode('rot_13')
                     except UnicodeDecodeError:
@@ -250,11 +250,8 @@ class UserAssist(common.AbstractWindowsCommand):
                         guid = subname.split("\\")[0]
                         if guid in folder_guids:
                             subname = subname.replace(guid, folder_guids[guid])
-                    d = self.parse_data(dat_raw)
-                    if d != None:
-                        dat = "{0}Raw Data:\n{1}".format(d, dat)
-                    else:
-                        dat = "Raw Data:\n{0}".format(dat)
-                    outfd.write("\n{0:13} {1:15} : {2}\n".format("REG_BINARY", subname, dat))
-        if not keyfound:
-            outfd.write("The requested key could not be found in the hive(s) searched\n")
+                    dat = self.parse_data(dat_raw)
+                    tg.append(None, [str(reg), str(self.regapi.reg_get_key_path(key)), str(key.LastWriteTime), "", str(subname), str(dat)])
+        return tg
+        #if not keyfound:
+        #    outfd.write("The requested key could not be found in the hive(s) searched\n")
