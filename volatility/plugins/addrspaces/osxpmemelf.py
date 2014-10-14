@@ -66,4 +66,6 @@ class OSXPmemELF(addrspace.AbstractRunBasedMemory):
                               int(phdr.p_offset),
                               int(phdr.p_memsz)))
 
+        self.as_assert(len(self.runs) > 0, "No PT_LOAD segments found")
+
 
