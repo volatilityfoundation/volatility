@@ -66,11 +66,12 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
                 self.table_header(outfd,
                                   [("Base", "[addrpad]"),
                                    ("Size", "[addr]"),
+                                   ("Entry", "[addrpad]"),
                                    ("LoadCount", "[addr]"), 
                                    ("Path", ""),
                                    ])
                 for m in task.get_load_modules():
-                    self.table_row(outfd, m.DllBase, m.SizeOfImage, m.LoadCount, str(m.FullDllName or ''))
+                    self.table_row(outfd, m.DllBase, m.SizeOfImage, m.EntryPoint, m.LoadCount, str(m.FullDllName or ''))
             else:
                 outfd.write("Unable to read PEB for task.\n")
 
