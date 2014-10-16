@@ -33,26 +33,28 @@ class linux_mount(linux_common.AbstractLinuxCommand):
     """Gather mounted fs/devices"""
 
     def _parse_mnt(self, mnt, ns, fs_types):
+        ret = None
+
         if not mnt.mnt_root.is_valid():
-            return
+            return ret
 
         dev_name = mnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
        
         if not dev_name.is_valid():
-            return
+            return ret
 
         fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
 
         if not fstype.is_valid():
-            return 
+            return ret
 
         if str(fstype) not in fs_types:
-            return 
+            return ret
 
         path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
 
         if path == []:
-            return
+            return ret
 
         mnt_string = self._calc_mnt_string(mnt)
 
@@ -61,7 +63,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         else:
             rr = "rw"
         
-        yield mnt.mnt_sb, dev_name, path, fstype, rr, mnt_string
+        return mnt.mnt_sb, str(dev_name), path, fstype, rr, mnt_string
 
     def calculate(self):
         linux_common.set_plugin_members(self)
@@ -107,10 +109,19 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         seen = {}
         for (idx, mnt) in enumerate(all_mnts):
             if mnt.mnt_sb.v() not in seen:
-                for (mnt_sb, dev_name, path, fstype, rr, mnt_string) in self._parse_mnt(mnt, ns, fs_types):
-                    yield (mnt_sb, dev_name, path, fstype, rr, mnt_string)
-            
-            seen[mnt.mnt_sb.v()] = 1
+                ret = self._parse_mnt(mnt, ns, fs_types)
+                        
+                mark = False
+                
+                if ret:
+                    (mnt_sb, dev_name, path, fstype, rr, mnt_string) = ret
+
+                    if not (dev_name == "devtmpfs" and path == "/"):
+                        yield (mnt_sb, dev_name, path, fstype, rr, mnt_string)
+                        mark = True
+
+                if mark:
+                    seen[mnt.mnt_sb.v()] = 1
 
     def _calc_mnt_string(self, mnt):
         ret = ""
