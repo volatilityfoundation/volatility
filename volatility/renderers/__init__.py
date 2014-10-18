@@ -53,7 +53,7 @@ class TreeNode(collections.Sequence):
 
     @property
     def parent(self):
-        """Returns the parent node of this node"""
+        """Returns the parent node of this node or None"""
         return self._parent
 
     @property

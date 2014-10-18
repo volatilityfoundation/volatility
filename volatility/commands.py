@@ -243,7 +243,7 @@ class Command(object):
         """Returns default renderers for the columns listed"""
         renderlist = [FormatCellRenderer("")] * len(columns)
 
-        # FIXME: Really, this should be handled by the plugin knowning what type of AS each object comes from
+        # FIXME: Really, this should be handled by the plugin knowing what type of AS each object comes from
         # However, as a nasty workaround, we can force all x64 profiles to produce addresses that are 64-bit in length
         # It does not deal with PAE address spaces, or WoW64 addresses, or anything else weird or wonderful
         # This will NOT be in volatility 3.0
