@@ -232,13 +232,17 @@ class MFT_FILE_RECORD(obj.CType):
                         if adsname != None and adsname.strip() != "" and dataseen:
                             attr += " ADS Name: {0}".format(adsname.strip())
                 dataseen = True
-                if next_attr.ContentSize == 0:
-                    next_off = next_attr.obj_offset + self.obj_vm.profile.get_obj_size("RESIDENT_ATTRIBUTE")
-                    next_attr = self.advance_one(next_off, mft_buff, end)
-                    attributes.append((attr, ""))
+                try:
+                    if next_attr.ContentSize == 0:
+                        next_off = next_attr.obj_offset + self.obj_vm.profile.get_obj_size("RESIDENT_ATTRIBUTE")
+                        next_attr = self.advance_one(next_off, mft_buff, end)
+                        attributes.append((attr, ""))
+                        continue
+                    start = next_attr.obj_offset + next_attr.ContentOffset
+                    theend = min(start + next_attr.ContentSize, end)
+                except struct.error:
+                    next_attr = None
                     continue
-                start = next_attr.obj_offset + next_attr.ContentOffset
-                theend = min(start + next_attr.ContentSize, end)
                 if next_attr.Header.NonResidentFlag == 1:
                     thedata = "" 
                 else:

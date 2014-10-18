@@ -30,26 +30,28 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.plthook as linux_plthook
 import volatility.plugins.linux.pslist as linux_pslist
 
-try:
-    import distorm3
-except ImportError:
-    debug.error("This plugin requres the distorm library to operate.")
-    
+   
 class linux_apihooks(linux_pslist.linux_pslist):
     """Checks for userland apihooks"""
 
     def render_text(self, outfd, data):
         linux_common.set_plugin_members(self)
+
+        try:
+            import distorm3
+        except ImportError:
+            debug.error("this plugin requres the distorm library to operate.")
+         
         self.table_header(outfd, [
-                                  ("Pid", "7"),
-                                  ("Name", "16"),
-                                  ("Hook VMA", "40"),
-                                  ("Hook Symbol", "24"),
-                                  ("Hooked Address", "[addrpad]"),
-                                  ("Type", "5"),
-                                  ("Hook Address", "[addrpad]"),                    
-                                  ("Hook Library", ""),
-                                  ]) 
+              ("Pid", "7"),
+              ("Name", "16"),
+              ("Hook VMA", "40"),
+              ("Hook Symbol", "24"),
+              ("Hooked Address", "[addrpad]"),
+              ("Type", "5"),
+              ("Hook Address", "[addrpad]"),                    
+              ("Hook Library", ""),
+              ]) 
 
         for task in data:
             for hook_desc, sym_name, addr, hook_type, hook_addr, hookfuncdesc in task.apihook_info():
