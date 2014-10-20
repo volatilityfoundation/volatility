@@ -46,6 +46,13 @@ class TextRenderer(Renderer):
     min_column_width = 5
 
     def __init__(self, cell_renderers_func, max_width = 200, sort_column = None):
+        """Accepts a cell_renderer function, an optional maximum width and optional sort column.
+
+        The signature of the cell_renderers_function is:
+
+          def cell_renderers(self, TreeGridcolumns):
+            return [cell_renderer, cell_renderer, ...]
+        """
         self._cell_renderers_func = cell_renderers_func
         self._cell_renderers = None
         self.max_width = max_width
