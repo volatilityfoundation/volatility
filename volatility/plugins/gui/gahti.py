@@ -67,7 +67,7 @@ class Gahti(sessions.Sessions):
         output = self.unified_output(data)
 
         if isinstance(output, renderers.TreeGrid):
-            tr = TextRenderer(self.text_cell_renderers(output.columns), sort_column = self.text_sort_column)
+            tr = TextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column)
             tr.render(outfd, output)
         else:
             raise TypeError("Unified Output must return a TreeGrid object")
