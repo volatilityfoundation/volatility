@@ -284,6 +284,59 @@ class _OBJECT_HEADER_81R2(_OBJECT_HEADER):
                 46: 'DxgkSharedResource',
             }
 
+class _OBJECT_HEADER_10TP(_OBJECT_HEADER):
+
+    type_map = {
+                2: 'Type',
+                3: 'Directory',
+                4: 'SymbolicLink',
+                5: 'Token',
+                6: 'Job',
+                7: 'Process',
+                8: 'Thread',
+                9: 'UserApcReserve',
+                10: 'IoCompletionReserve',
+                11: 'DebugObject',
+                12: 'Event',
+                13: 'Mutant',
+                14: 'Callback',
+                15: 'Semaphore',
+                16: 'Timer',
+                17: 'IRTimer',
+                18: 'Profile',
+                19: 'KeyedEvent',
+                20: 'WindowStation',
+                21: 'Desktop',
+                22: 'Composition',
+                23: 'RawInputManager',
+                24: 'TpWorkerFactory',
+                25: 'Adapter',
+                26: 'Controller',
+                27: 'Device',
+                28: 'Driver',
+                29: 'IoCompletion',
+                30: 'WaitCompletionPacket',
+                31: 'File',
+                32: 'TmTm',
+                33: 'TmTx',
+                34: 'TmRm',
+                35: 'TmEn',
+                36: 'Section',
+                37: 'Session',
+                38: 'Key',
+                39: 'ALPC Port',
+                40: 'PowerRequest',
+                41: 'WmiGuid',
+                42: 'EtwRegistration',
+                43: 'EtwConsumer',
+                44: 'PcwObject',
+                45: 'FilterConnectionPort',
+                46: 'FilterCommunicationPort',
+                47: 'DxgkSharedResource',
+                48: 'DxgkSharedSyncObject',
+                49: 'DxgkSharedSwapChainObject',
+            }
+
 class Win8KDBG(windows.AbstractKDBGMod):
     """The Windows 8 / 2012 KDBG signatures"""
 
@@ -385,7 +438,7 @@ class Win8ObjectClasses(obj.ProfileModification):
             handletable = _HANDLE_TABLE32
             pspcidtable = _PSP_CID_TABLE32
         else:
-            if (major, minor) == (6, 3):
+            if (major, minor) >= (6, 3):
                 handletable = _HANDLE_TABLE_81R264
                 pspcidtable = _PSP_CID_TABLE_81R264
             else:
@@ -394,6 +447,8 @@ class Win8ObjectClasses(obj.ProfileModification):
 
         if (major, minor) == (6, 3):
             objheader = _OBJECT_HEADER_81R2
+        elif (major, minor) == (6, 4):
+            objheader = _OBJECT_HEADER_10TP
         else:
             objheader = _OBJECT_HEADER
 

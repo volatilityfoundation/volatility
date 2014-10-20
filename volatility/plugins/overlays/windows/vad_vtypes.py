@@ -140,7 +140,7 @@ class VadTagModification(obj.ProfileModification):
                 '_MM_AVL_NODE': [ None, {
                     'Tag': [offset , ['String', dict(length = 4)]],
                 }]})
-        elif version == (6, 3):
+        elif version >= (6, 3):
             overlay.update({
                 '_RTL_BALANCED_NODE': [ None, {
                     'Tag': [offset , ['String', dict(length = 4)]],
@@ -515,7 +515,7 @@ class Win81Vad(obj.ProfileModification):
     before = ["WindowsOverlay"]
     conditions = {"os": lambda x: x == "windows", 
                   "major": lambda x: x == 6, 
-                  "minor": lambda x: x == 3}
+                  "minor": lambda x: x >= 3}
 
     def modification(self, profile):
         profile.object_classes.update({
