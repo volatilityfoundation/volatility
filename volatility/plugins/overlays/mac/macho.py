@@ -89,6 +89,29 @@ macho_types = {
     'nlocrel'        : [76, ['unsigned int']],
 }],
 
+ 'macho32_dysymtab_command': [ 80, {
+    'cmd'        : [0, ['unsigned int']],
+    'cmdsize'    : [4, ['unsigned int']],
+    'ilocalsym'  : [8, ['unsigned int']],
+    'nlocalsym'  : [12, ['unsigned int']],
+    'iextdefsym' : [16, ['unsigned int']],
+    'nextdefsym' : [20, ['unsigned int']],
+    'iundefsym'  : [24, ['unsigned int']],
+    'nundefsym'  : [28, ['unsigned int']],
+    'tocoff'     : [32, ['unsigned int']],
+    'ntoc'       : [36, ['unsigned int']],
+    'modtaboff'  : [40, ['unsigned int']],
+    'nmodtab'        : [44, ['unsigned int']],
+    'extrefsymoff'   : [48, ['unsigned int']],
+    'nextrefsyms'    : [52, ['unsigned int']],
+    'indirectsymoff' : [56, ['unsigned int']],
+    'nindirectsyms'  : [60, ['unsigned int']],
+    'extreloff'      : [64, ['unsigned int']],
+    'nextrel'        : [68, ['unsigned int']],
+    'locreloff'      : [72, ['unsigned int']],
+    'nlocrel'        : [76, ['unsigned int']],
+}],
+
 
 'macho32_load_command': [ 0x8, {
     'cmd': [0x0, ['unsigned int']],
