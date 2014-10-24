@@ -1063,6 +1063,19 @@ class task_struct(obj.CType):
 
         return ret
 
+    def getcwd(self):
+        rdentry = self.fs.get_root_dentry()
+        rmnt    = self.fs.get_root_mnt()
+        pdentry = self.fs.get_pwd_dentry()
+        pmnt    = self.fs.get_pwd_mnt()
+          
+        path = linux_common.do_get_path(rdentry, rmnt, pdentry, pmnt) 
+
+        if path == []:
+            path = ""
+
+        return path
+
     @property
     def uid(self):
         ret = self.members.get("uid")
@@ -1924,6 +1937,24 @@ class linux_fs_struct(obj.CType):
             ret = self.rootmnt
         else:
             ret = self.root.mnt
+
+        return ret
+
+    def get_pwd_dentry(self):
+        # < 2.6.26
+        if hasattr(self, "pwdmnt"):
+            ret = self.pwd
+        else:
+            ret = self.pwd.dentry
+
+        return ret
+
+    def get_pwd_mnt(self):
+        # < 2.6.26
+        if hasattr(self, "pwdmnt"):
+            ret = self.pwdmnt
+        else:
+            ret = self.pwd.mnt
 
         return ret
 
