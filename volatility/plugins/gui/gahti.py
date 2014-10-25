@@ -31,6 +31,15 @@ class Gahti(sessions.Sessions):
 
     def unified_output(self, data):
 
+        return renderers.TreeGrid(
+            [("Session", str),
+             ("Type", str),
+             ("Tag", str),
+             ("fnDestroy", Address),
+             ("Flags", str),
+            ], self.generator(data))
+
+    def generator(self, data):
         profile = utils.load_as(self._config).profile
 
         # Get the OS version being analyzed
@@ -43,25 +52,16 @@ class Gahti(sessions.Sessions):
         else:
             handle_types = consts.HANDLE_TYPE_ENUM
 
-        tg = renderers.TreeGrid(
-                         [("Session", str),
-                          ("Type", str),
-                          ("Tag", str),
-                          ("fnDestroy", Address),
-                          ("Flags", str),
-                         ])
-
         for session in data:
             gahti = session.find_gahti()
             if gahti:
                 for i, h in handle_types.items():
-                    tg.append(None,
+                    yield (0,
                                     [str(session.SessionId),
                                      str(h),
                                      str(gahti.types[i].dwAllocTag),
                                      Address(gahti.types[i].fnDestroy),
                                      str(gahti.types[i].bObjectCreateFlags)])
-        return tg
 
     def render_text(self, outfd, data):
         output = self.unified_output(data)

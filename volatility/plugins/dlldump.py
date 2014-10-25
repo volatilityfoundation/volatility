@@ -93,15 +93,7 @@ class DLLDump(procdump.ProcDump):
                             continue
                     yield proc, ps_ad, mod.DllBase.v(), mod.BaseDllName
 
-    def unified_output(self, data):
-
-        tg = renderers.TreeGrid(
-                          [("Process(V)", Address),
-                           ("Name", str),
-                           ("Module Base", Address),
-                           ("Module Name", str),
-                           ("Result", str)])
-
+    def generator(self, data):
         for proc, ps_ad, mod_base, mod_name in data:
             if not ps_ad.is_valid_address(mod_base):
                 result = "Error: DllBase is unavailable (possibly due to paging)"
@@ -109,10 +101,18 @@ class DLLDump(procdump.ProcDump):
                 process_offset = ps_ad.vtop(proc.obj_offset)
                 dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod_base)
                 result = self.dump_pe(ps_ad, mod_base, dump_file)
-            tg.append(None,
-                    [Address(proc.obj_offset),
+            yield (0,
+                   [Address(proc.obj_offset),
                     str(proc.ImageFileName),
                     Address(mod_base),
                     str(mod_name or ''),
                     str(result)])
-        return tg
+
+    def unified_output(self, data):
+
+        return renderers.TreeGrid(
+                          [("Process(V)", Address),
+                           ("Name", str),
+                           ("Module Base", Address),
+                           ("Module Name", str),
+                           ("Result", str)], self.generator(data))

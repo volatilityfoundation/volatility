@@ -73,15 +73,16 @@ class AtomScan(common.AbstractScanCommand):
 
     def unified_output(self, data):
 
-        tg = renderers.TreeGrid(
+        return renderers.TreeGrid(
                          [(self.offset_column(), Address),
                           ("AtomOfs(V)", Address),
                           ("Atom", Hex),
                           ("Refs", int),
                           ("Pinned", int),
                           ("Name", str),
-                         ])
+                         ], self.generator(data))
 
+    def generator(self, data):
         for atom_table in data:
 
             # This defeats the purpose of having a generator, but
@@ -98,7 +99,7 @@ class AtomScan(common.AbstractScanCommand):
 
             for atom in sorted(atoms, key = lambda x: getattr(x, attr)):
 
-                tg.append(None,
+                yield (0,
                     [Address(atom_table.obj_offset),
                     Address(atom.obj_offset),
                     Hex(atom.Atom),
@@ -106,7 +107,6 @@ class AtomScan(common.AbstractScanCommand):
                     int(atom.Pinned),
                     str(atom.Name or "")]
                     )
-        return tg
 
 class Atoms(common.AbstractWindowsCommand):
     """Print session and window station atom tables"""
@@ -139,7 +139,7 @@ class Atoms(common.AbstractWindowsCommand):
 
     def unified_output(self, data):
 
-        tg = renderers.TreeGrid(
+        return renderers.TreeGrid(
                          [("Offset(V)", Address),
                           ("Session", int),
                           ("WindowStation", str),
@@ -148,8 +148,9 @@ class Atoms(common.AbstractWindowsCommand):
                           ("HIndex", int),
                           ("Pinned", int),
                           ("Name", str),
-                         ])
+                         ], self.generator(data))
 
+    def generator(self, data):
         for atom_table, window_station in data:
             for atom in atom_table.atoms():
 
@@ -157,7 +158,7 @@ class Atoms(common.AbstractWindowsCommand):
                 if not atom.is_string_atom():
                     continue
 
-                tg.append(None,
+                yield (0,
                     [Address(atom_table.PhysicalAddress),
                     int(window_station.dwSessionId),
                     str(window_station.Name or ''),
@@ -167,4 +168,3 @@ class Atoms(common.AbstractWindowsCommand):
                     int(atom.Pinned),
                     str(atom.Name or "")]
                     )
-        return tg

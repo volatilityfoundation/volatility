@@ -85,12 +85,7 @@ class ModDump(procdump.ProcDump):
                         continue
                 yield addr_space, procs, mod.DllBase.v(), mod.BaseDllName
 
-    def unified_output(self, data):
-
-        tg = renderers.TreeGrid([("Module Base", Address),
-                                 ("Module Name", str),
-                                 ("Result", str)])
-
+    def generator(self, data):
         for addr_space, procs, mod_base, mod_name in data:
             space = tasks.find_space(addr_space, procs, mod_base)
             if space == None:
@@ -98,7 +93,14 @@ class ModDump(procdump.ProcDump):
             else:
                 dump_file = "driver.{0:x}.sys".format(mod_base)
                 result = self.dump_pe(space, mod_base, dump_file)
-            tg.append(None, [Address(mod_base),
-                             str(mod_name),
-                             str(result)])
+            yield (0, [Address(mod_base),
+                          str(mod_name),
+                          str(result)])
+
+    def unified_output(self, data):
+
+        tg = renderers.TreeGrid([("Module Base", Address),
+                                 ("Module Name", str),
+                                 ("Result", str)],
+                                self.generator(data))
         return tg

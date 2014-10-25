@@ -29,15 +29,16 @@ class VBoxInfo(crashinfo.CrashInfo):
     target_as = ['VirtualBoxCoreDumpElf64']
 
     def unified_output(self, data):
-        tg = renderers.TreeGrid([("FileOffset", Address),
+        return renderers.TreeGrid([("FileOffset", Address),
                                  ("Memory Offset", Address),
-                                 ("Size", Hex)])
+                                 ("Size", Hex)],
+                                  self.generator(data))
 
+    def generator(self, data):
         for memory_offset, file_offset, length in data.get_runs():
-            tg.append(None, [Address(file_offset),
+            yield (0, [Address(file_offset),
                                   Address(memory_offset),
                                   Address(length)])
-        return tg
 
     def render_text(self, outfd, data):
 
