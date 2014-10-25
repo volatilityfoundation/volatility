@@ -84,11 +84,9 @@ class TextRenderer(Renderer):
             return string[:length + even] + "..." + string[-length:]
 
 
-    def render(self, outfd, grid):
-        """Renders a text grid based on the contents of each element"""
+    def _validate_grid(self, grid):
         if not isinstance(grid, renderers.TreeGrid):
             raise TypeError("Grid must be of type TreeGrid")
-
         self._cell_renderers = self._cell_renderers_func(grid.columns)
         if not isinstance(self._cell_renderers, list):
             raise TypeError("cell_renderers must be of type list")
@@ -96,7 +94,13 @@ class TextRenderer(Renderer):
             if not isinstance(item, CellRenderer):
                 raise TypeError("Items within the cell_renderers list must be of type CellRenderer")
 
-        # Determine number of columns
+    def render(self, outfd, grid):
+        """Renders a text grid based on the contents of each element"""
+        sort_key = None
+        if self.sort_column:
+            sort_key = ColumnSortKey(grid, self.sort_column).key
+
+        self._validate_grid(grid)# Determine number of columns
         grid_depth = grid.visit(None, lambda x, y: max(y, grid.path_depth(x)), 0)
 
         # Determine max width of each column
@@ -140,7 +144,7 @@ class TextRenderer(Renderer):
                 self._elide(("{:<" + str(grid_max_widths[index]) + "}").format(column.name), grid_max_widths[index])]
         outfd.write(" ".join(cols) + "\n")
 
-        def print_row(node, accumulator = None):
+        def print_row(node, accumulator):
             row = []
             for index in range(len(grid_max_widths)):
                 if grid_depth > 1:
@@ -159,8 +163,29 @@ class TextRenderer(Renderer):
             return accumulator
 
         output = []
-        sort_key = None
-        if self.sort_column:
-            sort_key = ColumnSortKey(grid, self.sort_column).key
         grid.visit(None, print_row, output, sort_key = sort_key)
         outfd.write("\n".join(output) + "\n")
+
+class QuickTextRenderer(TextRenderer):
+    def render(self, outfd, grid):
+        self._validate_grid(grid)
+
+        # Determine max width of each column
+        grid_max_widths = [0] * len(grid.columns)
+
+        # If the grid_max_widths have not been limited,
+        headers = []
+        for i in range(len(grid.columns)):
+            grid_max_widths[i] = max(grid_max_widths[i], len(grid.columns[i].name))
+            headers += [grid.columns[i].name]
+        outfd.write("|".join(headers) + "\n")
+
+        def print_row(node, outfd):
+            outfd.write(">" * grid.path_depth(node))
+            for column in grid.columns:
+                outfd.write("|" + self._cell_renderers[column.index].render(node.values[column.index]))
+            outfd.write("\n")
+            outfd.flush()
+            return outfd
+
+        grid.populate(print_row, outfd)

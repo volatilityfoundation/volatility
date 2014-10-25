@@ -30,7 +30,7 @@ from volatility.renderers.basic import Address, Address64, Hex
 from volatility.renderers.dot import DotRenderer
 from volatility.renderers.html import HTMLRenderer
 from volatility.renderers.sqlite import SqliteRenderer
-from volatility.renderers.text import TextRenderer, FormatCellRenderer
+from volatility.renderers.text import TextRenderer, FormatCellRenderer, QuickTextRenderer
 
 
 class Command(object):
@@ -271,6 +271,10 @@ class Command(object):
 
     def render_text(self, outfd, data):
         self._render(outfd, TextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
+
+
+    def render_quicktext(self, outfd, data):
+        self._render(outfd, QuickTextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
 
     def render_sqlite(self, outfd, data):
         self._render(outfd, SqliteRenderer(self.__class__.__name__, self._config), data)
