@@ -419,20 +419,14 @@ def convert_file(mac_file, outfile):
     AT_type( {0x0000008b}
     '''
 
-    level1_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{5}(\w+)\s')
-    level2_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{9}(\w+)\s')
-    level3_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{13}(\w+)\s')
-    level4_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{17}(\w+)\s')
-    level5_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{21}(\w+)\s')
-    level6_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{25}(\w+)\s')
-    level7_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{29}(\w+)\s')
-    level8_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{33}(\w+)\s')
-    level9_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{37}(\w+)\s')
-    level10_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{41}(\w+)\s')
-    level11_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{45}(\w+)\s')
-    level12_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{49}(\w+)\s')
-    level13_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{53}(\w+)\s')
-    level14_re = re.compile(r'^(0x[0-9a-fA-F]+):\s{57}(\w+)\s')
+    # skip the first (entry 0)
+    re_compiles = ["<BAD COMPILE>"]
+    parse_depth = 27
+    string_idx  = 5
+    for i in range(1, parse_depth):       
+        s = r'^(0x[0-9a-fA-F]+):\s{' + "%d" % string_idx  + r'}(\w+)\s'
+        re_compiles.append(re.compile(s))
+        string_idx = string_idx + 4
     
     at_re     = re.compile(r'^\s+(\w+)\((.+)')
 
@@ -440,7 +434,6 @@ def convert_file(mac_file, outfile):
     dontbreak = 0
 
     for line in mac_file.readlines():
-
         if len(line) < 2:
             outfile.write("\n")
             level = 0
@@ -469,120 +462,22 @@ def convert_file(mac_file, outfile):
 
         # new declaration
         if level == 0:
-            m = level1_re.match(line)
-            t = level2_re.match(line)
-            r = level3_re.match(line)
-            f = level4_re.match(line)
-            z = level5_re.match(line)
-            s = level6_re.match(line)
-            y = level7_re.match(line)
-            b = level8_re.match(line)
-            j = level9_re.match(line)
-            a = level10_re.match(line)
-            c = level11_re.match(line)
-            d = level12_re.match(line)
-            e = level13_re.match(line)
-            g = level14_re.match(line)            
-
-            if m:
-                (id, name) = m.groups()
-                id = "%d" % int(id, 16)
-                level = 1
-
-                write_line(outfile, 1, id, name)
-
-            elif t:
-                (id, name) = t.groups()
-                id = "%d" % int(id, 16)
-                level = 1
+            line_wrote = False
+            for check_idx in range(1, parse_depth):
+                re_check = re_compiles[check_idx]
                 
-                write_line(outfile, 2, id, name)
-            
-            elif r:
-                (id, name) = r.groups()
-                id = "%d" % int(id, 16)           
-                level = 1
-                
-                write_line(outfile, 3, id, name)
+                matchobj = re_check.match(line)
+                if matchobj:
+                    (id, name) = matchobj.groups()
 
-            elif f:
-                (id, name) = f.groups()
-                id = "%d" % int(id, 16)
-                level = 1
+                    id = "%d" % int(id, 16)
+                    level = 1
 
-                write_line(outfile, 4, id, name)
+                    write_line(outfile, check_idx, id, name)
+                    line_wrote = True
+                    break
 
-            elif z:
-                (id, name) = z.groups()    
-                level = 1
-                id = "%d" % int(id, 16)
-
-                write_line(outfile, 5, id, name)
-    
-            elif s:
-                (id, name) = s.groups()
-                id = "%d" % int(id, 16)
-                level = 1
-            
-                write_line(outfile, 6, id, name)
-
-            elif y:
-                (id, name) = y.groups()
-                id = "%d" % int(id, 16)
-                level = 1
-           
-                write_line(outfile, 7, id, name)
-            
-            elif b:
-                (id, name) = b.groups()
-                id = "%d" % int(id, 16)
-                level = 1
-
-                write_line(outfile, 8, id, name)
-
-            elif j:
-                (id, name) = j.groups()
-                id = "%d" % int(id, 16)
-                level = 1
-
-                write_line(outfile, 9, id, name)
-
-            elif a:
-                (id, name) = a.groups()
-                id = "%d" % int(id, 16)
-                level = 1
-                
-                write_line(outfile, 10, id, name)
-
-            elif c:
-                (id, name) = c.groups()
-                id = "%d" % int(id, 16)
-                level = 1
-                
-                write_line(outfile, 11, id, name)
-
-            elif d:
-                (id, name) = d.groups()
-                id = "%d" % int(id, 16)
-                level = 1
-                
-                write_line(outfile, 12, id, name)
-
-            elif e:
-                (id, name) = e.groups()
-                id = "%d" % int(id, 16)
-                level = 1
-                
-                write_line(outfile, 13, id, name)
-
-            elif g:
-                (id, name) = g.groups()
-                id = "%d" % int(id, 16)
-                level = 1
-        
-                write_line(outfile, 14, id, name)
-
-            else:
+            if not line_wrote:
                 print "State machine broken! level 0! %s" % line
                 sys.exit(1)
 
@@ -590,8 +485,7 @@ def convert_file(mac_file, outfile):
         #                AT_xxxx
         #                blank
         elif level == 1:
-                        
-            m = level2_re.match(line)
+            m = re_compiles[2].match(line)
             a = at_re.match(line)
             if m:
                 (id, name) = m.groups()
