@@ -166,10 +166,6 @@ def _get_path_file(task, filp):
     dentry  = filp.dentry
     vfsmnt  = filp.vfsmnt
     
-    parent_name = vfsmnt.mnt_parent.mnt_mountpoint.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
-    mount_point = vfsmnt.mnt_mountpoint.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
-    mnt_root    = vfsmnt.mnt_root.d_name.name.dereference_as("String", length = MAX_STRING_LENGTH)
-
     return do_get_path(rdentry, rmnt, dentry, vfsmnt)
 
 def get_new_sock_pipe_path(task, filp):
