@@ -34,7 +34,7 @@ class VBoxInfo(crashinfo.CrashInfo):
                                  ("Size", Hex)])
 
         for memory_offset, file_offset, length in data.get_runs():
-            self.table_row(None, [Address(file_offset),
+            tg.append(None, [Address(file_offset),
                                   Address(memory_offset),
                                   Address(length)])
         return tg
