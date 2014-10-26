@@ -217,7 +217,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         file_size = inode.i_size
 
         if not inode.is_valid() or file_size == None:
-            return data
+            raise StopIteration
 
         extra = file_size % 4096
         idxs = file_size / 4096
