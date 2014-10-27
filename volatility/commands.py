@@ -28,7 +28,7 @@ import volatility.renderers as renderers
 import volatility.addrspace as addrspace
 from volatility.renderers.basic import Address, Address64, Hex
 from volatility.renderers.dot import DotRenderer
-from volatility.renderers.html import HTMLRenderer
+from volatility.renderers.html import HTMLRenderer, JSONRenderer
 from volatility.renderers.sqlite import SqliteRenderer
 from volatility.renderers.text import TextRenderer, FormatCellRenderer
 
@@ -271,6 +271,9 @@ class Command(object):
 
     def render_text(self, outfd, data):
         self._render(outfd, TextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
+
+    def render_json(self, outfd, data):
+        self._render(outfd, JSONRenderer(), data)
 
     def render_sqlite(self, outfd, data):
         self._render(outfd, SqliteRenderer(self.__class__.__name__, self._config), data)
