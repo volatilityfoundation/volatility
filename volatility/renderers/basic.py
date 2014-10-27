@@ -14,11 +14,11 @@ class Address64(long):
         return long.__new__(cls, number)
 
 
-class Hex(int):
+class Hex(long):
     """Integer class to allow renderers to differentiate between addresses and numbers"""
 
     def __new__(cls, number):
-        return int.__new__(cls, number)
+        return long.__new__(cls, number)
 
 
 class Renderer(object):
