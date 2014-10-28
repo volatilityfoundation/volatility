@@ -954,6 +954,29 @@ class module_struct(obj.CType):
 
         return ret       
 
+    def is_valid(self):
+        valid = False
+
+        if self.state.v() in [0, 1, 2] and \
+           self.core_size >= 4096 and self.core_size <= 1000000 and \
+           self.core_text_size >= 4096 and self.core_text_size <= 1000000:
+        
+            s = self.obj_vm.read(self.name.obj_offset, 64)
+            if s:
+                idx = s.find("\x00")
+
+                if idx > 1:
+                    good = True
+                    name = s[:idx]
+                    for n in name:
+                        if not (32 < ord(n) < 127):
+                            good = False
+                            break
+
+                    if good and self.module_core.is_valid():
+                        valid = True
+
+        return valid
 
 class vm_area_struct(obj.CType):
     def vm_name(self, task):
