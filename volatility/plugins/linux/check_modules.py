@@ -67,5 +67,5 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
 
         self.table_header(outfd, [("Module Address", "[address]"), ("Module Name", "24")])
         for mod in data:
-            self.table_row(outfd, mod.obj_offset, str(mod.name))
+            self.table_row(outfd, mod, str(mod.name))
 
