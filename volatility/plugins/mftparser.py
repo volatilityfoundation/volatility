@@ -714,14 +714,14 @@ class MFTParser(common.AbstractWindowsCommand):
                         if self._config.DEBUGOUT:
                             print "Problem entry at offset:", hex(offset)
                         continue
+    
                 if (int(mft_entry.RecordNumber), name) in seen:
                     continue
                 else:
                     seen.append((int(mft_entry.RecordNumber), name))
-                offsets.append((offset, mft_entry))
+                offsets.append((offset, mft_entry, mft_buff))
 
-        for offset, mft_entry in offsets:
-            mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
+        for offset, mft_entry, mft_buff in offsets:
             if self._config.DEBUGOUT:
                 print "Processing MFT Entry at offset:", hex(offset)
             attributes = mft_entry.parse_attributes(mft_buff, not self._config.NOCHECK, self._config.ENTRYSIZE)
