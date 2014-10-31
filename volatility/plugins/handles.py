@@ -38,22 +38,11 @@ class Handles(taskmods.DllList):
         config.add_option("SILENT", short_option = 's', default = False,
                           action = 'store_true', help = 'Suppress less meaningful results')
 
-    def unified_output(self, data):
-        offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        tg = renderers.TreeGrid(
-                          [("Offset{0}".format(offsettype), Address),
-                           ("Pid", int),
-                           ("Handle", Hex),
-                           ("Access", Hex),
-                           ("Type", str),
-                           ("Details", str),
-                           ])
-
+    def generator(self, data):
         if self._config.OBJECT_TYPE:
             object_list = [s for s in self._config.OBJECT_TYPE.split(',')]
         else:
             object_list = []
-
         for pid, handle, object_type, name in data:
             if object_list and object_type not in object_list:
                 continue
@@ -64,13 +53,24 @@ class Handles(taskmods.DllList):
                 offset = handle.Body.obj_offset
             else:
                 offset = handle.obj_vm.vtop(handle.Body.obj_offset)
-        
-            tg.append(None, [Address(offset),
-                             int(pid),
-                             Hex(handle.HandleValue),
-                             Hex(handle.GrantedAccess),
-                             str(object_type),
-                             str(name)])
+
+            yield (0, [Address(offset),
+                          int(pid),
+                          Hex(handle.HandleValue),
+                          Hex(handle.GrantedAccess),
+                          str(object_type),
+                          str(name)])
+
+    def unified_output(self, data):
+        offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
+        tg = renderers.TreeGrid(
+                          [("Offset{0}".format(offsettype), Address),
+                           ("Pid", int),
+                           ("Handle", Hex),
+                           ("Access", Hex),
+                           ("Type", str),
+                           ("Details", str),
+                           ], self.generator(data))
         return tg
 
     def calculate(self):
@@ -79,7 +79,7 @@ class Handles(taskmods.DllList):
             pid = task.UniqueProcessId
             if task.ObjectTable.HandleTableList:
                 for handle in task.ObjectTable.handles():
-                    
+
                     if not handle.is_valid():
                         continue
 

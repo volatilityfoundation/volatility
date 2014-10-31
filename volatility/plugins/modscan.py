@@ -69,21 +69,22 @@ class ModScan(common.AbstractScanCommand):
         )
 
     def unified_output(self, data):
-        tg = renderers.TreeGrid(
-                          [(self.offset_column(), Address),
-                           ('Name', str),
-                           ('Base', Address),
-                           ('Size', Hex),
-                           ('File', str)
-                           ])
-        for ldr_entry in data:
-            tg.append(None,
-                         [Address(ldr_entry.obj_offset),
-                         str(ldr_entry.BaseDllName or ''),
-                         Address(ldr_entry.DllBase),
-                         Hex(ldr_entry.SizeOfImage),
-                         str(ldr_entry.FullDllName or '')])
-        return tg
+        def generator(data):
+            for ldr_entry in data:
+                yield (0,
+                             [Address(ldr_entry.obj_offset),
+                             str(ldr_entry.BaseDllName or ''),
+                             Address(ldr_entry.DllBase),
+                             Hex(ldr_entry.SizeOfImage),
+                             str(ldr_entry.FullDllName or '')])
+
+        return renderers.TreeGrid(
+            [(self.offset_column(), Address),
+             ('Name', str),
+             ('Base', Address),
+             ('Size', Hex),
+             ('File', str)
+            ], generator(data))
 
 class PoolScanThread(poolscan.PoolScanner):
     """Pool scanner for thread objects"""
@@ -110,21 +111,21 @@ class ThrdScan(common.AbstractScanCommand):
     scanners = [PoolScanThread]
 
     def unified_output(self, data):
-        tg = renderers.TreeGrid(
-                          [(self.offset_column(), Address),
-                           ("PID", int),
-                           ("TID", int),
-                           ("Start Address", Address),
-                           ("Create Time", str),
-                           ("Exit Time", str),
-                           ])
+        def generator(data):
+            for thread in data:
+                yield (0, [Address(thread.obj_offset),
+                               int(thread.Cid.UniqueProcess),
+                               int(thread.Cid.UniqueThread),
+                               Address(thread.StartAddress),
+                               str(thread.CreateTime or ''),
+                               str(thread.ExitTime or '')]
+                               )
+        return renderers.TreeGrid(
+            [(self.offset_column(), Address),
+             ("PID", int),
+             ("TID", int),
+             ("Start Address", Address),
+             ("Create Time", str),
+             ("Exit Time", str),
+            ], generator(data))
 
-        for thread in data:
-            tg.append(None, [Address(thread.obj_offset),
-                           int(thread.Cid.UniqueProcess),
-                           int(thread.Cid.UniqueThread),
-                           Address(thread.StartAddress),
-                           str(thread.CreateTime or ''),
-                           str(thread.ExitTime or '')]
-                           )
-        return tg

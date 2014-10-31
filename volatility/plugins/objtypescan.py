@@ -56,19 +56,21 @@ class ObjTypeScan(common.AbstractScanCommand):
 
     def unified_output(self, data):
 
-        tg = renderers.TreeGrid( [("Offset", Address),
+        def generator(data):
+            for object_type in data:
+                yield (0, [
+                    Address(object_type.obj_offset),
+                    Hex(object_type.TotalNumberOfObjects),
+                    Hex(object_type.TotalNumberOfHandles),
+                    str(object_type.Key),
+                    str(object_type.Name or ''),
+                    str(object_type.TypeInfo.PoolType)])
+
+
+        return renderers.TreeGrid( [("Offset", Address),
                                   ("nObjects", Hex),
                                   ("nHandles", Hex),
                                   ("Key", str),
                                   ("Name", str),
-                                  ("PoolType", str)])
-        for object_type in data:
-            tg.append(None,[
-                            Address(object_type.obj_offset),
-                            Hex(object_type.TotalNumberOfObjects),
-                            Hex(object_type.TotalNumberOfHandles),
-                            str(object_type.Key),
-                            str(object_type.Name or ''),
-                            str(object_type.TypeInfo.PoolType)])
-
-        return tg
+                                  ("PoolType", str)],
+                                 generator(data))

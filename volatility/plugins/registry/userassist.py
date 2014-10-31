@@ -36,7 +36,7 @@ import volatility.utils as utils
 import datetime
 
 # for Windows 7 userassist info check out Didier Stevens' article
-# from Into the Boxes issue 0x0: 
+# from Into the Boxes issue 0x0:
 #  http://intotheboxes.wordpress.com/2010/01/01/into-the-boxes-issue-0x0/
 ua_win7_vtypes = {
   '_VOLUSER_ASSIST_TYPES' : [ 0x48, {
@@ -187,14 +187,14 @@ class UserAssist(common.AbstractWindowsCommand):
         addr_space = utils.load_as(self._config)
         win7 = addr_space.profile.metadata.get('major', 0) == 6 and addr_space.profile.metadata.get('minor', 0) >= 1
         skey = "software\\microsoft\\windows\\currentversion\\explorer\\userassist"
- 
+
         if not self._config.HIVE_OFFSET:
             self.regapi.set_current("ntuser.dat")
         else:
             name = obj.Object("_CMHIVE", vm = addr_space, offset = self._config.HIVE_OFFSET).get_name()
             self.regapi.all_offsets[self._config.HIVE_OFFSET] = name
             self.regapi.current_offsets[self._config.HIVE_OFFSET] = name
- 
+
         for key, name in self.regapi.reg_yield_key(None, skey):
             for guidkey in self.regapi.reg_get_all_subkeys(None, None, given_root = key):
                 for count in self.regapi.reg_get_all_subkeys(None, None, given_root = guidkey):
@@ -223,14 +223,16 @@ class UserAssist(common.AbstractWindowsCommand):
         return output
 
     def unified_output(self, data):
-        keyfound = False
-        tg = TreeGrid([("Registry", str),
+        return TreeGrid([("Registry", str),
                       ("Path", str),
                       ("LastWrite", str),
                       ("Subkey", str),
                       ("Value", str),
                       ("Data", str),
-                      ])
+                      ], self.generator(data))
+
+    def generator(self, data):
+        keyfound = False
         for win7, reg, key in data:
             if key:
                 keyfound = True
@@ -239,7 +241,7 @@ class UserAssist(common.AbstractWindowsCommand):
                         item = "Unknown subkey: " + s.Name.reason
                     else:
                         item = s.Name
-                    tg.append(None, [str(reg), str(self.regapi.reg_get_key_path(key)), str(key.LastWriteTime), str(item), "", ""])
+                    yield (0, [str(reg), str(self.regapi.reg_get_key_path(key)), str(key.LastWriteTime), str(item), "", ""])
                 for subname, dat in self.regapi.reg_yield_values(None, None, given_root = key, thetype = "REG_BINARY"):
                     dat_raw = dat
                     try:
@@ -251,7 +253,6 @@ class UserAssist(common.AbstractWindowsCommand):
                         if guid in folder_guids:
                             subname = subname.replace(guid, folder_guids[guid])
                     dat = self.parse_data(dat_raw)
-                    tg.append(None, [str(reg), str(self.regapi.reg_get_key_path(key)), str(key.LastWriteTime), "", str(subname), str(dat)])
-        return tg
-        #if not keyfound:
-        #    outfd.write("The requested key could not be found in the hive(s) searched\n")
+                    yield (0, [str(reg), str(self.regapi.reg_get_key_path(key)), str(key.LastWriteTime), "", str(subname), str(dat)])
+        if not keyfound:
+            debug.error("The requested key could not be found in the hive(s) searched")

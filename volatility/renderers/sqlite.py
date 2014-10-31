@@ -1,4 +1,5 @@
 from volatility.renderers.basic import Renderer
+from volatility import debug
 import sqlite3
 
 __author__ = 'mike'
@@ -33,6 +34,9 @@ class SqliteRenderer(Renderer):
 
     def render(self, outfd, grid):
         """Renders the TreeGrid in data out to the output file from the config options"""
+        if not self._config.OUTPUT_FILE:
+            debug.error("Please specify a valid output file using --output-file")
+
         self._db = sqlite3.connect(self._config.OUTPUT_FILE, isolation_level = None)
         create = "CREATE TABLE " + self._plugin_name + "( id INTEGER, rowparent INTEGER, " + \
                  ", ".join(['"' + self._sanitize_name(i.name) + '" ' + self._column_type(i.type) for i in grid.columns]) + ")"

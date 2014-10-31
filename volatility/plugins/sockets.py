@@ -46,7 +46,7 @@ class Sockets(common.AbstractWindowsCommand):
 
     def unified_output(self, data):
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        tg = renderers.TreeGrid(
+        return renderers.TreeGrid(
                           [("Offset{0}".format(offsettype), Address),
                            ("PID", int),
                            ("Port", int),
@@ -54,22 +54,22 @@ class Sockets(common.AbstractWindowsCommand):
                            ("Protocol", str),
                            ("Address", str),
                            ("Create Time", str)
-                           ])
+                           ], self.generator(data))
 
+    def generator(self, data):
         for sock in data:
             if not self._config.PHYSICAL_OFFSET:
                 offset = sock.obj_offset
             else:
                 offset = sock.obj_vm.vtop(sock.obj_offset)
 
-            tg.append(None, [Address(offset),
+            yield (0, [Address(offset),
                              int(sock.Pid),
                              int(sock.LocalPort),
                              int(sock.Protocol),
                              str(protos.protos.get(sock.Protocol.v(), "-")),
                              str(sock.LocalIpAddress),
                              str(sock.CreateTime)])
-        return tg
 
     def calculate(self):
         addr_space = utils.load_as(self._config)

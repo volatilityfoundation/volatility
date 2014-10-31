@@ -77,17 +77,18 @@ class SockScan(common.AbstractScanCommand):
 
     def unified_output(self, data):
 
-        tg = renderers.TreeGrid([(self.offset_column(), Address),
+        return renderers.TreeGrid([(self.offset_column(), Address),
                                   ('PID', int),
                                   ('Port', int),
                                   ('Proto', int),
                                   ('Protocol', str),
                                   ('Address', str),
                                   ('Create Time', str)
-                                  ])
+                                  ], self.generator(data))
 
+    def generator(self, data):
         for sock_obj in data:
-            tg.append(None,
+            yield (0,
                            [Address(sock_obj.obj_offset),
                            int(sock_obj.Pid),
                            int(sock_obj.LocalPort),
@@ -95,5 +96,3 @@ class SockScan(common.AbstractScanCommand):
                            str(protos.protos.get(sock_obj.Protocol.v(), "-")),
                            str(sock_obj.LocalIpAddress),
                            str(sock_obj.CreateTime)])
-
-        return tg

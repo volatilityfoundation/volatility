@@ -20,7 +20,7 @@
 #
 
 """pstree example file"""
-from volatility.renderers import TreeGrid
+from volatility import renderers
 from volatility.renderers.basic import Address
 
 import volatility.win32.tasks as tasks
@@ -59,24 +59,8 @@ class PSTree(common.AbstractWindowsCommand):
 
         return pid
 
-    def unified_output(self, data):
-
-        cols = [("Offset", Address),
-                ("Name", str),
-                ("Pid", int),
-                ("PPid", int),
-                ("Thds", int),
-                ("Hnds", int),
-                ("Time", str)]
-
-        if self._config.VERBOSE:
-            cols += [("Audit", str),
-                     ("Cmd", str),
-                     ("Path", str)]
-
-        tg = TreeGrid(cols)
-
-        def draw_branch(parent, inherited_from):
+    def generator(self, data):
+        def draw_branch(level, inherited_from):
             for task in data.values():
                 if task.InheritedFromUniqueProcessId == inherited_from:
 
@@ -96,19 +80,39 @@ class PSTree(common.AbstractWindowsCommand):
                         else:
                             row += [str(process_params.CommandLine or ''),
                                     str(process_params.ImagePathName or '')]
-                    node = tg.append(parent, row)
+                    yield (level, row)
 
                     try:
                         del data[int(task.UniqueProcessId)]
                     except KeyError:
-                        debug.warning("PID {0} PPID {1} has already been seen".format(task.UniqueProcessId, task.InheritedFromUniqueProcessId))
+                        debug.warning("PID {0} PPID {1} has already been seen".format(task.UniqueProcessId,
+                                                                                      task.InheritedFromUniqueProcessId))
 
-                    draw_branch(node, task.UniqueProcessId)
+                    for item in draw_branch(level + 1, task.UniqueProcessId):
+                        yield item
 
         while len(data.keys()) > 0:
             keys = data.keys()
             root = self.find_root(data, keys[0])
-            draw_branch(None, root)
+            for item in draw_branch(0, root):
+                yield item
+
+    def unified_output(self, data):
+
+        cols = [("Offset", Address),
+                ("Name", str),
+                ("Pid", int),
+                ("PPid", int),
+                ("Thds", int),
+                ("Hnds", int),
+                ("Time", str)]
+
+        if self._config.VERBOSE:
+            cols += [("Audit", str),
+                     ("Cmd", str),
+                     ("Path", str)]
+
+        tg = renderers.TreeGrid(cols, self.generator(data))
         return tg
 
     @cache.CacheDecorator(lambda self: "tests/pstree/verbose={0}".format(self._config.VERBOSE))

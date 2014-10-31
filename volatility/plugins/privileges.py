@@ -90,18 +90,9 @@ class Privs(taskmods.DllList):
                           help = 'Show privileges matching REGEX',
                           action = 'store', type = 'string')
 
-    def unified_output(self, data):
-
-        tg = renderers.TreeGrid([("Pid", int),
-                                 ("Process", str),
-                                 ("Value", int),
-                                 ("Privilege", str),
-                                 ("Attributes", str),
-                                 ("Description", str)])
-
+    def generator(self, data):
         if self._config.REGEX:
             priv_re = re.compile(self._config.REGEX, re.I)
-
         for task in data:
 
             for value, present, enabled, default in task.get_token().privileges():
@@ -131,11 +122,20 @@ class Privs(taskmods.DllList):
                     if not priv_re.search(name):
                         continue
 
-                tg.append(None,
-                          [int(task.UniqueProcessId),
-                           str(task.ImageFileName),
-                           int(value),
-                           str(name),
-                           ",".join(attributes),
-                           str(desc)])
-        return tg
+                yield (0,
+                       [int(task.UniqueProcessId),
+                        str(task.ImageFileName),
+                        int(value),
+                        str(name),
+                        ",".join(attributes),
+                        str(desc)])
+
+    def unified_output(self, data):
+
+        return renderers.TreeGrid([("Pid", int),
+                                 ("Process", str),
+                                 ("Value", int),
+                                 ("Privilege", str),
+                                 ("Attributes", str),
+                                 ("Description", str)],
+                                  self.generator(data))

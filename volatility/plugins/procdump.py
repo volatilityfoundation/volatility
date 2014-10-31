@@ -89,12 +89,14 @@ class ProcDump(taskmods.DllList):
 
     def unified_output(self, data):
         """Renders the tasks to disk images, outputting progress as they go"""
-        tg = renderers.TreeGrid(
+        return renderers.TreeGrid(
                           [("Process(V)", Address),
                            ("ImageBase", Address),
                            ("Name", str),
-                           ("Result", str)])
+                           ("Result", str)],
+                          self.generator(data))
 
+    def generator(self, data):
         for task in data:
             task_space = task.get_process_address_space()
             if task_space == None:
@@ -110,9 +112,8 @@ class ProcDump(taskmods.DllList):
                 result = self.dump_pe(task_space,
                                 task.Peb.ImageBaseAddress,
                                 dump_file)
-            tg.append(None,
+            yield (0,
                             [Address(task.obj_offset),
                             Address(task.Peb.ImageBaseAddress),
                             str(task.ImageFileName),
                             str(result)])
-        return tg

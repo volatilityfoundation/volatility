@@ -52,21 +52,22 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
                           action = 'store', type = 'str')
 
     def unified_output(self, data):
-        tg = TreeGrid([("Pid", int),
+        return TreeGrid([("Pid", int),
                        ("Base", Address),
                        ("Size", int),
                        ("LoadCount", int),
-                       ("Path", str)])
+                       ("Path", str)],
+                        self.generator(data))
 
+    def generator(self, data):
         for task in data:
             pid = task.UniqueProcessId
 
             if task.Peb:
                 for m in task.get_load_modules():
-                    tg.append(None, [int(pid), Address(m.DllBase), int(m.SizeOfImage), int(m.LoadCount), str(m.FullDllName or '')])
+                    yield (0, [int(pid), Address(m.DllBase), int(m.SizeOfImage), int(m.LoadCount), str(m.FullDllName or '')])
             else:
-                tg.append(None, [int(pid), Address(0), 0, 0, "Error reading PEB for pid"])
-        return tg
+                yield (0, [int(pid), Address(0), 0, 0, "Error reading PEB for pid"])
 
     def filter_tasks(self, tasks):
         """ Reduce the tasks based on the user selectable PIDS parameter.
@@ -139,7 +140,7 @@ class PSList(DllList):
     def unified_output(self, data):
 
         offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        tg = TreeGrid([("Offset{0}".format(offsettype), Address),
+        return TreeGrid([("Offset{0}".format(offsettype), Address),
                         ("Name", str),
                         ("PID", int),
                         ("PPID", int),
@@ -148,8 +149,10 @@ class PSList(DllList):
                         ("Sess", int),
                         ("Wow64", int),
                         ("Start", str),
-                        ("Exit", str)])
+                        ("Exit", str)],
+                        self.generator(data))
 
+    def generator(self, data):
         for task in data:
             # PHYSICAL_OFFSET must STRICTLY only be used in the results.  If it's used for anything else,
             # it needs to have cache_invalidator set to True in the options
@@ -157,7 +160,7 @@ class PSList(DllList):
                 offset = task.obj_offset
             else:
                 offset = task.obj_vm.vtop(task.obj_offset)
-            tg.append(None, [Address(offset),
+            yield (0, [Address(offset),
                              str(task.ImageFileName),
                              int(task.UniqueProcessId),
                              int(task.InheritedFromUniqueProcessId),
@@ -167,7 +170,6 @@ class PSList(DllList):
                              int(task.IsWow64),
                              str(task.CreateTime or ''),
                              str(task.ExitTime or '')])
-        return tg
 
 # Inherit from files just for the config options (__init__)
 class MemMap(DllList):

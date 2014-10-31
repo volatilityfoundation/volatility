@@ -262,14 +262,14 @@ class ShimCache(common.AbstractWindowsCommand):
 
     def unified_output(self, data):
         # blank header in case there is no shimcache data
-        tg = TreeGrid([("Last Modified", str),
+        return TreeGrid([("Last Modified", str),
                        ("Last Update", str),
                        ("Path", str),
-                      ])
+                      ], self.generator(data))
 
+    def generator(self, data):
         for path, lm, lu in data:
             if lu:
-                tg.append(None, [str(lm), str(lu), str(path).strip()])
+                yield (0, [str(lm), str(lu), str(path).strip()])
             else:
-                tg.append(None, [str(lm), "-", str(path).strip()])
-        return tg
+                yield (0, [str(lm), "-", str(path).strip()])
