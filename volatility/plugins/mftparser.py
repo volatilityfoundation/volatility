@@ -321,8 +321,12 @@ class STANDARD_INFORMATION(obj.CType):
     # XXX need a better check than this
     # we return valid if we have _any_ timestamp other than Null
     def is_valid(self):
-        return obj.CType.is_valid(self) and (self.ModifiedTime.v() != 0 or self.MFTAlteredTime.v() != 0 or \
-                self.FileAccessedTime.v() != 0 or self.CreationTime.v() != 0) 
+        modified = self.ModifiedTime.v()
+        mftaltered = self.MFTAlteredTime.v()
+        creation = self.CreationTime.v()
+        accessed = self.FileAccessedTime.v()
+        return obj.CType.is_valid(self) and (modified != 0 or mftaltered != 0 or \
+                accessed != 0 or creation != 0)
 
     def get_type_short(self):
         if self.Flags == None:
@@ -398,8 +402,12 @@ class FILE_NAME(STANDARD_INFORMATION):
     # we return valid if we have _any_ timestamp other than Null
     # filename must also be a non-empty string
     def is_valid(self):
-        return obj.CType.is_valid(self) and (self.ModifiedTime.v() != 0 or self.MFTAlteredTime.v() != 0 or \
-                self.FileAccessedTime.v() != 0 or self.CreationTime.v() != 0) and \
+        modified = self.ModifiedTime.v()
+        mftaltered = self.MFTAlteredTime.v()
+        creation = self.CreationTime.v()
+        accessed = self.FileAccessedTime.v()
+        return obj.CType.is_valid(self) and (modified != 0 or mftaltered != 0 or \
+                accessed != 0 or creation != 0) and \
                 self.remove_unprintable(self.get_name()) != ""
 
     def get_name(self):
