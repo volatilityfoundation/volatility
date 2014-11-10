@@ -321,10 +321,22 @@ class STANDARD_INFORMATION(obj.CType):
     # XXX need a better check than this
     # we return valid if we have _any_ timestamp other than Null
     def is_valid(self):
-        modified = self.ModifiedTime.v()
-        mftaltered = self.MFTAlteredTime.v()
-        creation = self.CreationTime.v()
-        accessed = self.FileAccessedTime.v()
+        try:
+            modified = self.ModifiedTime.v()
+        except struct.error:
+            modified = 0 
+        try:
+            mftaltered = self.MFTAlteredTime.v()
+        except struct.error:
+            mftaltered = 0 
+        try:
+            creation = self.CreationTime.v()
+        except struct.error:
+            creation = 0 
+        try:
+            accessed = self.FileAccessedTime.v()
+        except struct.error:
+            accessed = 0
         return obj.CType.is_valid(self) and (modified != 0 or mftaltered != 0 or \
                 accessed != 0 or creation != 0)
 
@@ -402,10 +414,22 @@ class FILE_NAME(STANDARD_INFORMATION):
     # we return valid if we have _any_ timestamp other than Null
     # filename must also be a non-empty string
     def is_valid(self):
-        modified = self.ModifiedTime.v()
-        mftaltered = self.MFTAlteredTime.v()
-        creation = self.CreationTime.v()
-        accessed = self.FileAccessedTime.v()
+        try:
+            modified = self.ModifiedTime.v()
+        except struct.error:
+            modified = 0
+        try:
+            mftaltered = self.MFTAlteredTime.v()
+        except struct.error:
+            mftaltered = 0
+        try:
+            creation = self.CreationTime.v()
+        except struct.error:
+            creation = 0
+        try:
+            accessed = self.FileAccessedTime.v()
+        except struct.error:
+            accessed = 0
         return obj.CType.is_valid(self) and (modified != 0 or mftaltered != 0 or \
                 accessed != 0 or creation != 0) and \
                 self.remove_unprintable(self.get_name()) != ""
