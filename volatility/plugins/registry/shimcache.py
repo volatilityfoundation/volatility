@@ -218,12 +218,13 @@ class ShimCache(commands.Command):
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'unknown').lower() == 'windows'
 
+    @staticmethod
     def remove_unprintable(self, item):
         return ''.join([str(c) for c in item if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
 
-    def calculate(self):
-        addr_space = utils.load_as(self._config)
-        regapi = registryapi.RegistryApi(self._config)
+    @staticmethod
+    def get_entries(addr_space, regapi):
+
         regapi.reset_current()
         currentcs = regapi.reg_get_currentcontrolset()
         if currentcs == None:
@@ -242,19 +243,26 @@ class ShimCache(commands.Command):
         data_raw = regapi.reg_get_value('system', key, "AppCompatCache")
         if data_raw == None or len(data_raw) < 0x1c:
             debug.warning("No ShimCache data found")
-            return
+            raise StopIteration
 
-        bufferas = addrspace.BufferAddressSpace(self._config, data = data_raw)
+        bufferas = addrspace.BufferAddressSpace(addr_space.get_config(), data = data_raw)
         shimdata = obj.Object("ShimRecords", offset = 0, vm = bufferas)
         if shimdata == None:
             debug.warning("No ShimCache data found")
-            return
+            raise StopIteration
 
         for e in shimdata.Entries:
             if xp:
                 yield e.Path, e.LastModified, e.LastUpdate
             else:
-                yield self.remove_unprintable(bufferas.read(int(e.PathOffset), int(e.Length))), e.LastModified, None
+                yield ShimCache.remove_unprintable(bufferas.read(int(e.PathOffset), int(e.Length))), e.LastModified, None
+
+    def calculate(self):
+        addr_space = utils.load_as(self._config)
+        regapi = registryapi.RegistryApi(self._config)
+
+        for entry in self.get_entries(addr_space, regapi):
+            yield entry
 
     def render_text(self, outfd, data):
         first = True
