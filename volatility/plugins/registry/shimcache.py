@@ -219,7 +219,7 @@ class ShimCache(commands.Command):
         return profile.metadata.get('os', 'unknown').lower() == 'windows'
 
     @staticmethod
-    def remove_unprintable(self, item):
+    def remove_unprintable(item):
         return ''.join([str(c) for c in item if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
 
     @staticmethod
