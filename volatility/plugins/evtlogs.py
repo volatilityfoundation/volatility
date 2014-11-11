@@ -255,6 +255,8 @@ class EvtLogs(common.AbstractWindowsCommand):
                         self.generator(data))
 
     def generator(self, data):
+        if self._config.DUMP_DIR and not self._config.SAVE_EVT:
+            debug.error("Please add --save-evt flag to dump EVT files")
         if self._config.SAVE_EVT and self._config.DUMP_DIR == None:
             debug.error("Please specify a dump directory (--dump-dir)")
         if self._config.SAVE_EVT and not os.path.isdir(self._config.DUMP_DIR):
@@ -263,10 +265,11 @@ class EvtLogs(common.AbstractWindowsCommand):
         for name, buf in data:
             ## Dump the raw event log so it can be parsed with other tools
             if self._config.SAVE_EVT:
+                ofname = ntpath.basename(name)
                 fh = open(os.path.join(self._config.DUMP_DIR, ofname), 'wb')
                 fh.write(buf)
                 fh.close()
-                outfd.write('Saved raw .evt file to {0}\n'.format(ofname))
+                print 'Saved raw .evt file to {0}'.format(ofname)
             for fields in self.parse_evt_info(name, buf):
                 yield (0, [str(fields[0]), str(fields[1]), str(fields[2]), str(fields[3]), str(fields[4]), str(fields[5]), str(fields[6])])
 
