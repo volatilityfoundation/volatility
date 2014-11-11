@@ -40,6 +40,8 @@ class _MM_SESSION_SPACE(obj.CType):
         one session.
         """
         for p in self.ProcessList.list_of_type("_EPROCESS", "SessionProcessLinks"):
+            if not p.is_valid():
+                break
             yield p
 
     @property
