@@ -31,6 +31,8 @@ This module implements the fast connection scanning
 
 import volatility.poolscan as poolscan
 import volatility.plugins.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class PoolScanConn(poolscan.PoolScanner):
     """Pool scanner for tcp connections"""
@@ -66,18 +68,15 @@ class ConnScan(common.AbstractScanCommand):
         return (profile.metadata.get('os', 'unknown') == 'windows' and
                 profile.metadata.get('major', 0) == 5)
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd,
-                          [(self.offset_column(), "[addrpad]"),
-                           ("Local Address", "25"),
-                           ("Remote Address", "25"),
-                           ("Pid", "")
-                           ])
+    def unified_output(self, data):
+        return TreeGrid([("Offset(P)", Address),
+                       ("LocalAddress", str),
+                       ("RemoteAddress", str),
+                       ("PID", int)],
+                        self.generator(data))
 
-        for tcp_obj in data:
-            local = "{0}:{1}".format(tcp_obj.LocalIpAddress, tcp_obj.LocalPort)
-            remote = "{0}:{1}".format(tcp_obj.RemoteIpAddress, tcp_obj.RemotePort)
-            self.table_row(outfd,
-                            tcp_obj.obj_offset,
-                            local, remote,
-                            tcp_obj.Pid)
+    def generator(self, data):
+        for conn in data:
+            local = "{0}:{1}".format(conn.LocalIpAddress, conn.LocalPort)
+            remote = "{0}:{1}".format(conn.RemoteIpAddress, conn.RemotePort)
+            yield (0, [Address(conn.obj_offset), str(local), str(remote), int(conn.Pid)])

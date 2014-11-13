@@ -28,7 +28,7 @@ class Cmdline(taskmods.DllList):
         return TreeGrid([("Process", str),
                        ("PID", int),
                        ("CommandLine", str),
-                      ], self.generator(data))
+                       ], self.generator(data))
 
     def generator(self, data):
         for task in data:
