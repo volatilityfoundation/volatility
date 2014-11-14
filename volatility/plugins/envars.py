@@ -20,6 +20,8 @@
 
 import volatility.plugins.taskmods as taskmods
 import volatility.plugins.registry.registryapi as registryapi
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class Envars(taskmods.DllList):
     "Display process environment variables"
@@ -82,16 +84,15 @@ class Envars(taskmods.DllList):
 
         return values
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                       ("Process", str),
+                       ("Block", Address),
+                       ("Variable", str),
+                       ("Value", str)],
+                        self.generator(data))
 
-        self.table_header(outfd,
-            [("Pid", "8"),
-             ("Process", "20"),
-             ("Block", "[addrpad]"),
-             ("Variable", "30"),
-             ("Value", ""),
-            ])
-
+    def generator(self, data):
         if self._config.SILENT:
             silent_vars = self._get_silent_vars()
 
@@ -100,9 +101,8 @@ class Envars(taskmods.DllList):
                 if self._config.SILENT:
                     if var in silent_vars:
                         continue 
-                self.table_row(outfd,
-                    task.UniqueProcessId,
-                    task.ImageFileName,
-                    task.Peb.ProcessParameters.Environment, 
-                    var, val
-                    )
+                yield (0, [int(task.UniqueProcessId),
+                        str(task.ImageFileName),
+                        Address(task.Peb.ProcessParameters.Environment),
+                        str(var),
+                        str(val)])
