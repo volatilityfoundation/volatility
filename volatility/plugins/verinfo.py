@@ -29,7 +29,6 @@ import volatility.utils as utils
 import volatility.debug as debug
 import volatility.exceptions as exceptions
 from volatility.renderers import TreeGrid
-from volatility.renderers.basic import Address
 
 class VerInfo(procdump.ProcDump):
     """Prints out the version information from PE images"""
