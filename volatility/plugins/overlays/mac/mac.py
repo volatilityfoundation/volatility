@@ -789,7 +789,13 @@ class inpcb(obj.CType):
 
         tcpcb = self.inp_ppcb.dereference_as("tcpcb")
 
-        return tcp_states[tcpcb.t_state]
+        state_type = tcpcb.t_state
+        if state_type:
+            state = tcp_states[state_type]
+        else:
+            state = ""
+
+        return state
 
     def ipv4_info(self):
         lip = self.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v()    
