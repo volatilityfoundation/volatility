@@ -232,7 +232,8 @@ class AbstractDiscreteAllocMemory(BaseAddressSpace):
 
         position = addr
         remaining = length
-        buff = ""
+        buff = []
+        lenbuff = 0
         read = self.base.zread if pad else self.base.read
 
         # For each allocation...
@@ -245,7 +246,8 @@ class AbstractDiscreteAllocMemory(BaseAddressSpace):
             if paddr is None:
                 if not pad:
                     return None
-                buff += "\x00" * datalen
+                buff.append("\x00" * datalen)
+                lenbuff += datalen
             else:
                 # This accounts for a special edge case
                 # when the address is valid in this address space
@@ -255,18 +257,16 @@ class AbstractDiscreteAllocMemory(BaseAddressSpace):
                 if self.base.is_valid_address(paddr):
                     data = read(paddr, datalen)
                 else:
-                    data = None
-
-                if data is None:
                     if not pad:
                         return obj.NoneObject("Could not read_chunks from addr " + hex(position) + " of size " + hex(datalen))
                     data = "\x00" * datalen
-                buff += data
+                buff.append(data)
+                lenbuff += len(data)
             position += datalen
             remaining -= datalen
             assert (addr + length == position + remaining), "Address + length != position + remaining (" + hex(addr + length) + " != " + hex(position + remaining) + ") in " + self.base.__class__.__name__
-            assert (position - addr == len(buff)), "Position - address != len(buff) (" + str(position - addr) + " != " + str(len(buff)) + ") in " + self.base.__class__.__name__
-        return buff
+            assert (position - addr == lenbuff), "Position - address != len(buff) (" + str(position - addr) + " != " + str(lenbuff) + ") in " + self.base.__class__.__name__
+        return "".join(buff)
 
     def read(self, addr, length):
         '''

@@ -83,6 +83,7 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
         self.fhandle = open(self.fname, self.mode)
         self.fhandle.seek(0, 2)
         self.fsize = self.fhandle.tell()
+        self.eqIstruct = struct.Struct("=I")
 
     # Abstract Classes cannot register options, and since this checks config.WRITE in __init__, we define the option here
     @staticmethod
@@ -91,31 +92,25 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
                           help = "Enable write support", callback = write_callback)
 
     def fread(self, length):
-        length = int(length)
+        #length = int(length) # unnecesary "cast"
         return self.fhandle.read(length)
 
     def read(self, addr, length):
-        addr, length = int(addr), int(length)
         try:
             self.fhandle.seek(addr)
         except (IOError, OverflowError):
-            return None
-        data = self.fhandle.read(length)
-        if len(data) == 0:
-            return None
-        return data
+            return ""
+        return self.fhandle.read(length)
 
     def zread(self, addr, length):
         data = self.read(addr, length)
-        if data is None:
-            data = "\x00" * length
-        elif len(data) != length:
+        if len(data) != length:
             data += "\x00" * (length - len(data))
         return data
 
     def read_long(self, addr):
         string = self.read(addr, 4)
-        (longval,) = struct.unpack('=I', string)
+        longval, = self.eqIstruct.unpack(string)
         return longval
 
     def get_available_addresses(self):
@@ -124,7 +119,7 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
         yield (0, self.fsize)
 
     def is_valid_address(self, addr):
-        if addr == None:
+        if addr is None: # is None is faster than == None
             return False
         return 0 <= addr < self.fsize
 

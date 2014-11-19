@@ -64,17 +64,11 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     paging_address_space = True
     minimum_size = 0x1000
     alignment_gcd = 0x1000
+    ltQstruct = struct.Struct('<Q')
 
     def entry_present(self, entry):
         if entry:
-            if (entry & 1):
-                return True
-
-            # The page is in transition and not a prototype.
-            # Thus, we will treat it as present.
-            if (entry & (1 << 11)) and not (entry & (1 << 10)):
-                return True
-
+            return (entry & 1) or ((entry & 2048) and not(entry & 1024))
         return False
 
     def page_size_flag(self, entry):
@@ -193,7 +187,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
                     retVal = self.get_paddr(vaddr, pte)
         return retVal
 
-    def read_long_long_phys(self, addr):
+    def read_long_long_phys(self, addr, cache = {}):
         '''
         This method returns a 64-bit little endian
         unsigned integer from the specified address in the
@@ -202,13 +196,17 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
 
         This code was derived directly from legacyintel.py
         '''
+        cache_page = addr >> 12 << 12
         try:
-            string = self.base.read(addr, 8)
-        except IOError:
-            string = None
-        if not string:
+            data = cache[cache_page]
+        except KeyError:
+            data = self.base.read(cache_page, 4096+16) # +16 is for border case padding, just to be sure
+            cache[cache_page] = data
+        pos = addr - cache_page
+        string = data[pos : pos + 8]
+        if len(string) < 8:
             return obj.NoneObject("Unable to read_long_long_phys at " + hex(addr))
-        (longlongval,) = struct.unpack('<Q', string)
+        longlongval, = ltQstruct.unpack(string)
         return longlongval
 
     def get_available_pages(self):
@@ -237,17 +235,27 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
                     continue
 
                 pgd_curr = self.pdba_base(pdpte_value)
+                pgd_curr_raw = self.base.read(pgd_curr, 8 * ptrs_per_pae_pgd)
+                pgd_strings = [pgd_curr_raw[x*8:(x*8)+8] for x in xrange(ptrs_per_pae_pgd)]
+                pgd_curr_list = [self.ltQstruct.unpack(s)[0] for s in pgd_strings]
+                # Here we saved 512x 8 byte reads, and replaced them by 1 bgi 4k read.
                 for j in range(0, ptrs_per_pae_pgd):
                     soffset = vaddr + (j * ptrs_per_pae_pgd * ptrs_per_pae_pte * 8)
-                    entry = self.read_long_long_phys(pgd_curr)
-                    pgd_curr = pgd_curr + 8
+                    #entry = self.read_long_long_phys(pgd_curr)
+                    #pgd_curr = pgd_curr + 8
+                    entry = pgd_curr_list[j]
                     if self.entry_present(entry) and self.page_size_flag(entry):
                         yield (soffset, 0x200000)
                     elif self.entry_present(entry):
                         pte_curr = entry & 0xFFFFFFFFFF000
+                        pte_curr_raw = self.base.read(pte_curr, 8 * ptrs_per_pae_pgd)
+                        pte_strings = [pte_curr_raw[x*8:(x*8)+8] for x in xrange(ptrs_per_pae_pte)]
+                        pte_curr_list = [self.ltQstruct.unpack(s)[0] for s in pte_strings]
+                        # And here we saved another 512x 8 byte reads.
                         for k in range(0, ptrs_per_pae_pte):
-                            pte_entry = self.read_long_long_phys(pte_curr)
-                            pte_curr = pte_curr + 8
+                            pte_entry = pte_curr_list[k]
+                            #pte_entry = self.read_long_long_phys(pte_curr)
+                            #pte_curr = pte_curr + 8
                             if self.entry_present(pte_entry):
                                 yield (soffset + k * 0x1000, 0x1000)
 
