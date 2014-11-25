@@ -12,6 +12,10 @@ If you believe you've been left off, it is not
 intentional. Please bring it to our attention!
 ===============================================
 
+Volatility 2.5: 
+
+Bruno Constanzo for various patches to enhance performance/optimization 
+
 Volatility 2.4:
 
 Justin Capella and Espen Olsen for their work on the Qemu ELF core dumps
