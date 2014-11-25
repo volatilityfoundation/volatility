@@ -25,6 +25,8 @@ import struct
 import volatility.plugins.common as common
 import volatility.utils as utils
 import volatility.debug as debug
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class BiosKbd(common.AbstractWindowsCommand):
     """Reads the keyboard buffer from Real Mode memory"""
@@ -34,11 +36,16 @@ class BiosKbd(common.AbstractWindowsCommand):
     LEN = 39
     FORMAT = "<BBBHH32s"
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("AsciiChar", str),
+                       ("AsciiCode", Address),
+                       ("Scancode", Address)],
+                        self.generator(data))
+
+    def generator(self, data):
         """Displays the character codes"""
-        outfd.write("Ascii     Scancode\n")
         for c, s in data:
-            outfd.write("{0} (0x{1:02x})   0x{2:02x}\n".format(self.format_char(c), ord(c), s))
+            yield (0, [str(self.format_char(c)), Address(ord(c)), Address(s)])
 
     def format_char(self, c):
         """Prints out an ascii printable character"""
