@@ -29,6 +29,7 @@ import volatility.win32.rawreg as rawreg
 import volatility.debug as debug
 import volatility.plugins.registry.registryapi as registryapi
 import volatility.plugins.common as common
+from volatility.renderers import TreeGrid
 import hashlib
 import struct
 
@@ -536,11 +537,13 @@ class GetServiceSids(common.AbstractWindowsCommand):
         for sid in servicesids:
             yield sid, servicesids[sid]
 
-    def render_text(self, outfd, data):
-        """ output to Service SIDs as a dictionary for future use"""
-        outfd.write("servicesids = { \n")
+    def unified_output(self, data):
+        return TreeGrid([("SID", str),
+                       ("Service", str)],
+                        self.generator(data))
+
+    def generator(self, data):
         for sid, service in data:
             if not service:
                 continue
-            outfd.write("    '" + sid + "': '" + service + "',\n")
-        outfd.write("}\n")
+            yield (0, [str(sid), str(service)])

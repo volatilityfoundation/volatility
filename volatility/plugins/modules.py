@@ -20,9 +20,10 @@
 #
 
 #pylint: disable-msg=C0111
-
+from volatility import renderers
 import volatility.plugins.common as common
 import volatility.cache as cache
+from volatility.renderers.basic import Address, Hex
 import volatility.win32 as win32
 import volatility.utils as utils
 
@@ -33,27 +34,29 @@ class Modules(common.AbstractWindowsCommand):
         config.add_option("PHYSICAL-OFFSET", short_option = 'P', default = False,
                           cache_invalidator = False, help = "Physical Offset", action = "store_true")
 
-    def render_text(self, outfd, data):
-        offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
-        self.table_header(outfd,
-                          [("Offset{0}".format(offsettype), "[addrpad]"),
-                           ("Name", "20"),
-                           ('Base', "[addrpad]"),
-                           ('Size', "[addr]"),
-                           ('File', "")
-                           ])
-
+    def generator(self, data):
         for module in data:
             if not self._config.PHYSICAL_OFFSET:
                 offset = module.obj_offset
             else:
                 offset = module.obj_vm.vtop(module.obj_offset)
-            self.table_row(outfd,
-                         offset,
-                         str(module.BaseDllName  or ''),
-                         module.DllBase,
-                         module.SizeOfImage,
-                         str(module.FullDllName or ''))
+            yield (0,
+                   [Address(offset),
+                    str(module.BaseDllName or ''),
+                    Address(module.DllBase),
+                    Hex(module.SizeOfImage),
+                    str(module.FullDllName or '')])
+
+    def unified_output(self, data):
+        offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
+        tg = renderers.TreeGrid(
+                          [("Offset{0}".format(offsettype), Address),
+                           ("Name", str),
+                           ('Base', Address),
+                           ('Size', Hex),
+                           ('File', str)
+                           ], self.generator(data))
+        return tg
 
 
     @cache.CacheDecorator("tests/lsmod")
@@ -67,22 +70,25 @@ class Modules(common.AbstractWindowsCommand):
 class UnloadedModules(common.AbstractWindowsCommand):
     """Print list of unloaded modules"""
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
 
-        self.table_header(outfd, [
-                           ("Name", "20"),
-                           ('StartAddress', "[addrpad]"),
-                           ('EndAddress', "[addrpad]"),
-                           ('Time', "")])
+        def generator(data):
+            for drv in data:
+                yield (0, [str(drv.Name),
+                                 Address(drv.StartAddress),
+                                 Address(drv.EndAddress),
+                                 str(drv.CurrentTime)])
 
-        for drv in data:
-            self.table_row(outfd, drv.Name, drv.StartAddress, 
-                          drv.EndAddress, drv.CurrentTime) 
+        return renderers.TreeGrid([("Name", str),
+                                 ('StartAddress', Address),
+                                 ('EndAddress', Address),
+                                 ('Time', str)],
+                                  generator(data))
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
-    
+
         kdbg = win32.tasks.get_kdbg(addr_space)
 
         for drv in kdbg.MmUnloadedDrivers.dereference().dereference():
-            yield drv 
+            yield drv

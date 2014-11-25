@@ -36,6 +36,7 @@ import volatility.addrspace as addrspace
 import volatility.obj as obj
 import volatility.debug as debug
 import os, datetime, ntpath
+from volatility.renderers import TreeGrid
 
 # for more information on Event Log structures see WFA 2E pg 260-263 by Harlan Carvey
 evt_log_types = {
@@ -242,29 +243,34 @@ class EvtLogs(common.AbstractWindowsCommand):
             
             ## Scan to the next record signature 
             loc = buf.find("LfLe", loc + 1)
-            
-    def render_text(self, outfd, data):
-        if self._config.DUMP_DIR == None:
+
+    def unified_output(self, data):
+        return TreeGrid([("TimeWritten", str),
+                       ("LogFile", str),
+                       ("ComputerName", str),
+                       ("SID", str),
+                       ("Source", str),
+                       ("EventID", str),
+                       ("EventType", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        if self._config.DUMP_DIR and not self._config.SAVE_EVT:
+            debug.error("Please add --save-evt flag to dump EVT files")
+        if self._config.SAVE_EVT and self._config.DUMP_DIR == None:
             debug.error("Please specify a dump directory (--dump-dir)")
-        if not os.path.isdir(self._config.DUMP_DIR):
+        if self._config.SAVE_EVT and not os.path.isdir(self._config.DUMP_DIR):
             debug.error(self._config.DUMP_DIR + " is not a directory")
 
-        for name, buf in data: 
-            ## We can use the ntpath module instead of manually replacing the slashes
-            ofname = ntpath.basename(name)
-            
+        for name, buf in data:
             ## Dump the raw event log so it can be parsed with other tools
             if self._config.SAVE_EVT:
+                ofname = ntpath.basename(name)
                 fh = open(os.path.join(self._config.DUMP_DIR, ofname), 'wb')
                 fh.write(buf)
                 fh.close()
-                outfd.write('Saved raw .evt file to {0}\n'.format(ofname))
-            
-            ## Now dump the parsed, pipe-delimited event records to a file
-            ofname = ofname.replace(".evt", ".txt")
-            fh = open(os.path.join(self._config.DUMP_DIR, ofname), 'wb')
+                print 'Saved raw .evt file to {0}'.format(ofname)
             for fields in self.parse_evt_info(name, buf):
-                fh.write('|'.join(fields) + "\n")    
-            fh.close()
-            outfd.write('Parsed data sent to {0}\n'.format(ofname))
+                yield (0, [str(fields[0]), str(fields[1]), str(fields[2]), str(fields[3]), str(fields[4]), str(fields[5]), str(fields[6])])
+
 

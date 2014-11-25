@@ -28,6 +28,7 @@ import volatility.obj as obj
 import volatility.utils as utils
 import volatility.debug as debug
 import volatility.exceptions as exceptions
+from volatility.renderers import TreeGrid
 
 class VerInfo(procdump.ProcDump):
     """Prints out the version information from PE images"""
@@ -76,6 +77,43 @@ class VerInfo(procdump.ProcDump):
                 pefile = obj.Object("_IMAGE_DOS_HEADER", module.DllBase, process_space)
                 if pefile.is_valid():
                     yield module, pefile
+
+    def unified_output(self, data):
+        return TreeGrid([("Module", str),
+                       ("FileVersion", str),
+                       ("ProductVersion", str),
+                       ("Flags", str),
+                       ("OS", str),
+                       ("FileType", str),
+                       ("FileDate", str), 
+                       ("InfoString", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for module, pefile in data:
+            if module:
+                name = str(module.FullDllName)
+            vinfo = pefile.get_version_info()
+            if vinfo != None:
+                fileversion = "".format(vinfo.FileInfo.file_version())
+                prodversion = "".format(vinfo.FileInfo.product_version())
+                flags = "".format(vinfo.FileInfo.flags())
+                os = "".format(vinfo.FileInfo.FileOS)
+                filetype = "".format(vinfo.FileInfo.file_type())
+                filedate = "".format(vinfo.FileInfo.FileDate or '')
+                infostring = ""
+                for string, value in vinfo.get_file_strings():
+                    infostring += "{0} : {1}".format(string, value)
+                yield (0, [name,
+                            fileversion,
+                            prodversion,
+                            flags,
+                            os,
+                            filetype,
+                            filedate,
+                            infostring])
+            else:
+                yield (0, [name, "", "", "", "", "", "", ""])
 
     def render_text(self, outfd, data):
         """Renders the text"""

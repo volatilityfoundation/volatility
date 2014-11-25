@@ -20,6 +20,8 @@ import volatility.utils as utils
 import volatility.win32.tasks as tasks
 import volatility.obj as obj
 import volatility.debug as debug
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 #--------------------------------------------------------------------------------
 # Profile Modifications 
@@ -176,13 +178,14 @@ class BigPools(common.AbstractWindowsCommand):
         for pool in BigPagePoolScanner(kernel_space).scan(tags):
             yield pool
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Allocation", Address),
+                       ("Tag", str),
+                       ("PoolType", str),
+                       ("NumberOfBytes", str)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Allocation", "[addrpad]"), 
-                                  ("Tag", "8"), 
-                                  ("PoolType", "26"), 
-                                  ("NumberOfBytes", "")])
-
+    def generator(self, data):
         for entry in data:
 
             # Not available until Vista 
@@ -197,4 +200,4 @@ class BigPools(common.AbstractWindowsCommand):
             else:
                 num_bytes = ""
 
-            self.table_row(outfd, entry.Va, entry.Key, pool_type, num_bytes)
+            yield (0, [Address(entry.Va), str(entry.Key), str(pool_type), str(num_bytes)])

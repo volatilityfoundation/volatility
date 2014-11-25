@@ -16,29 +16,40 @@
 # You should have received a copy of the GNU General Public License
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
+from volatility import renderers
+from volatility.commands import Command
 
 import volatility.plugins.crashinfo as crashinfo
+from volatility.renderers.basic import Address, Hex
+
 
 class VBoxInfo(crashinfo.CrashInfo):
     """Dump virtualbox information"""
-    
+
     target_as = ['VirtualBoxCoreDumpElf64']
-        
+
+    def unified_output(self, data):
+        return renderers.TreeGrid([("FileOffset", Address),
+                                 ("Memory Offset", Address),
+                                 ("Size", Hex)],
+                                  self.generator(data))
+
+    def generator(self, data):
+        for memory_offset, file_offset, length in data.get_runs():
+            yield (0, [Address(file_offset),
+                                  Address(memory_offset),
+                                  Address(length)])
+
     def render_text(self, outfd, data):
-    
+
         header = data.get_header()
-        
+
         outfd.write("Magic: {0:#x}\n".format(header.u32Magic))
         outfd.write("Format: {0:#x}\n".format(header.u32FmtVersion))
         outfd.write("VirtualBox {0}.{1}.{2} (revision {3})\n".format(
-                header.Major, 
-                header.Minor, header.Build, 
+                header.Major,
+                header.Minor, header.Build,
                 header.u32VBoxRevision))
         outfd.write("CPUs: {0}\n\n".format(header.cCpus))
-        
-        self.table_header(outfd, [("File Offset", "[addrpad]"), 
-                                  ("Memory Offset", "[addrpad]"), 
-                                  ("Size", "[addrpad]")])
-        
-        for memory_offset, file_offset, length in data.get_runs():
-            self.table_row(outfd, file_offset, memory_offset, length)
+
+        Command.render_text(outfd, data)

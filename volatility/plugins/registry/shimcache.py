@@ -26,10 +26,11 @@
 """
 
 import volatility.plugins.registry.registryapi as registryapi
+from volatility.renderers import TreeGrid
 import volatility.debug as debug
 import volatility.utils as utils
 import volatility.obj as obj
-import volatility.commands as commands
+import volatility.plugins.common as common
 import volatility.addrspace as addrspace
 
 # Structures taken from the ShimCache Whitepaper: https://blog.mandiant.com/archives/2459
@@ -211,8 +212,11 @@ class ShimCacheTypesWin7x64(obj.ProfileModification):
         profile.vtypes.update(appcompat_type_win7_x64)
 
 
-class ShimCache(commands.Command):
+class ShimCache(common.AbstractWindowsCommand):
     """Parses the Application Compatibility Shim Cache registry key"""
+    def __init__(self, config, *args, **kwargs):
+        self._addrspace = None
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
 
     @staticmethod
     def is_valid_profile(profile):
@@ -235,10 +239,10 @@ class ShimCache(commands.Command):
         xp = False
 
         if version <= (5, 1):
-            key = currentcs + '\\' + "Control\\Session Manager\\AppCompatibility"
+            key = currentcs + "\\Control\\Session Manager\\AppCompatibility"
             xp = True
         else:
-            key = currentcs + '\\' + "Control\\Session Manager\\AppCompatCache"
+            key = currentcs + "\\Control\\Session Manager\\AppCompatCache"
 
         data_raw = regapi.reg_get_value('system', key, "AppCompatCache")
         if data_raw == None or len(data_raw) < 0x1c:
@@ -264,21 +268,16 @@ class ShimCache(commands.Command):
         for entry in self.get_entries(addr_space, regapi):
             yield entry
 
-    def render_text(self, outfd, data):
-        first = True
+    def unified_output(self, data):
+        # blank header in case there is no shimcache data
+        return TreeGrid([("Last Modified", str),
+                       ("Last Update", str),
+                       ("Path", str),
+                      ], self.generator(data))
+
+    def generator(self, data):
         for path, lm, lu in data:
             if lu:
-                if first:
-                    self.table_header(outfd, [("Last Modified", "30"),
-                                              ("Last Update", "30"),
-                                              ("Path", ""),
-                                             ])
-                    first = False
-                outfd.write("{0:30} {1:30} {2}\n".format(lm, lu, path))
+                yield (0, [str(lm), str(lu), str(path).strip()])
             else:
-                if first:
-                    self.table_header(outfd, [("Last Modified", "30"),
-                                              ("Path", ""),
-                                             ])
-                    first = False
-                outfd.write("{0:30} {1}\n".format(lm, path))
+                yield (0, [str(lm), "-", str(path).strip()])
