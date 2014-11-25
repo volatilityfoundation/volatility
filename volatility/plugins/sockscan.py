@@ -28,10 +28,13 @@ This module implements the fast socket scanning
 """
 
 #pylint: disable-msg=C0111
+from volatility import renderers
 
 import volatility.poolscan as poolscan
 import volatility.plugins.common as common
 import volatility.protos as protos
+from volatility.renderers.basic import Address
+
 
 class PoolScanSocket(poolscan.PoolScanner):
     """Pool scanner for tcp socket objects"""
@@ -70,23 +73,26 @@ class SockScan(common.AbstractScanCommand):
         return (profile.metadata.get('os', 'unknown') == 'windows' and
                 profile.metadata.get('major', 0) == 5)
 
-    def render_text(self, outfd, data):
+    text_sort_column = "port"
 
-        self.table_header(outfd, [(self.offset_column(), '[addrpad]'),
-                                  ('PID', '>8'),
-                                  ('Port', '>6'),
-                                  ('Proto', '>6'),
-                                  ('Protocol', '15'),
-                                  ('Address', '15'),
-                                  ('Create Time', '')
-                                  ])
+    def unified_output(self, data):
 
+        return renderers.TreeGrid([(self.offset_column(), Address),
+                                  ('PID', int),
+                                  ('Port', int),
+                                  ('Proto', int),
+                                  ('Protocol', str),
+                                  ('Address', str),
+                                  ('Create Time', str)
+                                  ], self.generator(data))
+
+    def generator(self, data):
         for sock_obj in data:
-            self.table_row(outfd,
-                           sock_obj.obj_offset,
-                           sock_obj.Pid,
-                           sock_obj.LocalPort,
-                           sock_obj.Protocol,
-                           protos.protos.get(sock_obj.Protocol.v(), "-"),
-                           sock_obj.LocalIpAddress,
-                           sock_obj.CreateTime)
+            yield (0,
+                           [Address(sock_obj.obj_offset),
+                           int(sock_obj.Pid),
+                           int(sock_obj.LocalPort),
+                           int(sock_obj.Protocol),
+                           str(protos.protos.get(sock_obj.Protocol.v(), "-")),
+                           str(sock_obj.LocalIpAddress),
+                           str(sock_obj.CreateTime)])

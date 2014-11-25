@@ -31,6 +31,8 @@ import volatility.utils as utils
 import volatility.poolscan as poolscan
 import volatility.plugins.common as common
 import volatility.plugins.bigpagepools as bigpools
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class PoolScanHive(poolscan.PoolScanner):
     """Pool scanner for registry hives"""
@@ -74,7 +76,10 @@ class HiveScan(common.AbstractScanCommand):
             for result in self.scan_results(addr_space):
                 yield result
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [('Offset(P)', '[addrpad]')])
+    def unified_output(self, data):
+        return TreeGrid([("Offset(P)", Address)],
+                        self.generator(data))
+
+    def generator(self, data):
         for hive in data:
-            self.table_row(outfd, hive.obj_offset)
+            yield(0, [Address(hive.obj_offset)])

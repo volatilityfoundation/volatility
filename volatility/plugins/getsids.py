@@ -34,6 +34,7 @@ import volatility.plugins.registry.registryapi as registryapi
 import volatility.plugins.taskmods as taskmods
 import volatility.plugins.getservicesids as getservicesids
 import volatility.utils as utils
+from volatility import renderers
 import re, ntpath
 
 def find_sid_re(sid_string, sid_re_list):
@@ -150,7 +151,7 @@ class GetSIDs(taskmods.DllList):
     def lookup_user_sids(self):
 
         regapi = registryapi.RegistryApi(self._config)
-        regapi.set_current("hklm") 
+        regapi.set_current("hklm")
 
         key = "Microsoft\\Windows NT\\CurrentVersion\\ProfileList"
         val = "ProfileImagePath"
@@ -167,30 +168,44 @@ class GetSIDs(taskmods.DllList):
 
         return sids
 
-    def render_text(self, outfd, data):
-        """Renders the sids as text"""
+    def unified_output(self, data):
 
-        user_sids = self.lookup_user_sids()
+        def generator(data):
+            user_sids = self.lookup_user_sids()
 
-        for task in data:
-            token = task.get_token()
+            for task in data:
+                token = task.get_token()
 
-            if not token:
-                outfd.write("{0} ({1}): Token unreadable\n".format(task.ImageFileName, int(task.UniqueProcessId)))
-                continue
+                if not token:
+                    tg.append(None, [int(task.UniqueProcessId),
+                                     str(task.ImageFileName),
+                                     "Token unreadable",
+                                     ""])
+                    continue
 
-            for sid_string in token.get_sids():
-                if sid_string in well_known_sids:
-                    sid_name = " ({0})".format(well_known_sids[sid_string])
-                elif sid_string in getservicesids.servicesids:
-                    sid_name = " ({0})".format(getservicesids.servicesids[sid_string])
-                elif sid_string in user_sids:   
-                    sid_name = " ({0})".format(user_sids[sid_string])
-                else:
-                    sid_name_re = find_sid_re(sid_string, well_known_sid_re)
-                    if sid_name_re:
-                        sid_name = " ({0})".format(sid_name_re)
+                for sid_string in token.get_sids():
+                    if sid_string in well_known_sids:
+                        sid_name = well_known_sids[sid_string]
+                    elif sid_string in getservicesids.servicesids:
+                        sid_name = getservicesids.servicesids[sid_string]
+                    elif sid_string in user_sids:
+                        sid_name = user_sids[sid_string]
                     else:
-                        sid_name = ""
+                        sid_name_re = find_sid_re(sid_string, well_known_sid_re)
+                        if sid_name_re:
+                            sid_name = sid_name_re
+                        else:
+                            sid_name = ""
 
-                outfd.write("{0} ({1}): {2}{3}\n".format(task.ImageFileName, task.UniqueProcessId, sid_string, sid_name))
+                    yield (0, [int(task.UniqueProcessId),
+                                     str(task.ImageFileName),
+                                     str(sid_string),
+                                     str(sid_name)])
+
+        return renderers.TreeGrid(
+            [("PID", int),
+             ("Process", str),
+             ("SID", str),
+             ("Name", str),
+            ], generator(data))
+

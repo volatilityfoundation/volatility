@@ -17,12 +17,21 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import sys, textwrap
+import os
+import sys
+import textwrap
 import volatility.debug as debug
 import volatility.fmtspec as fmtspec
 import volatility.obj as obj
 import volatility.registry as registry
+import volatility.renderers as renderers
 import volatility.addrspace as addrspace
+from volatility.renderers.basic import Address, Address64, Hex
+from volatility.renderers.dot import DotRenderer
+from volatility.renderers.html import HTMLRenderer, JSONRenderer
+from volatility.renderers.sqlite import SqliteRenderer
+from volatility.renderers.text import TextRenderer, FormatCellRenderer, QuickTextRenderer
+
 
 class Command(object):
     """ Base class for each plugin command """
@@ -35,10 +44,11 @@ class Command(object):
     # Make these class variables so they can be modified across every plugin
     elide_data = True
     tablesep = " "
+    text_sort_column = None
 
     def __init__(self, config, *_args, **_kwargs):
         """ Constructor uses args as an initializer. It creates an instance
-        of OptionParser, populates the options, and finally parses the 
+        of OptionParser, populates the options, and finally parses the
         command line. Options are stored in the self.opts attribute.
         """
         self._config = config
@@ -88,7 +98,7 @@ class Command(object):
         """ Executes the plugin command."""
         # Check we can support the plugins
         profs = registry.get_plugin_classes(obj.Profile)
-        # force user to give a profile if a plugin 
+        # force user to give a profile if a plugin
         #  other than kdbgscan or imageinfo are given:
         if self.__class__.__name__.lower() in ["kdbgscan", "imageinfo"] and self._config.PROFILE == None:
             self._config.update("PROFILE", "WinXPSP2x86")
@@ -106,8 +116,10 @@ class Command(object):
         ## requested output mode:
         function_name = "render_{0}".format(self._config.OUTPUT)
         if self._config.OUTPUT_FILE:
-            outfd = open(self._config.OUTPUT_FILE, 'w')
-            # TODO: We should probably check that this won't blat over an existing file 
+            if os.path.exists(self._config.OUTPUT_FILE):
+                debug.error("File " + self._config.OUTPUT_FILE + " already exists.  Cowardly refusing to overwrite it...")
+            outfd = open(self._config.OUTPUT_FILE, 'wb')
+            # TODO: We should probably check that this won't blat over an existing file
         else:
             outfd = sys.stdout
 
@@ -217,3 +229,60 @@ class Command(object):
             result = self._elide(("{0:" + spec.to_string() + "}").format(args[index]), spec.minwidth)
             reslist.append(result)
         outfd.write(self.tablesep.join(reslist) + "\n")
+
+    text_stock_renderers = {Hex: "#x",
+                            Address: "#8x",
+                            Address64: "#16x",
+                            int: "",
+                            str: "<",
+                            float: ".2",
+                            bytes: ""}
+
+
+    def text_cell_renderers(self, columns):
+        """Returns default renderers for the columns listed"""
+        renderlist = [FormatCellRenderer("")] * len(columns)
+
+        # FIXME: Really, this should be handled by the plugin knowing what type of AS each object comes from
+        # However, as a nasty workaround, we can force all x64 profiles to produce addresses that are 64-bit in length
+        # It does not deal with PAE address spaces, or WoW64 addresses, or anything else weird or wonderful
+        # This will NOT be in volatility 3.0
+        x64 = False
+        if self._config.PROFILE.endswith("x64"):
+            x64 = True
+
+        for column in columns:
+            if not isinstance(column, renderers.Column):
+                raise TypeError("Columns must be a list of Column objects")
+            columntype = column.type if not x64 or column.type != Address else Address64
+            renderlist[column.index] = FormatCellRenderer(self.text_stock_renderers[columntype])
+        return renderlist
+
+    def unified_output(self, data):
+        raise NotImplementedError("Rendering using the unified output format has not been implemented for this plugin.")
+
+    def _render(self, outfd, renderer, data):
+        output = self.unified_output(data)
+
+        if isinstance(output, renderers.TreeGrid):
+            renderer.render(outfd, output)
+        else:
+            raise TypeError("Unified Output must return a TreeGrid object")
+
+    def render_text(self, outfd, data):
+        self._render(outfd, TextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
+
+    def render_quicktext(self, outfd, data):
+        self._render(outfd, QuickTextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
+
+    def render_json(self, outfd, data):
+        self._render(outfd, JSONRenderer(), data)
+
+    def render_sqlite(self, outfd, data):
+        self._render(outfd, SqliteRenderer(self.__class__.__name__, self._config), data)
+
+    def render_dot(self, outfd, data):
+        self._render(outfd, DotRenderer(self.text_cell_renderers, self._config), data)
+
+    def render_html(self, outfd, data):
+        self._render(outfd, HTMLRenderer(), data)

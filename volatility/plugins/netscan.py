@@ -27,6 +27,8 @@ import volatility.debug as debug
 import volatility.poolscan as poolscan
 import socket
 import volatility.plugins.overlays.windows.tcpip_vtypes as tcpip_vtypes
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 # Python's socket.AF_INET6 is 0x1e but Microsoft defines it 
 # as a constant value of 0x17 in their source code. Thus we 
@@ -227,21 +229,30 @@ class Netscan(common.AbstractScanCommand):
                 for ver, laddr, raddr in objct.dual_stack_sockets():
                     yield objct, "TCP" + ver, laddr, objct.Port, raddr, 0, "LISTENING"
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([(self.offset_column(), Address),
+                       ("Proto", str),
+                       ("LocalAddr", str),
+                       ("ForeignAddr", str),
+                       ("State", str),
+                       ("PID", int),
+                       ("Owner", str),
+                       ("Created", str)],
+                        self.generator(data))
 
-        outfd.write("{0:<18} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
-            self.offset_column(), "Proto", "Local Address", "Foreign Address",
-            "State", "Pid", "Owner", "Created"))
-
+    def generator(self, data):
         for net_object, proto, laddr, lport, raddr, rport, state in data:
 
             lendpoint = "{0}:{1}".format(laddr, lport)
             rendpoint = "{0}:{1}".format(raddr, rport)
 
-            outfd.write("{0:<#18x} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
-                net_object.obj_offset, proto, lendpoint,
-                rendpoint, state, net_object.Owner.UniqueProcessId,
-                net_object.Owner.ImageFileName,
-                str(net_object.CreateTime or '')
-                ))
+            yield (0, 
+                [Address(net_object.obj_offset), 
+                str(proto), 
+                lendpoint,
+                rendpoint, 
+                str(state), 
+                int(net_object.Owner.UniqueProcessId),
+                str(net_object.Owner.ImageFileName),
+                str(net_object.CreateTime or '')])
 

@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
+from volatility import renderers
 
 import volatility.plugins.common as common
+from volatility.renderers.basic import Hex, Address
 import volatility.utils as utils
 import volatility.poolscan as poolscan
 import volatility.obj as obj
@@ -32,14 +34,14 @@ class ObjectTypeScanner(poolscan.PoolScanner):
         self.pooltag = obj.VolMagic(address_space).ObjectTypePoolTag.v()
         size = 0xc8 # self.address_space.profile.get_obj_size("_OBJECT_TYPE")
 
-        self.checks = [ 
+        self.checks = [
                 ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                 ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
                 #('CheckPoolIndex', dict(value = 0)),
                 ]
 
 class ObjectTypeKeyModification(obj.ProfileModification):
-    before = ['WindowsVTypes'] 
+    before = ['WindowsVTypes']
     conditions = {'os': lambda x: x == 'windows'}
 
     def modification(self, profile):
@@ -52,19 +54,23 @@ class ObjTypeScan(common.AbstractScanCommand):
 
     scanners = [ObjectTypeScanner]
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
 
-        self.table_header(outfd, [("Offset", "[addrpad]"), 
-                                  ("nObjects", "[addr]"), 
-                                  ("nHandles", "[addr]"), 
-                                  ("Key", "8"), 
-                                  ("Name", "30"),  
-                                  ("PoolType", "20")])
-        for object_type in data:
-            self.table_row(outfd, 
-                            object_type.obj_offset, 
-                            object_type.TotalNumberOfObjects, 
-                            object_type.TotalNumberOfHandles, 
-                            str(object_type.Key), 
-                            str(object_type.Name or ''), 
-                            object_type.TypeInfo.PoolType)
+        def generator(data):
+            for object_type in data:
+                yield (0, [
+                    Address(object_type.obj_offset),
+                    Hex(object_type.TotalNumberOfObjects),
+                    Hex(object_type.TotalNumberOfHandles),
+                    str(object_type.Key),
+                    str(object_type.Name or ''),
+                    str(object_type.TypeInfo.PoolType)])
+
+
+        return renderers.TreeGrid( [("Offset", Address),
+                                  ("nObjects", Hex),
+                                  ("nHandles", Hex),
+                                  ("Key", str),
+                                  ("Name", str),
+                                  ("PoolType", str)],
+                                 generator(data))

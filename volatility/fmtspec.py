@@ -35,7 +35,7 @@ class FormatSpec(object):
         self.from_specs(**kwargs)
 
     def from_specs(self, fill = None, align = None, sign = None, altform = None, minwidth = None, precision = None, formtype = None):
-        ## Allow setting individual elements using kwargs 
+        ## Allow setting individual elements using kwargs
         if fill is not None:
             self.fill = fill
         if align is not None:
@@ -103,3 +103,6 @@ class FormatSpec(object):
 
     def __str__(self):
         return self.to_string()
+
+    def __repr__(self):
+        return "<FormatSpec (" + self.to_string() + ")>"
