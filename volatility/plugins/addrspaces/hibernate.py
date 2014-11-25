@@ -20,7 +20,7 @@
 #
 # Code found in WindowsHiberFileSpace32 for parsing meta information
 # is inspired by the work of Matthieu Suiche:  http://sandman.msuiche.net/.
-# A special thanks to Matthieu for all his help integrating 
+# A special thanks to Matthieu for all his help integrating
 # this code in Volatility.
 
 """ A Hiber file Address Space """
@@ -60,8 +60,8 @@ class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
 
     In order for us to work we need to:
     1) have a valid baseAddressSpace
-    2) the first 4 bytes must be 'hibr' or 'wake' 
-        otherwise we bruteforce to find self.header.FirstTablePage in 
+    2) the first 4 bytes must be 'hibr' or 'wake'
+        otherwise we bruteforce to find self.header.FirstTablePage in
         _get_first_table_page() this occurs with a zeroed PO_MEMORY_IMAGE header
     """
     order = 10
@@ -77,6 +77,7 @@ class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
         self.PageCache = Store(50)
         self.MemRangeCnt = 0
         self.entry_count = 0xFF
+        self._long_struct = struct.Struct("=I")
 
         # Extract header information
         self.as_assert(self.profile.has_type("PO_MEMORY_IMAGE"), "PO_MEMORY_IMAGE is not available in profile")
@@ -314,7 +315,7 @@ class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
         string = self.read(addr, 4)
         if not string:
             return obj.NoneObject("Could not read long at " + str(addr))
-        (longval,) = struct.unpack('=I', string)
+        longval, = self._long_struct.unpack(string)
         return longval
 
     def get_available_pages(self):
