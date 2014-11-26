@@ -140,8 +140,8 @@ class Strings(common.AbstractWindowsCommand):
         reverse_map = self.get_reverse_map(addr_space, tasks)
 
         for line in stringlist:
-            (offsetString, string) = self.parse_line(line)
             try:
+                (offsetString, string) = self.parse_line(line)
                 offset = int(offsetString)
             except ValueError:
                 debug.error("String file format invalid.")
