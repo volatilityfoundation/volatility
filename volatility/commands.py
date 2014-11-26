@@ -270,7 +270,8 @@ class Command(object):
             raise TypeError("Unified Output must return a TreeGrid object")
 
     def render_text(self, outfd, data):
-        self._render(outfd, TextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
+        self._render(outfd, TextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column,
+                                         config = self._config), data)
 
     def render_quicktext(self, outfd, data):
         self._render(outfd, QuickTextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)

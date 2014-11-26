@@ -1,4 +1,5 @@
 import math
+import sys
 from volatility import renderers
 from volatility.fmtspec import FormatSpec
 from volatility.renderers import ColumnSortKey
@@ -45,7 +46,7 @@ class FormatCellRenderer(CellRenderer):
 class TextRenderer(Renderer):
     min_column_width = 5
 
-    def __init__(self, cell_renderers_func, max_width = 200, sort_column = None):
+    def __init__(self, cell_renderers_func, max_width = 200, sort_column = None, config = None):
         """Accepts a cell_renderer function, an optional maximum width and optional sort column.
 
         The signature of the cell_renderers_function is:
@@ -57,6 +58,7 @@ class TextRenderer(Renderer):
         self._cell_renderers = None
         self.max_width = max_width
         self.sort_column = sort_column
+        self._config = config
 
     def partition_width(self, widths):
         """Determines if the widths are over the maximum available space, and if so shrinks them"""
@@ -101,6 +103,15 @@ class TextRenderer(Renderer):
             sort_key = ColumnSortKey(grid, self.sort_column).key
 
         self._validate_grid(grid)# Determine number of columns
+
+        if self._config and self._config.VERBOSE:
+            qtr = QuickTextRenderer(self._cell_renderers_func)
+            output = sys.stdout
+            output.write("Immediate (verbose) output:\n")
+            qtr.render(output, grid)
+            output.write("\n")
+            output.flush()
+
         grid_depth = grid.visit(None, lambda x, y: max(y, grid.path_depth(x)), 0)
 
         # Determine max width of each column
