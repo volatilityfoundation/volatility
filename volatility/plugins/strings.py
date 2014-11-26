@@ -25,6 +25,8 @@ import volatility.utils as utils
 import volatility.plugins.common as common
 import volatility.plugins.taskmods as taskmods
 import volatility.plugins.filescan as filescan
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class Strings(common.AbstractWindowsCommand):
     """Match physical offsets to virtual addresses (may take a while, VERY verbose)"""
@@ -144,11 +146,9 @@ class Strings(common.AbstractWindowsCommand):
             except ValueError:
                 debug.error("String file format invalid.")
 
-            pids = []
+            pids = ["FREE MEMORY:-1"]
             if reverse_map.has_key(offset & 0xFFFFF000):
                 pids = ["{0}:{1:08x}".format(pid[0], pid[1] | (offset & 0xFFF)) for pid in reverse_map[offset & 0xFFFFF000][1:]]
-            else:
-                pids = ["FREE MEMORY"]
 
             yield offset, pids, "{0}".format(string.strip())
 
@@ -239,6 +239,23 @@ class Strings(common.AbstractWindowsCommand):
                 continue
         
         return reverse_map
+
+
+    def unified_output(self, data):
+        return TreeGrid([("Offset(P)", Address),
+                       ("Attribution", str),
+                       ("Offset(V)", Address),
+                       ("String", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for offset, pids, string in data:
+            for p in pids:
+                item, addr = p.split(":")
+                yield (0, [Address(offset),
+                        str(item),
+                        Address(int(addr, 16)),
+                        str(string)])
 
     def render_text(self, outfd, data):
         for offset, pids, string in data:
