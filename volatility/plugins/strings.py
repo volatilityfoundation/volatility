@@ -144,12 +144,13 @@ class Strings(common.AbstractWindowsCommand):
             except ValueError:
                 debug.error("String file format invalid.")
 
-            yield "{0} [".format(offset)
+            pids = []
             if reverse_map.has_key(offset & 0xFFFFF000):
-                yield ' '.join(["{0}:{1:08x}".format(pid[0], pid[1] | (offset & 0xFFF)) for pid in reverse_map[offset & 0xFFFFF000][1:]])
+                pids = ["{0}:{1:08x}".format(pid[0], pid[1] | (offset & 0xFFF)) for pid in reverse_map[offset & 0xFFFFF000][1:]]
             else:
-                yield 'FREE MEMORY'
-            yield "] {0}\n".format(string.strip())
+                pids = ["FREE MEMORY"]
+
+            yield offset, pids, "{0}".format(string.strip())
 
     @classmethod
     def parse_line(cls, line):
@@ -240,6 +241,6 @@ class Strings(common.AbstractWindowsCommand):
         return reverse_map
 
     def render_text(self, outfd, data):
+        for offset, pids, string in data:
+            outfd.write("{0} [{1}] {2}\n".format(offset, ' '.join(pids), string))
 
-        for result in data:
-            outfd.write(result)
