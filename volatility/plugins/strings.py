@@ -25,6 +25,7 @@ import volatility.utils as utils
 import volatility.plugins.common as common
 import volatility.plugins.taskmods as taskmods
 import volatility.plugins.filescan as filescan
+import volatility.plugins.addrspaces.standard as standard
 
 class Strings(common.AbstractWindowsCommand):
     """Match physical offsets to virtual addresses (may take a while, VERY verbose)"""
@@ -173,6 +174,33 @@ class Strings(common.AbstractWindowsCommand):
         return tuple(line.split(split_char, 1))
 
     @classmethod
+    def get_file_offset(cls, addr_space, vaddr):
+        """Translate a virtual address to its offset within 
+        the memory dump file, taking into account the possibility
+        of multiple address space layers. 
+
+        :param  cls         | an instance of the Strings plugin class
+        :param  addr_space  | kernel or process virtual address space 
+        :param  vaddr       | the virtual address to translate 
+
+        :return <int> 
+        """
+
+        paddr = addr_space.vtop(vaddr)
+        offset = paddr
+
+        addr_space = addr_space.base 
+        while not isinstance(addr_space, standard.FileAddressSpace):
+            offset = addr_space.translate(offset)
+            # device memory addresses won't translate, so restore the original value 
+            if offset == None:
+                offset = paddr 
+                break
+            addr_space = addr_space.base 
+
+        return offset
+
+    @classmethod
     def get_reverse_map(cls, addr_space, tasks):
         """Generates a reverse mapping of physical addresses 
         to the kernel and/or tasks.
@@ -199,7 +227,7 @@ class Strings(common.AbstractWindowsCommand):
         debug.debug("Calculating kernel mapping...\n")
         available_pages = addr_space.get_available_pages()
         for (vpage, vpage_size) in available_pages:
-            kpage = addr_space.vtop(vpage)
+            kpage = cls.get_file_offset(addr_space, vpage)
             for i in range(0, vpage_size, 0x1000):
                 # Since the output will always be mutable, we 
                 # don't need to reinsert into the list
@@ -223,7 +251,7 @@ class Strings(common.AbstractWindowsCommand):
             try:
                 available_pages = task_space.get_available_pages()
                 for (vpage, vpage_size) in available_pages:
-                    physpage = task_space.vtop(vpage)
+                    physpage = cls.get_file_offset(task_space, vpage)
                     for i in range(0, vpage_size, 0x1000):
                         # Since the output will always be mutable, we 
                         # don't need to reinsert into the list
