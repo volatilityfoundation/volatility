@@ -27,6 +27,8 @@
 import volatility.obj as obj
 import volatility.utils as utils
 import volatility.plugins.linux.common as linux_common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_pslist(linux_common.AbstractLinuxCommand):
     """Gather active tasks by walking the task_struct->task list"""
@@ -70,6 +72,30 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
             if not pidlist or task.pid in pidlist:
                 yield task
 
+    def unified_output(self, data):
+        return TreeGrid([("Offset", Address),
+                       ("Name", str),
+                       ("Pid", int),
+                       ("Uid", str),
+                       ("Gid", str),
+                       ("DTB", Address),
+                       ("StartTime", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for task in data:
+            if task.mm.pgd == None:
+                dtb = task.mm.pgd
+            else:
+                dtb = self.addr_space.vtop(task.mm.pgd) or task.mm.pgd
+            yield (0, [Address(task.obj_offset),
+                                  str(task.comm),
+                                  int(task.pid),
+                                  str(task.uid) if task.uid else "-",
+                                  str(task.gid) if task.gid else "-",
+                                  Address(dtb),
+                                  str(task.get_task_start_time())])
+
     def render_text(self, outfd, data):
 
         self.table_header(outfd, [("Offset", "[addrpad]"),
@@ -94,6 +120,31 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
 
 class linux_memmap(linux_pslist):
     """Dumps the memory map for linux tasks"""
+
+    def unified_output(self, data):
+        return TreeGrid([("Task", str),
+                       ("Pid", int),
+                       ("Virtual", Address),
+                       ("Physical", Address),
+                       ("Size", Address)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for task in data:
+            task_space = task.get_process_address_space()
+
+            pagedata = task_space.get_available_pages()
+            if pagedata:
+                for p in pagedata:
+                    pa = task_space.vtop(p[0])
+                    # pa can be 0, according to the old memmap, but can't == None(NoneObject)
+                    if pa != None:
+                        yield (0, [str(task.comm), int(task.pid), Address(p[0]), Address(pa), Address(p[1])])
+                    #else:
+                    #    outfd.write("0x{0:10x} 0x000000     0x{1:12x}\n".format(p[0], p[1]))
+            else:
+                yield(0, [str(task.comm), int(task.pid), Address(-1), Address(-1), Address(-1)])
+
 
     def render_text(self, outfd, data):
 
