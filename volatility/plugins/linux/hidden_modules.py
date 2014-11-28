@@ -29,6 +29,8 @@ import re
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsmod  as linux_lsmod
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_hidden_modules(linux_common.AbstractLinuxCommand):
     """Carves memory to find hidden kernel modules"""
@@ -99,11 +101,14 @@ class linux_hidden_modules(linux_common.AbstractLinuxCommand):
         for mod in self.walk_modules_address_space(self.addr_space):
             yield mod
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Offset (V)", "[addrpad]"), ("Name", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Offset(V)", Address),
+                       ("Name", str)],
+                        self.generator(data))
 
+    def generator(self, data):
         for module in data:
-            self.table_row(outfd, module.obj_offset, str(module.name))
+            yield (0, [Address(module.obj_offset), str(module.name)])
 
 
 
