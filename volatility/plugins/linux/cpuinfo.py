@@ -26,6 +26,7 @@
 
 import volatility.plugins.linux.common as linux_common
 import volatility.obj as obj
+from volatility.renderers import TreeGrid
 
 class linux_cpuinfo(linux_common.AbstractLinuxIntelCommand):
     """Prints info about each active processor"""
@@ -118,11 +119,13 @@ class linux_cpuinfo(linux_common.AbstractLinuxIntelCommand):
 
             yield i, var
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Processor", int),
+                       ("Vendor", str),
+                       ("Model", str)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Processor", "12"),
-                                  ("Vendor", "16"),
-                                  ("Model", "")])
+    def generator(self, data):
         for i, vendor_id, model_id in data:
-            self.table_row(outfd, str(i), vendor_id, model_id)
+            yield (0, [int(i), str(vendor_id), str(model_id)])
 
