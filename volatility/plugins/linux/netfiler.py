@@ -29,6 +29,8 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsmod as linux_lsmod
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_netfilter(linux_common.AbstractLinuxCommand):
     """Lists Netfilter hooks"""
@@ -66,10 +68,15 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
 
                     yield proto_names[outer], hook_names[inner], hook_ops.hook.v(), hooked
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Proto", "5"), ("Hook", "16"), ("Handler", "[addrpad]"), ("Is Hooked", "5")])
+    def unified_output(self, data):
+        return TreeGrid([("Proto", str),
+                       ("Hook", str),
+                       ("Handler", Address),
+                       ("IsHooked", str)],
+                        self.generator(data))
 
+    def generator(self, data):
         for outer, inner, hook_addr, hooked in data:
-            self.table_row(outfd, outer, inner, hook_addr, hooked)
+            yield (0, [str(outer), str(inner), Address(hook_addr), str(hooked)])
 
 
