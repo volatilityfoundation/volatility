@@ -30,6 +30,7 @@ import volatility.debug as debug
 import volatility.addrspace as addrspace
 import volatility.plugins.linux.common  as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
+from volatility.renderers import TreeGrid
 
 bash_vtypes_32 = {
     '_hist_entry': [ 0xc, {
@@ -153,17 +154,18 @@ class linux_bash(linux_pslist.linux_pslist):
                     if hist.is_valid():
                         yield task, hist
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                       ("Name", str),
+                       ("CommandTime", str),
+                       ("Command", str)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Pid", "8"), 
-                                  ("Name", "20"),
-                                  ("Command Time", "30"),
-                                  ("Command", ""),])
-                                    
+    def generator(self, data):
         for task, hist_entry in data:
-            self.table_row(outfd, task.pid, task.comm, 
-                           hist_entry.time_object(), 
-                           hist_entry.line.dereference())
+            yield (0, [int(task.pid), str(task.comm),
+                           str(hist_entry.time_object()), 
+                           str(hist_entry.line.dereference())])
             
 
 
