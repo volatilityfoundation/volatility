@@ -24,6 +24,8 @@ import volatility.plugins.linux.pslist as linux_pslist
 import volatility.plugins.linux.pidhashtable as linux_pidhashtable
 import volatility.plugins.linux.pslist_cache as linux_pslist_cache
 import volatility.plugins.linux.common as linux_common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 #based off the windows version from mhl
 #
@@ -77,26 +79,24 @@ class linux_psxview(linux_common.AbstractLinuxCommand):
                     seen_offsets.append(offset)
                     yield offset, obj.Object("task_struct", offset = offset, vm = self.addr_space), ps_sources
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Offset(V)", Address),
+                       ("Name", str),
+                       ("PID", int),
+                       ("pslist", str),
+                       ("pid_hash", str),
+                       ("kmem_cache", str),
+                       ("parents", str),
+                       ("leaders", str)],
+                        self.generator(data))
 
-        self.table_header(outfd, [('Offset(V)', '[addrpad]'),
-                                  ('Name', '<20'),
-                                  ('PID', '>6'),
-                                  ('pslist', '5'),
-                                  ('pid_hash', '5'),
-                                  ('kmem_cache', '5'),
-                                  ('parents', '5'),
-                                  ('leaders', '5'),
-                                  ])
-
+    def generator(self, data):
         for offset, process, ps_sources in data:
-            self.table_row(outfd,
-                offset,
-                process.comm,
-                process.pid,
+            yield(0, [Address(offset),
+                str(process.comm),
+                int(process.pid),
                 str(ps_sources['pslist'].__contains__(offset)),
                 str(ps_sources['pid_hash'].__contains__(offset)),
                 str(ps_sources['kmem_cache'].__contains__(offset)),
                 str(ps_sources['parents'].__contains__(offset)),
-                str(ps_sources['thread_leaders'].__contains__(offset)),
-                )
+                str(ps_sources['thread_leaders'].__contains__(offset))])
