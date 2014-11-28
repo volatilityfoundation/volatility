@@ -33,6 +33,8 @@ import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsmod as linux_lsmod
 import volatility.plugins.linux.hidden_modules as linux_hidden_modules
 import volatility.plugins.linux.find_file as linux_find_file
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 try:
     import distorm3
@@ -291,9 +293,16 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         for (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked) in self.get_syscalls(index_lines, True): 
             yield (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked)
  
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Table Name", "6"), ("Index", "5"), ("System Call", "24"), ("Handler Address", "[addrpad]"), ("Symbol", "<60")])
+    def unified_output(self, data):
+        return TreeGrid([("TableName", str),
+                       ("Index", int),
+                       ("SystemCall", str),
+                       ("HandlerAddress", Address),
+                       ("Symbol", str)],
+                        self.generator(data))
+
+    def generator(self, data):
         for (tableaddr, table_name, i, idx_name, call_addr, sym_name, _) in data:
-            self.table_row(outfd, table_name, i, idx_name, call_addr, sym_name)
+            yield (0, [str(table_name), int(i), str(idx_name), Address(call_addr), str(sym_name)])
 
 
