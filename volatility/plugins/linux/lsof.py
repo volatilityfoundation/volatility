@@ -27,16 +27,18 @@
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
+from volatility.renderers import TreeGrid
 
 class linux_lsof(linux_pslist.linux_pslist):
     """Lists open files"""
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                       ("FD", int),
+                       ("Path", str)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Pid", "8"),
-                                  ("FD", "8"),
-                                  ("Path", "")])
-
+    def generator(self, data):
         for task in data:
             for filp, fd in task.lsof(): 
-                self.table_row(outfd, task.pid, fd, linux_common.get_path(task, filp))
+                yield (0, [int(task.pid), int(fd), str(linux_common.get_path(task, filp))])
