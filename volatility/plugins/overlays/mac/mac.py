@@ -263,7 +263,7 @@ class fileglob(obj.CType):
 
         ret = str(ret)
         return ret
-        
+      
 class proc(obj.CType):   
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         self.pack_fmt  = ""
@@ -309,9 +309,19 @@ class proc(obj.CType):
             ret = cred.cr_uid     
         
         return ret
-    
-    def get_process_address_space(self):
 
+    def threads(self):
+        threads = []
+        seen_threads = []
+        qentry = self.task.threads
+        for thread in qentry.thread_walk_list(qentry.obj_offset):
+            if thread.obj_offset not in seen_threads:
+                seen_threads.append(thread.obj_offset)
+                threads.append(thread)
+
+        return threads 
+
+    def get_process_address_space(self):
         cr3 = self.task.map.pmap.pm_cr3
         map_val = str(self.task.map.pmap.pm_task_map or '')
 
@@ -411,6 +421,16 @@ class proc(obj.CType):
                 break
             yield map
             map = map.links.next
+
+    def find_heap_map(self):
+        ret = None
+
+        for pmap in self.get_proc_maps():
+            if pmap.get_special_path() == "[heap]":
+                ret = pmap
+                break
+
+        return None
 
     def search_process_memory(self, s):
         """Search process memory. 
