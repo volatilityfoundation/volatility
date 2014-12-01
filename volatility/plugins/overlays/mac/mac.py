@@ -490,6 +490,41 @@ class proc(obj.CType):
                         yield offset + hit
                 offset += min(to_read, scan_blk_sz)
 
+    def psenv(self):
+        proc_as = self.get_process_address_space()
+
+        # We need a valid process AS to continue 
+        if not proc_as:
+            return
+
+        start = self.user_stack - self.p_argslen
+        skip  = len(self.get_arguments())
+        end   = self.p_argslen
+
+        to_read = end - skip
+    
+        vars_buf = proc_as.read(start + skip, to_read)
+        if vars_buf:
+            ents = vars_buf.split("\x00")
+            for varstr in ents:
+                eqidx = varstr.find("=")
+
+                if eqidx == -1:
+                    continue
+
+                key = varstr[:eqidx]
+                val = varstr[eqidx+1:]
+
+                yield (key, val) 
+    
+    def get_environment(self):
+        env = ""
+
+        for (k, v) in self.psenv():
+            env = env + "{0}={1} ".format(k, v)
+
+        return env
+
     def get_arguments(self):
         proc_as = self.get_process_address_space()
 
@@ -928,7 +963,6 @@ class sockaddr_dl(obj.CType):
         """Get the value of the sockaddr_dl object."""
 
         ret = ""
-
         for i in xrange(self.sdl_alen):
             try:
                 e = self.sdl_data[self.sdl_nlen + i]
