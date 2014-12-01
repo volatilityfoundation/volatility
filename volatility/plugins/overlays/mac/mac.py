@@ -566,6 +566,26 @@ class proc(obj.CType):
             argc -= 1            
 
         return " ".join([str(s) for s in args])
+    
+    def lsof(self):
+        num_fds = self.p_fd.fd_lastfile
+        nfiles  = self.p_fd.fd_nfiles
+        if nfiles > num_fds:
+            num_fds = nfiles
+
+        fds = obj.Object('Array', offset = self.p_fd.fd_ofiles, vm = self.obj_vm, targetType = 'Pointer', count = num_fds)
+
+        for i, fd in enumerate(fds):
+            f = fd.dereference_as("fileproc")
+            if f:
+                ftype = f.f_fglob.fg_type
+                if ftype == 'DTYPE_VNODE': 
+                    vnode = f.f_fglob.fg_data.dereference_as("vnode")
+                    path = vnode.full_path()
+                else:
+                    path = ""
+                        
+                yield f, path, i
 
 class rtentry(obj.CType):
 
