@@ -23,9 +23,11 @@
 @contact:      atcuno@gmail.com
 @organization: 
 """
-import volatility.obj as obj
-import volatility.plugins.mac.common as common
+import volatility.obj   as obj
+import volatility.utils as utils
 import volatility.debug as debug
+
+import volatility.plugins.mac.common as common
 
 class mac_pslist(common.AbstractMacCommand):
     """ List Running Processes """
@@ -33,6 +35,14 @@ class mac_pslist(common.AbstractMacCommand):
     def __init__(self, config, *args, **kwargs):
         common.AbstractMacCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('PID', short_option = 'p', default = None, help = 'Operate on these Process IDs (comma-separated)', action = 'store', type = 'str')
+
+    @staticmethod
+    def virtual_process_from_physical_offset(addr_space, offset):
+        pspace = utils.load_as(addr_space.get_config(), astype = 'physical')
+        proc = obj.Object("proc", vm = pspace,     offset = offset)
+        task = obj.Object("task", vm = addr_space, offset = proc.task)
+        
+        return task.bsd_info.dereference_as("proc")
 
     def calculate(self):
         common.set_plugin_members(self)
