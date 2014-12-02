@@ -26,6 +26,8 @@
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_check_syscall_arm(linux_common.AbstractLinuxARMCommand):
     """ Checks if the system call table has been altered """
@@ -84,6 +86,22 @@ class linux_check_syscall_arm(linux_common.AbstractLinuxARMCommand):
                 yield(i, call_addr, 1)
             else:
                 yield(i, call_addr, 0)
+
+    def unified_output(self, data):
+        return TreeGrid([("Index", Address),
+                       ("Address", Address),
+                       ("Symbol", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for (i, call_addr, hooked) in data:
+
+            if hooked == 0:
+                sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
+            else:
+                sym_name = "HOOKED"
+
+            yield (0 [Address(i), Address(call_addr), str(sym_name)])
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Index", "[addr]"), ("Address", "[addrpad]"), ("Symbol", "<30")])
