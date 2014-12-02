@@ -29,6 +29,8 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.lsmod as linux_lsmod
 import volatility.plugins.linux.common as linux_common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_check_modules(linux_common.AbstractLinuxCommand):
     """Compares module list to sysfs info, if available"""
@@ -63,9 +65,12 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
         for mod_name in set(kset_modules.keys()).difference(lsmod_modules):
             yield kset_modules[mod_name]
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("ModuleAddress", Address),
+                       ("ModuleName", str)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Module Address", "[address]"), ("Module Name", "24")])
+    def generator(self, data):
         for mod in data:
-            self.table_row(outfd, mod, str(mod.name))
+            yield (0, [Address(mod), str(mod.name)])
 
