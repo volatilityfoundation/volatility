@@ -31,7 +31,6 @@ class mac_netstat(mac_tasks.mac_tasks):
     """ Lists active per-process network connections """
 
     def render_text(self, outfd, data):
-        
         self.table_header(outfd, [("Proto", "6"),
                                   ("Local IP", "20"),
                                   ("Local Port", "6"),
@@ -41,22 +40,12 @@ class mac_netstat(mac_tasks.mac_tasks):
                                   ("Process", "24")])
         
         for proc in data:
-            for (filp, _, _) in proc.lsof():
-                if filp.f_fglob.fg_type == 'DTYPE_SOCKET':
-                    socket = filp.f_fglob.fg_data.dereference_as("socket") 
-                    family = socket.family
-        
-                    if family == 1:
-                        upcb = socket.so_pcb.dereference_as("unpcb")
-                        path = upcb.unp_addr.sun_path
-                        outfd.write("UNIX {0}\n".format(path))
-                    elif family in [2, 30]:
-                        proto = socket.protocol
-                        state = socket.state
-                       
-                        (lip, lport, rip, rport) = socket.get_connection_info()
-     
-                        self.table_row(outfd, proto, lip, lport, rip, rport, state, "{}/{}".format(proc.p_comm, proc.p_pid))
-                        
+            for (family, info) in proc.netstat():
+                if family == 1:
+                    outfd.write("UNIX {0}\n".format(info))
+                elif family in [2, 30]:
+                    (proto, lip, lport, rip, rport, state) = info
+                    self.table_row(outfd, proto, lip, lport, rip, rport, state, "{}/{}".format(proc.p_comm, proc.p_pid))
+                    
 
   

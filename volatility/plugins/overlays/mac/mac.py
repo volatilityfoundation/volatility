@@ -447,6 +447,24 @@ class proc(obj.CType):
                     else:
                         break         
 
+    def netstat(self):
+        for (filp, _, _) in self.lsof():
+            if filp.f_fglob.fg_type == 'DTYPE_SOCKET':
+                socket = filp.f_fglob.fg_data.dereference_as("socket") 
+                family = socket.family
+    
+                if family == 1:
+                    upcb = socket.so_pcb.dereference_as("unpcb")
+                    path = upcb.unp_addr.sun_path
+                    yield (family,  (socket.v(), path))
+                elif family in [2, 30]:
+                    proto = socket.protocol
+                    state = socket.state
+                   
+                    (lip, lport, rip, rport) = socket.get_connection_info()
+ 
+                    yield (family, (socket, proto, lip, lport, rip, rport, state))
+
     @property
     def p_gid(self):
         cred = self.p_ucred
