@@ -380,7 +380,7 @@ class proc(obj.CType):
         for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
             yield hist              
 
-    def bash_env(self):
+    def bash_environment(self):
         proc_as = self.get_process_address_space()
         
         # In cases when mm is an invalid pointer 
@@ -440,11 +440,12 @@ class proc(obj.CType):
                 
                     if good_varstr:        
                         good_varstr = good_varstr[:idx]
-                        procvars.append(good_varstr) 
+                        key = good_varstr[:eqidx]
+                        val = good_varstr[eqidx+1:]
 
-            yield " ".join(procvars)
-
-            break
+                        yield (key, val) 
+                    else:
+                        break         
 
     @property
     def p_gid(self):
