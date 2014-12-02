@@ -83,11 +83,11 @@ class mac_check_syscalls(common.AbstractMacCommand):
                 if not sym_name:
                     sym_name = "N/A"
 
-            yield (table_addr, "SyscallTable", i, ent_addr, hooked, sym_name)
+            yield (table_addr, "SyscallTable", i, ent_addr, sym_name, hooked)
  
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Table Name", "15"), ("Index", "6"), ("Address", "[addrpad]"), ("Symbol", "<30"), ("Status", "")])
-        for (_, table_name, i, call_addr, hooked, sym_name) in data:
+        for (_, table_name, i, call_addr, sym_name, hooked) in data:
             if hooked:
                 status = "HOOKED"
             else:
