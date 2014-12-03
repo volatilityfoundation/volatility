@@ -38,6 +38,7 @@ class mac_orphan_threads(pstasks.mac_tasks):
                                   ("Name", "16"),
                                   ("Start Address", "[addrpad]"),
                                   ("Mapping", "40"),
+                                  ("Name", "40"),
                                   ("Status", ""),
                                  ])
  
@@ -68,6 +69,16 @@ class mac_orphan_threads(pstasks.mac_tasks):
                 else:
                     status = "UNKNOWN"
 
-                self.table_row(outfd, proc.p_pid, proc.p_comm, start, mapping, status)
+                name = ""
+                if thread.uthread:
+                    name_buf = self.addr_space.read(thread.uthread.dereference_as("uthread").pth_name, 256)
+                    if name_buf:
+                        idx = name_buf.find("\x00")
+                        if idx != -1:
+                            name_buf = name_buf[:idx]
+                        
+                        name = name_buf
+
+                self.table_row(outfd, proc.p_pid, proc.p_comm, start, mapping, name, status)
 
  
