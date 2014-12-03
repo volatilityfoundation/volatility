@@ -16,6 +16,7 @@ Volatility 2.5:
 
 Bruno Constanzo for various patches to enhance performance/optimization 
 Karl Vogel for pointing out an issue with IPv4 addresses on big endian systems
+Glenn P. Edwards, Jr for adding combined user/kernel scans, --case, and ascii/unicode options to yarascan
 
 Volatility 2.4:
 
