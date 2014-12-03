@@ -91,7 +91,7 @@ class TreeGrid(object):
     and to create cycles.
     """
 
-    simple_types = {int, long, str, float, bytes}
+    simple_types = set([int, long, str, float, bytes])
     path_sep = "|"
 
     def __init__(self, columns, generator):
