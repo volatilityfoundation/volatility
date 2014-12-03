@@ -63,7 +63,7 @@ class mac_librarydump(mac_tasks.mac_tasks):
             addresses = []
 
             if self._config.BASE:
-                addresses = [self._config.BASE]
+                addresses = [("macho-{0:x}".format(self._config.BASE), self._config.BASE)]
             else:
                 for map in proc.get_dyld_maps():        
                     addresses.append((map.imageFilePath, map.imageLoadAddress))
