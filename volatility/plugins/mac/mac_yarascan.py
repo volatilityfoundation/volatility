@@ -102,7 +102,8 @@ class mac_yarascan(malfind.YaraScan):
                 else:
                     kernel_start = 0xc0000000
             else:
-                kernel_start = 0xffffff8000000000
+                vm_addr = self.addr_space.profile.get_symbol("_vm_min_kernel_address")
+                kernel_start = obj.Object("unsigned long", offset = vm_addr, vm = self.addr_space)
 
             scanner = malfind.DiscontigYaraScanner(rules = rules, 
                                                    address_space = self.addr_space) 
