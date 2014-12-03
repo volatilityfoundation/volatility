@@ -21,8 +21,8 @@
 """
 
 
+import volatility.plugins.linux.common as common
 import volatility.plugins.linux.pslist as linux_pslist
-import volatility.plugins.linux.threads as linux_threads
 import collections
 import struct
 import volatility.debug as debug
@@ -83,26 +83,33 @@ fmt['32bit'] = '<I'
 fmt['64bit'] = '<Q'
 
 
-class linux_info_regs(linux_threads.linux_threads):
+class linux_info_regs(linux_pslist.linux_pslist):
     '''It's like 'info registers' in GDB. It prints out all the
 processor registers involved during the context switch.'''
     def __init__(self, config, *args, **kwargs):
-        linux_threads.linux_threads.__init__(self, config, *args, **kwargs) 
+        linux_pslist.linux_pslist.__init__(self, config, *args, **kwargs) 
+        
+        self.bits     = 0
+        self.reg_size = 0
+        self.offsets  = []
+        self.fmt      = ""
+
+    def calculate(self):
+        common.set_plugin_members(self)
 
         self.bits = self.profile.metadata.get('memory_model', '32bit')
         self.reg_size = reg_size[self.bits]
         self.offsets = offsets[self.bits]
         self.fmt = fmt[self.bits]
 
-    def calculate(self):
-        for task, (thread_group, threads) in linux_threads.linux_threads(self._config).calculate():
-            name = task.get_commandline()
+        for proc in linux_pslist.linux_pslist(self._config).calculate():
+            name = proc.get_commandline()
             thread_registers = []
-            for thread_task in threads:
+            for thread_task in proc.threads():
                 thread_name = thread_task.comm
                 regs = self.parse_kernel_stack(thread_task)
                 thread_registers.append((thread_name,regs))
-            yield task, name, thread_registers
+            yield proc, name, thread_registers
 
 
     def render_text(self, outfd, data):
