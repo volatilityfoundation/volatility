@@ -24,6 +24,7 @@
 @organization: 
 """
 
+import volatility.debug as debug
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 from volatility.renderers import TreeGrid
@@ -38,6 +39,9 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
         and verifies that each is a symbol in the kernel
         """
         linux_common.set_plugin_members(self)
+
+        if self.profile.metadata['arch'] not in ["x64", "x86"]:
+            debug.error("This plugin is only supported on Intel-based memory captures") 
 
         tblsz = 256
 
