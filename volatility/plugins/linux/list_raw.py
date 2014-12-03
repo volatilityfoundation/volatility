@@ -69,19 +69,21 @@ class linux_list_raw(linux_common.AbstractLinuxCommand):
             for filp, fd in task.lsof():
                 filepath = linux_common.get_path(task, filp)
                 if type(filepath) == str and filepath.find("socket:[") != -1:
-                    to_add = filp.dentry.d_inode.i_ino
+                    to_add = filp.dentry.d_inode.i_ino.v()
                     self.fd_cache[to_add] = [task, filp, fd, filepath]
-                     
+   
     def _find_proc_for_inode(self, inode):
         if self.fd_cache == {}:
             self._fill_cache()
+        
+        inum = inode.i_ino.v()
 
-        if inode.i_ino in self.fd_cache:
-            (task, filp, fd, filepath) = self.fd_cache[inode.i_ino]
+        if inum in self.fd_cache:
+            (task, filp, fd, filepath) = self.fd_cache[inum]
         else:
-            debug.error("ERROR: Unable to find inode %d in cache!" % inode.i_ino)
+            (task, filp, fd, filepat)  = (None, None, None, None)
 
-        return (task, fd, inode.i_ino)
+        return (task, fd, inum)
 
     def __walk_hlist_node(self, node):    
         seen = set()
@@ -130,4 +132,5 @@ class linux_list_raw(linux_common.AbstractLinuxCommand):
                                  ])
 
         for (task, fd, inum) in data:
-            self.table_row(outfd, task.comm, task.pid, fd, inum)
+            if task:
+                self.table_row(outfd, task.comm, task.pid, fd, inum)
