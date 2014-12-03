@@ -97,6 +97,9 @@ processor registers involved during the context switch.'''
     def calculate(self):
         common.set_plugin_members(self)
 
+        if self.profile.metadata['arch'] not in ["x64", "x86"]:
+            debug.error("This plugin is only supported on Intel-based memory captures") 
+
         self.bits = self.profile.metadata.get('memory_model', '32bit')
         self.reg_size = reg_size[self.bits]
         self.offsets = offsets[self.bits]
@@ -110,7 +113,6 @@ processor registers involved during the context switch.'''
                 regs = self.parse_kernel_stack(thread_task)
                 thread_registers.append((thread_name,regs))
             yield proc, name, thread_registers
-
 
     def render_text(self, outfd, data):
 
