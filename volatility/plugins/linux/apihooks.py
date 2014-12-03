@@ -57,8 +57,30 @@ class linux_apihooks(linux_pslist.linux_pslist):
          
         for task in data:
             for hook_desc, sym_name, addr, hook_type, hook_addr, hookfuncdesc in task.apihook_info():
-                yield (0, [int(task.pid), str(task.comm), str(hook_desc), str(sym_name), 
+                yield (0, [int(task.pid), str(task.comm), str(hook_desc), str(sym_name),
                         Address(addr), str(hook_type), Address(hook_addr), str(hookfuncdesc)])
 
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [
+              ("Pid", "7"),
+              ("Name", "16"),
+              ("Hook VMA", "40"),
+              ("Hook Symbol", "24"),
+              ("Hooked Address", "[addrpad]"),
+              ("Type", "5"),
+              ("Hook Address", "[addrpad]"),
+              ("Hook Library", ""),
+              ])
+
+        linux_common.set_plugin_members(self)
+
+        try:
+            import distorm3
+        except ImportError:
+            debug.error("this plugin requres the distorm library to operate.")
+
+        for task in data:
+            for hook_desc, sym_name, addr, hook_type, hook_addr, hookfuncdesc in task.apihook_info():
+                self.table_row(outfd, task.pid, task.comm, hook_desc, sym_name, addr, hook_type, hook_addr, hookfuncdesc)
 
