@@ -34,23 +34,12 @@ import volatility.plugins.mac.pslist as mac_pslist
 class mac_malfind(mac_pslist.mac_pslist):
     """Looks for suspicious process mappings"""
 
-    def _is_suspicious(self, map):
-        ret = False        
-
-        if map.get_perms() == "rwx":
-           ret = True 
-
-        elif map.get_perms() == "r-x" and map.get_path() == "":
-            ret = True
- 
-        return ret
-
     def render_text(self, outfd, data):
         for task in data:
             proc_as = task.get_process_address_space()
 
             for map in task.get_proc_maps():
-                if self._is_suspicious(map):
+                if map.is_suspicious():
                     fname = map.get_path()                    
                     prots = map.get_perms()
 

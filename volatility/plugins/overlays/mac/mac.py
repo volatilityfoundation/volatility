@@ -1029,6 +1029,20 @@ class vm_map_entry(obj.CType):
 
         return ret
 
+    def is_suspicious(self):
+        ret = False        
+
+        perms = self.get_perms()
+
+        if perms == "rwx":
+           ret = True 
+
+        elif perms == "r-x" and self.get_path() == "":
+            ret = True
+ 
+        return ret
+
+
 class inpcb(obj.CType):
     
     def get_tcp_state(self):
