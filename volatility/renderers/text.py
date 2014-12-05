@@ -153,7 +153,7 @@ class TextRenderer(Renderer):
                 column = grid.columns[index]
             cols += [
                 self._elide(("{:<" + str(grid_max_widths[index]) + "}").format(column.name), grid_max_widths[index])]
-        outfd.write(" ".join(cols) + "\n")
+        outfd.write(" ".join(cols) + "\r\n")
 
         def print_row(node, accumulator):
             row = []
@@ -175,7 +175,7 @@ class TextRenderer(Renderer):
 
         output = []
         grid.visit(None, print_row, output, sort_key = sort_key)
-        outfd.write("\n".join(output) + "\n")
+        outfd.write("\r\n".join(output) + "\r\n")
 
 class QuickTextRenderer(TextRenderer):
     def render(self, outfd, grid):
