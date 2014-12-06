@@ -26,8 +26,9 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+import volatility.plugins.mac.lsmod  as lsmod
 
-class mac_lsmod_kext_map(common.AbstractMacCommand):
+class mac_lsmod_kext_map(lsmod.mac_lsmod):
     """ Lists loaded kernel modules """
 
     def calculate(self):
@@ -57,35 +58,5 @@ class mac_lsmod_kext_map(common.AbstractMacCommand):
             
             if kmod_start:
                 kmod = obj.Object("kmod_info", offset = kmod_start, vm = self.addr_space)
-                kmod_off = kmod.obj_offset
-                size     = kmod.m('size') 
-                ref_cnt  = kmod.reference_count
-                ver      = kmod.version
-                name     = str(kmod.name)
- 
-            else:
-                kmod_off = 0
-                size     = 0
-                ref_cnt  = 0
-                ver      = 0
-                name     = ""
-            
-            yield kmod_off, address, size, ref_cnt, ver, name
-
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Offset (V)", "[addrpad]"),
-                                  ("Module Address", "[addrpad]"), 
-                                  ("Size", "8"), 
-                                  ("Refs", "^8"),
-                                  ("Version", "12"),  
-                                  ("Name", "")])
-        
-        for kmod_off, address, size, ref_cnt, ver, name in data:
-            self.table_row(outfd,
-                           kmod_off, 
-                           address, 
-                           size, 
-                           ref_cnt, 
-                           ver, 
-                           name)
+                yield kmod
 
