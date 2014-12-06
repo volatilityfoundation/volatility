@@ -226,14 +226,18 @@ class MFT_FILE_RECORD(obj.CType):
             elif attr == "DATA":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $DATA"
-                if next_attr.Header.NameOffset > 0 and next_attr.Header.NameLength > 0:
-                    adsname = ""
-                    if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
-                        nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
-                        adsname = obj.Object("NullString", vm = self.obj_vm, offset = nameloc, length = next_attr.Header.NameLength * 2)
-                        if adsname != None and adsname.strip() != "" and dataseen:
-                            attr += " ADS Name: {0}".format(adsname.strip())
-                dataseen = True
+                try:
+                    if next_attr.Header and next_attr.Header.NameOffset > 0 and next_attr.Header.NameLength > 0:
+                        adsname = ""
+                        if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
+                            nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
+                            adsname = obj.Object("NullString", vm = self.obj_vm, offset = nameloc, length = next_attr.Header.NameLength * 2)
+                            if adsname != None and adsname.strip() != "" and dataseen:
+                                attr += " ADS Name: {0}".format(adsname.strip())
+                    dataseen = True
+                except struct.error:
+                    next_attr = None
+                    continue
                 try:
                     if next_attr.ContentSize == 0:
                         next_off = next_attr.obj_offset + self.obj_vm.profile.get_obj_size("RESIDENT_ATTRIBUTE")
