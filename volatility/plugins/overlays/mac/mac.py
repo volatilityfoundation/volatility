@@ -264,7 +264,25 @@ class fileglob(obj.CType):
 
         ret = str(ret)
         return ret
-      
+     
+class kauth_scope(obj.CType):
+    @property
+    def ks_identifier(self):
+        ident_ptr = self.m("ks_identifier")
+        ident = self.obj_vm.read(ident_ptr, 256)
+        if ident:
+            idx = ident.find("\x00")
+            if idx != -1:
+                ident = ident[:idx]  
+
+        return ident
+
+    def listeners(self):
+        ls_array = obj.Object(theType="Array", targetType="kauth_local_listener", offset = self.m("ks_listeners").obj_offset, vm = self.obj_vm, count = 16)    
+        for ls in ls_array:
+            if ls.is_valid() and ls.kll_callback != 0:
+                yield ls 
+
 class proc(obj.CType):   
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         self.pack_fmt  = ""
@@ -1653,6 +1671,7 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc'  : proc,
+            'kauth_scope'  : kauth_scope,
             'dyld32_image_info' : dyld32_image_info,
             'dyld64_image_info' : dyld64_image_info,
             'fileglob' : fileglob,
