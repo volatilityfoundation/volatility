@@ -24,8 +24,11 @@
 @organization: 
 """
 
+import volatility.debug as debug
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_check_idt(linux_common.AbstractLinuxCommand):
     """ Checks if the IDT has been altered """
@@ -36,6 +39,9 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
         and verifies that each is a symbol in the kernel
         """
         linux_common.set_plugin_members(self)
+
+        if self.profile.metadata['arch'] not in ["x64", "x86"]:
+            debug.error("This plugin is only supported on Intel-based memory captures") 
 
         tblsz = 256
 
@@ -76,12 +82,15 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
 
                     yield(i, ent, idt_addr, sym_name, hooked)
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Index", Address),
+                       ("Address", Address),
+                       ("Symbol", str)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Index", "[addr]"), ("Address", "[addrpad]"), ("Symbol", "<30")])
-
+    def generator(self, data):
         for (i, _, idt_addr, sym_name, hooked) in data:
-            self.table_row(outfd, i, idt_addr, sym_name)
+            yield (0, [Address(i), Address(idt_addr), str(sym_name)])
 
 
 

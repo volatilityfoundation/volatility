@@ -26,8 +26,10 @@
 """
 
 # Information for this script taken heavily from File System Forensic Analysis by Brian Carrier
+from volatility import renderers
 
 import volatility.plugins.common as common
+from volatility.renderers.basic import Address
 import volatility.scan as scan
 import volatility.utils as utils
 import volatility.addrspace as addrspace
@@ -169,7 +171,7 @@ class MFT_FILE_RECORD(obj.CType):
     def get_mft_type(self):
         return "{0}{1}".format("In Use & " if self.is_inuse() else "",
                "Directory" if self.is_directory() else "File")
-        
+
     def parse_attributes(self, mft_buff, check = True, entrysize = 1024):
         next_attr = self.ResidentAttributes
         end = mft_buff.find("\xff\xff\xff\xff")
@@ -224,14 +226,18 @@ class MFT_FILE_RECORD(obj.CType):
             elif attr == "DATA":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $DATA"
-                if next_attr.Header.NameOffset > 0 and next_attr.Header.NameLength > 0:
-                    adsname = ""
-                    if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
-                        nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
-                        adsname = obj.Object("NullString", vm = self.obj_vm, offset = nameloc, length = next_attr.Header.NameLength * 2)
-                        if adsname != None and adsname.strip() != "" and dataseen:
-                            attr += " ADS Name: {0}".format(adsname.strip())
-                dataseen = True
+                try:
+                    if next_attr.Header and next_attr.Header.NameOffset > 0 and next_attr.Header.NameLength > 0:
+                        adsname = ""
+                        if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
+                            nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
+                            adsname = obj.Object("NullString", vm = self.obj_vm, offset = nameloc, length = next_attr.Header.NameLength * 2)
+                            if adsname != None and adsname.strip() != "" and dataseen:
+                                attr += " ADS Name: {0}".format(adsname.strip())
+                    dataseen = True
+                except struct.error:
+                    next_attr = None
+                    continue
                 try:
                     if next_attr.ContentSize == 0:
                         next_off = next_attr.obj_offset + self.obj_vm.profile.get_obj_size("RESIDENT_ATTRIBUTE")
@@ -244,14 +250,14 @@ class MFT_FILE_RECORD(obj.CType):
                     next_attr = None
                     continue
                 if next_attr.Header.NonResidentFlag == 1:
-                    thedata = "" 
+                    thedata = ""
                 else:
                     try:
                         contents = mft_buff[start:theend]
                     except TypeError:
                         next_attr = None
                         continue
-                    thedata = contents 
+                    thedata = contents
                 attributes.append((attr, thedata))
                 next_off = theend
                 if next_off == start:
@@ -275,7 +281,7 @@ class MFT_FILE_RECORD(obj.CType):
     def advance_one(self, next_off, mft_buff, end):
         item = None
         attr = None
-        cursor = 0 
+        cursor = 0
 
         if next_off == None:
             return None
@@ -321,8 +327,24 @@ class STANDARD_INFORMATION(obj.CType):
     # XXX need a better check than this
     # we return valid if we have _any_ timestamp other than Null
     def is_valid(self):
-        return obj.CType.is_valid(self) and (self.ModifiedTime.v() != 0 or self.MFTAlteredTime.v() != 0 or \
-                self.FileAccessedTime.v() != 0 or self.CreationTime.v() != 0) 
+        try:
+            modified = self.ModifiedTime.v()
+        except struct.error:
+            modified = 0 
+        try:
+            mftaltered = self.MFTAlteredTime.v()
+        except struct.error:
+            mftaltered = 0 
+        try:
+            creation = self.CreationTime.v()
+        except struct.error:
+            creation = 0 
+        try:
+            accessed = self.FileAccessedTime.v()
+        except struct.error:
+            accessed = 0
+        return obj.CType.is_valid(self) and (modified != 0 or mftaltered != 0 or \
+                accessed != 0 or creation != 0)
 
     def get_type_short(self):
         if self.Flags == None:
@@ -347,7 +369,7 @@ class STANDARD_INFORMATION(obj.CType):
                 else:
                     type += " & " + VERBOSE_STANDARD_INFO_FLAGS[i]
         if type == None:
-            type = "Unknown Type " 
+            type = "Unknown Type "
         return type
 
     def get_header(self):
@@ -357,7 +379,7 @@ class STANDARD_INFORMATION(obj.CType):
                 ("Access Date", "30"),
                 ("Type", ""),
                ]
-   
+
     def __str__(self):
         return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
             str(self.ModifiedTime),
@@ -367,14 +389,14 @@ class STANDARD_INFORMATION(obj.CType):
 
     def body(self, path, record_num, size, offset):
         if path.strip() == "" or path == None:
-            # if the path is null we just try to get the filename 
+            # if the path is null we just try to get the filename
             # from our dictionary and print the body file output
-            record = MFT_PATHS_FULL.get(int(record_num), {}) 
+            record = MFT_PATHS_FULL.get(int(record_num), {})
             path = "(Possible non-base entry, extra $SI or invalid $FN)"
             if record != {}:
-                # we include with the found filename a note that this may be a 
+                # we include with the found filename a note that this may be a
                 # non-base entry.  the analyst can investigate these types of records
-                # on his/her own by comparing record numbers in output or examining the 
+                # on his/her own by comparing record numbers in output or examining the
                 # given physical offset in memory for example
                 path = "{0} {1}".format(record["filename"], path)
 
@@ -398,8 +420,24 @@ class FILE_NAME(STANDARD_INFORMATION):
     # we return valid if we have _any_ timestamp other than Null
     # filename must also be a non-empty string
     def is_valid(self):
-        return obj.CType.is_valid(self) and (self.ModifiedTime.v() != 0 or self.MFTAlteredTime.v() != 0 or \
-                self.FileAccessedTime.v() != 0 or self.CreationTime.v() != 0) and \
+        try:
+            modified = self.ModifiedTime.v()
+        except struct.error:
+            modified = 0
+        try:
+            mftaltered = self.MFTAlteredTime.v()
+        except struct.error:
+            mftaltered = 0
+        try:
+            creation = self.CreationTime.v()
+        except struct.error:
+            creation = 0
+        try:
+            accessed = self.FileAccessedTime.v()
+        except struct.error:
+            accessed = 0
+        return obj.CType.is_valid(self) and (modified != 0 or mftaltered != 0 or \
+                accessed != 0 or creation != 0) and \
                 self.remove_unprintable(self.get_name()) != ""
 
     def get_name(self):
@@ -484,19 +522,19 @@ MFT_types = {
      }],
 
     'ATTRIBUTE_HEADER': [ 0x10, {
-        'Type': [0x0, ['int']],   
+        'Type': [0x0, ['int']],
         'Length': [0x4, ['int']],
         'NonResidentFlag': [0x8, ['unsigned char']],
         'NameLength': [0x9, ['unsigned char']],
         'NameOffset': [0xa, ['unsigned short']],
         'Flags': [0xc, ['unsigned short']],
         'AttributeID': [0xe, ['unsigned short']],
-    }], 
+    }],
 
     'RESIDENT_ATTRIBUTE': [0x16, {
         'Header': [0x0, ['ATTRIBUTE_HEADER']],
         'ContentSize': [0x10, ['unsigned int']], #relative to the beginning of the attribute
-        'ContentOffset': [0x14, ['unsigned short']], 
+        'ContentOffset': [0x14, ['unsigned short']],
         'STDInfo': lambda x : obj.Object("STANDARD_INFORMATION", offset = x.obj_offset + x.ContentOffset, vm = x.obj_vm),
         'FileName': lambda x : obj.Object("FILE_NAME", offset = x.obj_offset + x.ContentOffset, vm = x.obj_vm),
         'ObjectID': lambda x : obj.Object("OBJECT_ID", offset = x.obj_offset + x.ContentOffset, vm = x.obj_vm),
@@ -520,13 +558,13 @@ MFT_types = {
         'EaCount': [0x4, ['int']],
         'EaUnpackedLength': [0x8, ['long']],
     }],
- 
+
     'EA': [None, {
         'NextEntryOffset': [0x0, ['unsigned long long']],
         'Flags': [0x8, ['unsigned char']],
         'EaNameLength': [0x9, ['unsigned char']],
         'EaValueLength': [0xa, ['unsigned short']],
-        'EaName': [0xc, ['String', dict(length = lambda x: x.EaNameLength)]], 
+        'EaName': [0xc, ['String', dict(length = lambda x: x.EaNameLength)]],
         'EaValue': lambda x: obj.Object("Array", offset = x.obj_offset + len(x.EaName), count = x.EaValueLength, vm = x.obj_vm,
                                         target = obj.Curry(obj.Object, "unsigned char")),
     }],
@@ -650,12 +688,12 @@ class MFTTYPES(obj.ProfileModification):
 
 
 class MFTScanner(scan.BaseScanner):
-    checks = [ ] 
+    checks = [ ]
 
     def __init__(self, needles = None):
         self.needles = needles
         self.checks = [ ("MultiStringFinderCheck", {'needles':needles})]
-        scan.BaseScanner.__init__(self) 
+        scan.BaseScanner.__init__(self)
 
     def scan(self, address_space, offset = 0, maxlen = None):
         for offset in scan.BaseScanner.scan(self, address_space, offset, maxlen):
@@ -666,7 +704,7 @@ class MFTParser(common.AbstractWindowsCommand):
     """ Scans for and parses potential MFT entries """
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
-        config.add_option("OFFSET", short_option = "o", default = None, 
+        config.add_option("OFFSET", short_option = "o", default = None,
                           help = "Physical offset for MFT Entries (comma delimited)")
         config.add_option('NOCHECK', short_option = 'N', default = False,
                           help = 'Only all entries including w/null timestamps',
@@ -714,14 +752,14 @@ class MFTParser(common.AbstractWindowsCommand):
                         if self._config.DEBUGOUT:
                             print "Problem entry at offset:", hex(offset)
                         continue
+    
                 if (int(mft_entry.RecordNumber), name) in seen:
                     continue
                 else:
                     seen.append((int(mft_entry.RecordNumber), name))
-                offsets.append((offset, mft_entry))
+                offsets.append((offset, mft_entry, mft_buff))
 
-        for offset, mft_entry in offsets:
-            mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
+        for offset, mft_entry, mft_buff in offsets:
             if self._config.DEBUGOUT:
                 print "Processing MFT Entry at offset:", hex(offset)
             attributes = mft_entry.parse_attributes(mft_buff, not self._config.NOCHECK, self._config.ENTRYSIZE)
@@ -778,6 +816,47 @@ class MFTParser(common.AbstractWindowsCommand):
                 # here we have a lone $SI in an MFT entry with no valid $FN.  This is most likely a non-base entry
                 outfd.write("0|{0}\n".format(si.body("", mft_entry.RecordNumber, -1, offset)))
 
+    def unified_output(self, data):
+        return renderers.TreeGrid([("MFT Offset", Address),
+                            ("Attribute", str),
+                            ("Record", int),
+                            ("Link count", int),
+                            ("Type", str),
+                            ("Creation", str),
+                            ("Modified", str),
+                            ("MFT Altered", str),
+                            ("Access Date", str),
+                            ("Value", str)], self.generator(data))
+
+    def generator(self, data):
+        for offset, mft_entry, attributes in data:
+            if not len(attributes):
+                continue
+            datnum = 0
+            for a, i in attributes:
+                if i == None:
+                    attrdata = ["Invalid (" + a + ")", "", "", "", "", ""]
+                elif a.startswith("STANDARD_INFORMATION"):
+                    attrdata = [a, str(i.CreationTime),
+                                str(i.ModifiedTime),
+                                str(i.MFTAlteredTime),
+                                str(i.FileAccessedTime),
+                                i.get_type()]
+                elif a.startswith("FILE_NAME"):
+                    attrdata = [a, str(i.CreationTime),
+                                str(i.ModifiedTime),
+                                str(i.MFTAlteredTime),
+                                str(i.FileAccessedTime),
+                                i.remove_unprintable(i.get_name())]
+                else:
+                    attrdata = [a, "", "", "", "", ""]
+
+                yield (0, [Address(offset),
+                           str(mft_entry.get_mft_type()),
+                           int(mft_entry.RecordNumber),
+                           int(mft_entry.LinkCount)] + attrdata)
+
+
     def render_text(self, outfd, data):
         if self._config.DUMP_DIR != None and not os.path.isdir(self._config.DUMP_DIR):
             debug.error(self._config.DUMP_DIR + " is not a directory")
@@ -787,7 +866,7 @@ class MFTParser(common.AbstractWindowsCommand):
                 continue
             outfd.write("{0}\n".format(border))
             outfd.write("MFT entry found at offset 0x{0:x}\n".format(offset))
-            outfd.write("Attribute: {0}\n".format(mft_entry.get_mft_type())) 
+            outfd.write("Attribute: {0}\n".format(mft_entry.get_mft_type()))
             outfd.write("Record Number: {0}\n".format(mft_entry.RecordNumber))
             outfd.write("Link count: {0}\n".format(mft_entry.LinkCount))
             outfd.write("\n")

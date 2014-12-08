@@ -156,10 +156,10 @@ class IpAddress(obj.NativeType):
     """Provides proper output for IpAddress objects"""
 
     def __init__(self, theType, offset, vm, **kwargs):
-        obj.NativeType.__init__(self, theType, offset, vm, format_string = vm.profile.native_types['unsigned int'][1], **kwargs)
+        obj.NativeType.__init__(self, theType, offset, vm, format_string = "4s", **kwargs)
 
     def v(self):
-        return utils.inet_ntop(socket.AF_INET, struct.pack("<I", obj.NativeType.v(self)))
+        return utils.inet_ntop(socket.AF_INET, obj.NativeType.v(self))
 
 class Ipv6Address(obj.NativeType):
     """Provides proper output for Ipv6Address objects"""

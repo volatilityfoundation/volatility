@@ -23,6 +23,7 @@ import sys, os
 import zipfile
 import struct
 import time
+from operator import attrgetter
 import volatility.plugins as plugins
 import volatility.debug as debug
 import volatility.obj as obj
@@ -263,7 +264,25 @@ class fileglob(obj.CType):
 
         ret = str(ret)
         return ret
-        
+     
+class kauth_scope(obj.CType):
+    @property
+    def ks_identifier(self):
+        ident_ptr = self.m("ks_identifier")
+        ident = self.obj_vm.read(ident_ptr, 256)
+        if ident:
+            idx = ident.find("\x00")
+            if idx != -1:
+                ident = ident[:idx]  
+
+        return ident
+
+    def listeners(self):
+        ls_array = obj.Object(theType="Array", targetType="kauth_local_listener", offset = self.m("ks_listeners").obj_offset, vm = self.obj_vm, count = 16)    
+        for ls in ls_array:
+            if ls.is_valid() and ls.kll_callback != 0:
+                yield ls 
+
 class proc(obj.CType):   
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         self.pack_fmt  = ""
@@ -281,7 +300,189 @@ class proc(obj.CType):
             self.pack_fmt = "<Q"
             self.pack_size = 8
             self.addr_type = "unsigned long long"
+      
+    def bash_hash_entries(self):
+        proc_as = self.get_process_address_space()
         
+        # In cases when mm is an invalid pointer 
+        if not proc_as:
+            return
+
+        bit_string = str(self.task.map.pmap.pm_task_map or '')[9:]
+        if bit_string.find("64BIT") == -1:
+            addr_type       = "unsigned int"
+            bucket_contents_type =  "mac32_bucket_contents"
+            htable_type     = "mac32_bash_hash_table"
+            nbuckets_offset = self.obj_vm.profile.get_obj_offset(htable_type, "nbuckets") 
+        else:
+            addr_type       = "unsigned long long"
+            bucket_contents_type =  "mac64_bucket_contents"
+            htable_type     = "mac64_bash_hash_table"
+            nbuckets_offset = self.obj_vm.profile.get_obj_offset(htable_type, "nbuckets") 
+
+        for map in self.get_proc_maps():
+            if map.get_path() != "":
+                continue
+
+            off = map.start
+
+            while off < map.end:
+                # test the number of buckets
+                dr = proc_as.read(off + nbuckets_offset, 4)
+                if dr == None:
+                    new_off = (off & ~0xfff) + 0xfff + 1
+                    off = new_off
+                    continue
+
+                test = struct.unpack("<I", dr)[0]
+                if test != 64:
+                    off = off + 1
+                    continue
+
+                htable = obj.Object(htable_type, offset = off, vm = proc_as)
+                
+                if htable.is_valid():
+                    bucket_array = obj.Object(theType="Array", targetType=addr_type, offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
+
+                    for bucket_ptr in bucket_array:
+                        bucket = obj.Object(bucket_contents_type, offset = bucket_ptr, vm = htable.nbuckets.obj_vm)
+                        while bucket != None and bucket.times_found > 0:  
+                            pdata = bucket.data 
+
+                            if pdata == None:
+                                bucket = bucket.next_bucket()
+                                continue
+
+                            print "valid: %s flags: %d" % (pdata.is_valid(), pdata.flags.v())
+
+                            if pdata.is_valid() and (0 <= pdata.flags <= 2):
+                                yield bucket
+
+                            bucket = bucket.next_bucket()
+                
+                off = off + 1
+
+    def bash_history_entries(self):
+        proc_as = self.get_process_address_space()
+            
+        bit_string = str(self.task.map.pmap.pm_task_map or '')[9:]
+        if bit_string.find("64BIT") == -1:
+            pack_format = "<I"
+            hist_struct = "bash32_hist_entry"
+        else:
+            pack_format = "<Q"
+            hist_struct = "bash64_hist_entry"
+
+        # Brute force the history list of an address isn't provided 
+        ts_offset = proc_as.profile.get_obj_offset(hist_struct, "timestamp")
+
+        history_entries = [] 
+        bang_addrs = []
+
+        # Look for strings that begin with pound/hash on the process heap 
+        for ptr_hash in self.search_process_memory_rw_nofile(["#"]):                 
+            # Find pointers to this strings address, also on the heap 
+            addr = struct.pack(pack_format, ptr_hash)
+            bang_addrs.append(addr)
+
+        for (idx, ptr_string) in enumerate(self.search_process_memory_rw_nofile(bang_addrs)):
+            # Check if we found a valid history entry object 
+            hist = obj.Object(hist_struct, 
+                              offset = ptr_string - ts_offset, 
+                              vm = proc_as)
+
+            if hist.is_valid():
+                history_entries.append(hist)
+    
+        # Report everything we found in order
+        for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
+            yield hist              
+
+    def bash_environment(self):
+        proc_as = self.get_process_address_space()
+        
+        # In cases when mm is an invalid pointer 
+        if not proc_as:
+            return
+        
+        procvars = []
+        for mapping in self.get_proc_maps():
+            if not str(mapping.get_perms()) == "rw-" or mapping.get_path().find("bash") == -1:
+                continue
+
+            env_start = 0
+            for off in range(mapping.links.start, mapping.links.end):
+                # check the first index
+                addrstr = proc_as.read(off, self.pack_size)
+                if not addrstr or len(addrstr) != self.pack_size:
+                    continue
+                addr = struct.unpack(self.pack_fmt, addrstr)[0]
+                # check first idx...
+                if addr:
+                    firstaddrstr = proc_as.read(addr, self.pack_size)
+                    if not firstaddrstr or len(firstaddrstr) != self.pack_size:
+                        continue
+                    firstaddr = struct.unpack(self.pack_fmt, firstaddrstr)[0]
+                    buf = proc_as.read(firstaddr, 64)
+                    if not buf:
+                        continue
+                    eqidx = buf.find("=")
+                    if eqidx > 0:
+                        nullidx = buf.find("\x00")
+                        # single char name, =
+                        if nullidx >= eqidx:
+                            env_start = addr
+
+            if env_start == 0:
+                continue
+
+            envars = obj.Object(theType="Array", targetType=self.addr_type, vm=proc_as, offset=env_start, count=256)
+            for var in envars:
+                if var:
+                    sizes = [8, 16, 32, 64, 128, 256, 384, 512, 1024, 2048, 4096]
+                    good_varstr = None
+
+                    for size in sizes:
+                        varstr = proc_as.read(var, size)
+                        if not varstr:
+                            continue
+
+                        eqidx = varstr.find("=")
+                        idx = varstr.find("\x00")
+
+                        if idx == -1 or eqidx == -1 or idx < eqidx:
+                            continue
+                    
+                        good_varstr = varstr
+                        break
+                
+                    if good_varstr:        
+                        good_varstr = good_varstr[:idx]
+                        key = good_varstr[:eqidx]
+                        val = good_varstr[eqidx+1:]
+
+                        yield (key, val) 
+                    else:
+                        break         
+
+    def netstat(self):
+        for (filp, _, _) in self.lsof():
+            if filp.f_fglob.fg_type == 'DTYPE_SOCKET':
+                socket = filp.f_fglob.fg_data.dereference_as("socket") 
+                family = socket.family
+    
+                if family == 1:
+                    upcb = socket.so_pcb.dereference_as("unpcb")
+                    path = upcb.unp_addr.sun_path
+                    yield (family,  (socket.v(), path))
+                elif family in [2, 30]:
+                    proto = socket.protocol
+                    state = socket.state
+                   
+                    (lip, lport, rip, rport) = socket.get_connection_info()
+ 
+                    yield (family, (socket, proto, lip, lport, rip, rport, state))
+
     @property
     def p_gid(self):
         cred = self.p_ucred
@@ -309,9 +510,19 @@ class proc(obj.CType):
             ret = cred.cr_uid     
         
         return ret
-    
-    def get_process_address_space(self):
 
+    def threads(self):
+        threads = []
+        seen_threads = []
+        qentry = self.task.threads
+        for thread in qentry.thread_walk_list(qentry.obj_offset):
+            if thread.obj_offset not in seen_threads:
+                seen_threads.append(thread.obj_offset)
+                threads.append(thread)
+
+        return threads 
+
+    def get_process_address_space(self):
         cr3 = self.task.map.pmap.pm_cr3
         map_val = str(self.task.map.pmap.pm_task_map or '')
 
@@ -412,6 +623,16 @@ class proc(obj.CType):
             yield map
             map = map.links.next
 
+    def find_heap_map(self):
+        ret = None
+
+        for pmap in self.get_proc_maps():
+            if pmap.get_special_path() == "[heap]":
+                ret = pmap
+                break
+
+        return None
+
     def search_process_memory(self, s):
         """Search process memory. 
 
@@ -470,6 +691,41 @@ class proc(obj.CType):
                         yield offset + hit
                 offset += min(to_read, scan_blk_sz)
 
+    def psenv(self):
+        proc_as = self.get_process_address_space()
+
+        # We need a valid process AS to continue 
+        if not proc_as:
+            return
+
+        start = self.user_stack - self.p_argslen
+        skip  = len(self.get_arguments())
+        end   = self.p_argslen
+
+        to_read = end - skip
+    
+        vars_buf = proc_as.read(start + skip, to_read)
+        if vars_buf:
+            ents = vars_buf.split("\x00")
+            for varstr in ents:
+                eqidx = varstr.find("=")
+
+                if eqidx == -1:
+                    continue
+
+                key = varstr[:eqidx]
+                val = varstr[eqidx+1:]
+
+                yield (key, val) 
+    
+    def get_environment(self):
+        env = ""
+
+        for (k, v) in self.psenv():
+            env = env + "{0}={1} ".format(k, v)
+
+        return env
+
     def get_arguments(self):
         proc_as = self.get_process_address_space()
 
@@ -511,6 +767,26 @@ class proc(obj.CType):
             argc -= 1            
 
         return " ".join([str(s) for s in args])
+    
+    def lsof(self):
+        num_fds = self.p_fd.fd_lastfile
+        nfiles  = self.p_fd.fd_nfiles
+        if nfiles > num_fds:
+            num_fds = nfiles
+
+        fds = obj.Object('Array', offset = self.p_fd.fd_ofiles, vm = self.obj_vm, targetType = 'Pointer', count = num_fds)
+
+        for i, fd in enumerate(fds):
+            f = fd.dereference_as("fileproc")
+            if f:
+                ftype = f.f_fglob.fg_type
+                if ftype == 'DTYPE_VNODE': 
+                    vnode = f.f_fglob.fg_data.dereference_as("vnode")
+                    path = vnode.full_path()
+                else:
+                    path = ""
+                        
+                yield f, path, i
 
 class rtentry(obj.CType):
 
@@ -771,6 +1047,20 @@ class vm_map_entry(obj.CType):
 
         return ret
 
+    def is_suspicious(self):
+        ret = False        
+
+        perms = self.get_perms()
+
+        if perms == "rwx":
+           ret = True 
+
+        elif perms == "r-x" and self.get_path() == "":
+            ret = True
+ 
+        return ret
+
+
 class inpcb(obj.CType):
     
     def get_tcp_state(self):
@@ -789,7 +1079,13 @@ class inpcb(obj.CType):
 
         tcpcb = self.inp_ppcb.dereference_as("tcpcb")
 
-        return tcp_states[tcpcb.t_state]
+        state_type = tcpcb.t_state
+        if state_type:
+            state = tcp_states[state_type]
+        else:
+            state = ""
+
+        return state
 
     def ipv4_info(self):
         lip = self.inp_dependladdr.inp46_local.ia46_addr4.s_addr.v()    
@@ -902,7 +1198,6 @@ class sockaddr_dl(obj.CType):
         """Get the value of the sockaddr_dl object."""
 
         ret = ""
-
         for i in xrange(self.sdl_alen):
             try:
                 e = self.sdl_data[self.sdl_nlen + i]
@@ -1376,6 +1671,7 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc'  : proc,
+            'kauth_scope'  : kauth_scope,
             'dyld32_image_info' : dyld32_image_info,
             'dyld64_image_info' : dyld64_image_info,
             'fileglob' : fileglob,

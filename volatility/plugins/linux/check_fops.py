@@ -34,6 +34,8 @@ import volatility.plugins.linux.pslist as linux_pslist
 import volatility.plugins.linux.lsmod as linux_lsmod
 from volatility.plugins.linux.slab_info import linux_slabinfo
 import volatility.plugins.linux.find_file as find_file
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_check_fop(linux_common.AbstractLinuxCommand):
     """Check file operation structures for rootkit modifications"""
@@ -140,13 +142,14 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
                 for (name, member, address) in func(f_op_members, modules):
                     yield (name, member, address)
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("SymbolName", str),
+                       ("Member", str),
+                       ("Address", Address)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Symbol Name", "42"), 
-                                  ("Member", "30"), 
-                                  ("Address", "[addr]")])
-                                  
+    def generator(self, data):
         for (what, member, address) in data:
-            self.table_row(outfd, what, member, address)
+            yield (0, [str(what), str(member), Address(address)])
 
 

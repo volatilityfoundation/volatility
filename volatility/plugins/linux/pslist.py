@@ -27,6 +27,8 @@
 import volatility.obj as obj
 import volatility.utils as utils
 import volatility.plugins.linux.common as linux_common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_pslist(linux_common.AbstractLinuxCommand):
     """Gather active tasks by walking the task_struct->task list"""
@@ -70,39 +72,43 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
             if not pidlist or task.pid in pidlist:
                 yield task
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Offset", Address),
+                       ("Name", str),
+                       ("Pid", int),
+                       ("Uid", str),
+                       ("Gid", str),
+                       ("DTB", Address),
+                       ("StartTime", str)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Offset", "[addrpad]"),
-                                  ("Name", "20"),
-                                  ("Pid", "15"),
-                                  ("Uid", "15"),
-                                  ("Gid", "6"),
-                                  ("DTB", "[addrpad]"),
-                                  ("Start Time", "")])
+    def generator(self, data):
         for task in data:
             if task.mm.pgd == None:
                 dtb = task.mm.pgd
             else:
                 dtb = self.addr_space.vtop(task.mm.pgd) or task.mm.pgd
-            self.table_row(outfd, task.obj_offset,
-                                  task.comm,
-                                  str(task.pid),
+            yield (0, [Address(task.obj_offset),
+                                  str(task.comm),
+                                  int(task.pid),
                                   str(task.uid) if task.uid else "-",
                                   str(task.gid) if task.gid else "-",
-                                  dtb,
-                                  task.get_task_start_time())
+                                  Address(dtb),
+                                  str(task.get_task_start_time())])
+
 
 class linux_memmap(linux_pslist):
     """Dumps the memory map for linux tasks"""
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Task", str),
+                       ("Pid", int),
+                       ("Virtual", Address),
+                       ("Physical", Address),
+                       ("Size", Address)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Task", "16"),
-                                  ("Pid", "8"),
-                                  ("Virtual", "[addrpad]"),
-                                  ("Physical", "[addrpad]"),
-                                  ("Size", "[addr]")])
-
+    def generator(self, data):
         for task in data:
             task_space = task.get_process_address_space()
 
@@ -112,9 +118,10 @@ class linux_memmap(linux_pslist):
                     pa = task_space.vtop(p[0])
                     # pa can be 0, according to the old memmap, but can't == None(NoneObject)
                     if pa != None:
-                        self.table_row(outfd, task.comm, task.pid, p[0], pa, p[1])
+                        yield (0, [str(task.comm), int(task.pid), Address(p[0]), Address(pa), Address(p[1])])
                     #else:
                     #    outfd.write("0x{0:10x} 0x000000     0x{1:12x}\n".format(p[0], p[1]))
             else:
-                outfd.write("Unable to read pages for {0} pid {1}.\n".format(task.comm, task.pid))
+                yield(0, [str(task.comm), int(task.pid), Address(-1), Address(-1), Address(-1)])
+
 

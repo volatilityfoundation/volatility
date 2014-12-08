@@ -34,7 +34,7 @@ import os
 
 def write_callback(option, _opt_str, _value, parser, *_args, **_kwargs):
     """Callback function to ensure that write support is only enabled if user repeats a long string
-    
+
        This call back checks whether the user really wants write support and then either enables it
        (for all future parses) by changing the option to store_true, or disables it permanently
        by ensuring all future attempts to store the value store_false.
@@ -62,7 +62,7 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
     1) A valid config.LOCATION (starting with file://)
 
     2) no one else has picked the AS before us
-    
+
     3) base == None (we dont operate on anyone else so we need to be
     right at the bottom of the AS stack.)
     """
@@ -83,6 +83,7 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
         self.fhandle = open(self.fname, self.mode)
         self.fhandle.seek(0, 2)
         self.fsize = self.fhandle.tell()
+        self._long_struct = struct.Struct("=I")
 
     # Abstract Classes cannot register options, and since this checks config.WRITE in __init__, we define the option here
     @staticmethod
@@ -115,7 +116,7 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
 
     def read_long(self, addr):
         string = self.read(addr, 4)
-        (longval,) = struct.unpack('=I', string)
+        longval, = self._long_struct.unpack(string)
         return longval
 
     def get_available_addresses(self):

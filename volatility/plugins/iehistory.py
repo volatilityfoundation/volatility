@@ -25,6 +25,8 @@ import volatility.plugins.taskmods as taskmods
 import volatility.utils as utils
 import volatility.win32.tasks as tasks
 import volatility.debug as debug
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class _URL_RECORD(obj.CType):
     """A class for URL and LEAK records"""
@@ -125,6 +127,61 @@ class IEHistory(taskmods.DllList):
                 if record.is_valid():
                     yield proc, record
     
+    def unified_output(self, data):
+        return TreeGrid([("Process", str),
+                       ("PID", int),
+                       ("CacheType", str),
+                       ("Offset", Address),
+                       ("RecordLength", int),
+                       ("Location", str),
+                       ("LastModified", str),
+                       ("LastAccessed", str),
+                       ("Length", int),
+                       ("FileOffset", Address),
+                       ("DataOffset", Address),
+                       ("DataSize", int),
+                       ("File", str),
+                       ("Data", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for process, record in data:
+            lm = -1
+            la = -1
+            length = -1
+            fileoffset = -1
+            dataoffset = -1
+            datasize = -1
+            thefile = ""
+            thedata = ""
+            
+            if record.obj_name == "_URL_RECORD":
+                lm = str(record.LastModified)
+                la = str(record.LastAccessed)
+                length = int(record.Length)
+                fileoffset = int(record.FileOffset)
+                dataoffset = int(record.DataOffset)
+                datasize = int(record.DataSize)
+                if record.FileOffset > 0:
+                    thefile = str(record.File or "")
+                if record.has_data():
+                    thedata = str(record.Data or "")
+            yield (0, [str(process.ImageFileName), 
+                        int(process.UniqueProcessId),
+                        str(record.Signature),
+                        Address(record.obj_offset),
+                        int(record.Length),
+                        str(record.Url),
+                        str(lm),
+                        str(la),
+                        int(length),
+                        Address(fileoffset),
+                        Address(dataoffset),
+                        int(datasize),
+                        str(thefile),
+                        str(thedata)])
+
+
     def render_text(self, outfd, data):
         for process, record in data:
             outfd.write("*" * 50 + "\n")

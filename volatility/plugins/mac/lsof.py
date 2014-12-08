@@ -30,38 +30,16 @@ import volatility.plugins.mac.common as common
 
 class mac_lsof(pstasks.mac_tasks):
     """ Lists per-process opened files """
-    def calculate(self):
-        common.set_plugin_members(self)
 
-        procs = pstasks.mac_tasks(self._config).calculate()
-
-        for proc in procs:
-            num_fds = proc.p_fd.fd_lastfile
-            if proc.p_fd.fd_nfiles > num_fds:
-                num_fds = proc.p_fd.fd_nfiles
-
-            fds = obj.Object('Array', offset = proc.p_fd.fd_ofiles, vm = self.addr_space, targetType = 'Pointer', count = proc.p_fd.fd_nfiles)
-
-            for i, fd in enumerate(fds):
-                f = fd.dereference_as("fileproc")
-                if f:
-                    ftype = f.f_fglob.fg_type
-                    if ftype == 'DTYPE_VNODE': 
-                        vnode = f.f_fglob.fg_data.dereference_as("vnode")
-                        path = vnode.full_path()
-                    else:
-                        path = ""
-                                        
-                    yield proc, i, f, path
- 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("PID","8"),
                                   ("File Descriptor", "6"),
                                   ("File Path", ""),
                                  ])
  
-        for proc, i, f, path in data:
-            if path:
-                self.table_row(outfd, proc.p_pid, i, path)
+        for proc in data:
+            for (_, filepath, fd) in proc.lsof():
+                if filepath:
+                    self.table_row(outfd, proc.p_pid, fd, filepath)
 
    

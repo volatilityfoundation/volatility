@@ -53,6 +53,46 @@ class AbstractMacCommand(commands.Command):
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'mac'
 
+def is_in_kernel_or_module(handler, ktext_start, ktext_end, kmods):
+    # see if this handler is in a known location
+    good = 0 
+    module = "UNKNOWN"
+
+    if ktext_start <= handler <= ktext_end:
+        good = 1     
+        module = "__kernel__"
+    elif kmods != []:
+        # see if the address fits in any of the known modules
+        for (start, end, name) in kmods:
+            if start <= handler <= end:
+                good = 1
+                module = name
+                break
+
+    return (good, module)
+
+def get_handler_name(kaddr_info, handler):
+    (obj_ref, kernel_symbol_addresses, ktext_start, ktext_end, kmods) = kaddr_info
+
+    module      = "UNKNOWN"
+    handler_sym = ""
+
+    if handler in kernel_symbol_addresses:
+        module  = "__kernel__"
+        handler_sym = obj_ref.profile.get_symbol_by_address("kernel", handler)
+
+    elif ktext_start <= handler <= ktext_end:
+        module = "__kernel__"
+    
+    elif kmods != []:
+        # see if the address fits in any of the known modules
+        for (start, end, name) in kmods:
+            if start <= handler <= end:
+                module = name
+                break
+
+    return (module, handler_sym)
+
 def is_known_address_name(handler, kernel_symbol_addresses, kmods):
     # see if this handler is in a known location
     good = 0 
@@ -97,6 +137,38 @@ def get_kernel_function_addrs(obj_ref):
     kmods = [(kmod.address, kmod.address + kmod.m('size'), kmod.name) for kmod in lsmod.mac_lsmod(obj_ref._config).calculate() if str(kmod.name) != "com.apple.kpi.unsupported"] 
 
     return (kernel_symbol_addresses, kmods)
+
+def get_kernel_addrs_start_end(obj_ref):
+    import volatility.plugins.mac.lsmod as lsmod
+   
+    s = obj_ref.profile.get_symbol("_vm_kernel_stext")
+    e = obj_ref.profile.get_symbol("_vm_kernel_etext") 
+
+    start = obj.Object("unsigned long", offset = s, vm = obj_ref.addr_space)
+    end   = obj.Object("unsigned long", offset = e, vm = obj_ref.addr_space)
+
+    # module addresses, tuple of (start, end)
+    # TODO -- make sure more stringent and parse each kext in-memory so we only allow whitelist from .text
+    kmods = [(kmod.address.v(), kmod.address.v() + kmod.m('size'), kmod.name) for kmod in lsmod.mac_lsmod(obj_ref._config).calculate() if str(kmod.name) != "com.apple.kpi.unsupported"] 
+
+    return (start, end, kmods)
+
+def get_handler_name_addrs(obj_ref):
+    import volatility.plugins.mac.lsmod as lsmod
+   
+    s = obj_ref.profile.get_symbol("_vm_kernel_stext")
+    e = obj_ref.profile.get_symbol("_vm_kernel_etext") 
+
+    start = obj.Object("unsigned long", offset = s, vm = obj_ref.addr_space)
+    end   = obj.Object("unsigned long", offset = e, vm = obj_ref.addr_space)
+
+    # module addresses, tuple of (start, end)
+    # TODO -- make sure more stringent and parse each kext in-memory so we only allow whitelist from .text
+    kmods = [(kmod.address.v(), kmod.address.v() + kmod.m('size'), kmod.name) for kmod in lsmod.mac_lsmod(obj_ref._config).calculate() if str(kmod.name) != "com.apple.kpi.unsupported"] 
+
+    kernel_symbol_addresses = obj_ref.profile.get_all_function_addresses()
+    
+    return (obj_ref, kernel_symbol_addresses, start, end, kmods)
 
 def get_kernel_addrs(obj_ref):
     import volatility.plugins.mac.lsmod as lsmod

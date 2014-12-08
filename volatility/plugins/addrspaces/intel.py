@@ -74,6 +74,7 @@ class IA32PagedMemory(paged.AbstractWritablePagedMemory):
     # Hardcoded page info to avoid expensive recalculation
     minimum_size = 0x1000
     alignment_gcd = 0x1000
+    _long_struct = struct.Struct('<I')
 
     def __init__(self, base, config, dtb = 0, skip_as_check = False, *args, **kwargs):
         ## We must be stacked on someone else:
@@ -146,7 +147,7 @@ class IA32PagedMemory(paged.AbstractWritablePagedMemory):
             string = None
         if not string:
             return obj.NoneObject("Unable to read_long_phys at " + hex(addr))
-        (longval,) = struct.unpack('<I', string)
+        longval, = self._long_struct.unpack(string)
         return longval
 
     def get_available_pages(self):
@@ -188,6 +189,7 @@ class IA32PagedMemoryPae(IA32PagedMemory):
 
     order = 60
     pae = True
+    _longlong_struct = struct.Struct('<Q')
 
     def get_pdptb(self, pdpr):
         return pdpr & 0xFFFFFFE0
@@ -256,7 +258,7 @@ class IA32PagedMemoryPae(IA32PagedMemory):
             string = None
         if not string:
             return obj.NoneObject("Unable to read base AS at " + hex(addr))
-        (longlongval,) = struct.unpack('<Q', string)
+        longlongval, = self._longlong_struct.unpack(string)
         return longlongval
 
     def get_available_pages(self):

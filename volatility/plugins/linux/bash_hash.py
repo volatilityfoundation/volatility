@@ -32,6 +32,7 @@ import volatility.debug as debug
 import volatility.addrspace as addrspace
 import volatility.plugins.linux.common  as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
+from volatility.renderers import TreeGrid
 
 bash_hash_vtypes_32 = {
     '_pathdata' : [ 8, {
@@ -121,17 +122,19 @@ class linux_bash_hash(linux_pslist.linux_pslist):
             for ent in task.bash_hash_entries():
                 yield task, ent
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Pid", "8"), 
-                                  ("Name", "20"),
-                                  ("Hits", "6"),
-                                  ("Command", "25"),
-                                  ("Full Path", "")])
-                                    
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                       ("Name", str),
+                       ("Hits", int),
+                       ("Command", str),
+                       ("Path", str)],
+                        self.generator(data))
+
+    def generator(self, data):
         for task, bucket in data:
-            self.table_row(outfd, task.pid, task.comm, 
-                           bucket.times_found, 
+            yield (0, [int(task.pid), str(task.comm),
+                           int(bucket.times_found), 
                            str(bucket.key.dereference()),
-                           str(bucket.data.path.dereference()))
+                           str(bucket.data.path.dereference())])
 
 

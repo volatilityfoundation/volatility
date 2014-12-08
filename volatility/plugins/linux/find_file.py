@@ -61,7 +61,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             name  = dentry.d_name.name.dereference_as("String", length = 255)
             new_file = parent + "/" + name
             ret.append((new_file, dentry))
-           
+ 
             inode = dentry.d_inode
 
             if inode and inode.is_valid() and inode.is_dir():
@@ -90,11 +90,11 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
             rname  = sb.s_root.d_name.name.dereference_as("String", length = 255)
             if rname and len(rname) > 0:
-                yield (sb, sb_path, rname, sb.s_root)
+                yield (sb, sb_path, sb_path, sb.s_root)
             
             for (file_path, file_dentry) in self._walk_sb(sb.s_root, parent):
                 yield (sb, sb_path, file_path, file_dentry)
-   
+
     def calculate(self):
         linux_common.set_plugin_members(self)
 
@@ -217,7 +217,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         file_size = inode.i_size
 
         if not inode.is_valid() or file_size == None:
-            return data
+            raise StopIteration
 
         extra = file_size % 4096
         idxs = file_size / 4096

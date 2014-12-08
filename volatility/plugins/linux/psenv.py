@@ -26,11 +26,16 @@
 """
 
 import volatility.plugins.linux.pslist as linux_pslist
+from volatility.renderers import TreeGrid
 
 class linux_psenv(linux_pslist.linux_pslist):
     '''Gathers processes along with their environment'''
+    def unified_output(self, data):
+        return TreeGrid([("Name", str),
+                       ("Pid", int),
+                       ("Environment", str)],
+                        self.generator(data))
 
-    def render_text(self, outfd, data):
-        outfd.write("{0:6s} {1:6s} {2:12s}\n".format("Name", "Pid", "Environment"))
+    def generator(self, data):
         for task in data:
-            outfd.write("{0:17s} {1:6s} {2:s}\n".format(str(task.comm), str(task.pid), task.get_environment()))
+            yield (0, [str(task.comm), int(task.pid), str(task.get_environment())])

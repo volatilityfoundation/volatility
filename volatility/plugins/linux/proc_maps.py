@@ -27,6 +27,8 @@
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_proc_maps(linux_pslist.linux_pslist):
     """Gathers process maps for linux"""
@@ -40,26 +42,28 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                 for vma in task.get_proc_maps():
                     yield task, vma            
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Pid", "8"),
-                                  ("Start", "#018x"),
-                                  ("End",   "#018x"),
-                                  ("Flags", "6"),
-                                  ("Pgoff", "[addr]"),
-                                  ("Major", "6"),
-                                  ("Minor", "6"),
-                                  ("Inode", "10"),
-                                  ("File Path", ""),                    
-                                 ]) 
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                       ("Start", Address),
+                       ("End", Address),
+                       ("Flags", str),
+                       ("Pgoff", Address),
+                       ("Major", int),
+                       ("Minor", int),
+                       ("Inode", int),
+                       ("Path", str)],
+                        self.generator(data))
+
+    def generator(self, data):
         for task, vma in data:
             (fname, major, minor, ino, pgoff) = vma.info(task)
 
-            self.table_row(outfd, task.pid, 
-                vma.vm_start,
-                vma.vm_end,
+            yield (0, [int(task.pid),
+                Address(vma.vm_start),
+                Address(vma.vm_end),
                 str(vma.vm_flags),
-                pgoff,
-                major,
-                minor,
-                ino,
-                fname)
+                Address(pgoff),
+                int(major),
+                int(minor),
+                int(ino),
+                str(fname)])

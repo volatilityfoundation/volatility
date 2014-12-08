@@ -27,6 +27,7 @@
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.find_file  as linux_find_file
+from volatility.renderers import TreeGrid
 
 class linux_enumerate_files(linux_common.AbstractLinuxCommand):
     """Lists files referenced by the filesystem cache"""
@@ -37,9 +38,11 @@ class linux_enumerate_files(linux_common.AbstractLinuxCommand):
         for (_, _, file_path, _)in linux_find_file.linux_find_file(self._config).walk_sbs():
             yield file_path
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Path", str)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Path", "")])
+    def generator(self, data):
         for path in data:
-            self.table_row(outfd, path)
+            yield (0, [str(path)])
             

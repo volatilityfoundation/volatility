@@ -51,8 +51,8 @@ mac_bash_hash_vtypes = {
     }],
     
     'mac64_pathdata' : [ 12, {
-    'path'  : [0x0, ['pointer', ['String', dict(length = 1024)]]],
-    'flags': [0x8, ['int']],
+    'path'  : [ 0, ['pointer', ['String', dict(length = 1024)]]],
+    'flags' : [ 8, ['int']],
     }],
 
     'mac64_bucket_contents' : [ 32, {
@@ -216,77 +216,6 @@ class mac_bash_hash(mac_pslist.mac_pslist):
         mac_pslist.mac_pslist.__init__(self, config, *args, **kwargs)
         self._config.add_option('SCAN_ALL', short_option = 'A', default = False, help = 'scan all processes, not just those named bash', action = 'store_true')    
 
-    def calculate(self):
-        mac_common.set_plugin_members(self)
-    
-        tasks = mac_pslist.mac_pslist(self._config).calculate()
-
-
-        for task in tasks:
-            proc_as = task.get_process_address_space()
-            
-            # In cases when mm is an invalid pointer 
-            if not proc_as:
-                continue
-
-            # Do we scan everything or just /bin/bash instances?
-            if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
-                continue
-
-            bit_string = str(task.task.map.pmap.pm_task_map or '')[9:]
-            if bit_string.find("64BIT") == -1:
-                addr_type       = "unsigned int"
-                bucket_contents_type =  "mac32_bucket_contents"
-                htable_type     = "mac32_bash_hash_table"
-                nbuckets_offset = self.addr_space.profile.get_obj_offset(htable_type, "nbuckets") 
-            else:
-                addr_type       = "unsigned long long"
-                bucket_contents_type =  "mac64_bucket_contents"
-                htable_type     = "mac64_bash_hash_table"
-                nbuckets_offset = self.addr_space.profile.get_obj_offset(htable_type, "nbuckets") 
-
-            proc_as = task.get_process_address_space()
-
-            for map in task.get_proc_maps():
-                if map.get_path() != "":
-                    continue
-
-                off = map.start
-
-                while off < map.end:
-                    # test the number of buckets
-                    dr = proc_as.read(off + nbuckets_offset, 4)
-                    if dr == None:
-                        new_off = (off & ~0xfff) + 0xfff + 1
-                        off = new_off
-                        continue
-
-                    test = struct.unpack("<I", dr)[0]
-                    if test != 64:
-                        off = off + 1
-                        continue
-
-                    htable = obj.Object(htable_type, offset = off, vm = proc_as)
-                    
-                    if htable.is_valid():
-                        bucket_array = obj.Object(theType="Array", targetType=addr_type, offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
-
-                        for bucket_ptr in bucket_array:
-                            bucket = obj.Object(bucket_contents_type, offset = bucket_ptr, vm = htable.nbuckets.obj_vm)
-                            while bucket != None and bucket.times_found > 0:  
-                                pdata = bucket.data 
-
-                                if pdata == None:
-                                    bucket = bucket.next_bucket()
-                                    continue
-
-                                if pdata.is_valid() and (0 <= pdata.flags <= 2):
-                                    yield task, bucket
-
-                                bucket = bucket.next_bucket()
-                    
-                    off = off + 1
-
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Pid", "8"), 
                                   ("Name", "20"),
@@ -294,8 +223,13 @@ class mac_bash_hash(mac_pslist.mac_pslist):
                                   ("Command", "25"),
                                   ("Full Path", "")])
                                     
-        for task, bucket in data:
-            self.table_row(outfd, task.p_pid, task.p_comm, 
+        for task in data:
+            # Do we scan everything or just /bin/bash instances?
+            if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
+                continue
+
+            for bucket in task.bash_hash_entries():
+                self.table_row(outfd, task.p_pid, task.p_comm, 
                            bucket.times_found,
                            str(bucket.key),
                            str(bucket.data.path))

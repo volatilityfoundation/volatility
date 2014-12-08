@@ -35,7 +35,7 @@ ptrs_per_pae_pte = 512
 
 class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     """ Standard AMD 64-bit address space.
-   
+
     This class implements the AMD64/IA-32E paging address space. It is responsible
     for translating each virtual (linear) address to a physical address.
     This is accomplished using hierachical paging structures.
@@ -64,6 +64,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     paging_address_space = True
     minimum_size = 0x1000
     alignment_gcd = 0x1000
+    _longlong_struct = struct.Struct("<Q")
 
     def entry_present(self, entry):
         if entry:
@@ -83,19 +84,19 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
         return False
 
     def get_2MB_paddr(self, vaddr, pgd_entry):
-        paddr = (pgd_entry & 0xFFFFFFFE00000) | (vaddr & 0x00000001fffff) 
+        paddr = (pgd_entry & 0xFFFFFFFE00000) | (vaddr & 0x00000001fffff)
         return paddr
 
     def is_valid_profile(self, profile):
         '''
         This method checks to make sure the address space is being
-        used with a supported profile. 
+        used with a supported profile.
         '''
         return profile.metadata.get('memory_model', '32bit') == '64bit' or profile.metadata.get('os', 'Unknown').lower() == 'mac'
 
     def pml4e_index(self, vaddr):
-        ''' 
-        This method returns the Page Map Level 4 Entry Index 
+        '''
+        This method returns the Page Map Level 4 Entry Index
         number from the given  virtual address. The index number is
         in bits 47:39.
         '''
@@ -103,7 +104,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
 
     def get_pml4e(self, vaddr):
         '''
-        This method returns the Page Map Level 4 (PML4) entry for the 
+        This method returns the Page Map Level 4 (PML4) entry for the
         virtual address. Bits 47:39 are used to the select the
         appropriate 8 byte entry in the Page Map Level 4 Table.
 
@@ -119,7 +120,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
         This method returns the Page Directory Pointer entry for the
         virtual address. Bits 32:30 are used to select the appropriate
         8 byte entry in the Page Directory Pointer table.
-        
+
         "Bits 51:12 are from the PML4E" [Intel]
         "Bits 11:3 are bits 38:30 of the linear address" [Intel]
         "Bits 2:0 are all 0" [Intel]
@@ -208,7 +209,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
             string = None
         if not string:
             return obj.NoneObject("Unable to read_long_long_phys at " + hex(addr))
-        (longlongval,) = struct.unpack('<Q', string)
+        longlongval, = self._longlong_struct.unpack(string)
         return longlongval
 
     def get_available_pages(self):
@@ -217,11 +218,11 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
         available within the address space. The entries in
         are composed of the virtual address of the page
         and the size of the particular page (address, size).
-        It walks the 0x1000/0x8 (0x200) entries in each Page Map, 
+        It walks the 0x1000/0x8 (0x200) entries in each Page Map,
         Page Directory, and Page Table to determine which pages
         are accessible.
         '''
-        
+
         for pml4e in range(0, 0x200):
             vaddr = pml4e << 39
             pml4e_value = self.get_pml4e(vaddr)

@@ -40,26 +40,34 @@ class mac_ifconfig(common.AbstractMacCommand):
         while ifnet:
             name = ifnet.if_name.dereference()
             unit = ifnet.if_unit
+            prom =  ifnet.if_flags & 0x100 == 0x100 # IFF_PROMISC
+
+            addr_dl = obj.Object("sockaddr_dl", offset = ifnet.if_lladdr.ifa_addr.v(), vm = self.addr_space) 
+            if addr_dl.is_valid():
+                mac = addr_dl.v()
+            else:
+                mac = ""
+
             ifaddr = ifnet.if_addrhead.tqh_first
-            
             ips = []
 
             while ifaddr:
                 ip = ifaddr.ifa_addr.get_address() 
                 if ip:
                     ips.append(ip)
+
                 ifaddr = ifaddr.ifa_link.tqe_next
      
-            yield (name, unit, ips)
+            yield (name, unit, mac, prom, ips)
             ifnet = ifnet.if_link.tqe_next
  
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Interface", "10"), ("Address", "")])
+        self.table_header(outfd, [("Interface", "10"), ("IP Address", "32"), ("Mac Address", "20"), ("Promiscuous", "")])
 
-        for (name, unit, ips) in data:
+        for (name, unit, mac, prom, ips) in data:
             if ips:
                 for ip in ips:
-                    self.table_row(outfd, "{0}{1}".format(name, unit), ip)
+                    self.table_row(outfd, "{0}{1}".format(name, unit), ip, mac, prom)
             else:
                 # an interface with no IPs
-                self.table_row(outfd, "{0}{1}".format(name, unit), "")
+                self.table_row(outfd, "{0}{1}".format(name, unit), "", mac, prom)
