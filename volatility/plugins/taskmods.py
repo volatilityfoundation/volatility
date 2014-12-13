@@ -26,7 +26,7 @@
 import os, re
 import volatility.plugins.common as common
 from volatility.renderers import TreeGrid
-from volatility.renderers.basic import Address
+from volatility.renderers.basic import Address, Hex
 import volatility.win32 as win32
 import volatility.obj as obj
 import volatility.debug as debug
@@ -54,8 +54,8 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
     def unified_output(self, data):
         return TreeGrid([("Pid", int),
                        ("Base", Address),
-                       ("Size", int),
-                       ("LoadCount", int),
+                       ("Size", Hex),
+                       ("LoadCount", Hex),
                        ("Path", str)],
                         self.generator(data))
 
@@ -65,7 +65,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
 
             if task.Peb:
                 for m in task.get_load_modules():
-                    yield (0, [int(pid), Address(m.DllBase), int(m.SizeOfImage), int(m.LoadCount), str(m.FullDllName or '')])
+                    yield (0, [int(pid), Address(m.DllBase), Hex(m.SizeOfImage), Hex(m.LoadCount), str(m.FullDllName or '')])
             else:
                 yield (0, [int(pid), Address(0), 0, 0, "Error reading PEB for pid"])
 
