@@ -852,6 +852,8 @@ class rtentry(obj.CType):
         else:
             ret = "N/A"
 
+        return ret
+
     @property
     def delta(self):
         if self.expire() == 0:
