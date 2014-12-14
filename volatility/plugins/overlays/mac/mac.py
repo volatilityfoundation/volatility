@@ -283,6 +283,23 @@ class kauth_scope(obj.CType):
             if ls.is_valid() and ls.kll_callback != 0:
                 yield ls 
 
+class thread(obj.CType):   
+    def start_time(self):
+        baddr = self.obj_vm.profile.get_symbol("_clock_boottime")     
+
+        boot_time = obj.Object("unsigned long long", offset = baddr, vm = self.obj_vm)
+        abs_time  = boot_time + self.sched_stamp 
+
+        try:
+            data = struct.pack("<I", abs_time)
+        except struct.error:
+            return ""
+
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = data)
+        dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)
+
+        return dt
+
 class proc(obj.CType):   
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         self.pack_fmt  = ""
@@ -352,8 +369,6 @@ class proc(obj.CType):
                             if pdata == None:
                                 bucket = bucket.next_bucket()
                                 continue
-
-                            print "valid: %s flags: %d" % (pdata.is_valid(), pdata.flags.v())
 
                             if pdata.is_valid() and (0 <= pdata.flags <= 2):
                                 yield bucket
@@ -633,6 +648,27 @@ class proc(obj.CType):
 
         return None
 
+    def find_map(self, addr):
+        ret = None
+
+        for vma in self.get_proc_maps():
+            if int(vma.links.start) <= int(addr) <= int(vma.links.end):
+                ret = vma
+                break
+
+        return ret
+
+    def find_map_path(self, addr):
+        path = ""
+        m = self.find_map(addr)
+
+        if m:
+            path = m.get_path()
+            if path == "":
+                path = m.get_special_path()
+
+        return path
+              
     def search_process_memory(self, s):
         """Search process memory. 
 
@@ -1671,6 +1707,7 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc'  : proc,
+            'thread'  : thread,
             'kauth_scope'  : kauth_scope,
             'dyld32_image_info' : dyld32_image_info,
             'dyld64_image_info' : dyld64_image_info,

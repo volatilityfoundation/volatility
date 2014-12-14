@@ -51,12 +51,9 @@ class mac_lsmod_kext_map(lsmod.mac_lsmod):
 
             if macho.is_valid():
                 kmod_start = macho.address_for_symbol("_kmod_info")           
-            else:
-                kmod_start = 0
-            
-            address  = kext.start
-            
-            if kmod_start:
-                kmod = obj.Object("kmod_info", offset = kmod_start, vm = self.addr_space)
-                yield kmod
+           
+                if kmod_start: 
+                    kmod = obj.Object("kmod_info", offset = kmod_start, vm = self.addr_space)
+                    if kmod.is_valid():
+                        yield kmod
 
