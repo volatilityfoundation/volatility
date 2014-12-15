@@ -403,7 +403,7 @@ threads                    - Investigate _ETHREAD and _KTHREADs
 timeliner                  - Creates a timeline from various artifacts in memory
 timers                     - Print kernel timers and associated module DPCs
 truecryptmaster            - Recover TrueCrypt 7.1a Master Keys
-truecryptpassphrase        - TrueCrypt Cached Passprhase Finder
+truecryptpassphrase        - TrueCrypt Cached Passphrase Finder
 truecryptsummary           - TrueCrypt Summary
 unloadedmodules            - Print list of unloaded modules
 userassist                 - Print userassist registry keys and information
