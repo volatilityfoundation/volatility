@@ -130,7 +130,7 @@ class MFT_FILE_RECORD(obj.CType):
             return
         # otherwise keep a record of the directory that we've found
         cur = MFT_PATHS_FULL.get(int(self.RecordNumber), None)
-        if cur == None or cur["filename"].find("~") != -1 and fileinfo.is_valid():
+        if (cur == None or fileinfo.Namespace != 2) and fileinfo.is_valid():
             temp = {}
             temp["ParentDirectory"] = fileinfo.ParentDirectory
             temp["filename"] = self.remove_unprintable(fileinfo.get_name())
