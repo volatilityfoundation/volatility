@@ -42,9 +42,11 @@ class mac_netstat(mac_tasks.mac_tasks):
         for proc in data:
             for (family, info) in proc.netstat():
                 if family == 1:
-                    outfd.write("UNIX {0}\n".format(info))
+                    (socket, path) = info
+                    if path:
+                        outfd.write("UNIX {0}\n".format(path))
                 elif family in [2, 30]:
-                    (proto, lip, lport, rip, rport, state) = info
+                    (socket, proto, lip, lport, rip, rport, state) = info
                     self.table_row(outfd, proto, lip, lport, rip, rport, state, "{}/{}".format(proc.p_comm, proc.p_pid))
                     
 

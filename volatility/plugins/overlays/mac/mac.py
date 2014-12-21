@@ -1558,32 +1558,30 @@ def MacProfileFactory(profpkg):
             
             return ret
 
-
-        def _get_symbol_by_address(self, module, sym_address):
+        def _fill_sba_cache(self):
             ret = ""
             
             symtable = self.sys_map
-
-            mod = symtable[module]
+            mod = symtable["kernel"]
 
             for (name, addrs) in mod.items():
                 for (addr, _) in addrs:
-                    key = "%s|%x" % (module, addr)
+                    key = "%s|%x" % ("kernel", addr)
                     self.sba_cache[key] = name
-         
-                    if sym_address == addr or sym_address == self.shift_address + addr:
-                        ret = name
-                        break
-                    
-            return ret
+
+                    key = "%s|%x" % ("kernel", addr + self.shift_address)
+                    self.sba_cache[key] = name
         
         def get_symbol_by_address(self, module, sym_address):
+            if self.sba_cache == {}:
+                self._fill_sba_cache()
+    
             key = "%s|%x" % (module, sym_address)
             if key in self.sba_cache:
                 ret = self.sba_cache[key]
             else:
-                ret = self._get_symbol_by_address(module, sym_address)
-            
+                ret = ""
+ 
             return ret
 
         def get_all_symbol_names(self, module = "kernel"):
