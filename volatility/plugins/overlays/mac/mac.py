@@ -196,6 +196,15 @@ class VolatilityMacIntelValidAS(obj.VolatilityMagic):
         else:
             yield False
 
+class ifnet(obj.CType):
+    def sockaddr_dl(self):
+        if hasattr(self, "if_lladdr"):
+            ret = obj.Object("sockaddr_dl", offset = self.if_lladdr.ifa_addr.v(), vm = self.obj_vm)
+        else:
+            ret = obj.Object("sockaddr_dl", offset = self.if_addrhead.tqh_first.ifa_addr.v(), vm = self.obj_vm)
+
+        return ret
+
 class vnode(obj.CType):
     def is_dir(self):
         return self.v_type == 2
@@ -1713,6 +1722,7 @@ class MacObjectClasses(obj.ProfileModification):
             'dyld64_image_info' : dyld64_image_info,
             'fileglob' : fileglob,
             'vnode' : vnode,
+            'ifnet' : ifnet,
             'socket' : socket,
             'inpcbinfo' : inpcbinfo,
             'inpcb' : inpcb,
