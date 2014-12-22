@@ -489,7 +489,7 @@ class mac_apihooks_kernel(common.AbstractMacCommand):
                         yield ("TrapTable", '-', func_addr, False, modified, False, '-', hook_kext)
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Table Name", "<50"), ("Index", "<6"), ("Address", "[addrpad]"), ("Symbol", "<50"), ("Inlined", "<5"), ("Shadowed","<5"), ("Perms","<6"), ("Hook In", "<50")])
+        self.table_header(outfd, [("Table Name", "<30"), ("Index", "<6"), ("Address", "[addrpad]"), ("Symbol", "<30"), ("Inlined", "<5"), ("Shadowed","<5"), ("Perms","<6"), ("Hook In", "")])
         for (table_name, i, call_addr, hooked, inlined, syscall_shadowed, perms, kext) in data:
             if hooked == False:
                 sym_name = self.profile.get_symbol_by_address_type("kernel", call_addr, "N_FUN")

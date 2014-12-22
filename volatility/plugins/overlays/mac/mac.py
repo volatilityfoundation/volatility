@@ -196,6 +196,15 @@ class VolatilityMacIntelValidAS(obj.VolatilityMagic):
         else:
             yield False
 
+class ifnet(obj.CType):
+    def sockaddr_dl(self):
+        if hasattr(self, "if_lladdr"):
+            ret = obj.Object("sockaddr_dl", offset = self.if_lladdr.ifa_addr.v(), vm = self.obj_vm)
+        else:
+            ret = obj.Object("sockaddr_dl", offset = self.if_addrhead.tqh_first.ifa_addr.v(), vm = self.obj_vm)
+
+        return ret
+
 class vnode(obj.CType):
     def is_dir(self):
         return self.v_type == 2
@@ -283,6 +292,23 @@ class kauth_scope(obj.CType):
             if ls.is_valid() and ls.kll_callback != 0:
                 yield ls 
 
+class thread(obj.CType):   
+    def start_time(self):
+        baddr = self.obj_vm.profile.get_symbol("_clock_boottime")     
+
+        boot_time = obj.Object("unsigned long long", offset = baddr, vm = self.obj_vm)
+        abs_time  = boot_time + self.sched_stamp 
+
+        try:
+            data = struct.pack("<I", abs_time)
+        except struct.error:
+            return ""
+
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = data)
+        dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)
+
+        return dt
+
 class proc(obj.CType):   
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         self.pack_fmt  = ""
@@ -352,8 +378,6 @@ class proc(obj.CType):
                             if pdata == None:
                                 bucket = bucket.next_bucket()
                                 continue
-
-                            print "valid: %s flags: %d" % (pdata.is_valid(), pdata.flags.v())
 
                             if pdata.is_valid() and (0 <= pdata.flags <= 2):
                                 yield bucket
@@ -633,6 +657,27 @@ class proc(obj.CType):
 
         return None
 
+    def find_map(self, addr):
+        ret = None
+
+        for vma in self.get_proc_maps():
+            if int(vma.links.start) <= int(addr) <= int(vma.links.end):
+                ret = vma
+                break
+
+        return ret
+
+    def find_map_path(self, addr):
+        path = ""
+        m = self.find_map(addr)
+
+        if m:
+            path = m.get_path()
+            if path == "":
+                path = m.get_special_path()
+
+        return path
+              
     def search_process_memory(self, s):
         """Search process memory. 
 
@@ -815,6 +860,8 @@ class rtentry(obj.CType):
             ret = self.rt_stats.nstat_rxpackets 
         else:
             ret = "N/A"
+
+        return ret
 
     @property
     def delta(self):
@@ -1520,32 +1567,30 @@ def MacProfileFactory(profpkg):
             
             return ret
 
-
-        def _get_symbol_by_address(self, module, sym_address):
+        def _fill_sba_cache(self):
             ret = ""
             
             symtable = self.sys_map
-
-            mod = symtable[module]
+            mod = symtable["kernel"]
 
             for (name, addrs) in mod.items():
                 for (addr, _) in addrs:
-                    key = "%s|%x" % (module, addr)
+                    key = "%s|%x" % ("kernel", addr)
                     self.sba_cache[key] = name
-         
-                    if sym_address == addr or sym_address == self.shift_address + addr:
-                        ret = name
-                        break
-                    
-            return ret
+
+                    key = "%s|%x" % ("kernel", addr + self.shift_address)
+                    self.sba_cache[key] = name
         
         def get_symbol_by_address(self, module, sym_address):
+            if self.sba_cache == {}:
+                self._fill_sba_cache()
+    
             key = "%s|%x" % (module, sym_address)
             if key in self.sba_cache:
                 ret = self.sba_cache[key]
             else:
-                ret = self._get_symbol_by_address(module, sym_address)
-            
+                ret = ""
+ 
             return ret
 
         def get_all_symbol_names(self, module = "kernel"):
@@ -1671,11 +1716,13 @@ class MacObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'VolatilityMacIntelValidAS' : VolatilityMacIntelValidAS,
             'proc'  : proc,
+            'thread'  : thread,
             'kauth_scope'  : kauth_scope,
             'dyld32_image_info' : dyld32_image_info,
             'dyld64_image_info' : dyld64_image_info,
             'fileglob' : fileglob,
             'vnode' : vnode,
+            'ifnet' : ifnet,
             'socket' : socket,
             'inpcbinfo' : inpcbinfo,
             'inpcb' : inpcb,

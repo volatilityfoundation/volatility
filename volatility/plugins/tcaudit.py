@@ -391,7 +391,7 @@ tc_71a_vtypes_x64 = {
 #---------------------------------------------------------------------
             
 class TrueCryptPassphrase(common.AbstractWindowsCommand):
-    """TrueCrypt Cached Passprhase Finder"""
+    """TrueCrypt Cached Passphrase Finder"""
 
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)

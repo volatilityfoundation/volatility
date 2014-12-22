@@ -152,7 +152,7 @@ class TextRenderer(Renderer):
             else:
                 column = grid.columns[index]
             cols += [
-                self._elide(("{:<" + str(grid_max_widths[index]) + "}").format(column.name), grid_max_widths[index])]
+                self._elide(("{0:<" + str(grid_max_widths[index]) + "}").format(column.name), grid_max_widths[index])]
         outfd.write(" ".join(cols) + "\r\n")
 
         def print_row(node, accumulator):

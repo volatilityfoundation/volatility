@@ -41,10 +41,11 @@ class mac_ifconfig(common.AbstractMacCommand):
             name = ifnet.if_name.dereference()
             unit = ifnet.if_unit
             prom =  ifnet.if_flags & 0x100 == 0x100 # IFF_PROMISC
+           
+            addr_dl = ifnet.sockaddr_dl()
 
-            addr_dl = obj.Object("sockaddr_dl", offset = ifnet.if_lladdr.ifa_addr.v(), vm = self.addr_space) 
             if addr_dl.is_valid():
-                mac = addr_dl.v()
+                mac = addr_dl.v() 
             else:
                 mac = ""
 
