@@ -44,6 +44,5 @@ class XLSXRenderer(Renderer):
         self._columns = grid.columns
         self._text_cell_renderers = self._text_cell_renderers_func(self._columns)
         self._ws.append(self.description())
-        grid.visit(None, self._add_row, {None: 0})
-        
+        grid.visit(None, self._add_row, {None: 0}) 
         self._wb.save(filename = self._config.OUTPUT_FILE)
