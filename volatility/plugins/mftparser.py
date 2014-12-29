@@ -740,18 +740,19 @@ class MFTParser(common.AbstractWindowsCommand):
             for _, offset in scanner.scan(address_space):
                 mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
                 bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
-                mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
-                               offset = 0)
-                temp = mft_entry.advance_one(mft_entry.ResidentAttributes.STDInfo.obj_offset + mft_entry.ResidentAttributes.ContentSize, mft_buff, self._config.ENTRYSIZE)
                 name = ""
-                if temp != None:
-                    try:
-                        mft_entry.add_path(temp.FileName)
-                        name = temp.FileName.get_name()
-                    except struct.error:
-                        if self._config.DEBUGOUT:
-                            print "Problem entry at offset:", hex(offset)
+                try:
+                    mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
+                               offset = 0)
+                    temp = mft_entry.advance_one(mft_entry.ResidentAttributes.STDInfo.obj_offset + mft_entry.ResidentAttributes.ContentSize, mft_buff, self._config.ENTRYSIZE)
+                    if temp == None:
                         continue
+                    mft_entry.add_path(temp.FileName)
+                    name = temp.FileName.get_name()
+                except struct.error:
+                    if self._config.DEBUGOUT:
+                        print "Problem entry at offset:", hex(offset)
+                    continue
     
                 if (int(mft_entry.RecordNumber), name) in seen:
                     continue
