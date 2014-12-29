@@ -53,7 +53,6 @@ import volatility.debug as debug
 import volatility.obj as obj 
 import datetime
 from volatility.renderers import TreeGrid
-from volatility.renderers.basic import Address
 
 class Win7LdrDataTableEntry(obj.ProfileModification):
     before = ['WindowsOverlay']
