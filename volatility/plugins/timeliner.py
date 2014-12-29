@@ -52,37 +52,9 @@ import struct
 import volatility.debug as debug
 import volatility.obj as obj 
 import datetime
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
-try:
-    from openpyxl.workbook import Workbook
-    from openpyxl.writer.excel import ExcelWriter
-    from openpyxl.cell import get_column_letter
-    from openpyxl.style import Color, Fill
-    from openpyxl.cell import Cell
-    from openpyxl import load_workbook
-    has_openpyxl = True
-except ImportError:
-    has_openpyxl = False
-
-# you can have more colors
-# http://closedxml.codeplex.com/wikipage?title=Excel%20Indexed%20Colors
-colors = {
-    "GREEN":   "FF00FF00",
-    "LGREEN":  "FFCCFFCC",
-    "YELLOW":  "FFFFFF00",
-    "RED":     "FFFF0000",
-    #"BLUE":    "FF0000FF",
-    #"BLUE":    "FF0066CC",
-    "BLUE":    "FFCCCCFF",
-    "ORANGE":  "FFFF6600",
-    "WHITE":   "FFFFFFFF",
-    "LORANGE": "FFFF9900",
-    "BLUEGRAY": "FF666699",
-    "GRAY25":   "FFC0C0C0",
-    "TAN":      "FFFFCC99",
-    "PINK":     "FFFF00FF",
-}
-    
 class Win7LdrDataTableEntry(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',
@@ -170,60 +142,33 @@ class TimeLiner(common.AbstractWindowsCommand):
                           help = 'Gather Timestamps from a Particular Registry Hive', type = 'str')
         config.add_option('USER', short_option = 'U',
                           help = 'Gather Timestamps from a Particular User\'s Hive(s)', type = 'str')
-        config.add_option('YARA-RULES', short_option = 'Y', default = None,
-                        help = 'Yara rules (as a string)')
-        config.add_option('YARA-FILE', short_option = 'y', default = None,
-                        help = 'Yara rules (rules file)')
         config.add_option("MACHINE", default = "",
                         help = "Machine name to add to timeline header")
         config.add_option("TYPE", default = "".join([",".join(x for x in sorted(self.types))]),
                         help = "Type of artifact to use in timeline (default is all, but \"Registry\")")
-        config.add_option("HIGHLIGHT", default = None,
-                        help = "Highlight potentially malicious items in xlsx output (experimental)")
 
-        self.suspicious = {}
-        self.suspiciouspids = {}
 
+    def unified_output(self, data):
+        return TreeGrid([("Start", str),
+                       ("Header", str),
+                       ("Item", str),
+                       ("Details", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for line in data:
+            yield (0, line.split("|"))
+
+    # leaving render_text in for now
     def render_text(self, outfd, data):
         for line in data:
             if line != None:
-                outfd.write(line)
+                outfd.write("{0}\n".format(line))
     
     def render_body(self, outfd, data):
         for line in data:
             if line != None:
                 outfd.write(line) 
-
-    def fill(self, ws, row, max = 6, color = "RED"):
-        for col in xrange(1, max): 
-            ws.cell("{0}{1}".format(get_column_letter(col), row)).style.fill.fill_type = Fill.FILL_SOLID
-            ws.cell("{0}{1}".format(get_column_letter(col), row)).style.fill.start_color.index = colors.get(color, "RED")
-
-    def render_xlsx(self, outfd, data):
-        wb = Workbook(optimized_write = True)
-        ws = wb.create_sheet()
-        ws.title = 'Timeline Output'
-        header = ["Time", "Type", "Item", "Details", "Reason"]
-        ws.append(header)
-        total = 1
-        for line in data:
-            coldata = line.split("|")
-            ws.append(coldata)
-            total += 1
-        wb.save(filename = self._config.OUTPUT_FILE)
-
-        if self._config.HIGHLIGHT != None:
-            wb = load_workbook(filename = self._config.OUTPUT_FILE)
-            ws = wb.get_sheet_by_name(name = "Timeline Output")
-            for col in xrange(1, len(header) + 1):
-                ws.cell("{0}{1}".format(get_column_letter(col), 1)).style.font.bold = True
-            for row in xrange(2, total + 1):
-                for col in xrange(2, len(header)):
-                    if ws.cell("{0}{1}".format(get_column_letter(col), row)).value in self.suspicious.keys():
-                        self.fill(ws, row, len(header) + 1, self.suspicious[ws.cell("{0}{1}".format(get_column_letter(col), row)).value]["color"])
-                        ws.cell("{0}{1}".format(get_column_letter(col + 1), row)).value = self.suspicious[ws.cell("{0}{1}".format(get_column_letter(col), row)).value]["reason"]
-                    
-            wb.save(filename = self._config.OUTPUT_FILE)
 
     def getoutput(self, header, start, end = None, body = False):
         if body:
@@ -237,18 +182,13 @@ class TimeLiner(common.AbstractWindowsCommand):
         else:
             try:
                 if end == None or end.v() == 0:
-                    return "{0}|{1}\n".format(start, header)
+                    return "{0}|{1}".format(start, header)
                 else:
-                    return "{0}|{1} End: {2}\n".format(start, header, end)
+                    return "{0}|{1} End: {2}".format(start, header, end)
             except ValueError, ve:
-                return "{0}|{1}\n".format(-1, header)
+                return "{0}|{1}".format(-1, header)
                 
     def calculate(self):
-        if self._config.OUTPUT == "xlsx" and not has_openpyxl:
-            debug.error("You must install OpenPyxl for xlsx format:\n\thttps://bitbucket.org/ericgazoni/openpyxl/wiki/Home")
-        elif self._config.OUTPUT == "xlsx" and not self._config.OUTPUT_FILE:
-            debug.error("You must specify an output *.xlsx file!\n\t(Example: --output-file=OUTPUT.xlsx)")
-
         if (self._config.HIVE or self._config.USER) and "Registry" not in self._config.TYPE:
             debug.error("You must use --registry in conjuction with -H/--hive and/or -U/--user")
         if self._config.TYPE != None:
@@ -268,13 +208,9 @@ class TimeLiner(common.AbstractWindowsCommand):
         if self._config.MACHINE != "":
             self._config.update("MACHINE", "{0} ".format(self._config.MACHINE))
 
-        detections = False
-        if self._config.OUTPUT == "xlsx" and self._config.HIGHLIGHT != None:
-            detections = True
-    
         if "ImageDate" in self._config.TYPE:
             im = imageinfo.ImageInfo(self._config).get_image_time(addr_space)
-            yield self.getoutput("[{0}LIVE RESPONSE]{1} (System time)".format(
+            yield self.getoutput("[{0}LIVE RESPONSE]{1} (System time){1}".format(
                 self._config.MACHINE, "" if body else "|"), 
                 im['ImageDatetime'], body = body)
 
@@ -353,39 +289,6 @@ class TimeLiner(common.AbstractWindowsCommand):
                         yield self.getoutput(line, key_obj.KeyControlBlock.KcbLastWriteTime, body = body)
 
 
-            if detections and "Process" in self._config.TYPE:
-                injected = False
-                for vad, address_space in eprocess.get_vads(vad_filter = eprocess._injection_filter):
-
-                    if malfind.Malfind(self._config)._is_vad_empty(vad, address_space):
-                        continue
-
-                    line = "PID: {0}/PPID: {1}/POffset: 0x{2:08x}".format(
-                        eprocess.UniqueProcessId,
-                        eprocess.InheritedFromUniqueProcessId,
-                        offset)
-                    self.suspicious[line.strip()] = {"reason":"MALFIND", "color": "RED"}
-                    self.suspiciouspids[eprocess.UniqueProcessId.v()] = {"reason":"MALFIND", "color": "RED"}
-                    injected = True
-
-                proc_okay = False
-                if not injected and (eprocess.ExitTime.v() > 0 or str(eprocess.ImageFileName).lower() in ["system", "smss.exe", "csrss.exe"]):
-                    proc_okay = True
-                elif not injected and ps_sources['psscan'].has_key(offset) and (not ps_sources['pslist'].has_key(offset) or not \
-                    ps_sources['thrdproc'].has_key(offset) or not ps_sources['pspcid'].has_key(offset) or not \
-                    ps_sources['csrss'].has_key(offset) or not ps_sources['session'].has_key(offset) or not \
-                    ps_sources['deskthrd'].has_key(offset)):
-                    proc_okay = True
-                if not proc_okay and (not ps_sources['pslist'].has_key(offset) or not ps_sources['psscan'].has_key(offset) or not ps_sources['thrdproc'].has_key(offset) \
-                    or not ps_sources['pspcid'].has_key(offset) or not ps_sources['csrss'].has_key(offset) or not ps_sources['session'].has_key(offset) \
-                    or not ps_sources['deskthrd'].has_key(offset)):
-                    if self.suspicious.get(line.strip(), {}).get("reason", None) == None:
-                        self.suspicious[line.strip()] = {"reason":"PSXVIEW", "color": "RED"}
-                        self.suspiciouspids[eprocess.UniqueProcessId.v()] = {"reason":"PSXVIEW", "color": "RED"}
-                    else:
-                        self.suspicious[line.strip()] = {"reason":"MALFIND and PSXVIEW", "color": "RED"}
-                        self.suspiciouspids[eprocess.UniqueProcessId.v()] = {"reason":"MALFIND and PSXVIEW", "color": "RED"}
-
             if eprocess.Peb == None or eprocess.Peb.ImageBaseAddress == None:
                 continue
             # Get DLL PE timestamps for Wow64 processes (excluding 64-bit ones)
@@ -455,40 +358,6 @@ class TimeLiner(common.AbstractWindowsCommand):
                 if hasattr(mod, "LoadTime") and "LoadTime" in self._config.TYPE:
                     temp = line.replace("[{0}PE HEADER ".format(self._config.MACHINE), "[{0}DLL LOADTIME ".format(self._config.MACHINE))
                     yield self.getoutput(temp, mod.TimeDateStamp, end = mod.LoadTime, body = body)
-                if detections and eprocess.UniqueProcessId.v() in self.suspiciouspids.keys():
-                    suspiciousline = "Process: {0}/PID: {1}/PPID: {2}/Process POffset: 0x{3:08x}/DLL Base: 0x{4:08x}".format(
-                        eprocess.ImageFileName,
-                        eprocess.UniqueProcessId,
-                        eprocess.InheritedFromUniqueProcessId,
-                        offset,
-                        mod.DllBase.v())
-                    self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[eprocess.UniqueProcessId.v()]["reason"], "color": "BLUE"}
-
-        # yarascan
-        mal = []
-        if self._config.YARA_RULES or self._config.YARA_FILE: 
-            mal = malfind.YaraScan(self._config).calculate()
-        for o, addr, hit, content in mal:
-            # Find out if the hit is from user or kernel mode 
-            if o == None:
-                continue
-            elif o.obj_name == "_EPROCESS":
-                line = "PID: {0}/PPID: {1}/POffset: 0x{2:08x}".format(
-                    o.UniqueProcessId,
-                    o.InheritedFromUniqueProcessId,
-                    o.obj_vm.vtop(o.obj_offset))
-                if detections and self.suspicious.get(line.strip(), {}).get("reason", None) == None:
-                    self.suspicious[line.strip()] = {"reason":"YARASCAN", "color": "LORANGE"}
-                    self.suspiciouspids[o.UniqueProcessId.v()] = {"reason":"YARASCAN", "color": "LORANGE"}
-                elif self.suspicious[line.strip()]["reason"].find("YARASCAN {0}".format(hit.rule)) == -1:
-                    self.suspicious[line.strip()]["reason"] = self.suspicious[line.strip()]["reason"] + " and YARASCAN {0}".format(hit.rule)
-            else:
-                line = "Base: {0:#010x}".format(
-                        o.BaseDllName)
-                if detections and self.suspicious.get(line.strip(), {}).get("reason", None) == None:
-                    self.suspicious[line.strip()] = {"reason":"YARASCAN {0}".format(hit.rule), "color": "LORANGE"}
-                elif detections and self.suspicious[line.strip()]["reason"].find("YARASCAN {0}".format(hit.rule)) == -1:
-                    self.suspicious[line.strip()]["reason"] = self.suspicious[line.strip()]["reason"] + " and YARASCAN {0}".format(hit.rule)
 
         # Get Sockets and Evtlogs XP/2k3 only
         if version[0] == 5:
@@ -508,11 +377,6 @@ class TimeLiner(common.AbstractWindowsCommand):
                         self._config.MACHINE)
 
                 yield self.getoutput(line, sock.CreateTime, body = body)
-                if detections and sock.Pid.v() in self.suspiciouspids.keys():
-                    suspiciousline = "PID: {0}/POffset: 0x{1:#010x}".format(
-                        sock.Pid,
-                        sock.obj_offset)
-                    self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[sock.Pid.v()]["reason"], "color": "YELLOW"}
 
             stuff = []
             if "EvtLog" in self._config.TYPE:
@@ -524,20 +388,6 @@ class TimeLiner(common.AbstractWindowsCommand):
                             fields[1], fields[2], fields[3], fields[4], fields[5], fields[6], fields[7],
                             self._config.MACHINE)
                     yield self.getoutput(line, fields[0], body = body)
-                    if not detections:
-                        continue
-                    line = "{0}/{1}/{2}/{3}/{4}/{5}".format(
-                       fields[2], fields[3], fields[4], fields[5], fields[6], fields[7])
-                    if fields[5] == 517:
-                        self.suspicious[line] = {"reason": "SEC LOG CLEARED", "color": "RED"}
-                    if fields[5] in [861] and fields[6] == "Failure":
-                        self.suspicious[line] = {"reason": "PORT BLOCKED", "color": "TAN"}
-                    if fields[1].lower() == "secevent.evt" and fields[5] in [529, 680] and fields[6] == "Failure":
-                        self.suspicious[line] = {"reason": "LOGIN FAILURE", "color": "TAN"}
-                    if fields[1].lower() == "sysevent.evt" and fields[5] in [100]:
-                        self.suspicious[line] = {"reason": "LOGIN FAILURE", "color": "TAN"}
-                    if fields[1].lower() == "osession.evt" and fields[5] == 7003:
-                        self.suspicious[line] = {"reason": "OFFICE APPLICATION FAILURE", "color": "TAN"}
         elif version <= (6, 1):
             # Vista+
             nets = []
@@ -555,13 +405,6 @@ class TimeLiner(common.AbstractWindowsCommand):
                         self._config.MACHINE)
 
                 yield self.getoutput(line, net_object.CreateTime, body = body)
-                if detections and net_object.Owner.UniqueProcessId.v() in self.suspiciouspids.keys():
-                    suspiciousline = "{0}/{1}/{2}/{3:<#10x}".format(
-                        net_object.Owner.UniqueProcessId,
-                        proto,
-                        state,
-                        net_object.obj_offset)
-                    self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[net_object.Owner.UniqueProcessId.v()]["reason"], "color": "YELLOW"}
 
         # Get threads
         threads = []
@@ -577,15 +420,6 @@ class TimeLiner(common.AbstractWindowsCommand):
                     self._config.MACHINE)
             yield self.getoutput(line, thread.CreateTime, end = thread.ExitTime, body = body)
 
-            if not detections:
-                continue
-            suspiciousline = "PID: {0}/TID: {1}".format(
-                    thread.Cid.UniqueProcess,
-                    thread.Cid.UniqueThread)
-            if thread.Cid.UniqueProcess.v() in self.suspiciouspids.keys():
-                self.suspicious[suspiciousline] = {"reason": "Process flagged: " + self.suspiciouspids[thread.Cid.UniqueProcess.v()]["reason"], "color": "YELLOW"}
-            if image == "UNKNOWN" or thread.Cid.UniqueProcess.v() not in pids:
-                self.suspicious[suspiciousline] = {"reason": "UNKNOWN IMAGE", "color": "YELLOW"}
     
         data = []
         if "Symlink" in self._config.TYPE:
