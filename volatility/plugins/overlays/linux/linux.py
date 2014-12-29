@@ -1844,16 +1844,8 @@ class task_struct(obj.CType):
 
         elif wall_addr:
             wall  = obj.Object("timespec", offset = wall_addr, vm = self.obj_vm)
-
-            init_task_addr = self.obj_vm.profile.get_symbol("init_task")            
-            init_task  = obj.Object("task_struct", offset = init_task_addr, vm = self.obj_vm)
-
-            time_val = init_task.utime + init_task.stime
-            nsec = time_val * self.TICK_NSEC()
-            tv_sec  = nsec / linux_common.nsecs_per
-            tv_nsec = nsec % linux_common.nsecs_per      
-            timeo = linux_common.vol_timespec(tv_sec, tv_nsec)    
-
+            timeo = linux_common.vol_timespec(0, 0)
+    
         # timekeeper way
         else:
             timekeeper_addr = self.obj_vm.profile.get_symbol("timekeeper")
@@ -1865,10 +1857,10 @@ class task_struct(obj.CType):
 
     # based on 2.6.35 getboottime
     def get_boot_time(self):
-
         (wall, timeo) = self.get_time_vars()
         secs = wall.tv_sec + timeo.tv_sec
         nsecs = wall.tv_nsec + timeo.tv_nsec
+
         secs = secs * -1
         nsecs = nsecs * -1
 
