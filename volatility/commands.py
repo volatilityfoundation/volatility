@@ -31,6 +31,7 @@ from volatility.renderers.dot import DotRenderer
 from volatility.renderers.html import HTMLRenderer, JSONRenderer
 from volatility.renderers.sqlite import SqliteRenderer
 from volatility.renderers.text import TextRenderer, FormatCellRenderer, QuickTextRenderer
+from volatility.renderers.xlsx import XLSXRenderer
 
 
 class Command(object):
@@ -287,3 +288,6 @@ class Command(object):
 
     def render_html(self, outfd, data):
         self._render(outfd, HTMLRenderer(), data)
+
+    def render_xlsx(self, outfd, data):
+        self._render(outfd, XLSXRenderer(self.text_cell_renderers, self._config), data)
