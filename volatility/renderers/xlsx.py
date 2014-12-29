@@ -17,7 +17,7 @@ except ImportError:
 class XLSXRenderer(Renderer):
     def __init__(self, renderers_func, config):
         if not has_openpyxl:
-            debug.error("You must install OpenPyxl for xlsx format:\n\thttps://bitbucket.org/ericgazoni/openpyxl/wiki/Home")
+            debug.error("You must install OpenPyxl 2.1.2 for xlsx format:\n\thttps://pypi.python.org/pypi/openpyxl")
         self._config = config
         self._columns = None
         self._text_cell_renderers_func = renderers_func
