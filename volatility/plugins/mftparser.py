@@ -170,7 +170,7 @@ class MFT_FILE_RECORD(obj.CType):
         fileinfo = self.fnlong or self.fnshort
         if fileinfo == None:
             return "(Null)"
-        if self.obj_vm._config.DEBUGOUT:
+        if hasattr(self.obj_vm._config, "DEBUGOUT") and self.obj_vm._config.DEBUGOUT:
             print "Building path for file {0}".format(fileinfo.get_name())
         parent = ""
         path = self.remove_unprintable(fileinfo.get_name()) or "(Null)"
@@ -210,11 +210,11 @@ class MFT_FILE_RECORD(obj.CType):
     def add_filename(self, fn):
         if fn.Namespace == 2:
             self.newattr("fnshort", fn)
-            if self.obj_vm._config.DEBUGOUT:
+            if hasattr(self.obj_vm._config, "DEBUGOUT") and self.obj_vm._config.DEBUGOUT:
                 print "added", fn.get_name()
         else:
             self.newattr("fnlong", fn)
-            if self.obj_vm._config.DEBUGOUT:
+            if hasattr(self.obj_vm._config, "DEBUGOUT") and self.obj_vm._config.DEBUGOUT:
                 print "added (long)", fn.get_name()
 
     def process_attr_list(self, next_attr, attributes = [], check = True):
@@ -258,7 +258,7 @@ class MFT_FILE_RECORD(obj.CType):
             if attr == None:
                 next_attr = None
             elif attr == "STANDARD_INFORMATION":
-                if self.obj_vm._config.DEBUGOUT:
+                if hasattr(self.obj_vm._config, "DEBUGOUT") and self.obj_vm._config.DEBUGOUT:
                     print "Found $SI"
                 if not check or next_attr.STDInfo.is_valid():
                     attributes.append((attr, next_attr.STDInfo))
@@ -269,7 +269,7 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 next_attr = self.advance_one(next_off)
             elif attr == 'FILE_NAME':
-                if self.obj_vm._config.DEBUGOUT:
+                if hasattr(self.obj_vm._config, "DEBUGOUT") and self.obj_vm._config.DEBUGOUT:
                     print "Found $FN"
                 self.add_path(next_attr.FileName)
                 if not check or next_attr.FileName.is_valid():
@@ -281,7 +281,7 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 next_attr = self.advance_one(next_off)
             elif attr == "OBJECT_ID":
-                if self.obj_vm._config.DEBUGOUT:
+                if hasattr(self.obj_vm._config, "DEBUGOUT") and self.obj_vm._config.DEBUGOUT:
                     print "Found $ObjectId"
                 if next_attr.Header.NonResidentFlag == 1:
                     attributes.append((attr, "Non-Resident"))
@@ -296,7 +296,7 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 next_attr = self.advance_one(next_off)
             elif attr == "DATA":
-                if self.obj_vm._config.DEBUGOUT:
+                if hasattr(self.obj_vm._config, "DEBUGOUT") and self.obj_vm._config.DEBUGOUT:
                     print "Found $DATA"
                 try:
                     if next_attr.Header and next_attr.Header.NameOffset > 0 and next_attr.Header.NameLength > 0:
@@ -329,7 +329,7 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 next_attr = self.advance_one(next_off)
             elif attr == "ATTRIBUTE_LIST":
-                if self.obj_vm._config.DEBUGOUT:
+                if hasattr(self.obj_vm._config, "DEBUGOUT") and self.obj_vm._config.DEBUGOUT:
                     print "Found $AttributeList"
                 if next_attr.Header.NonResidentFlag == 1:
                     attributes.append((attr, "Non-Resident"))
