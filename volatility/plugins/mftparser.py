@@ -780,16 +780,15 @@ class MFTParser(common.AbstractWindowsCommand):
             for _, offset in scanner.scan(address_space):
                 try:
                     mft_entry = obj.Object('MFT_FILE_RECORD', vm = address_space, offset = offset)
-                    if self._config.ENTRYSIZE != 1024:
-                        mft_entry.set_size(self._config.ENTRYSIZE)
+                    if self._config.ENTRYSIZE != 1024 or self._config.NOCHECK:
+                        mft_entry.set_options(self._config.ENTRYSIZE, check = not self._config.NOCHECK)
                 except struct.error:
                     if self._config.DEBUGOUT:
                         print "Problem entry at offset:", hex(offset)
                 name = mft_entry.fnlong or mft_entry.fnshort
                 if name == None or (int(mft_entry.RecordNumber), name) in seen:
                     continue
-                else:
-                    seen.append((int(mft_entry.RecordNumber), name))
+                seen.append((int(mft_entry.RecordNumber), name))
                 offsets.append((offset, mft_entry))
 
         # The reason why we wait until the end to yield the mft entries is so that we 
