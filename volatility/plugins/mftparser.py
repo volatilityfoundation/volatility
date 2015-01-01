@@ -119,6 +119,36 @@ INDEX_ENTRY_FLAGS = {
 MFT_PATHS_FULL = {}
 
 class MFT_FILE_RECORD(obj.CType):
+    def __init__(self, *args, **kwargs):
+        # Usually we don't add members to objects like this, but its an
+        # exception due to lack of better options.
+        obj.CType.__init__(self, *args, **kwargs)
+        self.newattr("stdinfo", None)
+        self.newattr("fnlong", None)
+        self.newattr("fnshort", None)
+        self.newattr("objectid", None)
+        self.newattr("data", [])
+        self.newattr("esize", 1024)
+        self.newattr("check", True)
+        self.newattr("mft_buff", self.obj_vm.read(self.obj_offset, self.esize))
+        end = self.mft_buff.find("\xff\xff\xff\xff")
+        if end == -1:
+            end = int(self.esize)
+        self.newattr("end", end + int(self.obj_offset))
+        self.parse_attributes(entrysize = self.esize)
+
+    def set_options(self, esize = 1024, check = True):
+        # this function allows us to have entries larger than 1K
+        self.newattr("esize", esize)
+        if check in [True, False]:
+            self.newattr("check", check)
+        self.newattr("mft_buff", self.obj_vm.read(self.obj_offset, self.esize))
+        end = self.mft_buff.find("\xff\xff\xff\xff")
+        if end == -1:
+            end = int(self.esize)
+        self.newattr("end", end + int(self.obj_offset))
+        self.parse_attributes(entrysize = self.esize, check = self.check)
+
     def remove_unprintable(self, str):
         return ''.join([c for c in str if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
 
@@ -130,13 +160,16 @@ class MFT_FILE_RECORD(obj.CType):
             return
         # otherwise keep a record of the directory that we've found
         cur = MFT_PATHS_FULL.get(int(self.RecordNumber), None)
-        if (cur == None or fileinfo.Namespace != 2) and fileinfo.is_valid():
+        if (cur == None or int(fileinfo.Namespace) in [0, 1, 3]) and fileinfo.is_valid():
             temp = {}
             temp["ParentDirectory"] = fileinfo.ParentDirectory
             temp["filename"] = self.remove_unprintable(fileinfo.get_name())
             MFT_PATHS_FULL[int(self.RecordNumber)] = temp
 
-    def get_full_path(self, fileinfo):
+    def get_full_path(self):
+        fileinfo = self.fnlong or self.fnshort
+        if fileinfo == None:
+            return "(Null)"
         if self.obj_vm._config.DEBUGOUT:
             print "Building path for file {0}".format(fileinfo.get_name())
         parent = ""
@@ -172,11 +205,47 @@ class MFT_FILE_RECORD(obj.CType):
         return "{0}{1}".format("In Use & " if self.is_inuse() else "",
                "Directory" if self.is_directory() else "File")
 
-    def parse_attributes(self, mft_buff, check = True, entrysize = 1024):
+    # We want to be able to differenciate between a $FN attribute that is 8.3
+    # and the full readable file name.  We prefer the latter for building paths
+    def add_filename(self, fn):
+        if fn.Namespace == 2:
+            self.newattr("fnshort", fn)
+            if self.obj_vm._config.DEBUGOUT:
+                print "added", fn.get_name()
+        else:
+            self.newattr("fnlong", fn)
+            if self.obj_vm._config.DEBUGOUT:
+                print "added (long)", fn.get_name()
+
+    def process_attr_list(self, next_attr, attributes = [], check = True):
+        start = 0
+        end = self.end
+        while start < end:
+            item = obj.Object("ATTRIBUTE_LIST", vm = self.obj_vm,
+                                offset = next_attr.AttributeList.obj_offset + start)
+            if item == None:
+                return
+            try:
+                thetype = ATTRIBUTE_TYPE_ID.get(int(item.Type), None)
+                if thetype == None:
+                    return
+                elif item.Length > 0x20 and thetype in ["STANDARD_INFORMATION", "FILE_NAME"]:
+                    theitem = obj.Object(thetype, vm = self.obj_vm, offset = item.AttributeID.obj_offset)
+                    if thetype == "STANDARD_INFORMATION" and (not check or theitem.is_valid()):
+                        attributes.append(("STANDARD_INFORMATION (AL)", theitem))
+                    elif thetype == "FILE_NAME" and (not check or theitem.is_valid()):
+                        self.add_path(theitem)
+                        self.add_filename(theitem)
+                        attributes.append(("FILE_NAME (AL)", theitem))
+            except struct.error:
+                return
+            if item.Length <= 0:
+                return
+            start += item.Length
+
+    def parse_attributes(self, check = True, entrysize = 1024):
         next_attr = self.ResidentAttributes
-        end = mft_buff.find("\xff\xff\xff\xff")
-        if end == -1:
-            end = entrysize
+        end = self.end
         attributes = []
         dataseen = False
         while next_attr != None and next_attr.obj_offset <= end:
@@ -193,22 +262,24 @@ class MFT_FILE_RECORD(obj.CType):
                     print "Found $SI"
                 if not check or next_attr.STDInfo.is_valid():
                     attributes.append((attr, next_attr.STDInfo))
+                    self.newattr("stdinfo", next_attr.STDInfo)
                 next_off = next_attr.STDInfo.obj_offset + next_attr.ContentSize
                 if next_off == next_attr.STDInfo.obj_offset:
                     next_attr = None
                     continue
-                next_attr = self.advance_one(next_off, mft_buff, end)
+                next_attr = self.advance_one(next_off)
             elif attr == 'FILE_NAME':
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $FN"
                 self.add_path(next_attr.FileName)
                 if not check or next_attr.FileName.is_valid():
                     attributes.append((attr, next_attr.FileName))
+                    self.add_filename(next_attr.FileName)
                 next_off = next_attr.FileName.obj_offset + next_attr.ContentSize
                 if next_off == next_attr.FileName.obj_offset:
                     next_attr = None
                     continue
-                next_attr = self.advance_one(next_off, mft_buff, end)
+                next_attr = self.advance_one(next_off)
             elif attr == "OBJECT_ID":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $ObjectId"
@@ -218,11 +289,12 @@ class MFT_FILE_RECORD(obj.CType):
                     continue
                 else:
                     attributes.append((attr, next_attr.ObjectID))
+                    self.newattr("objectid", next_attr.ObjectID)
                 next_off = next_attr.ObjectID.obj_offset + next_attr.ContentSize
                 if next_off == next_attr.ObjectID.obj_offset:
                     next_attr = None
                     continue
-                next_attr = self.advance_one(next_off, mft_buff, end)
+                next_attr = self.advance_one(next_off)
             elif attr == "DATA":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $DATA"
@@ -230,8 +302,7 @@ class MFT_FILE_RECORD(obj.CType):
                     if next_attr.Header and next_attr.Header.NameOffset > 0 and next_attr.Header.NameLength > 0:
                         adsname = ""
                         if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
-                            nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
-                            adsname = obj.Object("NullString", vm = self.obj_vm, offset = nameloc, length = next_attr.Header.NameLength * 2)
+                            adsname = next_attr.ADSName
                             if adsname != None and adsname.strip() != "" and dataseen:
                                 attr += " ADS Name: {0}".format(adsname.strip())
                     dataseen = True
@@ -239,31 +310,24 @@ class MFT_FILE_RECORD(obj.CType):
                     next_attr = None
                     continue
                 try:
-                    if next_attr.ContentSize == 0:
+                    if next_attr.Header.NonResidentFlag == 1 or next_attr.ContentSize == 0:
                         next_off = next_attr.obj_offset + self.obj_vm.profile.get_obj_size("RESIDENT_ATTRIBUTE")
-                        next_attr = self.advance_one(next_off, mft_buff, end)
+                        next_attr = self.advance_one(next_off)
                         attributes.append((attr, ""))
                         continue
-                    start = next_attr.obj_offset + next_attr.ContentOffset
-                    theend = min(start + next_attr.ContentSize, end)
+                    start = (next_attr.obj_offset + next_attr.ContentOffset) - self.obj_offset
+                    theend = min(start + next_attr.ContentSize, (end - self.obj_offset))
                 except struct.error:
                     next_attr = None
                     continue
-                if next_attr.Header.NonResidentFlag == 1:
-                    thedata = ""
-                else:
-                    try:
-                        contents = mft_buff[start:theend]
-                    except TypeError:
-                        next_attr = None
-                        continue
-                    thedata = contents
-                attributes.append((attr, thedata))
-                next_off = theend
+                attributes.append((attr, next_attr.Data))
+                if next_attr not in self.data:
+                    self.data.append(next_attr)
+                next_off = theend + self.obj_offset
                 if next_off == start:
                     next_attr = None
                     continue
-                next_attr = self.advance_one(next_off, mft_buff, end)
+                next_attr = self.advance_one(next_off)
             elif attr == "ATTRIBUTE_LIST":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $AttributeList"
@@ -271,24 +335,24 @@ class MFT_FILE_RECORD(obj.CType):
                     attributes.append((attr, "Non-Resident"))
                     next_attr = None
                     continue
-                next_attr.process_attr_list(self.obj_vm, self, attributes, check)
+                self.process_attr_list(next_attr, attributes, check)
                 next_attr = None
             else:
                 next_attr = None
-
         return attributes
 
-    def advance_one(self, next_off, mft_buff, end):
+    def advance_one(self, next_off, end = None):
         item = None
         attr = None
         cursor = 0
 
         if next_off == None:
             return None
-
-        while attr == None and cursor <= end:
+        while attr == None and cursor <= (self.end - next_off):
             try:
-                val = struct.unpack("<I", mft_buff[next_off + cursor: next_off + cursor + 4])[0]
+                start = (next_off + cursor) - self.obj_offset
+                end = (next_off + cursor + 4) - self.obj_offset
+                val = struct.unpack("<I", self.mft_buff[start: end])[0]
                 attr = ATTRIBUTE_TYPE_ID.get(val, None)
                 item = obj.Object('RESIDENT_ATTRIBUTE', vm = self.obj_vm,
                             offset = next_off + cursor)
@@ -296,32 +360,6 @@ class MFT_FILE_RECORD(obj.CType):
                 return None
             cursor += 1
         return item
-
-class RESIDENT_ATTRIBUTE(obj.CType):
-    def process_attr_list(self, bufferas, mft_entry, attributes = [], check = True):
-        start = 0
-        end = self.obj_offset + self.ContentSize
-        while start < end:
-            item = obj.Object("ATTRIBUTE_LIST", vm = bufferas,
-                                offset = self.AttributeList.obj_offset + start)
-            if item == None:
-                return
-            try:
-                thetype = ATTRIBUTE_TYPE_ID.get(int(item.Type), None)
-                if thetype == None:
-                    return
-                elif item.Length > 0x20 and thetype in ["STANDARD_INFORMATION", "FILE_NAME"]:
-                    theitem = obj.Object(thetype, vm = bufferas, offset = item.AttributeID.obj_offset)
-                    if thetype == "STANDARD_INFORMATION" and (not check or theitem.is_valid()):
-                        attributes.append(("STANDARD_INFORMATION (AL)", theitem))
-                    elif thetype == "FILE_NAME" and (not check or theitem.is_valid()):
-                        mft_entry.add_path(theitem)
-                        attributes.append(("FILE_NAME (AL)", theitem))
-            except struct.error:
-                return
-            if item.Length <= 0:
-                return
-            start += item.Length
 
 class STANDARD_INFORMATION(obj.CType):
     # XXX need a better check than this
@@ -532,13 +570,16 @@ MFT_types = {
     }],
 
     'RESIDENT_ATTRIBUTE': [0x16, {
-        'Header': [0x0, ['ATTRIBUTE_HEADER']],
+        'Header': [0x0, ['ATTRIBUTE_HEADER']], 
         'ContentSize': [0x10, ['unsigned int']], #relative to the beginning of the attribute
         'ContentOffset': [0x14, ['unsigned short']],
         'STDInfo': lambda x : obj.Object("STANDARD_INFORMATION", offset = x.obj_offset + x.ContentOffset, vm = x.obj_vm),
         'FileName': lambda x : obj.Object("FILE_NAME", offset = x.obj_offset + x.ContentOffset, vm = x.obj_vm),
         'ObjectID': lambda x : obj.Object("OBJECT_ID", offset = x.obj_offset + x.ContentOffset, vm = x.obj_vm),
         'AttributeList':lambda x : obj.Object("ATTRIBUTE_LIST", offset = x.obj_offset + x.ContentOffset, vm = x.obj_vm),
+        # may need to rethink the maximum size of a $DATA attribute, but for now we'll use this
+        'Data' : lambda x: x.obj_vm.read(x.obj_offset + x.ContentOffset, min(x.ContentSize, 1024)),
+        'ADSName': lambda x: obj.Object("NullString", vm = x.obj_vm, offset = x.obj_offset + x.Header.NameOffset, length = x.Header.NameLength * 2),
     }],
 
     'NON_RESIDENT_ATTRIBUTE': [0x40, {
@@ -682,7 +723,6 @@ class MFTTYPES(obj.ProfileModification):
             'FILE_NAME':FILE_NAME,
             'STANDARD_INFORMATION':STANDARD_INFORMATION,
             'OBJECT_ID':OBJECT_ID,
-            'RESIDENT_ATTRIBUTE':RESIDENT_ATTRIBUTE,
         })
         profile.vtypes.update(MFT_types)
 
@@ -729,42 +769,36 @@ class MFTParser(common.AbstractWindowsCommand):
         if self._config.OFFSET != None:
             items = [int(o, 16) for o in self._config.OFFSET.split(',')]
             for offset in items:
-                mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
-                bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
-                mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas, offset = 0)
-                offsets.append((offset, mft_entry, mft_buff))
+                mft_entry = obj.Object('MFT_FILE_RECORD', vm = address_space, offset = offset)
+                if self._config.ENTRYSIZE != 1024 or self._config.NOCHECK:
+                    mft_entry.set_options(esize = self._config.ENTRYSIZE, check = not self._config.NOCHECK)
+                offsets.append((offset, mft_entry))
         else:
             scanner = poolscan.MultiPoolScanner(needles = ['FILE', 'BAAD'])
             print "Scanning for MFT entries and building directory, this can take a while"
             seen = []
             for _, offset in scanner.scan(address_space):
-                mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
-                bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
-                name = ""
                 try:
-                    mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
-                               offset = 0)
-                    temp = mft_entry.advance_one(mft_entry.ResidentAttributes.STDInfo.obj_offset + mft_entry.ResidentAttributes.ContentSize, mft_buff, self._config.ENTRYSIZE)
-                    if temp == None:
-                        continue
-                    mft_entry.add_path(temp.FileName)
-                    name = temp.FileName.get_name()
+                    mft_entry = obj.Object('MFT_FILE_RECORD', vm = address_space, offset = offset)
+                    if self._config.ENTRYSIZE != 1024:
+                        mft_entry.set_size(self._config.ENTRYSIZE)
                 except struct.error:
                     if self._config.DEBUGOUT:
                         print "Problem entry at offset:", hex(offset)
-                    continue
-    
-                if (int(mft_entry.RecordNumber), name) in seen:
+                name = mft_entry.fnlong or mft_entry.fnshort
+                if name == None or (int(mft_entry.RecordNumber), name) in seen:
                     continue
                 else:
                     seen.append((int(mft_entry.RecordNumber), name))
-                offsets.append((offset, mft_entry, mft_buff))
+                offsets.append((offset, mft_entry))
 
-        for offset, mft_entry, mft_buff in offsets:
+        # The reason why we wait until the end to yield the mft entries is so that we 
+        # are able to build the entire path.  Unlike disk, we are not able to depend on
+        # entries to be in order
+        for offset, mft_entry in offsets:
             if self._config.DEBUGOUT:
                 print "Processing MFT Entry at offset:", hex(offset)
-            attributes = mft_entry.parse_attributes(mft_buff, not self._config.NOCHECK, self._config.ENTRYSIZE)
-            yield offset, mft_entry, attributes
+            yield offset, mft_entry
 
     def render_body(self, outfd, data):
         if self._config.DUMP_DIR != None and not os.path.isdir(self._config.DUMP_DIR):
@@ -773,49 +807,43 @@ class MFTParser(common.AbstractWindowsCommand):
         # Usually $SI occurs before $FN
         # We'll make an effort to get the filename from $FN for $SI
         # If there is only one $SI with no $FN we dump whatever information it has
-        for offset, mft_entry, attributes in data:
-            si = None
-            full = ""
-            datanum = 0
-            for a, i in attributes:
-                # we'll have a default file size of -1 for records missing $FN attributes
-                # note that file size found in $FN may not actually be accurate and will most likely
-                # be 0.  See Carrier, pg 363
-                size = -1
-                if a.startswith("STANDARD_INFORMATION"):
-                    if full != "":
-                        # if we are here, we've hit one $FN attribute for this entry already and have the full name
-                        # so we can dump this $SI
-                        outfd.write("0|{0}\n".format(i.body(full, mft_entry.RecordNumber, size, offset)))
-                    elif si != None:
-                        # if we are here then we have more than one $SI attribute for this entry
-                        # since we don't want to lose its info, we'll just dump it for now
-                        # we won't have full path, but we'll have a filename most likely
-                        outfd.write("0|{0}\n".format(i.body("", mft_entry.RecordNumber, size, offset)))
-                    elif si == None:
-                        # this is the usual case and we'll save the $SI to process after we get the full path from the $FN
-                        si = i
-                elif a.startswith("FILE_NAME"):
-                    if hasattr(i, "ParentDirectory"):
-                        full = mft_entry.get_full_path(i)
-                        size = int(i.RealFileSize)
-                        outfd.write("0|{0}\n".format(i.body(full, mft_entry.RecordNumber, size, offset)))
-                        if si != None:
-                            outfd.write("0|{0}\n".format(si.body(full, mft_entry.RecordNumber, size, offset)))
-                            si = None
-                elif a.startswith("DATA"):
-                    if len(str(i)) > 0:
-                        file_string = ".".join(["file", "0x{0:x}".format(offset), "data{0}".format(datanum), "dmp"])
-                        datanum += 1
-                        if self._config.DUMP_DIR != None:
-                            of_path = os.path.join(self._config.DUMP_DIR, file_string)
-                            of = open(of_path, 'wb')
-                            of.write(i)
-                            of.close()
-
-            if si != None:
+        for offset, mft_entry in data:
+            # we'll have a default file size of -1 for records missing $FN attributes
+            # note that file size found in $FN may not actually be accurate and will most likely
+            # be 0.  See Carrier, pg 363
+            size = -1
+            fn = None
+            full = mft_entry.get_full_path()
+            if mft_entry.fnlong or mft_entry.fnshort:
+                fn = mft_entry.fnlong or mft_entry.fnshort
+                size = int(fn.RealFileSize)
+                if mft_entry.stdinfo:
+                    outfd.write("0|{0}\n".format(mft_entry.stdinfo.body(full, mft_entry.RecordNumber, size, offset)))
+            else:
                 # here we have a lone $SI in an MFT entry with no valid $FN.  This is most likely a non-base entry
-                outfd.write("0|{0}\n".format(si.body("", mft_entry.RecordNumber, -1, offset)))
+                outfd.write("0|{0}\n".format(mft_entry.stdinfo.body("", mft_entry.RecordNumber, -1, offset)))
+            datanum = 0
+            allads = " ADSNames: "
+            for d in mft_entry.data:
+                ads = ""
+                if d.ADSName.strip() != "":
+                    ads = "({0}) ".format(mft_entry.remove_unprintable(str(d.ADSName.strip())))
+                    allads += ads
+                if len(str(d.Data)) > 0:
+                    file_string = ".".join(["file", "0x{0:x}".format(offset), "data{0}{1}".format(datanum, ads), "dmp"])
+                    datanum += 1
+                    if self._config.DUMP_DIR != None:
+                        of_path = os.path.join(self._config.DUMP_DIR, file_string)
+                        of = open(of_path, 'wb')
+                        of.write(d.Data)
+                        of.close()
+            if allads == " ADSNames: ":
+                allads = ""
+            if mft_entry.fnlong:
+                outfd.write("0|{0}\n".format(mft_entry.fnlong.body(full + allads, mft_entry.RecordNumber, size, offset)))
+            if mft_entry.fnshort:
+                outfd.write("0|{0}\n".format(mft_entry.fnshort.body(full + allads, mft_entry.RecordNumber, size, offset)))
+
 
     def unified_output(self, data):
         return renderers.TreeGrid([("MFT Offset", Address),
@@ -830,28 +858,34 @@ class MFTParser(common.AbstractWindowsCommand):
                             ("Value", str)], self.generator(data))
 
     def generator(self, data):
-        for offset, mft_entry, attributes in data:
-            if not len(attributes):
-                continue
+        for offset, mft_entry in data:
             datnum = 0
-            for a, i in attributes:
-                if i == None:
-                    attrdata = ["Invalid (" + a + ")", "", "", "", "", ""]
-                elif a.startswith("STANDARD_INFORMATION"):
-                    attrdata = [a, str(i.CreationTime),
-                                str(i.ModifiedTime),
-                                str(i.MFTAlteredTime),
-                                str(i.FileAccessedTime),
-                                i.get_type()]
-                elif a.startswith("FILE_NAME"):
-                    attrdata = [a, str(i.CreationTime),
-                                str(i.ModifiedTime),
-                                str(i.MFTAlteredTime),
-                                str(i.FileAccessedTime),
-                                i.remove_unprintable(i.get_name())]
-                else:
-                    attrdata = [a, "", "", "", "", ""]
-
+            if mft_entry.stdinfo:
+                attrdata = ["STANDARD_INFORMATION", str(mft_entry.stdinfo.CreationTime),
+                                str(mft_entry.stdinfo.ModifiedTime),
+                                str(mft_entry.stdinfo.MFTAlteredTime),
+                                str(mft_entry.stdinfo.FileAccessedTime),
+                                mft_entry.stdinfo.get_type()]
+                yield (0, [Address(offset),
+                           str(mft_entry.get_mft_type()),
+                           int(mft_entry.RecordNumber),
+                           int(mft_entry.LinkCount)] + attrdata)
+            if mft_entry.fnshort:
+                attrdata = ["FILE_NAME", str(mft_entry.fnshort.CreationTime),
+                                str(mft_entry.fnshort.ModifiedTime),
+                                str(mft_entry.fnshort.MFTAlteredTime),
+                                str(mft_entry.fnshort.FileAccessedTime),
+                                mft_entry.fnshort.remove_unprintable(mft_entry.fnshort.get_name())]
+                yield (0, [Address(offset),
+                           str(mft_entry.get_mft_type()),
+                           int(mft_entry.RecordNumber),
+                           int(mft_entry.LinkCount)] + attrdata)
+            if mft_entry.fnlong:
+                attrdata = ["FILE_NAME", str(mft_entry.fnlong.CreationTime),
+                                str(mft_entry.fnlong.ModifiedTime),
+                                str(mft_entry.fnlong.MFTAlteredTime),
+                                str(mft_entry.fnlong.FileAccessedTime),
+                                mft_entry.fnlong.remove_unprintable(mft_entry.fnlong.get_name())]
                 yield (0, [Address(offset),
                            str(mft_entry.get_mft_type()),
                            int(mft_entry.RecordNumber),
@@ -862,9 +896,7 @@ class MFTParser(common.AbstractWindowsCommand):
         if self._config.DUMP_DIR != None and not os.path.isdir(self._config.DUMP_DIR):
             debug.error(self._config.DUMP_DIR + " is not a directory")
         border = "*" * 75
-        for offset, mft_entry, attributes in data:
-            if len(attributes) == 0:
-                continue
+        for offset, mft_entry in data:
             outfd.write("{0}\n".format(border))
             outfd.write("MFT entry found at offset 0x{0:x}\n".format(offset))
             outfd.write("Attribute: {0}\n".format(mft_entry.get_mft_type()))
@@ -875,38 +907,48 @@ class MFTParser(common.AbstractWindowsCommand):
             # e.g. ADS.  Therfore we need to differentiate somehow
             # to avoid clobbering.  For now we'll use a counter (datanum)
             datanum = 0
-            for a, i in attributes:
-                if i == None:
-                    outfd.write("${0}: malformed entry\n".format(a))
-                    continue
-                if a.startswith("STANDARD_INFORMATION"):
-                    outfd.write("\n${0}\n".format(a))
-                    self.table_header(outfd, i.get_header())
-                    outfd.write("{0}\n".format(str(i)))
-                elif a.startswith("FILE_NAME"):
-                    outfd.write("\n${0}\n".format(a))
-                    if hasattr(i, "ParentDirectory"):
-                        full = mft_entry.get_full_path(i)
-                        self.table_header(outfd, i.get_header())
-                        output = i.get_full(full)
-                        if output == None:
-                            continue
-                        outfd.write("{0}\n".format(output))
-                    else:
-                        outfd.write("{0}\n".format(str(i)))
-                elif a.startswith("DATA"):
-                    outfd.write("\n${0}\n".format(a))
-                    contents = "\n".join(["{0:010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(i)])
-                    outfd.write("{0}\n".format(str(contents)))
-                    if len(str(i)) > 0:
-                        file_string = ".".join(["file", "0x{0:x}".format(offset), "data{0}".format(datanum), "dmp"])
-                        datanum += 1
-                        if self._config.DUMP_DIR != None:
-                            of_path = os.path.join(self._config.DUMP_DIR, file_string)
-                            of = open(of_path, 'wb')
-                            of.write(i)
-                            of.close()
-                elif a == "OBJECT_ID":
-                    outfd.write("\n$OBJECT_ID\n")
-                    outfd.write(str(i))
+            size = -1
+            fn = None
+            if mft_entry.stdinfo:
+                outfd.write("\n${0}\n".format("STANDARD_INFORMATION"))
+                self.table_header(outfd, mft_entry.stdinfo.get_header())
+                outfd.write("{0}\n".format(str(mft_entry.stdinfo)))
+            full = mft_entry.get_full_path()
+            if full and mft_entry.fnlong:
+                outfd.write("\n${0}\n".format("FILE_NAME"))
+                if hasattr(mft_entry.fnlong, "ParentDirectory"):
+                    self.table_header(outfd, mft_entry.fnlong.get_header())
+                    output = mft_entry.fnlong.get_full(full)
+                    if output == None:
+                        continue
+                    outfd.write("{0}\n".format(output))
+                else:
+                    outfd.write("{0}\n".format(str(mft_entry.fnlong)))
+            if full and mft_entry.fnshort:
+                outfd.write("\n${0}\n".format("FILE_NAME"))
+                if hasattr(mft_entry.fnshort, "ParentDirectory"):
+                    self.table_header(outfd, mft_entry.fnshort.get_header())
+                    output = mft_entry.fnshort.get_full(full)
+                    if output == None:
+                        continue
+                    outfd.write("{0}\n".format(output))
+                else:
+                    outfd.write("{0}\n".format(str(mft_entry.fnshort)))
+            for d in mft_entry.data:
+                ads = ""
+                if d.ADSName.strip() != "":
+                    ads = " ADS Name: {0}".format(mft_entry.remove_unprintable(str(d.ADSName.strip())))
+                outfd.write("\n${0}{1}\n".format("DATA", ads))
+                contents = "\n".join(["{0:010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(d.Data)])
+                outfd.write("{0}\n".format(str(contents)))
+                if len(str(d.Data)) > 0:
+                    file_string = ".".join(["file", "0x{0:x}".format(offset), "data{0}{1}".format(datanum, ads), "dmp"])
+                    datanum += 1
+                    if self._config.DUMP_DIR != None:
+                        of_path = os.path.join(self._config.DUMP_DIR, file_string)
+                        of = open(of_path, 'wb')
+                        of.write(d.Data)
+                        of.close()
+            outfd.write("\n$OBJECT_ID\n")
+            outfd.write(str(mft_entry.objectid))
             outfd.write("\n{0}\n".format(border))
