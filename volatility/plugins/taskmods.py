@@ -67,7 +67,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
                 for m in task.get_load_modules():
                     yield (0, [int(pid), Address(m.DllBase), Hex(m.SizeOfImage), Hex(m.LoadCount), str(m.FullDllName or '')])
             else:
-                yield (0, [int(pid), Address(0), 0, 0, "Error reading PEB for pid"])
+                yield (0, [int(pid), Address(0), Hex(0), Hex(0), "Error reading PEB for pid"])
 
     def filter_tasks(self, tasks):
         """ Reduce the tasks based on the user selectable PIDS parameter.
