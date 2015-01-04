@@ -147,8 +147,8 @@ class Strings(common.AbstractWindowsCommand):
                 debug.error("String file format invalid.")
 
             pids = ["FREE MEMORY:-1"]
-            if reverse_map.has_key(offset & 0xFFFFF000):
-                pids = ["{0}:{1:08x}".format(pid[0], pid[1] | (offset & 0xFFF)) for pid in reverse_map[offset & 0xFFFFF000][1:]]
+            if reverse_map.has_key(offset & 0xFFFFFFFFFFFFF000):
+                pids = ["{0}:{1:08x}".format(pid[0], pid[1] | (offset & 0xFFF)) for pid in reverse_map[offset & 0xFFFFFFFFFFFFF000][1:]]
 
             yield offset, pids, "{0}".format(string.strip())
 
