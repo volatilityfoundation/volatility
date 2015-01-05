@@ -36,13 +36,13 @@ def chunks(addrs, n):
 
 # this function breaks up a solid address space (like physical)
 # into size / 4096 chunks
-def rechunk(addrs):
+def rechunk(addrs, chunksize = 4096):
     start, end = addrs[0]
     cursor = 0
     addrs = []
-    for i in xrange(4097):
-        addrs.append((cursor, end / 4096))
-        cursor = min(cursor + (end / 4096), end)
+    for i in xrange(chunksize + 1):
+        addrs.append((cursor, end / chunksize))
+        cursor = min(cursor + (end / chunksize), end)
     return addrs
 
 # scanning function
@@ -91,11 +91,11 @@ class Opt2MultiPoolScanner(object):
     # wrapper for the scanning function
     # this will create "number" processes and divide the 
     # address space into "number" chunks, one for each process
-    def scan(self, address_space, offset = None, maxlen = None, number = 2):
+    def scan(self, address_space, offset = None, maxlen = None, number = 2, chunksize = 4096):
         total = sorted(address_space.get_available_addresses())
         if len(total) == 1:
             total = rechunk(total)
-        addrs = list(chunks(total, len(total) / number))
+        addrs = sorted(chunks(total, len(total) / number))
 
         procs = []
         q = Queue()
