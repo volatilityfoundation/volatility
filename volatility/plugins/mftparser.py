@@ -734,10 +734,10 @@ class MFTParser(common.AbstractWindowsCommand):
                 mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas, offset = 0)
                 offsets.append((offset, mft_entry, mft_buff))
         else:
-            scanner = poolscan.MultiPoolScanner(needles = ['FILE', 'BAAD'])
+            scanner = poolscan.Opt2MultiPoolScanner(needles = ['FILE', 'BAAD'])
             print "Scanning for MFT entries and building directory, this can take a while"
             seen = []
-            for _, offset in scanner.scan(address_space):
+            for _, offset in scanner.scan(address_space, number = 4):
                 mft_buff = address_space.read(offset, self._config.ENTRYSIZE)
                 bufferas = addrspace.BufferAddressSpace(self._config, data = mft_buff)
                 name = ""

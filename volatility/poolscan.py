@@ -23,6 +23,98 @@ import volatility.constants as constants
 import volatility.utils as utils
 import volatility.obj as obj
 import volatility.registry as registry
+from multiprocessing import Process, Queue
+
+#--------------------------------------------------------------------------------
+# An optimized multi-concurrent pool scanner
+#--------------------------------------------------------------------------------
+
+def chunks(addrs, n):
+    for i in xrange(0, len(addrs), n):
+        yield addrs[i:i+n]
+
+def rechunk(addrs):
+    start, end = addrs[0]
+    cursor = 0
+    addrs = []
+    for i in xrange(4096):
+        #print (cursor, end / 4096)
+        addrs.append((cursor, end / 4096))
+        cursor += ((end / 4096) + 1)
+    return addrs
+
+def functscan(thequeue, addrs, address_space, needles = [], overlap = 20, offset = None, maxlen = None):
+    if offset is None:
+        current_offset = 0
+    else:
+        current_offset = offset
+
+    if needles:
+        for (range_start, range_size) in addrs:
+            # Jump to the next available point to scan from
+            # self.base_offset jumps up to be at least range_start
+            current_offset = max(range_start, current_offset)
+            range_end = range_start + range_size
+
+            # If we have a maximum length, we make sure it's less than the range_end
+            if maxlen is not None:
+                range_end = min(range_end, offset + maxlen)
+
+            while (current_offset < range_end):
+                # We've now got range_start <= self.base_offset < range_end
+                # Figure out how much data to read
+                l = min(constants.SCAN_BLOCKSIZE + overlap, range_end - current_offset)
+
+                data = address_space.zread(current_offset, l)
+
+                for needle in needles:
+                    for addr in utils.iterfind(data, needle):
+                        # this scanner yields the matched pool tag as well as
+                        # the offset, to save the caller from having to perform
+                        # another .read() just to see which tag was matched
+                        thequeue.put((data[addr:addr+4], addr + current_offset))
+
+                current_offset += min(constants.SCAN_BLOCKSIZE, l)
+    thequeue.put((None, None))
+
+
+class Opt2MultiPoolScanner(object):
+    """An optimized scanner for pool tags"""
+
+    def __init__(self, needles = None):
+        self.needles = needles
+        self.overlap = 20
+
+    def scan(self, address_space, offset = None, maxlen = None, number = 2):
+        total = sorted(address_space.get_available_addresses())
+        if len(total) == 1:
+            total = rechunk(total)
+        #print total, len(total), number, len(total) / number
+        addrs = list(chunks(total, len(total) / number))
+
+        procs = []
+        q = Queue()
+        for i in xrange(number):
+            #print i, number, len(addrs)
+            procs.append(Process(target=functscan, args=(q, addrs[i], address_space, self.needles, self.overlap, offset, maxlen)))
+        for p in procs:
+            p.start()
+
+        counter = 0
+        while q:
+            msg = q.get()
+            #print msg
+            if msg == (None, None):
+                counter += 1
+            else:
+                yield msg
+            if counter == number:
+                break
+
+        for p in procs:
+            p.join()
+
+
 
 #--------------------------------------------------------------------------------
 # A multi-concurrent pool scanner 
