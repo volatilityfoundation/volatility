@@ -24,6 +24,8 @@
 @organization: 
 """
 
+import os
+
 import volatility.commands as commands
 import volatility.utils as utils
 import volatility.obj as obj
@@ -215,4 +217,17 @@ def write_vnode_to_file(vnode, file_path):
     fd.close()
 
     return wrote
+
+def write_macho_file(out_dir, proc, exe_address):
+    exe_contents = proc.get_macho(exe_address)     
+ 
+    file_name = "task.{0}.{1:#x}.dmp".format(proc.p_pid, exe_address)
+    file_path = os.path.join(out_dir, file_name)
+
+    outfile = open(file_path, "wb+")
+    outfile.write(exe_contents)            
+    outfile.close()
+
+    return file_path
+
 

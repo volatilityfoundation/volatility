@@ -613,6 +613,55 @@ class proc(obj.CType):
 
         return dt
     
+    def text_start(self):
+        text_start = None
+
+        wanted_vnode = self.p_textvp.v()
+
+        for map in self.get_proc_maps():
+            vnode = map.get_vnode()
+
+            if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode:
+                text_start = map.start.v()
+                break
+
+        return text_start
+
+    def get_macho(self, exe_address):
+        proc_as = self.get_process_address_space()
+
+        m = obj.Object("macho_header", offset = exe_address, vm = proc_as)
+
+        buffer = ""
+
+        for seg in m.segments():
+            if str(seg.segname) == "__PAGEZERO":
+                continue
+                
+            # this is related to the shared cache map 
+            # contact Andrew for full details
+            if str(seg.segname) == "__LINKEDIT" and seg.vmsize > 20000000:
+                continue
+
+            cur = seg.vmaddr
+            end = seg.vmaddr + seg.vmsize
+        
+            while cur < end:
+                buffer = buffer + proc_as.zread(cur, 4096) 
+                cur = cur + 4096
+ 
+        return buffer
+
+    def procdump(self):
+        start = self.text_start()
+
+        if start:
+            ret = self.get_macho(start) 
+        else:
+            ret = ""
+
+        return ret
+
     def get_dyld_maps(self):        
         proc_as = self.get_process_address_space()
 
