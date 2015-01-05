@@ -66,7 +66,7 @@ class linux_librarydump(linux_pslist.linux_pslist):
                 if buf != "\x7fELF":
                     continue
             
-                file_path = linux_procdump.linux_procdump(self._config).write_elf_file(task, elf_addr)
+                file_path = linux_common.write_elf_file(self._config.DUMP_DIR, task, elf_addr)
 
                 self.table_row(outfd, task.obj_offset,
                                       task.comm,

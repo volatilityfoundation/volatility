@@ -1099,6 +1099,49 @@ class task_struct(obj.CType):
 
         return path
 
+    def get_elf(self, elf_addr):
+        sects = {}
+        ret = ""
+
+        proc_as = self.get_process_address_space()
+
+        elf_hdr = obj.Object("elf_hdr", offset = elf_addr, vm = proc_as)
+
+        if not elf_hdr.is_valid():
+            return ""
+
+        for phdr in elf_hdr.program_headers():
+            if str(phdr.p_type) != 'PT_LOAD':
+                continue
+
+            start = phdr.p_vaddr
+            sz    = phdr.p_memsz
+            end = start + sz
+
+            if start % 4096:
+                start = start & ~0xfff
+
+            if end % 4096:
+                end = (end & ~0xfff) + 4096
+
+            real_size = end - start
+
+            sects[start] = real_size
+ 
+        last_end = -1
+
+        for start in sorted(sects.keys()):
+            read_size = sects[start]
+
+            if last_end != -1 and last_end != start + read_size:
+                debug.error("busted LOAD segments in %s | %d -> %x != %x + %x" % (task.comm, task.pid, last_end, start, read_size))
+
+            buf = proc_as.zread(start, read_size)
+
+            ret = ret + buf
+
+        return ret
+
     @property
     def uid(self):
         ret = self.members.get("uid")
