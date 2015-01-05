@@ -40,9 +40,9 @@ def rechunk(addrs):
     start, end = addrs[0]
     cursor = 0
     addrs = []
-    for i in xrange(4096):
+    for i in xrange(4097):
         addrs.append((cursor, end / 4096))
-        cursor += ((end / 4096) + 1)
+        cursor = min(cursor + (end / 4096), end)
     return addrs
 
 # scanning function
