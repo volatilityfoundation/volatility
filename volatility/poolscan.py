@@ -29,20 +29,23 @@ from multiprocessing import Process, Queue
 # An optimized multi-concurrent pool scanner
 #--------------------------------------------------------------------------------
 
+# this function breaks up the addresses into "n" chunks
 def chunks(addrs, n):
     for i in xrange(0, len(addrs), n):
         yield addrs[i:i+n]
 
+# this function breaks up a solid address space (like physical)
+# into size / 4096 chunks
 def rechunk(addrs):
     start, end = addrs[0]
     cursor = 0
     addrs = []
     for i in xrange(4096):
-        #print (cursor, end / 4096)
         addrs.append((cursor, end / 4096))
         cursor += ((end / 4096) + 1)
     return addrs
 
+# scanning function
 def functscan(thequeue, addrs, address_space, needles = [], overlap = 20, offset = None, maxlen = None):
     if offset is None:
         current_offset = 0
@@ -85,17 +88,18 @@ class Opt2MultiPoolScanner(object):
         self.needles = needles
         self.overlap = 20
 
+    # wrapper for the scanning function
+    # this will create "number" processes and divide the 
+    # address space into "number" chunks, one for each process
     def scan(self, address_space, offset = None, maxlen = None, number = 2):
         total = sorted(address_space.get_available_addresses())
         if len(total) == 1:
             total = rechunk(total)
-        #print total, len(total), number, len(total) / number
         addrs = list(chunks(total, len(total) / number))
 
         procs = []
         q = Queue()
         for i in xrange(number):
-            #print i, number, len(addrs)
             procs.append(Process(target=functscan, args=(q, addrs[i], address_space, self.needles, self.overlap, offset, maxlen)))
         for p in procs:
             p.start()
@@ -103,7 +107,6 @@ class Opt2MultiPoolScanner(object):
         counter = 0
         while q:
             msg = q.get()
-            #print msg
             if msg == (None, None):
                 counter += 1
             else:
