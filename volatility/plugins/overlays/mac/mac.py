@@ -614,16 +614,28 @@ class proc(obj.CType):
         return dt
     
     def text_start(self):
-        text_start = None
+        text_start = self.p_textoff.v()
 
-        wanted_vnode = self.p_textvp.v()
+        if text_start == 0:
+            wanted_vnode = self.p_textvp.v()
 
-        for map in self.get_proc_maps():
-            vnode = map.get_vnode()
+            if wanted_vnode:
+                for map in self.get_proc_maps():
+                    vnode = map.get_vnode()
 
-            if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode:
-                text_start = map.start.v()
-                break
+                    if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode:
+                        text_start = map.start.v()
+                        break
+   
+            # both offset and vp were bogus
+            if text_start == 0:
+                found_map = None
+                for map in self.get_dyld_maps():
+                    found_map = map
+                    break
+            
+                if found_map:
+                    text_start = found_map.imageLoadAddress
 
         return text_start
 
