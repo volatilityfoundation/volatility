@@ -78,7 +78,6 @@ def functscan(thequeue, addrs, address_space, lock, needles = [], overlap = 20, 
                         # the offset, to save the caller from having to perform
                         # another .read() just to see which tag was matched
                         with lock:
-                            print (data[addr:addr + 4], (addr + current_offset)), range_start, range_size
                             thequeue.put((data[addr:addr + 4], addr + current_offset), True)
 
                 current_offset += min(constants.SCAN_BLOCKSIZE, l)
