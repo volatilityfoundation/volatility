@@ -104,30 +104,26 @@ class Opt2MultiPoolScanner(object):
         q = Queue()
         lock = Lock()
         for i in xrange(number):
-            q = Queue()
             p = Process(target=functscan, args=(q, addrs[i], address_space, lock, self.needles, self.overlap, offset, maxlen,))
             p.start()
-            proc = {"proc": p, "queue": q}
-            procs.append(proc)
+            procs.append(p)
 
         counter = 0
         working = True
         while working:
-            for p in procs:
-                if p["queue"] == None:
-                    continue
-                msg = p["queue"].get(block=True, timeout=1)
-                if msg == (None, None):
-                    counter += 1
-                    p["queue"].close()
-                    p["queue"].join_thread()
-                    p["queue"] = None
-                    p["proc"].join()
-                else:
-                    with lock:
-                        yield msg
+            msg = q.get(block = True)
+            if msg == (None, None):
+                counter += 1
                 if counter == number:
                     working = False
+                    q.close()
+                    q.join_thread()
+            else:
+                with lock:
+                    yield msg
+
+        for p in procs:
+            p.join()
 
 #--------------------------------------------------------------------------------
 # A multi-concurrent pool scanner 
