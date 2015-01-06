@@ -50,7 +50,7 @@ class MultiPoolScanner(object):
 
             # If we have a maximum length, we make sure it's less than the range_end
             if maxlen is not None:
-                range_end = min(range_end, offset + maxlen)
+                range_end = min(range_end, current_offset + maxlen)
 
             while (current_offset < range_end):
                 # We've now got range_start <= self.base_offset < range_end
