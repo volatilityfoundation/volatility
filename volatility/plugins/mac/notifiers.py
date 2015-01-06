@@ -85,13 +85,13 @@ class mac_notifiers(lsmod.mac_lsmod):
                 # drivers for the specific kernel
                 handler = notifier.handler.v()
 
-                ch = notifier.compatHandler
+                ch = notifier.compatHandler.v()
 
                 if ch:
                     handler = ch
 
                 (good, module) = common.is_known_address_name(handler, kernel_symbol_addresses, kmods)
-                yield (good, module, key, notifier, matches)
+                yield (good, module, key, notifier, matches, handler)
 
     # returns the list of matching notifiers (serviceMatch) for a notifier as a string
     def get_matching(self, notifier):
@@ -118,13 +118,13 @@ class mac_notifiers(lsmod.mac_lsmod):
                                   ("Module", "40"),
                                   ("Status", "")])
 
-        for (good, module, key, notifier, matches) in data:
+        for (good, module, key, _, matches, handler) in data:
 
             if good == 0:
                 status = "UNKNOWN"
             else:
                 status = "OK"
 
-            self.table_row(outfd, key, matches, notifier, module, status)
+            self.table_row(outfd, key, matches, handler, module, status)
 
 
