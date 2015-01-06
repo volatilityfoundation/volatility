@@ -24,7 +24,7 @@ import volatility.utils as utils
 import volatility.obj as obj
 import volatility.registry as registry
 from multiprocessing import Process, Queue, Lock
-from Queue import Empty
+import multiprocessing
 
 #--------------------------------------------------------------------------------
 # An optimized multi-concurrent pool scanner
@@ -70,18 +70,18 @@ def functscan(thequeue, addrs, address_space, lock, needles = [], overlap = 20, 
                 # Figure out how much data to read
                 l = min(constants.SCAN_BLOCKSIZE + overlap, range_end - current_offset)
 
-                data = address_space.zread(current_offset, l)
+                with lock:
+                    data = address_space.zread(current_offset, l)
 
                 for needle in needles:
                     for addr in utils.iterfind(data, needle):
                         # this scanner yields the matched pool tag as well as
                         # the offset, to save the caller from having to perform
                         # another .read() just to see which tag was matched
-                        with lock:
-                            thequeue.put((data[addr:addr + 4], addr + current_offset), True)
+                        thequeue.put((data[addr:addr + 4], addr + current_offset), block=True)
 
                 current_offset += min(constants.SCAN_BLOCKSIZE, l)
-    thequeue.put((None, None))
+    thequeue.put((None, None), block=True)
 
 
 class Opt2MultiPoolScanner(object):
@@ -94,38 +94,40 @@ class Opt2MultiPoolScanner(object):
     # wrapper for the scanning function
     # this will create "number" processes and divide the 
     # address space into "number" chunks, one for each process
-    def scan(self, address_space, offset = None, maxlen = None, number = 2, numchunks = 4096):
-        total = sorted(address_space.get_available_addresses())
-        if len(total) == 1:
-            total = rechunk(total, chunks = numchunks)
-        addrs = list(chunks(total, len(total) / number))
+    def scan(self, address_space, offset = None, maxlen = None, number = multiprocessing.cpu_count(), numchunks = 4096):
+        addrs = sorted(address_space.get_available_addresses())
+        if len(addrs) == 1 and numchunks > 1:
+            addrs = rechunk(addrs, chunks = numchunks)
+            addrs = list(chunks(addrs, len(addrs) / number))
 
         procs = []
         q = Queue()
         lock = Lock()
         for i in xrange(number):
-            p = Process(target=functscan, args=(q, addrs[i], address_space, lock, self.needles, self.overlap, offset, maxlen))
+            q = Queue()
+            p = Process(target=functscan, args=(q, addrs[i], address_space, lock, self.needles, self.overlap, offset, maxlen,))
             p.start()
-            procs.append(p)
+            proc = {"proc": p, "queue": q}
+            procs.append(proc)
 
         counter = 0
-        while q:
-            try:
-                msg = q.get(False)
+        working = True
+        while working:
+            for p in procs:
+                if p["queue"] == None:
+                    continue
+                msg = p["queue"].get(block=True, timeout=1)
                 if msg == (None, None):
                     counter += 1
+                    p["queue"].close()
+                    p["queue"].join_thread()
+                    p["queue"] = None
+                    p["proc"].join()
                 else:
-                    yield msg
-            except Empty:
+                    with lock:
+                        yield msg
                 if counter == number:
-                    q.close()
-                    q.join_thread()
-                    break
-
-        for p in procs:
-            p.join()
-
-
+                    working = False
 
 #--------------------------------------------------------------------------------
 # A multi-concurrent pool scanner 
