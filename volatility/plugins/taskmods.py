@@ -175,6 +175,28 @@ class PSList(DllList):
 class MemMap(DllList):
     """Print the memory map"""
 
+    def unified_output(self, data):
+        return TreeGrid([("Process", str),
+                       ("PID", int),
+                       ("Virtual", Address),
+                       ("Physical", Address),
+                       ("Size", Address),
+                       ("DumpFileOffset", Address)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for pid, task, pagedata in data:
+            task_space = task.get_process_address_space()
+            proc = "{0}".format(task.ImageFileName)
+            offset = 0
+            if pagedata:
+                for p in pagedata:
+                    pa = task_space.vtop(p[0])
+                    # pa can be 0, according to the old memmap, but can't == None(NoneObject)
+                    if pa != None:
+                        yield (0, [proc, int(pid), Address(p[0]), Address(pa), Address(p[1]), Address(offset)])
+                        offset += p[1]
+
     def render_text(self, outfd, data):
         first = True
         for pid, task, pagedata in data:
