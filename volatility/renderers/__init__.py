@@ -39,7 +39,8 @@ class TreeNode(collections.Sequence):
         for index in range(len(self._treegrid.columns)):
             column = self._treegrid.columns[index]
             if not isinstance(values[index], column.type):
-                raise TypeError(
+                if not (type(values[index]) == long and column.type == int):
+                    raise TypeError(
                     "Values item with index " + repr(index) + " is the wrong type for column " + \
                     repr(column.name) + " (got " + str(type(values[index])) + " but expected " + \
                     str(column.type) + ")")
