@@ -26,28 +26,49 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.pstasks as mac_tasks
+from volatility.renderers import TreeGrid
 
 class mac_netstat(mac_tasks.mac_tasks):
     """ Lists active per-process network connections """
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Proto", "6"),
-                                  ("Local IP", "20"),
-                                  ("Local Port", "6"),
-                                  ("Remote IP", "20"),
-                                  ("Remote Port", "6"),
-                                  ("State", "20"),
-                                  ("Process", "24")])
-        
+    def unified_output(self, data):
+    	family = ""
+    	
+    	if family == 1:
+    	        return TreeGrid([("Path", str),
+                         ], 
+                         self.generator(data))
+                         
+        return TreeGrid([("Proto", str),
+                         ("Local IP", str),
+                         ("Local Port", int),
+                         ("Remote IP", str),
+                         ("Remote Port", str),
+                         ("State", str),
+                         ("Process", str)
+                         ], 
+                         self.generator(data))
+                         
+    def generator(self, data):
         for proc in data:
             for (family, info) in proc.netstat():
                 if family == 1:
                     (socket, path) = info
                     if path:
-                        outfd.write("UNIX {0}\n".format(path))
+                    	family = 1
+                        yield(0, [
+                    			str(path),
+                    			])
+                    			
                 elif family in [2, 30]:
                     (socket, proto, lip, lport, rip, rport, state) = info
-                    self.table_row(outfd, proto, lip, lport, rip, rport, state, "{}/{}".format(proc.p_comm, proc.p_pid))
+                    yield(0, [
+                    		str(proto), 
+                    		str(lip), 
+                    		int(lport), 
+                    		str(rip), 
+                    		str(rport), 
+                    		str(state), 
+                    		str(proc.p_comm, proc.p_pid)
+                    		])
                     
-
-  
