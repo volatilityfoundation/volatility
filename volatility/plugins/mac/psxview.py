@@ -26,6 +26,8 @@ import volatility.plugins.mac.pid_hash_table as pid_hash_table
 import volatility.plugins.mac.pgrp_hash_table as pgrp_hash_table
 import volatility.plugins.mac.session_hash_table as session_hash_table
 import volatility.plugins.mac.pstasks as pstasks
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_psxview(common.AbstractMacCommand):
     "Find hidden processes with various process listings"
@@ -46,7 +48,7 @@ class mac_psxview(common.AbstractMacCommand):
         return [s.s_leader.v() for s in session_hash_table.mac_list_sessions(self._config).calculate() if s.s_leader.is_valid()]
     
     def _get_procs_from_tasks(self):
-        return [p.v() for p in pstasks.mac_tasks(self._config).calculate()]            
+        return [p.v() for p in pstasks.mac_tasks(self._config).calculate()]       
 
     def calculate(self):
         common.set_plugin_members(self)
@@ -69,29 +71,32 @@ class mac_psxview(common.AbstractMacCommand):
                 if offset not in seen_offsets:
                     seen_offsets.append(offset)
                     yield offset, obj.Object("proc", offset = offset, vm = self.addr_space), ps_sources
-
-    def render_text(self, outfd, data):
-
-        self.table_header(outfd, [('Offset(V)', '[addrpad]'),
-                                  ('Name', '<20'),
-                                  ('PID', '>6'),
-                                  ('pslist', '5'),
-                                  ('parents', '5'),
-                                  ('pid_hash', '5'),
-                                  ('pgrp_hash_table', '5'),
-                                  ('session leaders', '5'),
-                                  ('task processes', '5'),
-                                  ])
-
+                    
+    def unified_output(self, data):
+        return TreeGrid([("Offset(V)", Address),
+                                  ("Name", str),
+                                  ("PID", int),
+                                  ("pslist", str ),
+                                  ("parents", str),
+                                  ("pid_hash", str),
+                                  ("pgrp_hash_table", str),
+                                  ("session leaders", str),
+                                  ("task processes", str),
+                                  ], self.generator(data))
+                                  
+    def generator(self, data):
         for offset, process, ps_sources in data:
-            self.table_row(outfd,
-                offset,
-                process.p_comm,
-                str(process.p_pid),
+            yield (0, [
+            	Address(offset),
+                str(process.p_comm),
+                int(process.p_pid),
                 str(ps_sources['pslist'].__contains__(offset)),
                 str(ps_sources['parents'].__contains__(offset)),
                 str(ps_sources['pid_hash'].__contains__(offset)),
                 str(ps_sources['pgrp_hash_table'].__contains__(offset)),
                 str(ps_sources['session_hash_table'].__contains__(offset)),
                 str(ps_sources['procs_from_tasks'].__contains__(offset)),
-                )
+                ])
+
+
+
