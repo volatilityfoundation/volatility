@@ -50,26 +50,26 @@ class mac_netstat(mac_tasks.mac_tasks):
                     (socket, path) = info
                     if path:
                     	yield(0, [
-                    			"UNIX", 
-                    			str(path).strip(), 
-                    			"-", 
-                    			"-", 
-                    			"-", 
-                    			"-", 
-                    			"-",
-                    			"-",
-                    			])
+                                "UNIX", 
+                                str(path).strip(), 
+                                "-", 
+                                "-", 
+                                "-", 
+                                "-", 
+                                "-",
+                                "-",
+                                ])
                     			
                 elif family in [2, 30]:
                     (socket, proto, lip, lport, rip, rport, state) = info
                     yield(0, [
-                    		str(proto), 
-                    		str(lip), 
-                    		str(lport), 
-                    		str(rip), 
-                    		str(rport), 
-                    		str(state), 
-                    		str(proc.p_comm),
-                    		str(proc.p_pid),
-                    		])
+                            str(proto), 
+                            str(lip), 
+                            str(lport), 
+                            str(rip), 
+                            str(rport), 
+                            str(state), 
+                            str(proc.p_comm),
+                            str(proc.p_pid),
+                            ])
                     
