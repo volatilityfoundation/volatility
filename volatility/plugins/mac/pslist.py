@@ -97,7 +97,7 @@ class mac_pslist(common.AbstractMacCommand):
             bit_string = str(proc.task.map.pmap.pm_task_map or '')[9:]
 
             yield (0, [
-            		   Address(proc.v()),
+                       Address(proc.v()),
                        str(proc.p_comm),
                        int(proc.p_pid),
                        str(proc.p_uid),
