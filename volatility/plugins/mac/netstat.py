@@ -32,20 +32,14 @@ class mac_netstat(mac_tasks.mac_tasks):
     """ Lists active per-process network connections """
 
     def unified_output(self, data):
-    	family = ""
-    	
-    	if family == 1:
-    	        return TreeGrid([("Path", str),
-                         ], 
-                         self.generator(data))
-                         
         return TreeGrid([("Proto", str),
                          ("Local IP", str),
-                         ("Local Port", int),
+                         ("Local Port", str),
                          ("Remote IP", str),
                          ("Remote Port", str),
                          ("State", str),
-                         ("Process", str)
+                         ("Process", str),
+                         ("PID", str)
                          ], 
                          self.generator(data))
                          
@@ -55,9 +49,15 @@ class mac_netstat(mac_tasks.mac_tasks):
                 if family == 1:
                     (socket, path) = info
                     if path:
-                    	family = 1
-                        yield(0, [
-                    			str(path),
+                    	yield(0, [
+                    			"UNIX", 
+                    			str(path).strip(), 
+                    			"-", 
+                    			"-", 
+                    			"-", 
+                    			"-", 
+                    			"-",
+                    			"-",
                     			])
                     			
                 elif family in [2, 30]:
@@ -65,10 +65,11 @@ class mac_netstat(mac_tasks.mac_tasks):
                     yield(0, [
                     		str(proto), 
                     		str(lip), 
-                    		int(lport), 
+                    		str(lport), 
                     		str(rip), 
                     		str(rport), 
                     		str(state), 
-                    		str(proc.p_comm, proc.p_pid)
+                    		str(proc.p_comm),
+                    		str(proc.p_pid),
                     		])
                     
