@@ -21,6 +21,7 @@ import volatility.obj as obj
 import volatility.plugins.mac.common as common
 import volatility.utils as utils
 import volatility.plugins.mac.pstasks as pstasks 
+from volatility.renderers import TreeGrid
 
 class mac_contacts(pstasks.mac_tasks):
     """Gets contact names from Contacts.app"""
@@ -54,8 +55,12 @@ class mac_contacts(pstasks.mac_tasks):
                                         length = 256)
                     yield proc, person
     
-    def render_text(self, outfd, data):
-
+    def unified_output(self, data):
+        return TreeGrid([("Contact", str),
+                         ],
+                         self.generator(data))
+                         
+    def generator(self, data):
         for (proc, person) in data:
 
             # strip the header from the string 
@@ -64,4 +69,6 @@ class mac_contacts(pstasks.mac_tasks):
             # take a maximum of eight parts  
             items = " ".join(person.split(" ")[:8])
             
-            outfd.write("{0}\n".format(items))
+            yield(0, [
+                    str(items), 
+                    ])            
