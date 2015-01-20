@@ -29,6 +29,8 @@ import os
 import volatility.obj as obj
 import volatility.plugins.mac.pstasks as pstasks 
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_adium(pstasks.mac_tasks):
     """ Lists Adium messages """
@@ -110,14 +112,17 @@ class mac_adium(pstasks.mac_tasks):
                    
                     idx = idx + 5
                     msg_idx = buffer[idx:].find(msg_search)
+                    
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                         ("Name", str),
+                         ("Start", Address),
+                         ("Size", str),
+                         ("Path", str),
+                         ], 
+                         self.generator(data))
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Pid", "8"), 
-                          ("Name", "20"),
-                          ("Start", "[addrpad]"),
-                          ("Size", "8"),
-                          ("Path", "")])
-
+    def generator(self, data):
         for (proc, start, msg) in data:
             fname = "Adium.{0}.{1:x}.txt".format(proc.p_pid, start)
             file_path = os.path.join(self._config.DUMP_DIR, fname)            
@@ -126,12 +131,13 @@ class mac_adium(pstasks.mac_tasks):
             fd.write(msg)
             fd.close()
 
-            self.table_row(outfd, 
-                           str(proc.p_pid), 
-                           proc.p_comm, 
-                           start,
-                           len(msg),
-                           file_path)
+            yield(0, [
+                    str(proc.p_pid), 
+                    str(proc.p_comm), 
+                    Address(start),
+                    str(len(msg)),
+                    str(file_path),
+                    ])
 
 
 
