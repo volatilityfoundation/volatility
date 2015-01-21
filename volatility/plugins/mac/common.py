@@ -146,6 +146,12 @@ def get_kernel_addrs_start_end(obj_ref):
     s = obj_ref.profile.get_symbol("_vm_kernel_stext")
     e = obj_ref.profile.get_symbol("_vm_kernel_etext") 
 
+    if s == None:
+        s = obj_ref.profile.get_symbol("_stext")
+       
+    if e == None:
+        e = obj_ref.profile.get_symbol("_etext") 
+    
     start = obj.Object("unsigned long", offset = s, vm = obj_ref.addr_space)
     end   = obj.Object("unsigned long", offset = e, vm = obj_ref.addr_space)
 
@@ -161,6 +167,12 @@ def get_handler_name_addrs(obj_ref):
     s = obj_ref.profile.get_symbol("_vm_kernel_stext")
     e = obj_ref.profile.get_symbol("_vm_kernel_etext") 
 
+    if s == None:
+        s = obj_ref.profile.get_symbol("_stext")
+       
+    if e == None:
+        e = obj_ref.profile.get_symbol("_etext") 
+    
     start = obj.Object("unsigned long", offset = s, vm = obj_ref.addr_space)
     end   = obj.Object("unsigned long", offset = e, vm = obj_ref.addr_space)
 
