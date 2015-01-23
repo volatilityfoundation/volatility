@@ -47,8 +47,7 @@ class JSONRenderer(Renderer):
         columns, rows, nodes = data
         n = {}
         # translate node object to dict
-        for i in range(len(columns)):
-            n[columns[i]] = node.values[i]
+        n['values'] = node.values
         # associate node object to dict representation
         nodes[node] = n
         # if this is a root node
@@ -58,9 +57,9 @@ class JSONRenderer(Renderer):
         else:
             # add to parent's children list
             # ASSUMES there is no column named __children
-            if '__children' not in nodes[node.parent]:
-                nodes[node.parent]['__children'] = []
-            nodes[node.parent]['__children'].append(nodes[node])
+            if 'children' not in nodes[node.parent]:
+                nodes[node.parent]['children'] = []
+            nodes[node.parent]['children'].append(nodes[node])
         return columns, rows, nodes
 
     def render(self, outfd, data):
@@ -70,5 +69,5 @@ class JSONRenderer(Renderer):
         rows = []
         nodes = {}
         columns, rows, nodes = data.visit(None, self._add_node, (columns, rows, nodes))
-        return outfd.write(json.dumps(rows))
+        return outfd.write(json.dumps({'columns': columns, 'rows': rows}))
 
