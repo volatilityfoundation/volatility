@@ -31,7 +31,6 @@ import volatility.addrspace as addrspace
 import volatility.plugins.mac.common  as mac_common
 import volatility.plugins.mac.pstasks as mac_tasks
 from volatility.renderers import TreeGrid
-from volatility.renderers.basic import Address
 
 bash_vtypes = {
     'bash32_hist_entry': [ 0xc, {
