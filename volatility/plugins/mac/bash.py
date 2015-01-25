@@ -162,10 +162,10 @@ class mac_bash(mac_tasks.mac_tasks):
 
 			for hist_entry in task.bash_history_entries():
 				yield (0, [
-						   int(task.p_pid),
-						   str(task.p_comm),
-						   str(hist_entry.time_object()),
-						   str(hist_entry.line()),
-						   ])
+					int(task.p_pid),
+					str(task.p_comm),
+					str(hist_entry.time_object()),
+					str(hist_entry.line()),
+					])
 
 
