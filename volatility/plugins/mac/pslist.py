@@ -81,11 +81,11 @@ class mac_pslist(common.AbstractMacCommand):
         return TreeGrid([("Offset (V)", Address),
                                   ("Name", str),
                                   ("PID", int),
-                                  ("Uid", str ),
+                                  ("Uid", int ),
                                   ("Gid", str),
                                   ("PGID", str),
                                   ("Bits", str),
-                                  ("DTB", str),
+                                  ("DTB", Address),
                                   ("Start time", str),
                                   ], self.generator(data))
     def generator(self, data):
@@ -97,15 +97,13 @@ class mac_pslist(common.AbstractMacCommand):
             bit_string = str(proc.task.map.pmap.pm_task_map or '')[9:]
 
             yield (0, [
-                       Address(proc.v()),
+            		   Address(proc.v()),
                        str(proc.p_comm),
                        int(proc.p_pid),
-                       str(proc.p_uid),
+                       int(proc.p_uid),
                        str(proc.p_gid),
                        str(proc.p_pgrpid),
                        str(bit_string),
-                       str(proc.task.dereference_as("task").map.pmap.pm_cr3),
+                       Address(proc.task.dereference_as("task").map.pmap.pm_cr3),
                        str(proc.start_time()),
                        ])
-
-
