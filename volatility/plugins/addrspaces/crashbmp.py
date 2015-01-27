@@ -78,11 +78,11 @@ class WindowsCrashDumpSpace64BitMap(crash.WindowsCrashDumpSpace32):
         bufferas = addrspace.BufferAddressSpace(self._config, data = fdmp_buff)
         self.bitmaphdr2 = obj.Object('_FULL_DUMP64', vm = bufferas, offset = 0)
 
-        firstbit = None        				# First bit in a run
-        firstoffset = 0        				# File offset of first bit 
-        lastbit = None         				# Last bit in a run
-        lastbitseen = 0        				# Most recent bit processed
-        offset = self.bitmaphdr2.HeaderSize		# Size of file headers
+        firstbit = None                         # First bit in a run
+        firstoffset = 0                         # File offset of first bit 
+        lastbit = None                          # Last bit in a run
+        lastbitseen = 0                         # Most recent bit processed
+        offset = self.bitmaphdr2.HeaderSize     # Size of file headers
 
         for i in range(0, ((self.bitmaphdr2.BitmapSize + 31) / 32)):
             if self.bitmaphdr.Buffer2[i] == 0:
