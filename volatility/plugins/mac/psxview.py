@@ -87,7 +87,7 @@ class mac_psxview(common.AbstractMacCommand):
     def generator(self, data):
         for offset, process, ps_sources in data:
             yield (0, [
-            	Address(offset),
+                Address(offset),
                 str(process.p_comm),
                 int(process.p_pid),
                 str(ps_sources['pslist'].__contains__(offset)),

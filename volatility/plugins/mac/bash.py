@@ -154,17 +154,15 @@ class mac_bash(mac_tasks.mac_tasks):
                             ("Command", str),
                             ], self.generator(data))
                             
-	def generator(self, data):                                   
-		for task in data:
-			if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
-				continue
+    def generator(self, data):
+        for task in data:
+            if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
+                continue
 
-			for hist_entry in task.bash_history_entries():
-				yield (0, [
-					int(task.p_pid),
-					str(task.p_comm),
-					str(hist_entry.time_object()),
-					str(hist_entry.line()),
-					])
-
-
+            for hist_entry in task.bash_history_entries():
+                yield (0, [
+                    int(task.p_pid),
+                    str(task.p_comm),
+                    str(hist_entry.time_object()),
+                    str(hist_entry.line()),
+                    ])
