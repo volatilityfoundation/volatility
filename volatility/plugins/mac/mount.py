@@ -26,6 +26,7 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
 
 class mac_mount(common.AbstractMacCommand):
     """ Prints mounted device information """
@@ -41,10 +42,18 @@ class mac_mount(common.AbstractMacCommand):
             yield mount
             mount = mount.mnt_list.tqe_next
         
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Device", "30"), ("Mount Point", "60"), ("Type", "")])
+    def unified_output(self, data):
+        return TreeGrid ([
+                        ("Device", str),
+                        ("Mount Point", str),
+                        ("Type", str),
+                        ],
+                         self.generator(data))
+
+    def generator(self, data):
         for mount in data:
-            self.table_row(outfd, 
-                           mount.mnt_vfsstat.f_mntonname, 
-                           mount.mnt_vfsstat.f_mntfromname, 
-                           mount.mnt_vfsstat.f_fstypename)
+            yield(0, [
+                    str(mount.mnt_vfsstat.f_mntonname),
+                    str(mount.mnt_vfsstat.f_mntfromname),
+                    str(mount.mnt_vfsstat.f_fstypename),
+                    ])
