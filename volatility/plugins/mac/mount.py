@@ -44,16 +44,16 @@ class mac_mount(common.AbstractMacCommand):
         
     def unified_output(self, data):
         return TreeGrid ([
-                        ("Device", str),
-                        ("Mount Point", str),
+                        ("Device", str), 
+                        ("Mount Point", str), 
                         ("Type", str),
-                        ],
+                        ], 
                          self.generator(data))
-
+                         
     def generator(self, data):
         for mount in data:
             yield(0, [
-                    str(mount.mnt_vfsstat.f_mntonname),
-                    str(mount.mnt_vfsstat.f_mntfromname),
+                    str(mount.mnt_vfsstat.f_mntonname), 
+                    str(mount.mnt_vfsstat.f_mntfromname), 
                     str(mount.mnt_vfsstat.f_fstypename),
                     ])

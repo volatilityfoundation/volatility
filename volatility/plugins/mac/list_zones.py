@@ -26,6 +26,8 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+
 
 class mac_list_zones(common.AbstractMacCommand):
     """ Prints active zones """
@@ -42,8 +44,14 @@ class mac_list_zones(common.AbstractMacCommand):
             yield zone
             zone = zone.next_zone       
  
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Name", "30"), ("Active Count", ">10"), ("Free Count", ">10"), ("Element Size", ">10")])
+    def unified_output(self, data):
+        return TreeGrid([("Name", str),
+                         ("Active Count", str),
+                         ("Free Count", str),
+                         ("Element Size", str)
+                        ], self.generator(data))
+
+    def generator(self, data):
         for zone in data:
             name = zone.zone_name.dereference().replace(" ", ".")
     
@@ -54,5 +62,10 @@ class mac_list_zones(common.AbstractMacCommand):
             else:
                 sum_count = "N/A"
 
-            self.table_row(outfd, name, zone.count, sum_count, zone.elem_size)
+            yield(0, [
+                str(name),
+                str(zone.count),
+                str(sum_count),
+                str(zone.elem_size),
+            ])
 

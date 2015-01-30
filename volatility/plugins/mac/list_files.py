@@ -27,6 +27,8 @@
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
 import volatility.plugins.mac.mount as mac_mount
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_list_files(common.AbstractMacCommand):
     """ Lists files in the file cache """
@@ -46,8 +48,15 @@ class mac_list_files(common.AbstractMacCommand):
 
                 vnode = vnode.v_mntvnodes.tqe_next        
  
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Offset (V)", "[addrpad]"), ("File Path", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Offset (V)", Address),
+                         ("File Path", str),
+                         ], self.generator(data))
+
+    def generator(self, data):
         for vnode, path in data:
-            self.table_row(outfd, vnode.v(), path)    
+            yield (0, [
+                Address(vnode.v()),
+                str(path),
+            ])
 
