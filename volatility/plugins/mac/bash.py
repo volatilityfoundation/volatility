@@ -30,6 +30,7 @@ import volatility.debug as debug
 import volatility.addrspace as addrspace
 import volatility.plugins.mac.common  as mac_common
 import volatility.plugins.mac.pstasks as mac_tasks
+from volatility.renderers import TreeGrid
 
 bash_vtypes = {
     'bash32_hist_entry': [ 0xc, {
@@ -145,21 +146,23 @@ class mac_bash(mac_tasks.mac_tasks):
         mac_tasks.mac_tasks.__init__(self, config, *args, **kwargs)
         self._config.add_option('SCAN_ALL', short_option = 'A', default = False, help = 'scan all processes, not just those named bash', action = 'store_true')    
 
-    def render_text(self, outfd, data):
-
-        self.table_header(outfd, [("Pid", "8"), 
-                                  ("Name", "20"),
-                                  ("Command Time", "30"),
-                                  ("Command", ""),])
-                                    
+    def unified_output(self, data):
+    
+        return TreeGrid([("Pid", int), 
+                            ("Name", str),
+                            ("Command Time", str),
+                            ("Command", str),
+                            ], self.generator(data))
+                            
+    def generator(self, data):
         for task in data:
             if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
                 continue
-            
+
             for hist_entry in task.bash_history_entries():
-                self.table_row(outfd, task.p_pid, task.p_comm, 
-                           hist_entry.time_object(), 
-                           hist_entry.line())
-            
-
-
+                yield (0, [
+                    int(task.p_pid),
+                    str(task.p_comm),
+                    str(hist_entry.time_object()),
+                    str(hist_entry.line()),
+                    ])

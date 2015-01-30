@@ -25,25 +25,29 @@
 """
 
 import volatility.plugins.mac.pstasks as pstasks
+from volatility.renderers import TreeGrid
 
 class mac_psaux(pstasks.mac_tasks):
     """ Prints processes with arguments in user land (**argv) """
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                        ("Name", str),
+                        ("Bits", str),
+                        ("Stack", str),
+                        ("Length", str),
+                        ("Argc", str),
+                        ("Arguments", str)
+                        ], self.generator(data))
 
-        self.table_header(outfd, [("Pid", "8"), 
-                                  ("Name", "20"),
-                                  ("Bits", "16"),
-                                  ("Stack", "#018x"),
-                                  ("Length", "8"),
-                                  ("Argc", "8"),
-                                  ("Arguments", "")])
+    def generator(self, data):
         for proc in data:
-            self.table_row(outfd, 
-                           proc.p_pid, 
-                           proc.p_comm, 
-                           str(proc.task.map.pmap.pm_task_map or '')[9:],
-                           proc.user_stack,
-                           proc.p_argslen,
-                           proc.p_argc,
-                           proc.get_arguments())
+            yield(0, [
+                    int(proc.p_pid),
+                    str(proc.p_comm),
+                    str(proc.task.map.pmap.pm_task_map),
+                    str(proc.user_stack),
+                    str(proc.p_argslen),
+                    str(proc.p_argc),
+                    str(proc.get_arguments()),
+                    ])

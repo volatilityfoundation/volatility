@@ -29,6 +29,7 @@
 import volatility.obj as obj
 import volatility.plugins.mac.pstasks as pstasks 
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
 
 class mac_keychaindump(pstasks.mac_tasks):
     """ Recovers possbile keychain keys. Use chainbreaker to open related keychain files """
@@ -64,15 +65,19 @@ class mac_keychaindump(pstasks.mac_tasks):
                     if map.start <= key_buf_ptr < map.end:
                         yield proc_as, key_buf_ptr
                                                     
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Key", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Key", str),
+                         ], self.generator(data))
 
+    def generator(self, data):
         for (proc_as, key_buf_ptr) in data:
             key_buf = proc_as.read(key_buf_ptr, 24)
             if not key_buf:
                 continue
 
             key = "".join('%02X'%ord(k) for k in key_buf)
-            self.table_row(outfd, key)
+            yield(0, [
+                str(key),
+                ])
 
 
