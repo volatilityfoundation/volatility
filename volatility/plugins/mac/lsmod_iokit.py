@@ -27,6 +27,8 @@
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_lsmod_iokit(common.AbstractMacCommand):
     """ Lists loaded kernel modules through IOkit """
@@ -50,28 +52,32 @@ class mac_lsmod_iokit(common.AbstractMacCommand):
             if kext and kext.is_valid():
                 yield kext
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Offset (V)", "[addrpad]"),
-                                  ("Module Address", "[addrpad]"), 
-                                  ("Size", "8"), 
-                                  ("Refs", "^8"),
-                                  ("Version", "12"),  
-                                  ("Name", "48"),
-                                  ("Path", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Offset (V)", Address),
+                                  ("Module Address", Address),
+                                  ("Size", str),
+                                  ("Refs", str),
+                                  ("Version", str),
+                                  ("Name", str),
+                                  ("Path", str)
+                                  ], self.generator(data))
+
+    def generator(self, data):
         for kext in data:
             path = kext.path
 
             if path:
                 path = str(path.dereference())
 
-            self.table_row(outfd,
-                           kext.kmod_info,
-                           kext.kmod_info.address, 
-                           kext.kmod_info.m("size"),
-                           kext.kmod_info.reference_count, 
-                           kext.version,
-                           kext.kmod_info.name, 
-                           str(path))
+            yield(0, [
+                      Address(kext.kmod_info),
+                      Address(kext.kmod_info.address),
+                      str(kext.kmod_info.m("size")),
+                      str(kext.kmod_info.reference_count),
+                      str(kext.version),
+                      str(kext.kmod_info.name),
+                      str(path)
+                      ])
 
 
 

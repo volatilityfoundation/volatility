@@ -30,6 +30,8 @@ import volatility.plugins.mac.ifconfig as mac_ifconfig
 import volatility.plugins.mac.pstasks as mac_pstasks
 import volatility.debug as debug
 import volatility.obj as obj
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_list_raw(mac_common.AbstractMacCommand):
     """List applications with promiscuous sockets"""
@@ -66,13 +68,18 @@ class mac_list_raw(mac_common.AbstractMacCommand):
 
             cur = cur.list.le_next.dereference()
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Process", str),
+                                  ("PID", int),
+                                  ("File Descriptor", str),
+                                  ("Socket", Address),
+                                 ], self.generator(data))
 
-        self.table_header(outfd, [("Process", "16"),
-                                  ("PID", "6"),
-                                  ("File Descriptor", "5"),
-                                  ("Socket", "[addrpad]"),
-                                 ])
-
+    def generator(self, data):
         for (task, fd, socket) in data:
-            self.table_row(outfd, task.p_comm, task.p_pid, fd, socket)
+            yield(0, [
+                str(task.p_comm),
+                int(task.p_pid),
+                str(fd),
+                Address(socket),
+                ])

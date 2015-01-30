@@ -27,6 +27,9 @@
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
 import volatility.plugins.mac.lsmod as lsmod
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
+
 
 class mac_ip_filters(lsmod.mac_lsmod):
     """ Reports any hooked IP filters """
@@ -64,15 +67,22 @@ class mac_ip_filters(lsmod.mac_lsmod):
            
                 cur = cur.ipf_link.tqe_next
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Context", "10"), 
-                                  ("Filter", "16"), 
-                                  ("Pointer", "[addrpad]"), 
-                                  ("Status", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Context", str),
+                                  ("Filter", str),
+                                  ("Pointer", Address),
+                                  ("Status", str)
+                                  ], self.generator(data))
 
+    def generator(self, data):
         for (good, context, fname, ptr) in data:
             if good == 0:
                 status = "UNKNOWN"
             else:
                 status = "OK"
-            self.table_row(outfd, context, fname, ptr, status)
+            yield (0,[
+                str(context),
+                str(fname),
+                Address(ptr),
+                str(status),
+                ])
