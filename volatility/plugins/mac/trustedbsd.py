@@ -27,6 +27,8 @@
 import sys
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 from lsmod import mac_lsmod as mac_lsmod
 
@@ -70,12 +72,25 @@ class mac_trustedbsd(mac_lsmod):
 
                     yield (good, check, module, name, ptr)
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Check", "40"), ("Name", "20"), ("Pointer", "[addrpad]"), ("Module", ""), ("Status", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Check", str),
+                         ("Name", str),
+                         ("Pointer", Address),
+                         ("Module", str),
+                         ("Status", str),
+                         ], self.generator(data))
+
+    def generator(self, data):
         for (good, check, module, name, ptr) in data:
                 if good:
                     status = "OK"
                 else:
                     status = "HOOKED"
 
-                self.table_row(outfd, check, name, ptr, module, status)
+                yield(0, [
+                    str(check),
+                    str(name),
+                    Address(ptr),
+                    str(module),
+                    str(status),
+                    ])

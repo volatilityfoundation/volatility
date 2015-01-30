@@ -26,6 +26,8 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_check_trap_table(common.AbstractMacCommand):
     """ Checks to see if mach trap table entries are hooked """
@@ -101,11 +103,18 @@ class mac_check_trap_table(common.AbstractMacCommand):
 
             yield (table_addr, "TrapTable", i, ent_addr, sym_name, hooked)
  
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Table Name", "15"), 
-                                  ("Index", "6"), 
-                                  ("Address", "[addrpad]"), 
-                                  ("Symbol", "<50")])
+    def unified_output(self, data):
+        return TreeGrid([("Table Name", str),
+                        ("Index", str),
+                        ("Address", Address),
+                        ("Symbol", str),
+                        ], self.generator(data))
 
+    def generator(self, data):
         for (_, table_name, i, call_addr, sym_name, _) in data:
-            self.table_row(outfd, table_name, i, call_addr, sym_name)
+            yield(0, [
+                str(table_name),
+                str(i),
+                Address(call_addr),
+                str(sym_name),
+                ])
