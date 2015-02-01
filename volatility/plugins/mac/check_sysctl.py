@@ -26,6 +26,8 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 # based on sysctl_sysctl_debug_dump_node
 class mac_check_sysctl(common.AbstractMacCommand):
@@ -112,24 +114,26 @@ class mac_check_sysctl(common.AbstractMacCommand):
 
             yield (sysctl, name, val, is_known, module_name, status)
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
 
-        self.table_header(outfd, [
-                                  ("Name", "30"), 
-                                  ("Number", "8"), 
-                                  ("Perms", "6"), 
-                                  ("Handler", "[addrpad]"), 
-                                  ("Value", "20"),
-                                  ("Module", "40"),
-                                  ("Status", "5")])
+        return TreeGrid([("Name", str),
+                        ("Number", int),
+                        ("Perms", str),
+                        ("Handler", Address),
+                        ("Value", str),
+                        ("Module", str),
+                        ("Status", str),
+                        ], self.generator(data))
 
+    def generator(self, data):
         for (sysctl, name, val, is_known, module_name, status) in data:
-            self.table_row(outfd, 
-               name, 
-               sysctl.oid_number, 
-               sysctl.get_perms(),
-               sysctl.oid_handler, 
-               val,
-               module_name,
-               status)
+            yield(0, [
+               str(name),
+               int(sysctl.oid_number),
+               str(sysctl.get_perms()),
+               Address(sysctl.oid_handler),
+               str(val),
+               str(module_name),
+               str(status),
+               ])
 

@@ -30,6 +30,8 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.mac.pstasks as pstasks 
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_notesapp(pstasks.mac_tasks):
     """ Finds contents of Notes messages """
@@ -78,18 +80,20 @@ class mac_notesapp(pstasks.mac_tasks):
                     iter_idx = iter_idx + end_idx
                         
                     
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
         if self._config.DUMP_DIR == None:
             debug.error("Please specify a dump directory (--dump-dir)")
         if not os.path.isdir(self._config.DUMP_DIR):
             debug.error(self._config.DUMP_DIR + " is not a directory")
 
-        self.table_header(outfd, [("Pid", "8"), 
-                          ("Name", "20"),
-                          ("Start", "[addrpad]"),
-                          ("Size", "8"),
-                          ("Path", "")])
+        return TreeGrid([("Pid", int),
+                          ("Name", str),
+                          ("Start", Address),
+                          ("Size", str),
+                          ("Path", str),
+                          ], self.generator(data))
 
+    def generator(self, data):
         for (proc, start, msg) in data:
             fname = "Notes.{0}.{1:x}.txt".format(proc.p_pid, start)
             file_path = os.path.join(self._config.DUMP_DIR, fname)            
@@ -98,12 +102,13 @@ class mac_notesapp(pstasks.mac_tasks):
             fd.write(msg)
             fd.close()
 
-            self.table_row(outfd, 
-                           str(proc.p_pid), 
-                           proc.p_comm, 
-                           start,
-                           len(msg),
-                           file_path)
+            yield(0,[
+                    int(proc.p_pid),
+                    str(proc.p_comm),
+                    Address(start),
+                    str(len(msg)),
+                    str(file_path),
+                    ])
 
 
 

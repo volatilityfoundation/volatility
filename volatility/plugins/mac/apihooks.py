@@ -27,6 +27,8 @@
 import volatility.obj as obj
 import volatility.plugins.mac.pstasks as pstasks 
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 import distorm3
 
@@ -194,19 +196,20 @@ class mac_apihooks(pstasks.mac_tasks):
 
                     yield (proc, name, addr, is_lazy, is_ptr_hooked, is_api_hooked, hook_type, hook_addr, addr_mapping)
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Name", "16"),
-                                  ("PID", "6"),
-                                  ("Symbol", "25"),
-                                  ("Sym Address", "[addrpad]"),
-                                  ("Lazy", "5"),
-                                  ("Ptr Hook", "6"),
-                                  ("API Hook", "6"),
-                                  ("Hook Type", "6"),
-                                  ("Hook Addr", "[addrpad]"),
-                                  ("Hook Library", ""),
-                                 ])       
- 
+    def unified_output(self, data):
+        return TreeGrid([("Name", str),
+                        ("PID", int),
+                        ("Symbol", str),
+                        ("Sym Address", Address),
+                        ("Lazy", str),
+                        ("Ptr Hook", str),
+                        ("API Hook", str),
+                        ("Hook Type", str),
+                        ("Hook Addr", Address),
+                        ("Hook Library", str),
+                        ], self.generator(data))
+
+    def generator(self, data):
         for (task, name, addr, is_lazy, is_ptr_hooked, is_api_hooked, hook_type, hook_addr, addr_mapping) in data:
             if is_lazy:
                 is_lazy = "True"
@@ -223,5 +226,16 @@ class mac_apihooks(pstasks.mac_tasks):
             else:
                 is_api_hooked = "False"
 
-            self.table_row(outfd, task.p_comm, task.p_pid, name, addr, is_lazy, is_ptr_hooked, is_api_hooked, hook_type, hook_addr, addr_mapping)
+            yield(0, [
+                str(task.p_comm),
+                int(task.p_pid),
+                str(name),
+                Address(addr),
+                str(is_lazy),
+                str(is_ptr_hooked),
+                str(is_api_hooked),
+                str(hook_type),
+                Address(hook_addr),
+                str(addr_mapping),
+                ])
 
