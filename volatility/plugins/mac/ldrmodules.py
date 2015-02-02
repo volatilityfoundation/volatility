@@ -28,6 +28,7 @@
 import volatility.obj as obj
 import volatility.plugins.mac.common as mac_common
 import volatility.plugins.mac.pslist as mac_pslist
+from volatility.renderers import TreeGrid
 
 class mac_ldrmodules(mac_pslist.mac_pslist):
     """Compares the output of proc maps with the list of libraries from libdl"""
@@ -76,15 +77,16 @@ class mac_ldrmodules(mac_pslist.mac_pslist):
                 (task, proc_as, vm_name) = proc_maps[task_offset][vm_start]
                 yield (task_offset, task, proc_as, vm_start, vm_name, proc_maps, dl_maps)
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Pid", "8"),
-                                  ("Name", "16"),
-                                  ("Start", "#018x"),
-                                  ("File Path", "100"),                    
-                                  ("Kernel", "6"),
-                                  ("Dyld", "6"), 
-                                ]) 
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                        ("Name", str),
+                        ("Start", str),
+                        ("File Path", str),
+                        ("Kernel", str),
+                        ("Dyld", str),
+                        ], self.generator(data))
 
+    def generator(self, data):
         for task_offset, task, proc_as, vm_start, map_name, proc_maps, dl_maps in data:
             if vm_start in proc_maps[task_offset]:
                 pmaps = "True"
@@ -96,13 +98,14 @@ class mac_ldrmodules(mac_pslist.mac_pslist):
             else:
                 dmaps = "False"
 
-            self.table_row(outfd, 
-                task.p_pid, 
+            yield(0, [
+                int(task.p_pid),
                 str(task.p_comm),
-                vm_start,
-                map_name,
-                pmaps,
-                dmaps)
+                str(vm_start),
+                str(map_name),
+                str(pmaps),
+                str(dmaps),
+                ])
 
 
 
