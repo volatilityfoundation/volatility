@@ -27,6 +27,8 @@
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
 import volatility.plugins.mac.lsmod as lsmod
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_notifiers(lsmod.mac_lsmod):
     """ Detects rootkits that add hooks into I/O Kit (e.g. LogKext) """
@@ -111,13 +113,15 @@ class mac_notifiers(lsmod.mac_lsmod):
 
         return ",".join(matches)
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Key", "30"), 
-                                  ("Matches", "40"),
-                                  ("Handler", "[addrpad]"),
-                                  ("Module", "40"),
-                                  ("Status", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Key", str),
+                        ("Matches", str),
+                        ("Handler", Address),
+                        ("Module", str),
+                        ("Status", str),
+                        ], self.generator(data))
 
+    def generator(self, data):
         for (good, module, key, _, matches, handler) in data:
 
             if good == 0:
@@ -125,6 +129,12 @@ class mac_notifiers(lsmod.mac_lsmod):
             else:
                 status = "OK"
 
-            self.table_row(outfd, key, matches, handler, module, status)
+            yield(0, [
+                str(key),
+                str(matches),
+                Address(handler),
+                str(module),
+                str(status),
+                ])
 
 
