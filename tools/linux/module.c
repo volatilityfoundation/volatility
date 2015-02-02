@@ -404,6 +404,11 @@ struct slab slab;
 #endif
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,31)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+/* Starting with Linux kernel 3.7 the struct timekeeper is defined in include/linux/timekeeper_internal.h */
+#include <linux/timekeeper_internal.h>
+#else
+/* Before Linux kernel 3.7 the struct timekeeper has to be taken from kernel/time/timekeeping.c */
 
 typedef u64 cycle_t;
 
@@ -465,6 +470,7 @@ struct timekeeper {
 	seqlock_t lock;
 };
 
+#endif
 
 struct timekeeper my_timekeeper;
 
