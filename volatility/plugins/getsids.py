@@ -177,7 +177,7 @@ class GetSIDs(taskmods.DllList):
                 token = task.get_token()
 
                 if not token:
-                    tg.append(None, [int(task.UniqueProcessId),
+                    yield (0, [int(task.UniqueProcessId),
                                      str(task.ImageFileName),
                                      "Token unreadable",
                                      ""])
