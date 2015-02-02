@@ -26,6 +26,8 @@
 
 import volatility.obj as obj
 import common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_check_syscalls(common.AbstractMacCommand):
     """ Checks to see if system call table entries are hooked """
@@ -85,15 +87,28 @@ class mac_check_syscalls(common.AbstractMacCommand):
 
             yield (table_addr, "SyscallTable", i, ent_addr, sym_name, hooked)
  
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Table Name", "15"), ("Index", "6"), ("Address", "[addrpad]"), ("Symbol", "<30"), ("Status", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Table Name", str),
+                         ("Index", int),
+                         ("Address", Address),
+                         ("Symbol", str),
+                         ("Status", str),
+                         ], self.generator(data))
+
+    def generator(self, data):
         for (_, table_name, i, call_addr, sym_name, hooked) in data:
             if hooked:
                 status = "HOOKED"
             else:
                 status = "OK"
 
-            self.table_row(outfd, table_name, i, call_addr, sym_name, status)
+            yield(0, [
+                str(table_name),
+                int(i),
+                Address(call_addr),
+                str(sym_name),
+                str(status),
+                ])
 
 
 

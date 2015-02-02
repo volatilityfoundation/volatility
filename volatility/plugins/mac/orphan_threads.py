@@ -27,21 +27,24 @@
 import volatility.obj as obj
 import volatility.plugins.mac.pstasks as pstasks
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_orphan_threads(pstasks.mac_tasks):
     """ Lists per-process opened files """
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
         common.set_plugin_members(self)
 
-        self.table_header(outfd, [("PID","8"),
-                                  ("Name", "16"),
-                                  ("Start Address", "[addrpad]"),
-                                  ("Mapping", "40"),
-                                  ("Name", "40"),
-                                  ("Status", ""),
-                                 ])
- 
+        return TreeGrid([("PID",int),
+                        ("Process Name", str),
+                        ("Start Address", Address),
+                        ("Mapping", str),
+                        ("Name", str),
+                        ("Status", str),
+                        ], self.generator(data))
+
+    def generator(self, data):
         (kstart, kend, kmods) = common.get_kernel_addrs_start_end(self)
         
         for proc in data:
@@ -79,6 +82,13 @@ class mac_orphan_threads(pstasks.mac_tasks):
                         
                         name = name_buf
 
-                self.table_row(outfd, proc.p_pid, proc.p_comm, start, mapping, name, status)
+                yield(0, [
+                    int(proc.p_pid),
+                    str(proc.p_comm),
+                    Address(start),
+                    str(mapping),
+                    str(name),
+                    str(status),
+                    ])
 
  

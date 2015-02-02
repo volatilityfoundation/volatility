@@ -32,6 +32,8 @@ import distorm3
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
 import volatility.debug as debug
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_check_syscall_shadow(common.AbstractMacCommand):
     """ Looks for shadow system call tables """
@@ -98,12 +100,17 @@ class mac_check_syscall_shadow(common.AbstractMacCommand):
         for (shadowtbl_addr, func, op) in self.shadowedSyscalls(model, distorm_mode, self.addr_space.profile.get_symbol("_sysent")):
             yield (shadowtbl_addr, func, op)
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, 
-                          [("Hooked Function", "30"),
-                          ("Hook Address", "[addrpad]"),
-                          ("Instruction", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Hooked Function", str),
+                          ("Hook Address", Address),
+                          ("Instruction", str),
+                          ], self.generator(data))
 
+    def generator(self, data):
         for (shadowtbl_addr, func, op) in data:
-            self.table_row(outfd, func, shadowtbl_addr, op)
+            yield(0, [
+                str(func),
+                Address(shadowtbl_addr),
+                str(op),
+                ])
 
