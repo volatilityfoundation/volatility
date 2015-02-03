@@ -274,7 +274,7 @@ class Command(object):
         self._render(outfd, TextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column,
                                          config = self._config), data)
 
-    def render_quicktext(self, outfd, data):
+    def render_quick(self, outfd, data):
         self._render(outfd, QuickTextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
 
     def render_json(self, outfd, data):

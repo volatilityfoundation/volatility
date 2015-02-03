@@ -104,13 +104,13 @@ class TextRenderer(Renderer):
 
         self._validate_grid(grid)# Determine number of columns
 
-        if self._config and self._config.VERBOSE:
-            qtr = QuickTextRenderer(self._cell_renderers_func)
-            output = sys.stdout
-            output.write("Immediate (verbose) output:\n")
-            qtr.render(output, grid)
-            output.write("\n")
-            output.flush()
+        # if self._config and self._config.VERBOSE:
+        #     qtr = QuickTextRenderer(self._cell_renderers_func)
+        #     output = sys.stdout
+        #     output.write("Immediate (verbose) output:\n")
+        #     qtr.render(output, grid)
+        #     output.write("\n")
+        #     output.flush()
 
         grid_depth = grid.visit(None, lambda x, y: max(y, grid.path_depth(x)), 0)
 
