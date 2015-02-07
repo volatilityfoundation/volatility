@@ -36,7 +36,7 @@ class linux_tmpfs(linux_common.AbstractLinuxCommand):
     def __init__(self, config, *args, **kwargs):
         linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
         config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'output directory for recovered files', action = 'store', type = 'str')
-        config.add_option('SB', short_option = 'S', default = None, help = 'superblock to process, see -l', action = 'store', type = 'int')
+        config.add_option('SB', short_option = 'S', default = None, help = 'superblock to process, see -L', action = 'store', type = 'int')
         
         config.remove_option("LISTFILES")
         config.add_option('LIST_SBS', short_option = 'L', default = None, help = 'list avaiable tmpfs superblocks', action = 'store_true')
