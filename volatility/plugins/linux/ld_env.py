@@ -25,17 +25,8 @@
 @organization: 
 """
 
-import volatility.plugins.linux.pslist as linux_pslist
-from volatility.renderers import TreeGrid
+import volatility.plugins.linux.libc_env as linux_libc_env
 
-class linux_psenv(linux_pslist.linux_pslist):
-    '''Gathers processes along with their static environment variables'''
-    def unified_output(self, data):
-        return TreeGrid([("Name", str),
-                       ("Pid", int),
-                       ("Environment", str)],
-                        self.generator(data))
+class linux_dynamic_env(linux_libc_env.linux_libc_env):
+    """Recover a process' dynamic environment variables"""
 
-    def generator(self, data):
-        for task in data:
-            yield (0, [str(task.comm), int(task.pid), str(task.get_environment())])

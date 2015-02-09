@@ -1542,6 +1542,11 @@ class task_struct(obj.CType):
         for vma in self.get_proc_maps():
             if not (vma.vm_file and str(vma.vm_flags) == "rw-"):
                 continue
+            
+            fname = vma.info(self)[0]
+
+            if fname.find("ld") == -1 and fname != "/bin/bash":
+                continue
 
             env_start = 0
             for off in range(vma.vm_start, vma.vm_end):
@@ -1594,11 +1599,12 @@ class task_struct(obj.CType):
 
                         key = good_varstr[:eqidx]
                         val = good_varstr[eqidx+1:]
-
+                        
                         yield (key, val) 
                     else:
                         break
- 
+
+
     def lsof(self):
         fds = self.files.get_fds()
         max_fds = self.files.get_max_fds()
