@@ -36,12 +36,14 @@ class linux_netscan(linux_common.AbstractLinuxCommand):
     def check_socket_back_pointer(self, i):
         return i.sk == i.sk.sk_socket.sk or i.sk.sk_socket.v() == 0x0
                 
-    def check_saddr(self, i):
-        return i.inet_saddr == i.sk.__sk_common.skc_rcv_saddr
-                    
-    def check_backlog_pointer(self, i):
-        return self.addr_space.profile.get_symbol_by_address("kernel", i.sk.sk_backlog_rcv.v()) != None
-                                
+    def check_pointers(self, i):
+        ret = self.addr_space.profile.get_symbol_by_address("kernel", i.sk.sk_backlog_rcv.v()) != None
+
+        if ret:
+            ret = self.addr_space.profile.get_symbol_by_address("kernel", i.sk.sk_error_report.v()) != None
+
+        return ret
+                  
     def check_proto(self, i):
         return i.protocol in ("TCP", "UDP", "IP")
 
@@ -61,7 +63,7 @@ class linux_netscan(linux_common.AbstractLinuxCommand):
             pack_size    = 8
             pack_fmt     = "<Q"
         
-        checks = [self.check_family, self.check_proto, self.check_socket_back_pointer, self.check_saddr, self.check_backlog_pointer]
+        checks = [self.check_family, self.check_proto, self.check_socket_back_pointer, self.check_pointers]
 
         destruct_offset = self.addr_space.profile.get_obj_offset("sock", "sk_destruct")
 
