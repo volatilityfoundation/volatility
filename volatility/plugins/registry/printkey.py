@@ -35,6 +35,8 @@ import volatility.utils as utils
 import volatility.commands as commands
 import volatility.plugins.common as common
 import volatility.plugins.registry.hivelist as hivelist
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address, Base64
 
 def vol(k):
     return bool(k.obj_offset & 0x80000000)
@@ -120,6 +122,82 @@ class PrintKey(hivelist.HiveList):
                     outfd.write("{0:13} {1:15} : {3:3s} {2}\n".format(tp, v.Name, dat, self.voltext(v)))
         if not keyfound:
             outfd.write("The requested key could not be found in the hive(s) searched\n")
+
+    def unified_output(self, data):
+        return TreeGrid([("Registry", str),
+                       ("KeyName", str),
+                       ("KeyStability", str),
+                       ("LastWrite", str),
+                       ("Subkeys", str),
+                       ("SubkeyStability", str),
+                       ("ValType", str),
+                       ("ValName", str),
+                       ("ValStability", str),
+                       ("ValData", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for reg, key in data:
+            if key:
+                subkeys = list(rawreg.subkeys(key))
+                values = list(rawreg.values(key))
+                yield (0, [str("{0}".format(reg)), 
+                        str("{0}".format(key.Name)),
+                        str("{0:3s}".format(self.voltext(key))),
+                        str("{0}".format(key.LastWriteTime)),
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "-"])
+
+                if subkeys:
+                    for s in subkeys:
+                        if s.Name == None:
+                            yield (0, [str("{0}".format(reg)),
+                                str("{0}".format(key.Name)),
+                                str("{0:3s}".format(self.voltext(key))),
+                                str("{0}".format(key.LastWriteTime)),
+                                str("Unknown subkey: {0}".format(s.Name.reason)),
+                                "-",
+                                "-",
+                                "-",
+                                "-",
+                                "-"])
+                        else:
+                            yield (0, [str("{0}".format(reg)),
+                                str("{0}".format(key.Name)),
+                                str("{0:3s}".format(self.voltext(key))),
+                                str("{0}".format(key.LastWriteTime)),
+                                str("{0}".format(s.Name)), 
+                                str("{0:3s}".format(self.voltext(s))),
+                                "-",
+                                "-",
+                                "-",
+                                "-"])
+
+                if values:
+                    for v in values:
+                        tp, dat = rawreg.value_data(v)
+                        if tp == 'REG_BINARY' or tp == 'REG_NONE':
+                            dat = Base64(dat)
+                        if tp in ['REG_SZ', 'REG_EXPAND_SZ', 'REG_LINK']:
+                            dat = dat.encode("ascii", 'backslashreplace')
+                        if tp == 'REG_MULTI_SZ':
+                            for i in range(len(dat)):
+                                dat[i] = dat[i].encode("ascii", 'backslashreplace')
+                        yield (0, [str("{0}".format(reg)),
+                            str("{0}".format(key.Name)),
+                            str("{0:3s}".format(self.voltext(key))),
+                            str("{0}".format(key.LastWriteTime)),
+                            "-",
+                            "-",
+                            str(tp),
+                            str("{0}".format(v.Name)),
+                            str("{0:3s}".format(self.voltext(v))),
+                            str(dat)])
+
 
 class HiveDump(common.AbstractWindowsCommand):
     """Prints out a hive"""
