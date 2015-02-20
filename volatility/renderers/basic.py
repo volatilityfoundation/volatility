@@ -3,6 +3,12 @@ __author__ = 'mike'
 import volatility.utils as utils
 import base64
 
+class Binary(str):
+    def __new__(cls, data):
+        if data == None:
+            return str.__new__(cls, "-")
+        return str.__new__(cls, data)
+
 class Hexdump(str):
     """String class to allow us to output binary data in hexdump format"""
     def __new__(cls, data, width = 16):
@@ -11,7 +17,7 @@ class Hexdump(str):
         string = "\n".join(["{0:#010x}  {1:<{width}}  {2}".format(o, h, ''.join(c), width = width * 3) for o, h, c in utils.Hexdump(data, width = width)])
         return str.__new__(cls, string)
 
-class Base64(str):
+class Base64(Binary):
     """String class to allow us to base64 encode binary data"""
     def __new__(cls, data):
         if data == None:
