@@ -219,6 +219,23 @@ class HiveDump(common.AbstractWindowsCommand):
         outfd.write("{0:20s} {1}\n".format("Last Written", "Key"))
         self.print_key(outfd, '', data)
 
+
+    def unified_output(self, data):
+        return TreeGrid([("LastWritten", str),
+                       ("Key", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        path = str(data.Name)
+        keys = [(data, path)]
+        for key, path in keys:
+            if key:
+                yield (0, [str("{0}".format(key.LastWriteTime)),
+                           str(path)])
+                for s in rawreg.subkeys(key):
+                    item = "{0}\\{1}".format(path, s.Name)
+                    keys.append((s, item))
+
     def print_key(self, outfd, keypath, key):
         if key.Name != None:
             outfd.write("{0:20s} {1}\n".format(key.LastWriteTime, keypath + "\\" + key.Name))
