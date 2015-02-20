@@ -10,6 +10,8 @@ class Hexdump(str):
 
 class Base64(str):
     def __new__(cls, data):
+        if data == None:
+            return str.__new__(cls, "-")
         string = base64.b64encode(data)
         return str.__new__(cls, string)
 
