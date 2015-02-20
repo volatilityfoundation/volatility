@@ -4,6 +4,7 @@ import volatility.utils as utils
 import base64
 
 class Hexdump(str):
+    """String class to allow us to output binary data in hexdump format"""
     def __new__(cls, data, width = 16):
         if data == None:
             return str.__new__(cls, "-")
@@ -11,6 +12,7 @@ class Hexdump(str):
         return str.__new__(cls, string)
 
 class Base64(str):
+    """String class to allow us to base64 encode binary data"""
     def __new__(cls, data):
         if data == None:
             return str.__new__(cls, "-")
