@@ -1,7 +1,7 @@
 __author__ = 'mike'
 
 import volatility.utils as utils
-import base64, binascii
+import base64
 
 class Binary(str):
     def __new__(cls, data):
