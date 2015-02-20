@@ -5,6 +5,8 @@ import base64
 
 class Hexdump(str):
     def __new__(cls, data, width = 16):
+        if data == None:
+            return str.__new__(cls, "-")
         string = "\n" + "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(data, width = width)])
         return str.__new__(cls, string)
 
