@@ -36,7 +36,7 @@ import volatility.commands as commands
 import volatility.plugins.common as common
 import volatility.plugins.registry.hivelist as hivelist
 from volatility.renderers import TreeGrid
-from volatility.renderers.basic import Address, Base64
+from volatility.renderers.basic import Address, Binary
 
 def vol(k):
     return bool(k.obj_offset & 0x80000000)
@@ -181,7 +181,7 @@ class PrintKey(hivelist.HiveList):
                     for v in values:
                         tp, dat = rawreg.value_data(v)
                         if tp == 'REG_BINARY' or tp == 'REG_NONE':
-                            dat = Base64(dat)
+                            dat = Binary(dat)
                         if tp in ['REG_SZ', 'REG_EXPAND_SZ', 'REG_LINK']:
                             dat = dat.encode("ascii", 'backslashreplace')
                         if tp == 'REG_MULTI_SZ':

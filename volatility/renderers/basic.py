@@ -1,13 +1,13 @@
 __author__ = 'mike'
 
 import volatility.utils as utils
-import base64
+import base64, binascii
 
 class Binary(str):
     def __new__(cls, data):
         if data == None:
             return str.__new__(cls, "-")
-        return str.__new__(cls, data)
+        return str(data)
 
 class Hexdump(str):
     """String class to allow us to output binary data in hexdump format"""

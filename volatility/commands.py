@@ -26,7 +26,7 @@ import volatility.obj as obj
 import volatility.registry as registry
 import volatility.renderers as renderers
 import volatility.addrspace as addrspace
-from volatility.renderers.basic import Address, Address64, Hex, Hexdump, Base64
+from volatility.renderers.basic import Address, Address64, Hex, Hexdump, Base64, Binary
 from volatility.renderers.dot import DotRenderer
 from volatility.renderers.html import HTMLRenderer, JSONRenderer
 from volatility.renderers.sqlite import SqliteRenderer
@@ -236,6 +236,7 @@ class Command(object):
                             Address64: "#16x",
                             Hexdump: "",
                             Base64: "",
+                            Binary: "",
                             int: "",
                             str: "<",
                             float: ".2",
