@@ -7,7 +7,7 @@ class Binary(str):
     def __new__(cls, data):
         if data == None:
             return str.__new__(cls, "-")
-        return str(data)
+        return str.__new__(cls, repr(data))
 
 class Hexdump(str):
     """String class to allow us to output binary data in hexdump format"""
