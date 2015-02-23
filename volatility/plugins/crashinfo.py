@@ -22,6 +22,8 @@ import volatility.plugins.common as common
 import volatility.cache as cache
 import volatility.debug as debug
 import volatility.obj as obj
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 import datetime
 
 class _DMP_HEADER(obj.CType):
@@ -88,10 +90,63 @@ class CrashInfo(common.AbstractWindowsCommand):
 
         return result
 
+    def unified_output(self, data):
+        return TreeGrid([("HeaderName", str),
+                       ("Majorversion", Address),
+                       ("Minorversion", Address),
+                       ("KdSecondaryVersion", Address),
+                       ("DirectoryTableBase", Address),
+                       ("PfnDataBase", Address),
+                       ("PsLoadedModuleList", Address),
+                       ("PsActiveProcessHead", Address),
+                       ("MachineImageType", Address),
+                       ("NumberProcessors", Address),
+                       ("BugCheckCode", Address),
+                       ("PaeEnabled", Address),
+                       ("KdDebuggerDataBlock", Address),
+                       ("ProductType", Address),
+                       ("SuiteMask", Address),
+                       ("WriterStatus", Address),
+                       ("Comment", str),
+                       ("DumpType", str),
+                       ("SystemTime", str),
+                       ("SystemUpTime", str),
+                       ("NumRuns", int)],
+                        self.generator(data))
+
+    def generator(self, data):
+        hdr = data.get_header()
+        pae = -1
+        if hdr.obj_name != "_DMP_HEADER64":
+            pae = hdr.PaeEnabled
+        yield (0, [str(hdr.obj_name),
+                    Address(hdr.MajorVersion),
+                    Address(hdr.MinorVersion),
+                    Address(hdr.KdSecondaryVersion),
+                    Address(hdr.DirectoryTableBase),
+                    Address(hdr.PfnDataBase),
+                    Address(hdr.PsLoadedModuleList),
+                    Address(hdr.PsActiveProcessHead),
+                    Address(hdr.MachineImageType),
+                    Address(hdr.NumberProcessors),
+                    Address(hdr.BugCheckCode),
+                    Address(pae),
+                    Address(hdr.KdDebuggerDataBlock),
+                    Address(hdr.ProductType),
+                    Address(hdr.SuiteMask),
+                    Address(hdr.WriterStatus),
+                    str(hdr.Comment),
+                    str(hdr.DumpType),
+                    str(hdr.SystemTime or ''),
+                    str(hdr.SystemUpTime or ''),
+                    len(data.get_runs())])
+
+
     def render_text(self, outfd, data):
         """Renders the crashdump header as text"""
 
         hdr = data.get_header()
+        runs = data.get_runs()
 
         outfd.write("{0}:\n".format(hdr.obj_name))
         outfd.write(" Majorversion:         0x{0:08x} ({1})\n".format(hdr.MajorVersion, hdr.MajorVersion))
@@ -115,18 +170,17 @@ class CrashInfo(common.AbstractWindowsCommand):
         outfd.write(" SystemTime            {0}\n".format(str(hdr.SystemTime or '')))
         outfd.write(" SystemUpTime          {0}\n".format(str(hdr.SystemUpTime or '')))
         outfd.write("\nPhysical Memory Description:\n")
-        outfd.write("Number of runs: {0}\n".format(len(data.get_runs())))
+        outfd.write("Number of runs: {0}\n".format(len(runs)))
         outfd.write("FileOffset    Start Address    Length\n")
-        if hdr.obj_name != "_DMP_HEADER64":
-            foffset = 0x1000
-        else:
+        foffset = 0x1000
+        if hdr.obj_name == "_DMP_HEADER64":
             foffset = 0x2000
         run = []
 
         ## FIXME. These runs differ for x86 vs x64. This is a reminder
         ## for MHL or AW to fix it. 
 
-        for run in data.get_runs():
+        for run in runs:
             outfd.write("{0:08x}      {1:08x}         {2:08x}\n".format(foffset, run[0], run[2]))
             foffset += (run[2])
         outfd.write("{0:08x}      {1:08x}\n".format(foffset - 0x1000, (run[0] + run[2] - 0x1000)))
