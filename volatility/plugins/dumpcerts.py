@@ -31,7 +31,7 @@ import volatility.utils as utils
 import volatility.win32.tasks as tasks
 import volatility.plugins.malware.malfind as malfind
 from volatility.renderers import TreeGrid
-from volatility.renderers.basic import Address, Binary
+from volatility.renderers.basic import Address
 
 try:
     import yara
@@ -217,7 +217,7 @@ class DumpCerts(procdump.ProcDump):
                        ("Length", int),
                        ("File", str),
                        ("Subject", str),
-                       ("Cert", Binary)],
+                       ("Cert", bytes)],
                         self.generator(data))
 
     def generator(self, data):
@@ -250,7 +250,7 @@ class DumpCerts(procdump.ProcDump):
                        int(cert.Size),
                        str(file_name),
                        str(parsed_subject),
-                       Binary(cert.object_as_string())])
+                       bytes(cert.object_as_string())])
 
 
     def render_text(self, outfd, data):

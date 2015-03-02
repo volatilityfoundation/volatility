@@ -36,7 +36,7 @@ import volatility.utils as utils
 import volatility.plugins.common as common
 import volatility.plugins.registry.registryapi as registryapi
 from volatility.renderers import TreeGrid
-from volatility.renderers.basic import Address, Binary
+from volatility.renderers.basic import Address
 
 class LSADump(common.AbstractWindowsCommand):
     """Dump (decrypted) LSA secrets from the registry"""
@@ -86,12 +86,12 @@ class LSADump(common.AbstractWindowsCommand):
 
     def unified_output(self, data):
         return TreeGrid([("Item", str),
-                       ("Data", Binary)],
+                       ("Data", bytes)],
                         self.generator(data))
 
     def generator(self, data):
         for k in data:
-            yield (0, [str(k), Binary(data[k])])
+            yield (0, [str(k), bytes(data[k])])
 
 class HashDump(common.AbstractWindowsCommand):
     """Dumps passwords hashes (LM/NTLM) from memory"""
