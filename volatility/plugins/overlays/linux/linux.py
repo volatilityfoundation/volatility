@@ -1927,7 +1927,11 @@ class task_struct(obj.CType):
     def get_task_start_time(self):
 
         start_time = self.start_time
-        start_secs = start_time.tv_sec + (start_time.tv_nsec / linux_common.nsecs_per / 100)
+        if type(start_time) == long:
+            start_secs = start_time
+        else: 
+            start_secs = start_time.tv_sec + (start_time.tv_nsec / linux_common.nsecs_per / 100)
+
         sec = self.get_boot_time() + start_secs
                 
         # convert the integer as little endian 
