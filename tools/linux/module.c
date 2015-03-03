@@ -192,6 +192,14 @@ struct radix_tree_node {
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)
+#define OUR_OWN_MOD_STRUCTS
+#endif
+
+#if LINUX_VERSION_CODE == KERNEL_VERSION(2,6,18)
+#define OUR_OWN_MOD_STRUCTS
+#endif
+
+#ifdef OUR_OWN_MOD_STRUCTS
 struct module_sect_attr
 {
         struct module_attribute mattr;
