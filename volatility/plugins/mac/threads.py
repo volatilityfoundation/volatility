@@ -290,7 +290,10 @@ class mac_threads(mac_tasks.mac_tasks):
                 registers[reg] = "{0:#10x}".format(getattr(thread.machine.iss.uss.ss_64, reg))
         else:
             for reg in registers_32:
-                registers[reg] = "{0:#10x}".format(getattr(thread.machine.iss.uss.ss_32, reg))
+                if hasattr(thread.machine, "iss"):
+                    registers[reg] = "{0:#10x}".format(getattr(thread.machine.iss.uss.ss_32, reg))
+                else:
+                    registers[reg] = ""
 
         return registers
 
