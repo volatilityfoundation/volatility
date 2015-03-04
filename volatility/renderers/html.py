@@ -1,5 +1,5 @@
 import StringIO
-from volatility.renderers.basic import Renderer, Base64
+from volatility.renderers.basic import Renderer, Bytes
 import json
 
 __author__ = 'mike'
@@ -35,14 +35,7 @@ class HTMLRenderer(Renderer):
 
 class JSONRenderer(Renderer):
     def render_row(self, node, accumulator):
-        vals = []
-        for v in node.values:
-            try:
-                test = json.dumps(v)
-                vals.append(v)
-            except UnicodeDecodeError:
-                vals.append(Base64(v))
-        return accumulator + vals
+        return accumulator + [v for v in node.values]
 
     def render(self, outfd, data):
         """Renderers a treegrid as columns/row items in JSON format"""
