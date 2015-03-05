@@ -12,8 +12,8 @@ class SqliteRenderer(Renderer):
         self._db = None
 
     column_types = [(str, "TEXT"),
-                    (int, "INTEGER"),
-                    (float, "REAL"),
+                    (int, "TEXT"),
+                    (float, "TEXT"),
                     (bytes, "BLOB")]
 
     def _column_type(self, col_type):
@@ -29,7 +29,7 @@ class SqliteRenderer(Renderer):
         accumulator[node] = max(accumulator.values()) + 1
         insert = "INSERT INTO " + self._plugin_name + " VALUES (?, ?, " + ", ".join(["?"] * len(node.values)) + ")"
         print insert, [accumulator[node], accumulator[node.parent]] + list(node.values)
-        self._db.execute(insert, [accumulator[node], accumulator[node.parent]] + list(node.values))
+        self._db.execute(insert, [accumulator[node], accumulator[node.parent]] + [str(v) for v in node.values])
         return accumulator
 
     def render(self, outfd, grid):
