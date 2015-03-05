@@ -116,7 +116,7 @@ class Command(object):
         ## Then we render the result in some way based on the
         ## requested output mode:
         function_name = "render_{0}".format(self._config.OUTPUT)
-        if self._config.OUTPUT_FILE:
+        if not self._config.OUTPUT == "sqlite" and self._config.OUTPUT_FILE:
             if os.path.exists(self._config.OUTPUT_FILE):
                 debug.error("File " + self._config.OUTPUT_FILE + " already exists.  Cowardly refusing to overwrite it...")
             outfd = open(self._config.OUTPUT_FILE, 'wb')
