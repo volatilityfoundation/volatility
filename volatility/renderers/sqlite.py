@@ -38,7 +38,7 @@ class SqliteRenderer(Renderer):
             debug.error("Please specify a valid output file using --output-file")
 
         self._db = sqlite3.connect(self._config.OUTPUT_FILE, isolation_level = None)
-        create = "CREATE TABLE " + self._plugin_name + "( id INTEGER, rowparent INTEGER, " + \
+        create = "CREATE TABLE IF NOT EXISTS " + self._plugin_name + "( id INTEGER, rowparent INTEGER, " + \
                  ", ".join(['"' + self._sanitize_name(i.name) + '" ' + self._column_type(i.type) for i in grid.columns]) + ")"
         self._db.execute(create)
         grid.visit(None, self._add_row, {None: 0})
