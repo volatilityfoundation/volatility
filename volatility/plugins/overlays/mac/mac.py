@@ -512,7 +512,7 @@ class proc(obj.CType):
         cred = self.p_ucred
 
         if not cred.is_valid():
-            return "-"
+            return -1
 
         if hasattr(cred, "cr_posix"):
             ret = cred.cr_posix.cr_groups[0]
@@ -526,7 +526,7 @@ class proc(obj.CType):
         cred = self.p_ucred
 
         if not cred.is_valid():
-            return "-"
+            return -1 
 
         if hasattr(cred, "cr_posix"):
             ret = cred.cr_posix.cr_uid
