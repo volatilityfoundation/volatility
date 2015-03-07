@@ -624,7 +624,6 @@ class proc(obj.CType):
 
                 if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode:
                     text_start = map.start.v()
-                    print "vnode: %x" % text_start
                     break
 
         # both offset and vp were bogus
@@ -636,7 +635,6 @@ class proc(obj.CType):
         
             if found_map:
                 text_start = found_map.imageLoadAddress
-                print "load_addr: %x" % text_start
 
         return text_start
 
