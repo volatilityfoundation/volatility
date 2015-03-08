@@ -24,7 +24,7 @@
 @organization: 
 """
 
-import struct
+import struct, string
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.addrspace as addrspace
@@ -89,7 +89,7 @@ class _mac_hist_entry(obj.CType):
             if idx != -1:
                 buf = buf[:idx]  
 
-        return buf
+        return "".join([c for c in buf if c in string.printable])
 
     @property
     def time_as_integer(self):
