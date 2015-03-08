@@ -101,7 +101,7 @@ class mac_network_conns(common.AbstractMacCommand):
                                  ], self.generator(data))
 
     def generator(self, data):
-        for (proto, pcb, lip, lport, rip, rport, state) in data: 
+        for (proto, pcb, lip, lport, rip, rport, state) in data:
             yield(0, [
                 Address(pcb.obj_offset),
                 str(proto),

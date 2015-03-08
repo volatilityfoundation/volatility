@@ -28,6 +28,7 @@ import volatility.obj as obj
 import volatility.plugins.mac.pstasks as pstasks 
 import volatility.plugins.mac.common as common
 from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_dyld_maps(pstasks.mac_tasks):
     """ Gets memory maps of processes from dyld data structures """
@@ -37,7 +38,7 @@ class mac_dyld_maps(pstasks.mac_tasks):
         
         return TreeGrid([("Pid", int),
                           ("Name", str),
-                          ("Start", str),
+                          ("Start", Address),
                           ("Map Name", str),
                           ], self.generator(data))
 
@@ -47,7 +48,7 @@ class mac_dyld_maps(pstasks.mac_tasks):
                 yield(0, [
                         int(proc.p_pid),
                         str(proc.p_comm),
-                        str(map.imageLoadAddress),
+                        Address(map.imageLoadAddress),
                         str(map.imageFilePath),
                         ])
                              

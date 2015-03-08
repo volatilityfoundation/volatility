@@ -50,22 +50,22 @@ class mac_lsmod(common.AbstractMacCommand):
             kmod = kmod.next
 
     def unified_output(self, data):
-        return TreeGrid([("Offset (V)", str),
-                                  ("Module Address", str),
-                                  ("Size", str),
-                                  ("Refs", str),
-                                  ("Version", str),
-                                  ("Name", str),
-                                  ], self.generator(data))
+        return TreeGrid([("Offset (V)", Address),
+                        ("Module Address", Address),
+                        ("Size", int),
+                        ("Refs", int),
+                        ("Version", str),
+                        ("Name", str),
+                        ], self.generator(data))
     def generator(self, data):
         for kmod in data:
             yield (0, [
-                           str(kmod),
-                           str(kmod.address),
-                           str(kmod.m('size')),
-                           str(kmod.reference_count),
-                           str(kmod.version),
-                           str(kmod.name),
-                           ])
+                    Address(kmod.obj_offset),
+                    Address(kmod.address),
+                    int(kmod.m('size')),
+                    int(kmod.reference_count),
+                    str(kmod.version),
+                    str(kmod.name),
+                    ])
 
 

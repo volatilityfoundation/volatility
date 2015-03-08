@@ -71,7 +71,7 @@ class mac_list_raw(mac_common.AbstractMacCommand):
     def unified_output(self, data):
         return TreeGrid([("Process", str),
                                   ("PID", int),
-                                  ("File Descriptor", str),
+                                  ("File Descriptor", int),
                                   ("Socket", Address),
                                  ], self.generator(data))
 
@@ -80,6 +80,6 @@ class mac_list_raw(mac_common.AbstractMacCommand):
             yield(0, [
                 str(task.p_comm),
                 int(task.p_pid),
-                str(fd),
+                int(fd),
                 Address(socket),
                 ])

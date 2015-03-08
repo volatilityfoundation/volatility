@@ -492,7 +492,7 @@ class mac_apihooks_kernel(common.AbstractMacCommand):
 
     def unified_output(self, data):
         return TreeGrid([("Table Name", str),
-                         ("Index", str),
+                         ("Index", int),
                          ("Address", Address),
                          ("Symbol", str),
                          ("Inlined", str),
@@ -528,7 +528,7 @@ class mac_apihooks_kernel(common.AbstractMacCommand):
 
             yield(0, [
                 str(table_name),
-                str(i),
+                int(i),
                 Address(call_addr),
                 str(sym_name),
                 str(txt_inlined),
