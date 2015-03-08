@@ -695,8 +695,8 @@ class proc(obj.CType):
         img_infos = obj.Object(theType = "Array", targetType = itype, offset = info_addr, count = infos.infoArrayCount, vm = proc_as)
         
         for info_addr in img_infos:
-            yield info_addr
-            #yield obj.Object("dyld_image_info", offset = info_addr, vm = proc_as)   
+            if info_addr:
+                yield info_addr
 
     def get_proc_maps(self):
         map = self.task.map.hdr.links.next
