@@ -684,6 +684,8 @@ class proc(obj.CType):
             itype = "dyld64_image_info"
 
         infos = obj.Object(dtype, offset=self.task.all_image_info_addr, vm=proc_as)
+        if not infos:
+            return
 
         # the pointer address
         info_buf = proc_as.read(infos.infoArray.obj_offset, self.pack_size)
