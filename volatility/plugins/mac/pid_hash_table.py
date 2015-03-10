@@ -42,8 +42,8 @@ class mac_pid_hash_table(pslist.mac_pslist):
         pidhash_array = obj.Object("Array", targetType = "pidhashhead", count = pidhash + 1, vm = self.addr_space, offset = pidhashtbl_ptr)
     
         for plist in pidhash_array:
-            p = plist.lh_first
+            p = plist.lh_first.dereference()
     
             while p:
                 yield p                
-                p = p.p_hash.le_next
+                p = p.p_hash.le_next.dereference()
