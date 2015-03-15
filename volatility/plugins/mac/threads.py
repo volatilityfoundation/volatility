@@ -29,6 +29,8 @@ import volatility.plugins.mac.common as common
 import volatility.debug as debug
 import volatility.utils as utils
 import volatility.plugins.mac.pstasks as mac_tasks
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 ## http://hte.sourceforge.net/doxygenized-0.8.0pre1/machostruc_8h-source.html
 ## documentation for thread state, registry, launch cmd etc
@@ -288,7 +290,10 @@ class mac_threads(mac_tasks.mac_tasks):
                 registers[reg] = "{0:#10x}".format(getattr(thread.machine.iss.uss.ss_64, reg))
         else:
             for reg in registers_32:
-                registers[reg] = "{0:#10x}".format(getattr(thread.machine.iss.uss.ss_32, reg))
+                if hasattr(thread.machine, "iss"):
+                    registers[reg] = "{0:#10x}".format(getattr(thread.machine.iss.uss.ss_32, reg))
+                else:
+                    registers[reg] = ""
 
         return registers
 
@@ -362,42 +367,44 @@ class mac_threads(mac_tasks.mac_tasks):
         
         self.get_active_threads()
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Offset", "[addrpad]"),
-                                  ("Pid", "8"),
-                                  ("Tid", "8"),
-                                  ("UID", "8"),
-                                  ("State", "30"),
-                                  ("Is Active?","<10"),
-                                  ("Options", "30"),
-                                  ("Priority", "8"),
-                                  ("Startup Addr", "[addrpad]"),
-                                  ("Stack Start Addr", "[addrpad]"),
-                                  ("Stack Size (bytes)", "<18"),
-                                  ("HW Debugged","<11"),
-                                  ("DTraced","<7"),
-                                  ("Arguments", "")
-                          ])
-
+    def unified_output(self, data):
+        return TreeGrid([("Offset", Address),
+                                  ("Pid", int),
+                                  ("Tid", str),
+                                  ("UID", str),
+                                  ("State", str),
+                                  ("Is Active?", str),
+                                  ("Options", str),
+                                  ("Priority", str),
+                                  ("Startup Addr", Address),
+                                  ("Stack Start Addr", Address),
+                                  ("Stack Size (bytes)", str),
+                                  ("HW Debugged",str),
+                                  ("DTraced", str),
+                                  ("Arguments", str),
+                                  ], self.generator(data))
+                          
+    def generator(self, data):
         for proc, thread, stack_start, stack_size, args, registers, is_active, dtraced, debugged, uid in data:
             if not thread.is_valid():
                 continue
 
-            self.table_row(outfd, thread.v(),
-                                  str(proc.p_pid),
-                                  str(thread.thread_id),
-                                  str(uid),
-                                  str(thread.state),
-                                  is_active,
-                                  str(thread.options),
-                                  str(thread.sched_pri),
-                                  thread.continuation,
-                                  stack_start,
-                                  stack_size,
-                                  debugged,
-                                  dtraced,
-                                  args
-                           )
+            yield (0, [
+                        Address(thread.v()),
+                        int(proc.p_pid),
+                        str(thread.thread_id),
+                        str(uid),
+                        str(thread.state),
+                        str(is_active),
+                        str(thread.options),
+                        str(thread.sched_pri),
+                        Address(thread.continuation),
+                        Address(stack_start),
+                        str(stack_size),
+                        str(debugged),
+                        str(dtraced),
+                        str(args),
+                        ])
 
             #for reg in registers:
             #    outfd.write("\t{0:<10} {1:}\n".format(reg, registers[reg].strip()))

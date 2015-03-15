@@ -27,21 +27,24 @@
 import volatility.obj as obj
 import volatility.plugins.mac.pstasks as pstasks
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_threads_simple(pstasks.mac_tasks):
     """ Lists threads along with their start time and priority """
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
         common.set_plugin_members(self)
 
-        self.table_header(outfd, [("PID","8"),
-                                  ("Name", "16"),
-                                  ("Start Time", "32"),
-                                  ("Priority", "6"),
-                                  ("Start Function", "[addrpad]"),
-                                  ("Function Map", ""),
-                                 ])
- 
+        return TreeGrid([("PID",int),
+                        ("Name", str),
+                        ("Start Time", str),
+                        ("Priority", str),
+                        ("Start Function", Address),
+                        ("Function Map", str),
+                        ], self.generator(data))
+
+    def generator(self, data):
         kaddr_info = common.get_handler_name_addrs(self)
 
         for proc in data:
@@ -56,10 +59,14 @@ class mac_threads_simple(pstasks.mac_tasks):
                 else:
                     handler = proc.find_map_path(func_addr)
                 
-                self.table_row(outfd, proc.p_pid, proc.p_comm, 
-                    th.start_time(), 
-                    th.priority, 
-                    func_addr, handler)
+                yield(0, [
+                    int(proc.p_pid),
+                    str(proc.p_comm),
+                    str(th.start_time()),
+                    str(th.priority),
+                    Address(func_addr),
+                    str(handler),
+                    ])
 
 
    

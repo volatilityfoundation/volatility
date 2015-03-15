@@ -512,7 +512,7 @@ class proc(obj.CType):
         cred = self.p_ucred
 
         if not cred.is_valid():
-            return "-"
+            return -1
 
         if hasattr(cred, "cr_posix"):
             ret = cred.cr_posix.cr_groups[0]
@@ -526,7 +526,7 @@ class proc(obj.CType):
         cred = self.p_ucred
 
         if not cred.is_valid():
-            return "-"
+            return -1 
 
         if hasattr(cred, "cr_posix"):
             ret = cred.cr_posix.cr_uid
@@ -613,6 +613,66 @@ class proc(obj.CType):
 
         return dt
     
+    def text_start(self):
+        text_start = 0
+
+        wanted_vnode = self.p_textvp.v()
+
+        if wanted_vnode:
+            for map in self.get_proc_maps():
+                vnode = map.get_vnode()
+
+                if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode:
+                    text_start = map.start.v()
+                    break
+
+        # both offset and vp were bogus
+        if text_start == 0:
+            found_map = None
+            for map in self.get_dyld_maps():
+                found_map = map
+                break
+        
+            if found_map:
+                text_start = found_map.imageLoadAddress
+
+        return text_start
+
+    def get_macho(self, exe_address):
+        proc_as = self.get_process_address_space()
+
+        m = obj.Object("macho_header", offset = exe_address, vm = proc_as)
+
+        buffer = ""
+
+        for seg in m.segments():
+            if str(seg.segname) == "__PAGEZERO":
+                continue
+                
+            # this is related to the shared cache map 
+            # contact Andrew for full details
+            if str(seg.segname) == "__LINKEDIT" and seg.vmsize > 20000000:
+                continue
+
+            cur = seg.vmaddr
+            end = seg.vmaddr + seg.vmsize
+        
+            while cur < end:
+                buffer = buffer + proc_as.zread(cur, 4096) 
+                cur = cur + 4096
+ 
+        return buffer
+
+    def procdump(self):
+        start = self.text_start()
+
+        if start:
+            ret = self.get_macho(start) 
+        else:
+            ret = ""
+
+        return ret
+
     def get_dyld_maps(self):        
         proc_as = self.get_process_address_space()
 
@@ -624,6 +684,8 @@ class proc(obj.CType):
             itype = "dyld64_image_info"
 
         infos = obj.Object(dtype, offset=self.task.all_image_info_addr, vm=proc_as)
+        if not infos:
+            return
 
         # the pointer address
         info_buf = proc_as.read(infos.infoArray.obj_offset, self.pack_size)
@@ -635,8 +697,8 @@ class proc(obj.CType):
         img_infos = obj.Object(theType = "Array", targetType = itype, offset = info_addr, count = infos.infoArrayCount, vm = proc_as)
         
         for info_addr in img_infos:
-            yield info_addr
-            #yield obj.Object("dyld_image_info", offset = info_addr, vm = proc_as)   
+            if info_addr:
+                yield info_addr
 
     def get_proc_maps(self):
         map = self.task.map.hdr.links.next

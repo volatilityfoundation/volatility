@@ -28,6 +28,8 @@ import re
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_moddump(common.AbstractMacCommand):
     """ Writes the specified kernel extension to disk """
@@ -68,13 +70,16 @@ class mac_moddump(common.AbstractMacCommand):
   
                 mod = mod.next
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
         if (not self._config.DUMP_DIR or not os.path.isdir(self._config.DUMP_DIR)):
             debug.error("Please specify an existing output dir (--dump-dir)")
  
-        self.table_header(outfd, [("Address", "[addrpad]"), 
-                                  ("Size", "8"), 
-                                  ("Output Path", "")])
+        return TreeGrid([("Address", Address),
+                        ("Size", int),
+                        ("Output Path", str),
+                        ], self.generator(data))
+
+    def generator(self, data):
         for kmod in data:
             start = kmod.address
             size  = kmod.m("size")
@@ -84,7 +89,11 @@ class mac_moddump(common.AbstractMacCommand):
             mod_data = self.addr_space.zread(kmod.address, size)
             mod_file.write(mod_data)
             mod_file.close()
-            self.table_row(outfd, start, size, file_name)
+            yield(0, [
+                Address(start),
+                int(size),
+                str(file_name),
+                ])
 
 
 

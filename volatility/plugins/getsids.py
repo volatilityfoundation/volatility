@@ -43,21 +43,21 @@ def find_sid_re(sid_string, sid_re_list):
             return name
 
 well_known_sid_re = [
-  (re.compile(r'S-1-5-[0-9-]+-500'), 'Administrator'),
-  (re.compile(r'S-1-5-[0-9-]+-501'), 'Guest'),
-  (re.compile(r'S-1-5-[0-9-]+-502'), 'KRBTGT'),
-  (re.compile(r'S-1-5-[0-9-]+-512'), 'Domain Admins'),
-  (re.compile(r'S-1-5-[0-9-]+-513'), 'Domain Users'),
-  (re.compile(r'S-1-5-[0-9-]+-514'), 'Domain Guests'),
-  (re.compile(r'S-1-5-[0-9-]+-515'), 'Domain Computers'),
-  (re.compile(r'S-1-5-[0-9-]+-516'), 'Domain Controllers'),
-  (re.compile(r'S-1-5-[0-9-]+-517'), 'Cert Publishers'),
-  (re.compile(r'S-1-5-[0-9-]+-520'), 'Group Policy Creator Owners'),
-  (re.compile(r'S-1-5-[0-9-]+-533'), 'RAS and IAS Servers'),
+  (re.compile(r'S-1-5-[0-9-]+-500$'), 'Administrator'),
+  (re.compile(r'S-1-5-[0-9-]+-501$'), 'Guest'),
+  (re.compile(r'S-1-5-[0-9-]+-502$'), 'KRBTGT'),
+  (re.compile(r'S-1-5-[0-9-]+-512$'), 'Domain Admins'),
+  (re.compile(r'S-1-5-[0-9-]+-513$'), 'Domain Users'),
+  (re.compile(r'S-1-5-[0-9-]+-514$'), 'Domain Guests'),
+  (re.compile(r'S-1-5-[0-9-]+-515$'), 'Domain Computers'),
+  (re.compile(r'S-1-5-[0-9-]+-516$'), 'Domain Controllers'),
+  (re.compile(r'S-1-5-[0-9-]+-517$'), 'Cert Publishers'),
+  (re.compile(r'S-1-5-[0-9-]+-520$'), 'Group Policy Creator Owners'),
+  (re.compile(r'S-1-5-[0-9-]+-533$'), 'RAS and IAS Servers'),
   (re.compile(r'S-1-5-5-[0-9]+-[0-9]+'), 'Logon Session'),
-  (re.compile(r'S-1-5-21-[0-9-]+-518'), 'Schema Admins'),
-  (re.compile(r'S-1-5-21-[0-9-]+-519'), 'Enterprise Admins'),
-  (re.compile(r'S-1-5-21-[0-9-]+-553'), 'RAS Servers'),
+  (re.compile(r'S-1-5-21-[0-9-]+-518$'), 'Schema Admins'),
+  (re.compile(r'S-1-5-21-[0-9-]+-519$'), 'Enterprise Admins'),
+  (re.compile(r'S-1-5-21-[0-9-]+-553$'), 'RAS Servers'),
 ]
 
 well_known_sids = {
@@ -177,7 +177,7 @@ class GetSIDs(taskmods.DllList):
                 token = task.get_token()
 
                 if not token:
-                    tg.append(None, [int(task.UniqueProcessId),
+                    yield (0, [int(task.UniqueProcessId),
                                      str(task.ImageFileName),
                                      "Token unreadable",
                                      ""])

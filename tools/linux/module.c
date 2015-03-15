@@ -175,7 +175,7 @@ struct rt_hash_bucket {
   struct rtable __rcu     *chain;
 } rt_hash_bucket;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
+#ifndef RADIX_TREE_MAX_TAGS
 #define RADIX_TREE_MAP_SHIFT    (CONFIG_BASE_SMALL ? 4 : 6)
 #define RADIX_TREE_MAP_SIZE     (1UL << RADIX_TREE_MAP_SHIFT)
 #define RADIX_TREE_MAP_MASK     (RADIX_TREE_MAP_SIZE-1)
@@ -192,6 +192,14 @@ struct radix_tree_node {
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)
+#define OUR_OWN_MOD_STRUCTS
+#endif
+
+#if LINUX_VERSION_CODE == KERNEL_VERSION(2,6,18)
+#define OUR_OWN_MOD_STRUCTS
+#endif
+
+#ifdef OUR_OWN_MOD_STRUCTS
 struct module_sect_attr
 {
         struct module_attribute mattr;
@@ -404,6 +412,11 @@ struct slab slab;
 #endif
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,31)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+/* Starting with Linux kernel 3.7 the struct timekeeper is defined in include/linux/timekeeper_internal.h */
+#include <linux/timekeeper_internal.h>
+#else
+/* Before Linux kernel 3.7 the struct timekeeper has to be taken from kernel/time/timekeeping.c */
 
 typedef u64 cycle_t;
 
@@ -465,6 +478,7 @@ struct timekeeper {
 	seqlock_t lock;
 };
 
+#endif
 
 struct timekeeper my_timekeeper;
 

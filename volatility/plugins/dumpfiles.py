@@ -286,7 +286,7 @@ class _CONTROL_AREA(obj.CType):
                     zpad.append([FileOffset, PAGE_SIZE])
                     ptecount += 1
 
-	    # Traverse the singly linked list to its next member.
+            # Traverse the singly linked list to its next member.
             subsection = NextSubsection
 
         return (mdata, zpad)
@@ -367,12 +367,12 @@ class _SHARED_CACHE_MAP(obj.CType):
         VACB.
 
         Args:
-            vacbs: 		The VACB object
-            size: 		How much data should be read from the VACB 
-            shared_cache_map: 	The associated SHARED_CACHE_MAP object
+            vacbs:              The VACB object
+            size:               How much data should be read from the VACB
+            shared_cache_map:   The associated SHARED_CACHE_MAP object
 
         Returns:
-            vacbinfo:    	Extracted VACB meta-information
+            vacbinfo:           Extracted VACB meta-information
 
         """
         # This is used to collect summary information. We will eventually leverage this

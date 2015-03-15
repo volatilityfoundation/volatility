@@ -26,16 +26,20 @@
 """
 
 import volatility.plugins.linux.pslist as linux_pslist
-from volatility.renderers import TreeGrid
 
-class linux_psenv(linux_pslist.linux_pslist):
-    '''Gathers processes along with their static environment variables'''
-    def unified_output(self, data):
-        return TreeGrid([("Name", str),
-                       ("Pid", int),
-                       ("Environment", str)],
-                        self.generator(data))
+class linux_dynamic_env(linux_pslist.linux_pslist):
+    """Recover a process' dynamic environment variables"""
 
-    def generator(self, data):
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Vars", "")])
+    
         for task in data:
-            yield (0, [str(task.comm), int(task.pid), str(task.get_environment())])
+            varstr = ""
+
+            for (key, val) in task.bash_environment():
+                varstr = varstr + "%s=%s " % (key, val)
+                                
+            self.table_row(outfd, task.pid, task.comm, varstr)
+

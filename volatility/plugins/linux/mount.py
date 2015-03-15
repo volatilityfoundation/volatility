@@ -79,7 +79,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         fs_types = self._get_filesystem_types()
 
         hash_mnts = {}
-        for outerlist in mnt_list:
+        for (idx, outerlist) in enumerate(mnt_list):
             if outerlist == outerlist.next:
                 continue
 
@@ -96,14 +96,23 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                 child_mnts[child_mnt.mnt_parent.mnt_parent] = 1
         
         all_mnts = list(set(hash_mnts.keys() + child_mnts.keys()))
-    
-        list_mnts = {}
+
+        list_mnts    = {} 
+        seen_m       = {}
         for mnt in all_mnts:
-            for child_mnt in mnt.mnt_list.list_of_type(mnttype, "mnt_list"):
+            if mnt.v() in seen_m:
+                continue
+            else:
+                seen_m[mnt.v()] = 1 
+
+            for (idx, child_mnt) in enumerate(mnt.mnt_list.list_of_type(mnttype, "mnt_list")):
+                if idx > 20:
+                    break
+
                 list_mnts[child_mnt]            = 1
                 list_mnts[child_mnt.mnt_parent] = 1
                 list_mnts[child_mnt.mnt_parent.mnt_parent] = 1
-       
+
         all_mnts = list(set(all_mnts + list_mnts.keys()))
  
         seen = {}

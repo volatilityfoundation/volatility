@@ -26,6 +26,8 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_network_conns(common.AbstractMacCommand):
     """ Lists network connections from kernel network structures """
@@ -88,16 +90,25 @@ class mac_network_conns(common.AbstractMacCommand):
                     state = ""
                 yield (proto_str, pcbinfo, lip, lport, rip, rport, state)
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Offset (V)", "[addrpad]"), 
-                                  ("Protocol", "4"),
-                                  ("Local IP", "20"),
-                                  ("Local Port", "6"),
-                                  ("Remote IP", "20"),
-                                  ("Remote Port", "6"),
-                                  ("State", ""),
-                                 ])
+    def unified_output(self, data):
+        return TreeGrid([("Offset (V)", Address),
+                                  ("Protocol", str),
+                                  ("Local IP", str),
+                                  ("Local Port", int),
+                                  ("Remote IP", str),
+                                  ("Remote Port", int),
+                                  ("State", str),
+                                 ], self.generator(data))
 
+    def generator(self, data):
         for (proto, pcb, lip, lport, rip, rport, state) in data: 
-            self.table_row(outfd, pcb.obj_offset, proto, lip, lport, rip, rport, state)
+            yield(0, [
+                Address(pcb.obj_offset),
+                str(proto),
+                str(lip),
+                int(lport),
+                str(rip),
+                int(rport),
+                str(state),
+                ])
 

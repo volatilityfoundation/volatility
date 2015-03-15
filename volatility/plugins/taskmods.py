@@ -67,7 +67,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
                 for m in task.get_load_modules():
                     yield (0, [int(pid), Address(m.DllBase), Hex(m.SizeOfImage), Hex(m.LoadCount), str(m.FullDllName or '')])
             else:
-                yield (0, [int(pid), Address(0), 0, 0, "Error reading PEB for pid"])
+                yield (0, [int(pid), Address(0), Hex(0), Hex(0), "Error reading PEB for pid"])
 
     def filter_tasks(self, tasks):
         """ Reduce the tasks based on the user selectable PIDS parameter.
@@ -174,6 +174,28 @@ class PSList(DllList):
 # Inherit from files just for the config options (__init__)
 class MemMap(DllList):
     """Print the memory map"""
+
+    def unified_output(self, data):
+        return TreeGrid([("Process", str),
+                       ("PID", int),
+                       ("Virtual", Address),
+                       ("Physical", Address),
+                       ("Size", Address),
+                       ("DumpFileOffset", Address)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for pid, task, pagedata in data:
+            task_space = task.get_process_address_space()
+            proc = "{0}".format(task.ImageFileName)
+            offset = 0
+            if pagedata:
+                for p in pagedata:
+                    pa = task_space.vtop(p[0])
+                    # pa can be 0, according to the old memmap, but can't == None(NoneObject)
+                    if pa != None:
+                        yield (0, [proc, int(pid), Address(p[0]), Address(pa), Address(p[1]), Address(offset)])
+                        offset += p[1]
 
     def render_text(self, outfd, data):
         first = True

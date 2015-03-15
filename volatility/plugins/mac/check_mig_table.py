@@ -26,6 +26,8 @@
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
 import volatility.debug as debug
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_check_mig_table(common.AbstractMacCommand):
     """ Lists entires in the kernel's MIG table """
@@ -55,13 +57,19 @@ class mac_check_mig_table(common.AbstractMacCommand):
 
             yield (entry.num, rname, entry.routine)
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Index", "8"),
-                          ("Routine Name", "100"),
-                          ("Routine Handler", "[addrpad]")])
+    def unified_output(self, data):
+        return TreeGrid([("Index", str),
+                          ("Routine Name", str),
+                          ("Routine Handler", Address),
+                          ], self.generator(data))
 
+    def generator(self, data):
         for (num, name, routine) in data:
-            self.table_row(outfd, num, name, routine) 
+            yield(0, [
+                str(num),
+                str(name),
+                Address(routine),
+                ])
 
 
 

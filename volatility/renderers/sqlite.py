@@ -12,8 +12,8 @@ class SqliteRenderer(Renderer):
         self._db = None
 
     column_types = [(str, "TEXT"),
-                    (int, "INTEGER"),
-                    (float, "REAL"),
+                    (int, "TEXT"),
+                    (float, "TEXT"),
                     (bytes, "BLOB")]
 
     def _column_type(self, col_type):
@@ -29,7 +29,7 @@ class SqliteRenderer(Renderer):
         accumulator[node] = max(accumulator.values()) + 1
         insert = "INSERT INTO " + self._plugin_name + " VALUES (?, ?, " + ", ".join(["?"] * len(node.values)) + ")"
         print insert, [accumulator[node], accumulator[node.parent]] + list(node.values)
-        self._db.execute(insert, [accumulator[node], accumulator[node.parent]] + list(node.values))
+        self._db.execute(insert, [accumulator[node], accumulator[node.parent]] + [str(v) for v in node.values])
         return accumulator
 
     def render(self, outfd, grid):
@@ -38,7 +38,7 @@ class SqliteRenderer(Renderer):
             debug.error("Please specify a valid output file using --output-file")
 
         self._db = sqlite3.connect(self._config.OUTPUT_FILE, isolation_level = None)
-        create = "CREATE TABLE " + self._plugin_name + "( id INTEGER, rowparent INTEGER, " + \
+        create = "CREATE TABLE IF NOT EXISTS " + self._plugin_name + "( id INTEGER, rowparent INTEGER, " + \
                  ", ".join(['"' + self._sanitize_name(i.name) + '" ' + self._column_type(i.type) for i in grid.columns]) + ")"
         self._db.execute(create)
         grid.visit(None, self._add_row, {None: 0})

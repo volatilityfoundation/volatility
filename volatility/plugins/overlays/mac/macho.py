@@ -317,6 +317,9 @@ class macho_header(macho):
 
         offset = 0
 
+        if self.ncmds > 1024:
+            return
+
         for i in range(self.ncmds):
             cmd = obj.Object(tname, offset = arr_start + offset, vm = self.obj_vm, parent = self)
 

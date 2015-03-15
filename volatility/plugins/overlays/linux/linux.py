@@ -1099,6 +1099,49 @@ class task_struct(obj.CType):
 
         return path
 
+    def get_elf(self, elf_addr):
+        sects = {}
+        ret = ""
+
+        proc_as = self.get_process_address_space()
+
+        elf_hdr = obj.Object("elf_hdr", offset = elf_addr, vm = proc_as)
+
+        if not elf_hdr.is_valid():
+            return ""
+
+        for phdr in elf_hdr.program_headers():
+            if str(phdr.p_type) != 'PT_LOAD':
+                continue
+
+            start = phdr.p_vaddr
+            sz    = phdr.p_memsz
+            end = start + sz
+
+            if start % 4096:
+                start = start & ~0xfff
+
+            if end % 4096:
+                end = (end & ~0xfff) + 4096
+
+            real_size = end - start
+
+            sects[start] = real_size
+ 
+        last_end = -1
+
+        for start in sorted(sects.keys()):
+            read_size = sects[start]
+
+            if last_end != -1 and last_end != start + read_size:
+                debug.error("busted LOAD segments in %s | %d -> %x != %x + %x" % (task.comm, task.pid, last_end, start, read_size))
+
+            buf = proc_as.zread(start, read_size)
+
+            ret = ret + buf
+
+        return ret
+
     @property
     def uid(self):
         ret = self.members.get("uid")
@@ -1499,6 +1542,11 @@ class task_struct(obj.CType):
         for vma in self.get_proc_maps():
             if not (vma.vm_file and str(vma.vm_flags) == "rw-"):
                 continue
+            
+            fname = vma.info(self)[0]
+
+            if fname.find("ld") == -1 and fname != "/bin/bash":
+                continue
 
             env_start = 0
             for off in range(vma.vm_start, vma.vm_end):
@@ -1551,11 +1599,12 @@ class task_struct(obj.CType):
 
                         key = good_varstr[:eqidx]
                         val = good_varstr[eqidx+1:]
-
+                        
                         yield (key, val) 
                     else:
                         break
- 
+
+
     def lsof(self):
         fds = self.files.get_fds()
         max_fds = self.files.get_max_fds()
@@ -1844,16 +1893,8 @@ class task_struct(obj.CType):
 
         elif wall_addr:
             wall  = obj.Object("timespec", offset = wall_addr, vm = self.obj_vm)
-
-            init_task_addr = self.obj_vm.profile.get_symbol("init_task")            
-            init_task  = obj.Object("task_struct", offset = init_task_addr, vm = self.obj_vm)
-
-            time_val = init_task.utime + init_task.stime
-            nsec = time_val * self.TICK_NSEC()
-            tv_sec  = nsec / linux_common.nsecs_per
-            tv_nsec = nsec % linux_common.nsecs_per      
-            timeo = linux_common.vol_timespec(tv_sec, tv_nsec)    
-
+            timeo = linux_common.vol_timespec(0, 0)
+    
         # timekeeper way
         else:
             timekeeper_addr = self.obj_vm.profile.get_symbol("timekeeper")
@@ -1865,10 +1906,10 @@ class task_struct(obj.CType):
 
     # based on 2.6.35 getboottime
     def get_boot_time(self):
-
         (wall, timeo) = self.get_time_vars()
         secs = wall.tv_sec + timeo.tv_sec
         nsecs = wall.tv_nsec + timeo.tv_nsec
+
         secs = secs * -1
         nsecs = nsecs * -1
 
@@ -1886,7 +1927,11 @@ class task_struct(obj.CType):
     def get_task_start_time(self):
 
         start_time = self.start_time
-        start_secs = start_time.tv_sec + (start_time.tv_nsec / linux_common.nsecs_per / 100)
+        if type(start_time) == long:
+            start_secs = start_time
+        else: 
+            start_secs = start_time.tv_sec + (start_time.tv_nsec / linux_common.nsecs_per / 100)
+
         sec = self.get_boot_time() + start_secs
                 
         # convert the integer as little endian 
@@ -2052,7 +2097,23 @@ class VolatilityDTB(obj.VolatilityMagic):
             sym   = "init_level4_pgt"
             shift = 0xffffffff80000000
         
-        yield profile.get_symbol(sym) - shift
+        sym_addr = profile.get_symbol(sym) - shift
+
+        pas = self.obj_vm
+
+        init_task_addr = profile.get_symbol("init_task") 
+        offset         = profile.get_obj_offset("task_struct", "comm")
+   
+        read_addr = init_task_addr - shift + offset
+
+        buf = pas.read(read_addr, 12)        
+      
+        if buf:
+            idx = buf.find("swapper")
+            if idx != 0:
+                sym_addr = sym_addr + 0x1000000
+
+        yield sym_addr
 
 # the intel check, simply checks for the static paging of init_task
 class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
@@ -2067,7 +2128,15 @@ class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
         else:
             shift = 0xffffffff80000000
 
-        yield self.obj_vm.vtop(init_task_addr) == init_task_addr - shift
+        phys  = self.obj_vm.vtop(init_task_addr)
+        check = init_task_addr - shift
+        if phys == check:
+            yield True
+        elif phys == check + 0x1000000:
+            yield True
+        else:
+            yield False
+
 
 # the ARM check, has to check multiple values b/c phones do not map RAM at 0
 class VolatilityLinuxARMValidAS(obj.VolatilityMagic):
@@ -2083,7 +2152,7 @@ class VolatilityLinuxARMValidAS(obj.VolatilityMagic):
             shift = 0xc0000000
         else:
             shift = 0xffffffff80000000
-
+            
         task_paddr = self.obj_vm.vtop(init_task_addr)
         fork_paddr = self.obj_vm.vtop(do_fork_addr)
 

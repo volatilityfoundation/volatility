@@ -51,11 +51,6 @@ class ModDump(procdump.ProcDump):
 
     @cache.CacheDecorator(lambda self: "tests/moddump/regex={0}/ignore-case={1}/base={2}".format(self._config.REGEX, self._config.IGNORE_CASE, self._config.BASE))
     def calculate(self):
-        if self._config.DUMP_DIR == None:
-            debug.error("Please specify a dump directory (--dump-dir)")
-        if not os.path.isdir(self._config.DUMP_DIR):
-            debug.error(self._config.DUMP_DIR + " is not a directory")
-
         addr_space = utils.load_as(self._config)
 
         if self._config.REGEX:
@@ -98,6 +93,10 @@ class ModDump(procdump.ProcDump):
                           str(result)])
 
     def unified_output(self, data):
+        if self._config.DUMP_DIR == None:
+            debug.error("Please specify a dump directory (--dump-dir)")
+        if not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
 
         tg = renderers.TreeGrid([("Module Base", Address),
                                  ("Module Name", str),

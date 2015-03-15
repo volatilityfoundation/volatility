@@ -27,9 +27,24 @@
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_lsmod_iokit(common.AbstractMacCommand):
     """ Lists loaded kernel modules through IOkit """
+
+    def _struct_or_class(self, type_name):
+        """Return the name of a structure or class. 
+
+        More recent versions of OSX define some types as 
+        classes instead of structures, so the naming is
+        a little different.   
+        """
+        if self.addr_space.profile.vtypes.has_key(type_name):
+            return type_name
+        else:
+            return type_name + "_class"
+
 
     def calculate(self):
         common.set_plugin_members(self)
@@ -38,7 +53,7 @@ class mac_lsmod_iokit(common.AbstractMacCommand):
 
         p = obj.Object("Pointer", offset = saddr, vm = self.addr_space) 
 
-        kOSArr = obj.Object("OSArray_class", offset = p, vm = self.addr_space)
+        kOSArr = obj.Object(self._struct_or_class("OSArray"), offset = p, vm = self.addr_space)
 
         if kOSArr == None:
             debug.error("The OSArray_class type was not found in the profile. Please file a bug if you are running aginst Mac >= 10.7")
@@ -46,32 +61,36 @@ class mac_lsmod_iokit(common.AbstractMacCommand):
         kext_arr = obj.Object(theType  = "Array", targetType = "Pointer", offset = kOSArr.array, count = kOSArr.capacity, vm = self.addr_space)
 
         for (i, kext) in enumerate(kext_arr):
-            kext = kext.dereference_as("OSKext_class")
+            kext = kext.dereference_as(self._struct_or_class("OSKext"))
             if kext and kext.is_valid():
                 yield kext
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Offset (V)", "[addrpad]"),
-                                  ("Module Address", "[addrpad]"), 
-                                  ("Size", "8"), 
-                                  ("Refs", "^8"),
-                                  ("Version", "12"),  
-                                  ("Name", "48"),
-                                  ("Path", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Offset (V)", Address),
+                                  ("Module Address", Address),
+                                  ("Size", str),
+                                  ("Refs", str),
+                                  ("Version", str),
+                                  ("Name", str),
+                                  ("Path", str)
+                                  ], self.generator(data))
+
+    def generator(self, data):
         for kext in data:
             path = kext.path
 
             if path:
                 path = str(path.dereference())
 
-            self.table_row(outfd,
-                           kext.kmod_info,
-                           kext.kmod_info.address, 
-                           kext.kmod_info.m("size"),
-                           kext.kmod_info.reference_count, 
-                           kext.version,
-                           kext.kmod_info.name, 
-                           str(path))
+            yield(0, [
+                      Address(kext.kmod_info),
+                      Address(kext.kmod_info.address),
+                      str(kext.kmod_info.m("size")),
+                      str(kext.kmod_info.reference_count),
+                      str(kext.version),
+                      str(kext.kmod_info.name),
+                      str(path)
+                      ])
 
 
 

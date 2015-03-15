@@ -24,6 +24,7 @@
 @contact:      atcuno@gmail.com
 @organization: 
 """
+import os
 
 import volatility.commands as commands
 import volatility.utils as utils
@@ -206,6 +207,17 @@ def get_path(task, filp):
         ret = _get_path_file(task, filp)
 
     return ret
+
+def write_elf_file(dump_dir, task, elf_addr):
+    file_path = os.path.join(dump_dir, "%s.%d.%#8x" % (task.comm, task.pid, elf_addr))
+
+    file_contents = task.get_elf(elf_addr)
+
+    fd = open(file_path, "wb")
+    fd.write(file_contents)
+    fd.close()       
+
+    return file_path 
 
 
 

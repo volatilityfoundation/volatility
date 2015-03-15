@@ -24,6 +24,8 @@
 @organization: 
 """
 
+import os
+
 import volatility.commands as commands
 import volatility.utils as utils
 import volatility.obj as obj
@@ -144,6 +146,12 @@ def get_kernel_addrs_start_end(obj_ref):
     s = obj_ref.profile.get_symbol("_vm_kernel_stext")
     e = obj_ref.profile.get_symbol("_vm_kernel_etext") 
 
+    if s == None:
+        s = obj_ref.profile.get_symbol("_stext")
+       
+    if e == None:
+        e = obj_ref.profile.get_symbol("_etext") 
+    
     start = obj.Object("unsigned long", offset = s, vm = obj_ref.addr_space)
     end   = obj.Object("unsigned long", offset = e, vm = obj_ref.addr_space)
 
@@ -159,6 +167,12 @@ def get_handler_name_addrs(obj_ref):
     s = obj_ref.profile.get_symbol("_vm_kernel_stext")
     e = obj_ref.profile.get_symbol("_vm_kernel_etext") 
 
+    if s == None:
+        s = obj_ref.profile.get_symbol("_stext")
+       
+    if e == None:
+        e = obj_ref.profile.get_symbol("_etext") 
+    
     start = obj.Object("unsigned long", offset = s, vm = obj_ref.addr_space)
     end   = obj.Object("unsigned long", offset = e, vm = obj_ref.addr_space)
 
@@ -215,4 +229,17 @@ def write_vnode_to_file(vnode, file_path):
     fd.close()
 
     return wrote
+
+def write_macho_file(out_dir, proc, exe_address):
+    exe_contents = proc.get_macho(exe_address)     
+ 
+    file_name = "task.{0}.{1:#x}.dmp".format(proc.p_pid, exe_address)
+    file_path = os.path.join(out_dir, file_name)
+
+    outfile = open(file_path, "wb+")
+    outfile.write(exe_contents)            
+    outfile.close()
+
+    return file_path
+
 

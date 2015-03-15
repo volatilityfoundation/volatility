@@ -22,6 +22,7 @@ import volatility.obj as obj
 import volatility.plugins.mac.common as common
 import volatility.utils as utils
 import volatility.plugins.mac.pstasks as pstasks 
+from volatility.renderers import TreeGrid
 
 class mac_calendar(pstasks.mac_tasks):
     """Gets calendar events from Calendar.app"""
@@ -98,12 +99,15 @@ class mac_calendar(pstasks.mac_tasks):
                                         offset = start + match.start() + 40 + 40, )
                         yield proc, "", event
                         
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
 
-        self.table_header(outfd, [("Source", "16"), 
-                          ("Type", "8"),
-                          ("Description", "26"),
-                          ("Event", "")])
+        return TreeGrid([("Source", str), 
+                          ("Type", str),
+                          ("Description", str),
+                          ("Event", str),
+                          ],self.generator(data))
+                          
+    def generator(self, data):
 
         for proc, description, event in data:       
     
@@ -114,6 +118,9 @@ class mac_calendar(pstasks.mac_tasks):
                 tp = "Other"
                 source = "{0}({1})".format(proc.p_comm, proc.p_pid)
 
-            self.table_row(outfd, source, tp, 
-                        description or "(None)",
-                        event)
+            yield (0, [ 
+                        str(source),
+                        str(tp), 
+                        str(description),
+                        str(event),
+                        ])

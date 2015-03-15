@@ -29,9 +29,9 @@ import volatility.obj as obj
 import volatility.utils as utils
 import volatility.plugins.malware.malfind as malfind
 import volatility.plugins.mac.common as mac_common
-import volatility.plugins.mac.pslist as mac_pslist
+import volatility.plugins.mac.pstasks as mac_pstasks
 
-class mac_malfind(mac_pslist.mac_pslist):
+class mac_malfind(mac_pstasks.mac_tasks):
     """Looks for suspicious process mappings"""
 
     def render_text(self, outfd, data):

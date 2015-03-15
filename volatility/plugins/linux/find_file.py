@@ -226,6 +226,9 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             extra = 4096 - extra
             idxs = idxs + 1
 
+        if idxs > 1000000000:
+            raise StopIteration
+
         for idx in range(0, idxs):
             data = self.get_page_contents(inode, idx)
                 

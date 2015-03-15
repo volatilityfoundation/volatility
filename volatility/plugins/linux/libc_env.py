@@ -34,7 +34,7 @@ import volatility.plugins.linux.common  as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
 
 class linux_bash_env(linux_pslist.linux_pslist):
-    """Recover bash's environment variables"""
+    """Recover a process' dynamic environment variables"""
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Pid", "8"), 
@@ -42,9 +42,6 @@ class linux_bash_env(linux_pslist.linux_pslist):
                                   ("Vars", "")])
     
         for task in data:
-            if task.comm.find("bash") == -1:
-                continue
-
             varstr = ""
 
             for (key, val) in task.bash_environment():

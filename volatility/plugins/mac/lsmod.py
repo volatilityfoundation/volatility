@@ -26,6 +26,8 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_lsmod(common.AbstractMacCommand):
     """ Lists loaded kernel modules """
@@ -47,20 +49,23 @@ class mac_lsmod(common.AbstractMacCommand):
                 yield kmod
             kmod = kmod.next
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Offset (V)", "[addrpad]"),
-                                  ("Module Address", "[addrpad]"), 
-                                  ("Size", "8"), 
-                                  ("Refs", "^8"),
-                                  ("Version", "12"),  
-                                  ("Name", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Offset (V)", str),
+                                  ("Module Address", str),
+                                  ("Size", str),
+                                  ("Refs", str),
+                                  ("Version", str),
+                                  ("Name", str),
+                                  ], self.generator(data))
+    def generator(self, data):
         for kmod in data:
-            self.table_row(outfd,
-                           kmod, 
-                           kmod.address, 
-                           kmod.m('size'), 
-                           kmod.reference_count, 
-                           kmod.version, 
-                           kmod.name)
+            yield (0, [
+                           str(kmod),
+                           str(kmod.address),
+                           str(kmod.m('size')),
+                           str(kmod.reference_count),
+                           str(kmod.version),
+                           str(kmod.name),
+                           ])
 
 

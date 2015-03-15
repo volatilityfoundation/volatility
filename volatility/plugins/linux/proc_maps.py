@@ -31,7 +31,7 @@ from volatility.renderers import TreeGrid
 from volatility.renderers.basic import Address
 
 class linux_proc_maps(linux_pslist.linux_pslist):
-    """Gathers process maps for linux"""
+    """Gathers process memory maps"""
 
     def calculate(self):
         linux_common.set_plugin_members(self)

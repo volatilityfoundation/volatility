@@ -95,12 +95,12 @@ class VerInfo(procdump.ProcDump):
                 name = str(module.FullDllName)
             vinfo = pefile.get_version_info()
             if vinfo != None:
-                fileversion = "".format(vinfo.FileInfo.file_version())
-                prodversion = "".format(vinfo.FileInfo.product_version())
-                flags = "".format(vinfo.FileInfo.flags())
-                os = "".format(vinfo.FileInfo.FileOS)
-                filetype = "".format(vinfo.FileInfo.file_type())
-                filedate = "".format(vinfo.FileInfo.FileDate or '')
+                fileversion = "{0}".format(vinfo.FileInfo.file_version())
+                prodversion = "{0}".format(vinfo.FileInfo.product_version())
+                flags = "{0}".format(vinfo.FileInfo.flags())
+                os = "{0}".format(vinfo.FileInfo.FileOS)
+                filetype = "{0}".format(vinfo.FileInfo.file_type())
+                filedate = "{0}".format(vinfo.FileInfo.FileDate or '')
                 infostring = ""
                 for string, value in vinfo.get_file_strings():
                     infostring += "{0} : {1}".format(string, value)

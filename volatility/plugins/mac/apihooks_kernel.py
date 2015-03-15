@@ -27,6 +27,8 @@ import volatility.commands as commands
 import distorm3
 import volatility.plugins.mac.check_sysctl as check_sysctl
 import volatility.plugins.mac.check_trap_table as check_trap_table
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_apihooks_kernel(common.AbstractMacCommand):
     """ Checks to see if system call and kernel functions are hooked """
@@ -488,8 +490,18 @@ class mac_apihooks_kernel(common.AbstractMacCommand):
                        
                         yield ("TrapTable", '-', func_addr, False, modified, False, '-', hook_kext)
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Table Name", "<30"), ("Index", "<6"), ("Address", "[addrpad]"), ("Symbol", "<30"), ("Inlined", "<5"), ("Shadowed","<5"), ("Perms","<6"), ("Hook In", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Table Name", str),
+                         ("Index", str),
+                         ("Address", Address),
+                         ("Symbol", str),
+                         ("Inlined", str),
+                         ("Shadowed",str),
+                         ("Perms", str),
+                         ("Hook In", str),
+                         ], self.generator(data))
+
+    def generator(self, data):
         for (table_name, i, call_addr, hooked, inlined, syscall_shadowed, perms, kext) in data:
             if hooked == False:
                 sym_name = self.profile.get_symbol_by_address_type("kernel", call_addr, "N_FUN")
@@ -514,7 +526,16 @@ class mac_apihooks_kernel(common.AbstractMacCommand):
             else:
                 txt_shadowed = "-"
 
-            self.table_row(outfd, table_name, i, call_addr, sym_name, txt_inlined, txt_shadowed, perms, kext)
+            yield(0, [
+                str(table_name),
+                str(i),
+                Address(call_addr),
+                str(sym_name),
+                str(txt_inlined),
+                str(txt_shadowed),
+                str(perms),
+                str(kext),
+                ])
 
 
 

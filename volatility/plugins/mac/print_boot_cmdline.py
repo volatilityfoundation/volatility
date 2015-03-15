@@ -26,6 +26,8 @@
 
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+
 
 class mac_print_boot_cmdline(common.AbstractMacCommand):
     """ Prints kernel boot arguments """
@@ -39,7 +41,10 @@ class mac_print_boot_cmdline(common.AbstractMacCommand):
  
         yield bootargs.CommandLine
  
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Command Line", "")])
+    def unified_output(self, data):
+        return TreeGrid([("Command Line", str),
+                         ], self.generator(data))
+
+    def generator(self, data):
         for cmdline in data:
-            self.table_row(outfd, cmdline)
+            yield(0, [str(cmdline),])

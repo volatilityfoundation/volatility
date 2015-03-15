@@ -30,7 +30,7 @@ import volatility.plugins.linux.pslist as linux_pslist
 from volatility.renderers import TreeGrid
 
 class linux_lsof(linux_pslist.linux_pslist):
-    """Lists open files"""
+    """Lists file descriptors and their path"""
 
     def unified_output(self, data):
         return TreeGrid([("Pid", int),

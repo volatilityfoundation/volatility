@@ -64,8 +64,12 @@ class mac_recover_filesystem(mac_common.AbstractMacCommand):
             if os.path.exists(out_path) and os.path.isdir(out_path):
                 shutil.rmtree(out_path) 
 
-            mac_common.write_vnode_to_file(vnode, out_path)             
-            ret = 1
+            if out_path.endswith("..namedfork/rsrc"):
+                ret = 0
+            else:
+                mac_common.write_vnode_to_file(vnode, out_path)             
+                ret = 1
+        
         elif vnode.is_dir():
             ret = 1
         else:
