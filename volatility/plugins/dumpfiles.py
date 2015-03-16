@@ -1049,9 +1049,7 @@ class DumpFiles(common.AbstractWindowsCommand):
                 if len(summaryinfo['present']) == 0:
                     continue
 
-                #of = open(summaryinfo['ofpath'], 'wb')
                 of = BytesIO()
-
                 for mdata in summaryinfo['present']:
                     rdata = None
                     if not mdata[0]:
@@ -1088,9 +1086,7 @@ class DumpFiles(common.AbstractWindowsCommand):
                 if len(summaryinfo['present']) == 0:
                     continue
 
-                #of = open(summaryinfo['ofpath'], 'wb')
                 of = BytesIO()
-
                 for mdata in summaryinfo['present']:
                     rdata = None
                     if not mdata[0]:
@@ -1126,8 +1122,6 @@ class DumpFiles(common.AbstractWindowsCommand):
                 of.close()
 
             elif summaryinfo['type'] == "SharedCacheMap":
-
-                #of = open(summaryinfo['ofpath'], 'wb')
                 of = BytesIO()
                 for vacb in summaryinfo['vacbary']:
                     if not vacb:
