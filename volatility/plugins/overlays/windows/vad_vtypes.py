@@ -76,7 +76,7 @@ class VadTraverser(obj.CType):
 
 class VadFlags(obj.CType):
     def __str__(self):
-        return ", ".join(["%s: %s" % (name, self.m(name)) for name in sorted(self.members.keys()) if self.m(name) != 0])
+        return ", ".join(["{0}: {1}".format(name, self.m(name)) for name in sorted(self.members.keys()) if self.m(name) != 0])
 
 class _MMVAD_FLAGS(VadFlags):
     pass
