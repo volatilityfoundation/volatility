@@ -128,6 +128,18 @@ class HashDump(common.AbstractWindowsCommand):
             else:
                 outfd.write(d + "\n")
 
+    # Note: we may want to break up the different fields 
+    # in addition to storing the constructed hash.
+    # for now we're just yielding the hash 
+    # Also applies to CacheDump
+    def unified_output(self, data):
+        return TreeGrid([("Hash", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for d in data:
+            yield (0, [str(d)])
+
 class CacheDump(common.AbstractWindowsCommand):
     """Dumps cached domain hashes from memory"""
 
@@ -162,3 +174,11 @@ class CacheDump(common.AbstractWindowsCommand):
                 debug.debug("Unable to read hashes from registry")
             else:
                 outfd.write(d + "\n")
+
+    def unified_output(self, data):
+        return TreeGrid([("Hash", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for d in data:
+            yield (0, [str(d)])
