@@ -38,7 +38,7 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
             help = "File to save the generated configuration")
 
         config.add_option("EXCLUDE-CONF", default = False, short_option = "E",
-            action = "store_true", help = "Do not read options from configuration files")
+            action = "store_true", help = "Save only options specified on the command line (rather than configuration files)")
 
         config.add_option("MODIFY", default = False, short_option = "M",
             action = "store_true", help = "Modify (rather than override) the generated configuration file")
