@@ -245,6 +245,11 @@ class Netscan(common.AbstractScanCommand):
 
             lendpoint = "{0}:{1}".format(laddr, lport)
             rendpoint = "{0}:{1}".format(raddr, rport)
+            pid = -1
+            owner = ""
+            if net_object.Owner != None:
+                pid = int(net_object.Owner.UniqueProcessId)
+                owner = str(net_object.Owner.ImageFileName)
 
             yield (0, 
                 [Address(net_object.obj_offset), 
@@ -252,7 +257,7 @@ class Netscan(common.AbstractScanCommand):
                 lendpoint,
                 rendpoint, 
                 str(state), 
-                int(net_object.Owner.UniqueProcessId),
-                str(net_object.Owner.ImageFileName),
+                pid,
+                owner,
                 str(net_object.CreateTime or '')])
 
