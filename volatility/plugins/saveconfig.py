@@ -19,6 +19,7 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
 import volatility.plugins.common as common
 import volatility.conf as conf
 import volatility.win32.tasks as tasks
@@ -52,15 +53,28 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
 
         ## Used to make sure we do not save our own options and options that are already saved
         self._exclude_options = ["dest", "exclude_conf", "modify", "offsets", "auto"]
+
         ## Used to store suggested profiles based on kdbg search
         self.suglist = []
+
         ## Used to save the generated configuration
         self.new_config = ConfigParser.RawConfigParser()
+
         ## Where to output the generated configuration file
         self.save_location = self._config.DEST
 
+	## Used if we 'aborted' due to not wanting to overwrite an existing file
+	self.abort = False
+
 
     def calculate(self):
+	## Stop executing if the user did not mean to overwrite the file
+	if os.path.isfile(self.save_location):
+		resp = raw_input("Are you sure you want to overwrite {}? [Y/n] ".format(self.save_location)) 
+		if resp.upper() == 'N':
+			self.abort = True
+			return # Not continuing 
+
         ## Read from existing target configuration (if modifying)
         if self._config.MODIFY:
             self.new_config.read(self.save_location)
@@ -114,7 +128,7 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
             pass
 
 
-        ## Write the actual configuration file
+        ## Write the new configuration file
         with open(self.save_location, "wb") as configfile:
             self.new_config.write(configfile)
 
@@ -132,14 +146,17 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
 
     def render_text(self, outfd, data):
         outfd.write("\n")
-        self.table_header(outfd, [("Option", self.max_width()[0]), ("Value", self.max_width()[1])])
-        ## Print out the final saved configuration
-        for opt, val in self.new_config.items("DEFAULT"):
-            self.table_row(outfd, opt, val)
+	if self.abort:
+		print ("No configuration file created")
+	else:
+        	if len(self.suglist) > 1:
+            		outfd.write("\nSuggested profiles: {}\n".format(", ".join(self.suglist)))
+        	if self.suglist:
+           		outfd.write("Selected profile: {}\n".format(self.suglist[0]))
 
-        if len(self.suglist) > 1:
-            outfd.write("\nSuggested profiles: {}\n".format(", ".join(self.suglist)))
-        if self.suglist:
-            outfd.write("Selected profile: {}\n".format(self.suglist[0]))
+        	self.table_header(outfd, [("Option", self.max_width()[0]), ("Value", self.max_width()[1])])
+        	## Print out the final saved configuration
+        	for opt, val in self.new_config.items("DEFAULT"):
+            		self.table_row(outfd, opt, val)
 
-        outfd.write("\nConfiguration saved to {}\n".format(self.save_location))
+        	outfd.write("\nConfiguration saved to {}\n".format(self.save_location))
