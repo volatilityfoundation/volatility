@@ -34,9 +34,9 @@ class mac_netstat(mac_tasks.mac_tasks):
     def unified_output(self, data):
         return TreeGrid([("Proto", str),
                          ("Local IP", str),
-                         ("Local Port", str),
+                         ("Local Port", int),
                          ("Remote IP", str),
-                         ("Remote Port", str),
+                         ("Remote Port", int),
                          ("State", str),
                          ("Process", str),
                          ("PID", str)
@@ -52,10 +52,10 @@ class mac_netstat(mac_tasks.mac_tasks):
                       yield(0, [
                                 "UNIX", 
                                 str(path).strip(), 
-                                "-", 
-                                "-", 
-                                "-", 
-                                "-", 
+                                0,
+                                "-",
+                                0,
+                                "-",
                                 "-",
                                 "-",
                                 ])
@@ -65,9 +65,9 @@ class mac_netstat(mac_tasks.mac_tasks):
                     yield(0, [
                             str(proto), 
                             str(lip), 
-                            str(lport), 
+                            int(lport),
                             str(rip), 
-                            str(rport), 
+                            int(rport),
                             str(state), 
                             str(proc.p_comm),
                             str(proc.p_pid),

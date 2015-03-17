@@ -90,23 +90,23 @@ class mac_route(common.AbstractMacCommand):
     def unified_output(self, data):
 
         return TreeGrid([("Source IP", str), 
-                                  ("Dest. IP", str), 
-                                  ("Name", str), 
-                                  ("Sent", str),
-                                  ("Recv", str),
-                                  ("Time", str), 
-                                  ("Exp.", str), 
-                                  ("Delta", str)
-                                  ], self.generator(data))
+                        ("Dest. IP", str),
+                        ("Name", str),
+                        ("Sent", int),
+                        ("Recv", int),
+                        ("Time", str),
+                        ("Exp.", int),
+                        ("Delta", int)
+                        ], self.generator(data))
     def generator(self, data):
         for rt in data:
             yield (0, [
                     str(rt.source_ip), 
                     str(rt.dest_ip),
                     str(rt.name),
-                    str(rt.sent), 
-                    str(rt.rx), 
+                    int(rt.sent),
+                    int(rt.rx),
                     str(rt.get_time()), 
-                    str(rt.expire()), 
-                    str(rt.delta),
+                    int(rt.expire()),
+                    int(rt.delta),
                     ])    

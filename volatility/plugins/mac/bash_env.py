@@ -32,20 +32,27 @@ import volatility.debug as debug
 import volatility.addrspace as addrspace
 import volatility.plugins.mac.common  as mac_common
 import volatility.plugins.mac.pstasks as mac_tasks
+from volatility.renderers import TreeGrid
 
 class mac_bash_env(mac_tasks.mac_tasks):
     """Recover bash's environment variables"""
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("Pid", "8"), 
-                                  ("Name", "20"),
-                                  ("Vars", "")])
-                                    
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                        ("Name", str),
+                        ("Vars", str),
+                        ], self.generator(data))
+
+    def generator(self, data):
         for task in data:
             varstr = ""
 
             for (key, val) in task.bash_environment():
                 varstr = varstr + "%s=%s " % (key, val)
 
-            self.table_row(outfd, task.p_pid, task.p_comm, varstr)
+            yield(0, [
+                  int(task.p_pid),
+                  str(task.p_comm),
+                  str(varstr),
+                  ])
 

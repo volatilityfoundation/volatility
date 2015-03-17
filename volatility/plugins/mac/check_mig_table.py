@@ -58,7 +58,7 @@ class mac_check_mig_table(common.AbstractMacCommand):
             yield (entry.num, rname, entry.routine)
 
     def unified_output(self, data):
-        return TreeGrid([("Index", str),
+        return TreeGrid([("Index", int),
                           ("Routine Name", str),
                           ("Routine Handler", Address),
                           ], self.generator(data))
@@ -66,7 +66,7 @@ class mac_check_mig_table(common.AbstractMacCommand):
     def generator(self, data):
         for (num, name, routine) in data:
             yield(0, [
-                str(num),
+                int(num),
                 str(name),
                 Address(routine),
                 ])

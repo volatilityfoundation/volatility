@@ -29,6 +29,7 @@ import volatility.obj as obj
 import volatility.plugins.mac.common as mac_common
 import volatility.plugins.mac.pslist as mac_pslist
 from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_ldrmodules(mac_pslist.mac_pslist):
     """Compares the output of proc maps with the list of libraries from libdl"""
@@ -80,7 +81,7 @@ class mac_ldrmodules(mac_pslist.mac_pslist):
     def unified_output(self, data):
         return TreeGrid([("Pid", int),
                         ("Name", str),
-                        ("Start", str),
+                        ("Start", Address),
                         ("File Path", str),
                         ("Kernel", str),
                         ("Dyld", str),
@@ -101,7 +102,7 @@ class mac_ldrmodules(mac_pslist.mac_pslist):
             yield(0, [
                 int(task.p_pid),
                 str(task.p_comm),
-                str(vm_start),
+                Address(vm_start),
                 str(map_name),
                 str(pmaps),
                 str(dmaps),

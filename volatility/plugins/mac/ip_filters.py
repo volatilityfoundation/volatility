@@ -69,10 +69,10 @@ class mac_ip_filters(lsmod.mac_lsmod):
 
     def unified_output(self, data):
         return TreeGrid([("Context", str),
-                                  ("Filter", str),
-                                  ("Pointer", Address),
-                                  ("Status", str)
-                                  ], self.generator(data))
+                        ("Filter", str),
+                        ("Pointer", Address),
+                        ("Status", str)
+                        ], self.generator(data))
 
     def generator(self, data):
         for (good, context, fname, ptr) in data:

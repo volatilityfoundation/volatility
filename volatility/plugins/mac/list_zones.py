@@ -46,9 +46,9 @@ class mac_list_zones(common.AbstractMacCommand):
  
     def unified_output(self, data):
         return TreeGrid([("Name", str),
-                         ("Active Count", str),
-                         ("Free Count", str),
-                         ("Element Size", str)
+                         ("Active Count", int),
+                         ("Free Count", int),
+                         ("Element Size", int)
                         ], self.generator(data))
 
     def generator(self, data):
@@ -61,11 +61,10 @@ class mac_list_zones(common.AbstractMacCommand):
                 sum_count = zone.sum_count - zone.count
             else:
                 sum_count = "N/A"
-
             yield(0, [
                 str(name),
-                str(zone.count),
-                str(sum_count),
-                str(zone.elem_size),
+                int(zone.count),
+                int(sum_count),
+                int(zone.elem_size),
             ])
 

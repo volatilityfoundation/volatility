@@ -39,7 +39,7 @@ class mac_threads_simple(pstasks.mac_tasks):
         return TreeGrid([("PID",int),
                         ("Name", str),
                         ("Start Time", str),
-                        ("Priority", str),
+                        ("Priority", int),
                         ("Start Function", Address),
                         ("Function Map", str),
                         ], self.generator(data))
@@ -63,7 +63,7 @@ class mac_threads_simple(pstasks.mac_tasks):
                     int(proc.p_pid),
                     str(proc.p_comm),
                     str(th.start_time()),
-                    str(th.priority),
+                    int(th.priority),
                     Address(func_addr),
                     str(handler),
                     ])
