@@ -116,3 +116,28 @@ class DLLDump(procdump.ProcDump):
                            ("Module Base", Address),
                            ("Module Name", str),
                            ("Result", str)], self.generator(data))
+
+    def render_text(self, outfd, data):
+        if self._config.DUMP_DIR == None:
+            debug.error("Please specify a dump directory (--dump-dir)")
+        if not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
+
+        self.table_header(outfd,
+                          [("Process(V)", "[addrpad]"),
+                           ("Name", "20"),
+                           ("Module Base", "[addrpad]"),
+                           ("Module Name", "20"),
+                           ("Result", "")])
+
+        for proc, ps_ad, mod_base, mod_name in data:
+            if not ps_ad.is_valid_address(mod_base):
+                result = "Error: DllBase is paged"
+            else:
+                process_offset = ps_ad.vtop(proc.obj_offset)
+                dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod_base)
+                result = self.dump_pe(ps_ad, mod_base, dump_file)
+            self.table_row(outfd,
+                    proc.obj_offset,
+                    proc.ImageFileName,
+                    mod_base, str(mod_name or ''), result)

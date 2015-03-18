@@ -106,3 +106,28 @@ class Envars(taskmods.DllList):
                         Address(task.Peb.ProcessParameters.Environment),
                         str(var),
                         str(val)])
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd,
+            [("Pid", "8"),
+             ("Process", "20"),
+             ("Block", "[addrpad]"),
+             ("Variable", "30"),
+             ("Value", ""),
+            ])
+
+        if self._config.SILENT:
+            silent_vars = self._get_silent_vars()
+
+        for task in data:
+            for var, val in task.environment_variables():
+                if self._config.SILENT:
+                    if var in silent_vars:
+                        continue 
+                self.table_row(outfd,
+                    task.UniqueProcessId,
+                    task.ImageFileName,
+                    task.Peb.ProcessParameters.Environment, 
+                    var, val
+                    )

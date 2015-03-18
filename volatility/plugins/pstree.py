@@ -115,6 +115,55 @@ class PSTree(common.AbstractWindowsCommand):
         tg = renderers.TreeGrid(cols, self.generator(data))
         return tg
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, 
+                         [("Name", "<50"), 
+                          ("Pid", ">6"),
+                          ("PPid", ">6"),
+                          ("Thds", ">6"),
+                          ("Hnds", ">6"),
+                          ("Time", "")])
+
+        def draw_branch(pad, inherited_from):
+            for task in data.values():
+                if task.InheritedFromUniqueProcessId == inherited_from:
+
+                    first_column = "{0} {1:#x}:{2:20}".format(
+                                        "." * pad, 
+                                        task.obj_offset, 
+                                        str(task.ImageFileName or '')
+                                        )
+
+                    self.table_row(outfd, 
+                        first_column,
+                        task.UniqueProcessId,
+                        task.InheritedFromUniqueProcessId,
+                        task.ActiveThreads,
+                        task.ObjectTable.HandleCount,
+                        task.CreateTime)
+
+                    if self._config.VERBOSE:
+                        outfd.write("{0}    audit: {1}\n".format(
+                                ' ' * pad, str(task.SeAuditProcessCreationInfo.ImageFileName.Name or '')))
+                        process_params = task.Peb.ProcessParameters
+                        if process_params:
+                            outfd.write("{0}    cmd: {1}\n".format(
+                                ' ' * pad, str(process_params.CommandLine or '')))
+                            outfd.write("{0}    path: {1}\n".format(
+                                ' ' * pad, str(process_params.ImagePathName or '')))
+
+                    try:
+                        del data[int(task.UniqueProcessId)]
+                    except KeyError:
+                        debug.warning("PID {0} PPID {1} has already been seen".format(task.UniqueProcessId, task.InheritedFromUniqueProcessId))
+
+                    draw_branch(pad + 1, task.UniqueProcessId) 
+
+        while len(data.keys()) > 0:
+            keys = data.keys()
+            root = self.find_root(data, keys[0])
+            draw_branch(0, root)
+
     @cache.CacheDecorator(lambda self: "tests/pstree/verbose={0}".format(self._config.VERBOSE))
     def calculate(self):
 

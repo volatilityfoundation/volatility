@@ -64,6 +64,22 @@ class FileScan(common.AbstractScanCommand):
     meta_info['os'] = 'WIN_32_XP_SP2'
     meta_info['version'] = '0.1'
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [(self.offset_column(), '#018x'),
+                                  ('#Ptr', '>6'),
+                                  ('#Hnd', '>6'),
+                                  ('Access', '>6'),
+                                  ('Name', '')
+                                  ])
+
+        for file in data:
+            header = file.get_object_header()
+            self.table_row(outfd,
+                         file.obj_offset,
+                         header.PointerCount,
+                         header.HandleCount,
+                         file.access_string(),
+                         str(file.file_name_with_device() or ''))
 
     def unified_output(self, data):
         return TreeGrid([(self.offset_column(), Address),
@@ -131,6 +147,29 @@ class DriverScan(common.AbstractScanCommand):
                        str(header.NameInfo.Name or ''),
                        str(driver.DriverName or '')])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [(self.offset_column(), '#018x'),
+                                  ('#Ptr', '>8'),
+                                  ('#Hnd', '>8'),
+                                  ('Start', '[addrpad]'),
+                                  ('Size', '[addr]'),
+                                  ('Service Key', '20'),
+                                  ('Name', '12'),
+                                  ('Driver Name', '')
+                                  ])
+
+        for driver in data:
+            header = driver.get_object_header()
+            self.table_row(outfd,
+                         driver.obj_offset,
+                         header.PointerCount,
+                         header.HandleCount,
+                         driver.DriverStart,
+                         driver.DriverSize,
+                         str(driver.DriverExtension.ServiceKeyName or ''),
+                         str(header.NameInfo.Name or ''),
+                         str(driver.DriverName or ''))
+
 
 class PoolScanSymlink(poolscan.PoolScanner):
     """Pool scanner for symlink objects"""
@@ -172,6 +211,25 @@ class SymLinkScan(common.AbstractScanCommand):
                        str(link.CreationTime or ''),
                        str(header.NameInfo.Name or ''),
                        str(link.LinkTarget or '')])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [(self.offset_column(), '#018x'),
+                                  ('#Ptr', '>6'),
+                                  ('#Hnd', '>6'),
+                                  ('Creation time', '30'),
+                                  ('From', '<20'),
+                                  ('To', '60'),
+                                  ])
+
+        for link in data:
+            header = link.get_object_header()
+            self.table_row(outfd,
+                        link.obj_offset,
+                        header.PointerCount,
+                        header.HandleCount,
+                        link.CreationTime or '',
+                        str(header.NameInfo.Name or ''),
+                        str(link.LinkTarget or ''))
 
 
 class PoolScanMutant(poolscan.PoolScanner):
@@ -229,6 +287,32 @@ class MutantScan(common.AbstractScanCommand):
                        str(CID),
                        str(header.NameInfo.Name or '')])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [(self.offset_column(), '#018x'),
+                                  ('#Ptr', '>8'),
+                                  ('#Hnd', '>8'),
+                                  ('Signal', '4'),
+                                  ('Thread', '[addrpad]'),
+                                  ('CID', '>9'),
+                                  ('Name', '')
+                                  ])
+
+        for mutant in data:
+            header = mutant.get_object_header()
+
+            if mutant.OwnerThread.is_valid():
+                thread = mutant.OwnerThread.dereference_as('_ETHREAD')
+                CID = "{0}:{1}".format(thread.Cid.UniqueProcess, thread.Cid.UniqueThread)
+            else:
+                CID = ""
+
+            self.table_row(outfd,
+                         mutant.obj_offset,
+                         header.PointerCount,
+                         header.HandleCount,
+                         mutant.Header.SignalState,
+                         mutant.OwnerThread, CID,
+                         str(header.NameInfo.Name or ''))
 
 
 class PoolScanProcess(poolscan.PoolScanner):
@@ -320,3 +404,22 @@ class PSScan(common.AbstractScanCommand):
                        str(eprocess.CreateTime or ''),
                        str(eprocess.ExitTime or '')])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [(self.offset_column(), '#018x'),
+                                  ('Name', '16'),
+                                  ('PID', '>6'),
+                                  ('PPID', '>6'),
+                                  ('PDB', '[addrpad]'),
+                                  ('Time created', '30'),
+                                  ('Time exited', '30')
+                                  ])
+
+        for eprocess in data:
+            self.table_row(outfd,
+                          eprocess.obj_offset,
+                          eprocess.ImageFileName,
+                          eprocess.UniqueProcessId,
+                          eprocess.InheritedFromUniqueProcessId,
+                          eprocess.Pcb.DirectoryTableBase,
+                          eprocess.CreateTime or '',
+                          eprocess.ExitTime or '')

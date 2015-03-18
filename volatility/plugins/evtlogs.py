@@ -273,4 +273,27 @@ class EvtLogs(common.AbstractWindowsCommand):
             for fields in self.parse_evt_info(name, buf):
                 yield (0, [str(fields[0]), str(fields[1]), str(fields[2]), str(fields[3]), str(fields[4]), str(fields[5]), str(fields[6])])
 
+    def render_text(self, outfd, data):
+        if self._config.DUMP_DIR == None:
+            debug.error("Please specify a dump directory (--dump-dir)")
+        if not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
 
+        for name, buf in data: 
+            ## We can use the ntpath module instead of manually replacing the slashes
+            ofname = ntpath.basename(name)
+            
+            ## Dump the raw event log so it can be parsed with other tools
+            if self._config.SAVE_EVT:
+                fh = open(os.path.join(self._config.DUMP_DIR, ofname), 'wb')
+                fh.write(buf)
+                fh.close()
+                outfd.write('Saved raw .evt file to {0}\n'.format(ofname))
+            
+            ## Now dump the parsed, pipe-delimited event records to a file
+            ofname = ofname.replace(".evt", ".txt")
+            fh = open(os.path.join(self._config.DUMP_DIR, ofname), 'wb')
+            for fields in self.parse_evt_info(name, buf):
+                fh.write('|'.join(fields) + "\n")    
+            fh.close()
+            outfd.write('Parsed data sent to {0}\n'.format(ofname))

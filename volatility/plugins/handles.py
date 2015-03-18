@@ -73,8 +73,37 @@ class Handles(taskmods.DllList):
                            ], self.generator(data))
         return tg
 
-    def calculate(self):
+    def render_text(self, outfd, data):
+        offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
 
+        self.table_header(outfd,
+                          [("Offset{0}".format(offsettype), "[addrpad]"),
+                           ("Pid", ">6"),
+                           ("Handle", "[addr]"),
+                           ("Access", "[addr]"),
+                           ("Type", "16"),
+                           ("Details", "")
+                           ])
+
+        if self._config.OBJECT_TYPE:
+            object_list = [s for s in self._config.OBJECT_TYPE.split(',')]
+        else:
+            object_list = []
+
+        for pid, handle, object_type, name in data:
+            if object_list and object_type not in object_list:
+                continue
+            if self._config.SILENT:
+                if len(name.replace("'", "")) == 0:
+                    continue
+            if not self._config.PHYSICAL_OFFSET:
+                offset = handle.Body.obj_offset
+            else:
+                offset = handle.obj_vm.vtop(handle.Body.obj_offset)
+
+            self.table_row(outfd, offset, pid, handle.HandleValue, handle.GrantedAccess, object_type, name)
+
+    def calculate(self):
         for task in taskmods.DllList.calculate(self):
             pid = task.UniqueProcessId
             if task.ObjectTable.HandleTableList:

@@ -117,3 +117,37 @@ class ProcDump(taskmods.DllList):
                             Address(task.Peb.ImageBaseAddress),
                             str(task.ImageFileName),
                             str(result)])
+
+    def render_text(self, outfd, data):
+        """Renders the tasks to disk images, outputting progress as they go"""
+        if self._config.DUMP_DIR == None:
+            debug.error("Please specify a dump directory (--dump-dir)")
+        if not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
+
+        self.table_header(outfd,
+                          [("Process(V)", "[addrpad]"),
+                           ("ImageBase", "[addrpad]"),
+                           ("Name", "20"),
+                           ("Result", "")])
+
+        for task in data:
+            task_space = task.get_process_address_space()
+            if task_space == None:
+                result = "Error: Cannot acquire process AS"
+            elif task.Peb == None:
+                # we must use m() here, because any other attempt to 
+                # reference task.Peb will try to instantiate the _PEB
+                result = "Error: PEB at {0:#x} is unavailable (possibly due to paging)".format(task.m('Peb'))
+            elif task_space.vtop(task.Peb.ImageBaseAddress) == None:
+                result = "Error: ImageBaseAddress at {0:#x} is unavailable (possibly due to paging)".format(task.Peb.ImageBaseAddress)
+            else:
+                dump_file = "executable." + str(task.UniqueProcessId) + ".exe"
+                result = self.dump_pe(task_space,
+                                task.Peb.ImageBaseAddress,
+                                dump_file)
+            self.table_row(outfd,
+                            task.obj_offset,
+                            task.Peb.ImageBaseAddress,
+                            task.ImageFileName,
+                            result)

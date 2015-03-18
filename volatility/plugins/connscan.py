@@ -68,6 +68,22 @@ class ConnScan(common.AbstractScanCommand):
         return (profile.metadata.get('os', 'unknown') == 'windows' and
                 profile.metadata.get('major', 0) == 5)
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd,
+                          [(self.offset_column(), "[addrpad]"),
+                           ("Local Address", "25"),
+                           ("Remote Address", "25"),
+                           ("Pid", "")
+                           ])
+
+        for tcp_obj in data:
+            local = "{0}:{1}".format(tcp_obj.LocalIpAddress, tcp_obj.LocalPort)
+            remote = "{0}:{1}".format(tcp_obj.RemoteIpAddress, tcp_obj.RemotePort)
+            self.table_row(outfd,
+                            tcp_obj.obj_offset,
+                            local, remote,
+                            tcp_obj.Pid)
+
     def unified_output(self, data):
         return TreeGrid([("Offset(P)", Address),
                        ("LocalAddress", str),
