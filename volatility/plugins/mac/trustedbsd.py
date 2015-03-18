@@ -82,10 +82,9 @@ class mac_trustedbsd(mac_lsmod):
 
     def generator(self, data):
         for (good, check, module, name, ptr) in data:
+                status = "HOOKED"
                 if good:
                     status = "OK"
-                else:
-                    status = "HOOKED"
 
                 yield(0, [
                     str(check),
@@ -94,3 +93,12 @@ class mac_trustedbsd(mac_lsmod):
                     str(module),
                     str(status),
                     ])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Check", "40"), ("Name", "20"), ("Pointer", "[addrpad]"), ("Module", ""), ("Status", "")])
+        for (good, check, module, name, ptr) in data:
+                status = "HOOKED"
+                if good:
+                    status = "OK"
+
+                self.table_row(outfd, check, name, ptr, module, status)

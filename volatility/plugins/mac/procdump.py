@@ -62,4 +62,18 @@ class mac_procdump(mac_tasks.mac_tasks):
                     str(file_path),
                     ])
 
+    def render_text(self, outfd, data):
+        if (not self._config.DUMP_DIR or not os.path.isdir(self._config.DUMP_DIR)):
+            debug.error("Please specify an existing output dir (--dump-dir)")
+ 
+        self.table_header(outfd, [("Task", "25"), 
+                                  ("Pid", "6"),
+                                  ("Address", "[addrpad]"),
+                                  ("Path", "")])
+       
+        for proc in data:
+            exe_address = proc.text_start()
+            if exe_address:
+                file_path = mac_common.write_macho_file(self._config.DUMP_DIR, proc, exe_address)
+                self.table_row(outfd, proc.p_comm, proc.p_pid, exe_address, file_path)
 

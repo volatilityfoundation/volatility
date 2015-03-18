@@ -72,3 +72,22 @@ class mac_netstat(mac_tasks.mac_tasks):
                             str(proc.p_comm),
                             str(proc.p_pid),
                             ])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Proto", "6"),
+                                  ("Local IP", "20"),
+                                  ("Local Port", "6"),
+                                  ("Remote IP", "20"),
+                                  ("Remote Port", "6"),
+                                  ("State", "20"),
+                                  ("Process", "24")])
+        
+        for proc in data:
+            for (family, info) in proc.netstat():
+                if family == 1:
+                    (socket, path) = info
+                    if path:
+                        outfd.write("UNIX {0}\n".format(path))
+                elif family in [2, 30]:
+                    (socket, proto, lip, lport, rip, rport, state) = info
+                    self.table_row(outfd, proto, lip, lport, rip, rport, state, "{}/{}".format(proc.p_comm, proc.p_pid))

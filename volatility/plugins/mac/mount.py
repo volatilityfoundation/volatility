@@ -57,3 +57,11 @@ class mac_mount(common.AbstractMacCommand):
                     str(mount.mnt_vfsstat.f_mntfromname), 
                     str(mount.mnt_vfsstat.f_fstypename),
                     ])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Device", "30"), ("Mount Point", "60"), ("Type", "")])
+        for mount in data:
+            self.table_row(outfd, 
+                           mount.mnt_vfsstat.f_mntonname, 
+                           mount.mnt_vfsstat.f_mntfromname, 
+                           mount.mnt_vfsstat.f_fstypename)

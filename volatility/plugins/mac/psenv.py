@@ -45,3 +45,16 @@ class mac_psenv(pstasks.mac_tasks):
                     str(proc.task.map.pmap.pm_task_map),
                     str(proc.get_environment()),
                     ])
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Bits", "16"),
+                                  ("Arguments", "")])
+        for proc in data:
+            self.table_row(outfd, 
+                           proc.p_pid, 
+                           proc.p_comm, 
+                           str(proc.task.map.pmap.pm_task_map or '')[9:],
+                           proc.get_environment())

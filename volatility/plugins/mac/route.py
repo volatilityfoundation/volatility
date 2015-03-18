@@ -110,3 +110,23 @@ class mac_route(common.AbstractMacCommand):
                     int(rt.expire()),
                     int(rt.delta),
                     ])    
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Source IP", "24"), 
+                                  ("Dest. IP", "24"), 
+                                  ("Name", "^10"), 
+                                  ("Sent", "^18"),
+                                  ("Recv", "^18"), 
+                                  ("Time", "^30"), 
+                                  ("Exp.", "^10"), 
+                                  ("Delta", "")])
+
+        for rt in data:
+            self.table_row(outfd, 
+                           rt.source_ip, 
+                           rt.dest_ip,
+                           rt.name,
+                           rt.sent, rt.rx, 
+                           rt.get_time(), 
+                           rt.expire(), 
+                           rt.delta)

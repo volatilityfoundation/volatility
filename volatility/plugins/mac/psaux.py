@@ -52,3 +52,22 @@ class mac_psaux(pstasks.mac_tasks):
                     int(proc.p_argc),
                     str(proc.get_arguments()),
                     ])
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Bits", "16"),
+                                  ("Stack", "#018x"),
+                                  ("Length", "8"),
+                                  ("Argc", "8"),
+                                  ("Arguments", "")])
+        for proc in data:
+            self.table_row(outfd, 
+                           proc.p_pid, 
+                           proc.p_comm, 
+                           str(proc.task.map.pmap.pm_task_map or '')[9:],
+                           proc.user_stack,
+                           proc.p_argslen,
+                           proc.p_argc,
+                           proc.get_arguments())

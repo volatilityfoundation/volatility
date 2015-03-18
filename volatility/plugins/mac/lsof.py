@@ -47,3 +47,14 @@ class mac_lsof(pstasks.mac_tasks):
                           int(fd),
                           str(filepath),
                           ])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("PID","8"),
+                                  ("File Descriptor", "6"),
+                                  ("File Path", ""),
+                                 ])
+ 
+        for proc in data:
+            for (_, filepath, fd) in proc.lsof():
+                if filepath:
+                    self.table_row(outfd, proc.p_pid, fd, filepath)
