@@ -272,6 +272,34 @@ class PSScan(common.AbstractScanCommand):
             addr_space = utils.load_as(self._config, astype = 'physical')
         return self.scan_results(addr_space)
 
+    def render_dot(self, outfd, data):
+        objects = set()
+        links = set()
+ 
+        for eprocess in data:
+            label = "{0} | {1} |".format(eprocess.UniqueProcessId,
+                eprocess.ImageFileName)
+            if eprocess.ExitTime:
+                label += "exited\\n{0}".format(eprocess.ExitTime)
+                options = ' style = "filled" fillcolor = "lightgray" '
+            else:
+                label += "running"
+                options = ''
+ 
+            objects.add('pid{0} [label="{1}" shape="record" {2}];\n'.format(eprocess.UniqueProcessId,
+                label, options))
+            links.add("pid{0} -> pid{1} [];\n".format(eprocess.InheritedFromUniqueProcessId,
+                eprocess.UniqueProcessId))
+ 
+        ## Now write the dot file
+        outfd.write("digraph processtree { \ngraph [rankdir = \"TB\"];\n")
+        for link in links:
+            outfd.write(link)
+ 
+        for item in objects:
+            outfd.write(item)
+        outfd.write("}")
+
     def unified_output(self, data):
         return TreeGrid([(self.offset_column(), Address),
                        ("Name", str),
