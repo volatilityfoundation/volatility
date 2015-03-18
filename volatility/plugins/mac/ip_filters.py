@@ -86,7 +86,7 @@ class mac_ip_filters(lsmod.mac_lsmod):
                 str(status),
                 ])
 
-def render_text(self, outfd, data):
+    def render_text(self, outfd, data):
         self.table_header(outfd, [("Context", "10"), 
                                   ("Filter", "16"), 
                                   ("Pointer", "[addrpad]"), 
