@@ -65,6 +65,23 @@ class mac_list_kauth_listeners(kauth_scopes.mac_list_kauth_scopes):
                     str(handler_sym),
                     ])
 
+    def render_text(self, outfd, data):
+        common.set_plugin_members(self)
+        self.table_header(outfd, [("Offset", "[addrpad]"),
+                          ("Scope", "24"),
+                          ("IData", "[addrpad]"),
+                          ("Callback Addr", "[addrpad]"),
+                          ("Callback Mod", "24"),
+                          ("Callback Sym", ""),])
 
 
+        kaddr_info = common.get_handler_name_addrs(self)
+
+        for scope in data:
+            scope_name = scope.ks_identifier
+
+            for ls in scope.listeners():
+                cb = ls.kll_callback.v()
+                (module, handler_sym) = common.get_handler_name(kaddr_info, cb)
+                self.table_row(outfd, ls.v(), scope_name, ls.kll_idata, cb, module, handler_sym)
 

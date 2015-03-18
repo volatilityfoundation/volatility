@@ -83,3 +83,14 @@ class mac_list_raw(mac_common.AbstractMacCommand):
                 int(fd),
                 Address(socket),
                 ])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Process", "16"),
+                                  ("PID", "6"),
+                                  ("File Descriptor", "5"),
+                                  ("Socket", "[addrpad]"),
+                                 ])
+
+        for (task, fd, socket) in data:
+            self.table_row(outfd, task.p_comm, task.p_pid, fd, socket)
+

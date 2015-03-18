@@ -60,3 +60,8 @@ class mac_list_files(common.AbstractMacCommand):
                 str(path),
             ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Offset (V)", "[addrpad]"), ("File Path", "")])
+        for vnode, path in data:
+            self.table_row(outfd, vnode.v(), path)    
+

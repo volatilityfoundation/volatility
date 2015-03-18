@@ -72,3 +72,26 @@ class mac_list_kauth_scopes(common.AbstractMacCommand):
                 str(module),
                 str(handler_sym),
                 ])
+
+    def render_text(self, outfd, data):
+        common.set_plugin_members(self)
+        
+        self.table_header(outfd, [("Offset", "[addrpad]"),
+                          ("Name", "24"),
+                          ("IData", "[addrpad]"),
+                          ("Listeners", "5"),
+                          ("Callback Addr", "[addrpad]"),
+                          ("Callback Mod", "24"),
+                          ("Callback Sym", ""),])
+
+        kaddr_info = common.get_handler_name_addrs(self)
+        
+        for scope in data:
+            cb = scope.ks_callback.v()
+            (module, handler_sym) = common.get_handler_name(kaddr_info, cb) 
+            
+            self.table_row(outfd, scope.v(),
+                                  scope.ks_identifier,
+                                  scope.ks_idata,
+                                  len([l for l in scope.listeners()]), 
+                                  cb, module, handler_sym)

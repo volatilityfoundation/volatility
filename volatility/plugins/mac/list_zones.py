@@ -57,10 +57,9 @@ class mac_list_zones(common.AbstractMacCommand):
     
             # sum_count was introduced in 10.8.x
             # do not want to overlay as 0 b/c we mess up subtraction
+            sum_count = "N/A"
             if hasattr(zone, "sum_count"):
                 sum_count = zone.sum_count - zone.count
-            else:
-                sum_count = "N/A"
             yield(0, [
                 str(name),
                 int(zone.count),
@@ -68,3 +67,15 @@ class mac_list_zones(common.AbstractMacCommand):
                 int(zone.elem_size),
             ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Name", "30"), ("Active Count", ">10"), ("Free Count", ">10"), ("Element Size", ">10")])
+        for zone in data:
+            name = zone.zone_name.dereference().replace(" ", ".")
+    
+            # sum_count was introduced in 10.8.x
+            # do not want to overlay as 0 b/c we mess up subtraction
+            sum_count = "N/A"
+            if hasattr(zone, "sum_count"):
+                sum_count = zone.sum_count - zone.count
+
+            self.table_row(outfd, name, zone.count, sum_count, zone.elem_size)
