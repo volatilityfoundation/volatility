@@ -83,3 +83,8 @@ class HiveScan(common.AbstractScanCommand):
     def generator(self, data):
         for hive in data:
             yield(0, [Address(hive.obj_offset)])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [('Offset(P)', '[addrpad]')])
+        for hive in data:
+            self.table_row(outfd, hive.obj_offset)
