@@ -108,5 +108,31 @@ class mac_ldrmodules(mac_pslist.mac_pslist):
                 str(dmaps),
                 ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"),
+                                  ("Name", "16"),
+                                  ("Start", "#018x"),
+                                  ("File Path", "100"),                    
+                                  ("Kernel", "6"),
+                                  ("Dyld", "6"), 
+                                ]) 
 
+        for task_offset, task, proc_as, vm_start, map_name, proc_maps, dl_maps in data:
+            if vm_start in proc_maps[task_offset]:
+                pmaps = "True"
+            else:
+                pmaps = "False"
+
+            if vm_start in dl_maps[task_offset]:
+                dmaps = "True"
+            else:
+                dmaps = "False"
+
+            self.table_row(outfd, 
+                task.p_pid, 
+                str(task.p_comm),
+                vm_start,
+                map_name,
+                pmaps,
+                dmaps)
 

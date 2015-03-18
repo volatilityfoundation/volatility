@@ -76,13 +76,24 @@ class mac_ip_filters(lsmod.mac_lsmod):
 
     def generator(self, data):
         for (good, context, fname, ptr) in data:
+            status = "OK"
             if good == 0:
                 status = "UNKNOWN"
-            else:
-                status = "OK"
             yield (0,[
                 str(context),
                 str(fname),
                 Address(ptr),
                 str(status),
                 ])
+
+def render_text(self, outfd, data):
+        self.table_header(outfd, [("Context", "10"), 
+                                  ("Filter", "16"), 
+                                  ("Pointer", "[addrpad]"), 
+                                  ("Status", "")])
+
+        for (good, context, fname, ptr) in data:
+            status = "OK"
+            if good == 0:
+                status = "UNKNOWN"
+            self.table_row(outfd, context, fname, ptr, status)

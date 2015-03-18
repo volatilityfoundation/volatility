@@ -71,5 +71,11 @@ class mac_check_mig_table(common.AbstractMacCommand):
                 Address(routine),
                 ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Index", "8"),
+                          ("Routine Name", "100"),
+                          ("Routine Handler", "[addrpad]")])
 
+        for (num, name, routine) in data:
+            self.table_row(outfd, num, name, routine) 
 

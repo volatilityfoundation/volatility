@@ -537,5 +537,31 @@ class mac_apihooks_kernel(common.AbstractMacCommand):
                 str(kext),
                 ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Table Name", "<30"), ("Index", "<6"), ("Address", "[addrpad]"), ("Symbol", "<30"), ("Inlined", "<5"), ("Shadowed","<5"), ("Perms","<6"), ("Hook In", "")])
+        for (table_name, i, call_addr, hooked, inlined, syscall_shadowed, perms, kext) in data:
+            if hooked == False:
+                sym_name = self.profile.get_symbol_by_address_type("kernel", call_addr, "N_FUN")
+                if sym_name.find("dtrace") > -1:
+                    sym_name = "[HOOKED] {0}".format(sym_name)
+            elif hooked == True:
+                sym_name = "HOOKED"
+            else:
+                sym_name = hooked
 
+            if inlined == False:
+                txt_inlined = "No"
+            elif inlined == True:
+                txt_inlined = "Yes"
+            else:
+                txt_inlined = "-"
+
+            if syscall_shadowed == False:
+                txt_shadowed = "No"
+            elif syscall_shadowed == True:
+                txt_shadowed = "Yes"
+            else:
+                txt_shadowed = "-"
+
+            self.table_row(outfd, table_name, i, call_addr, sym_name, txt_inlined, txt_shadowed, perms, kext)
 

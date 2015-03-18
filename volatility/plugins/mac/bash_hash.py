@@ -240,4 +240,21 @@ class mac_bash_hash(mac_pslist.mac_pslist):
                     str(bucket.data.path),
                     ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Hits", "6"),
+                                  ("Command", "25"),
+                                  ("Full Path", "")])
+                                    
+        for task in data:
+            # Do we scan everything or just /bin/bash instances?
+            if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
+                continue
+
+            for bucket in task.bash_hash_entries():
+                self.table_row(outfd, task.p_pid, task.p_comm, 
+                           bucket.times_found,
+                           str(bucket.key),
+                           str(bucket.data.path))
 

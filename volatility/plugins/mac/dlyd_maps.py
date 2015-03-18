@@ -51,6 +51,18 @@ class mac_dyld_maps(pstasks.mac_tasks):
                         Address(map.imageLoadAddress),
                         str(map.imageFilePath),
                         ])
-                             
 
+    def render_text(self, outfd, data):
+        common.set_plugin_members(self)
+        self.table_header(outfd, [("Pid", "8"), 
+                          ("Name", "20"),
+                          ("Start", "#018x"),
+                          ("Map Name", "")])
 
+        for proc in data:
+            for map in proc.get_dyld_maps():
+                self.table_row(outfd, 
+                           str(proc.p_pid),
+                           proc.p_comm, 
+                           map.imageLoadAddress,
+                           map.imageFilePath)

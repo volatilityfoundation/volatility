@@ -124,3 +124,22 @@ class mac_calendar(pstasks.mac_tasks):
                         str(description),
                         str(event),
                         ])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Source", "16"), 
+                          ("Type", "8"),
+                          ("Description", "26"),
+                          ("Event", "")])
+
+        for proc, description, event in data:       
+            if proc == None:
+                tp = "Local"
+                source = "(Kernel)"
+            else:
+                tp = "Other"
+                source = "{0}({1})".format(proc.p_comm, proc.p_pid)
+
+            self.table_row(outfd, source, tp, 
+                        description or "(None)",
+                        event)
+

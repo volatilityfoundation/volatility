@@ -118,3 +118,12 @@ class mac_check_trap_table(common.AbstractMacCommand):
                 Address(call_addr),
                 str(sym_name),
                 ])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Table Name", "15"), 
+                                  ("Index", "6"), 
+                                  ("Address", "[addrpad]"), 
+                                  ("Symbol", "<50")])
+
+        for (_, table_name, i, call_addr, sym_name, _) in data:
+            self.table_row(outfd, table_name, i, call_addr, sym_name)

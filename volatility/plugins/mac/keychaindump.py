@@ -76,8 +76,16 @@ class mac_keychaindump(pstasks.mac_tasks):
                 continue
 
             key = "".join('%02X'%ord(k) for k in key_buf)
-            yield(0, [
-                str(key),
-                ])
+            yield(0, [str(key),])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Key", "")])
+
+        for (proc_as, key_buf_ptr) in data:
+            key_buf = proc_as.read(key_buf_ptr, 24)
+            if not key_buf:
+                continue
+
+            key = "".join('%02X'%ord(k) for k in key_buf)
+            self.table_row(outfd, key)
 

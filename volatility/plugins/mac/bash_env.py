@@ -56,3 +56,13 @@ class mac_bash_env(mac_tasks.mac_tasks):
                   str(varstr),
                   ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Vars", "")])
+                                    
+        for task in data:
+            varstr = ""
+            for (key, val) in task.bash_environment():
+                varstr = varstr + "%s=%s " % (key, val)
+            self.table_row(outfd, task.p_pid, task.p_comm, varstr)

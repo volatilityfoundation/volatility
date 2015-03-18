@@ -114,3 +114,11 @@ class mac_check_syscall_shadow(common.AbstractMacCommand):
                 str(op),
                 ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, 
+                          [("Hooked Function", "30"),
+                          ("Hook Address", "[addrpad]"),
+                          ("Instruction", "")])
+
+        for (shadowtbl_addr, func, op) in data:
+            self.table_row(outfd, func, shadowtbl_addr, op)
