@@ -54,3 +54,12 @@ class linux_library_list(linux_pslist.linux_pslist):
         for task, mapping in data:
             yield (0, [str(task.comm), int(task.pid), Address(mapping.l_addr), str(mapping.l_name)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Task", "16"),
+                          ("Pid", "8"),
+                          ("Load Address", "[addrpad]"),
+                          ("Path", ""),
+                          ])
+  
+        for task, mapping in data:
+            self.table_row(outfd, task.comm, task.pid, mapping.l_addr, mapping.l_name)

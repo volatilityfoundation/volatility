@@ -310,5 +310,12 @@ class linux_check_inline_kernel(linux_common.AbstractLinuxCommand):
         for (sym_name, member, hook_type, sym_addr) in data:
             yield (0, [str(sym_name), str(member), str(hook_type), Address(sym_addr)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Name", "48"),
+                                  ("Member", "16"),
+                                  ("Hook Type", "8"),
+                                  ("Hook Address", "[addrpad]")])
 
+        for (sym_name, member, hook_type, sym_addr) in data:
+            self.table_row(outfd, sym_name, member, hook_type, sym_addr)
 

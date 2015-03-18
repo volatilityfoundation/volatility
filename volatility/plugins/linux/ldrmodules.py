@@ -53,5 +53,21 @@ class linux_ldrmodules(linux_pslist.linux_pslist):
                     str(pmaps),
                     str(dmaps)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"),
+                                  ("Name", "16"),
+                                  ("Start", "#018x"),
+                                  ("File Path", "50"),                    
+                                  ("Kernel", "6"),
+                                  ("Libc", "6"), 
+                                ]) 
 
-
+        for task in data:
+            for vm_start, vma_name, pmaps, dmaps in task.ldrmodules():
+                self.table_row(outfd, 
+                    task.pid, 
+                    str(task.comm),
+                    vm_start,
+                    vma_name,
+                    pmaps,
+                    dmaps)

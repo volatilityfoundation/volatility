@@ -137,4 +137,16 @@ class linux_bash_hash(linux_pslist.linux_pslist):
                            str(bucket.key.dereference()),
                            str(bucket.data.path.dereference())])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Hits", "6"),
+                                  ("Command", "25"),
+                                  ("Full Path", "")])
+                                    
+        for task, bucket in data:
+            self.table_row(outfd, task.pid, task.comm, 
+                           bucket.times_found, 
+                           str(bucket.key.dereference()),
+                           str(bucket.data.path.dereference()))
 

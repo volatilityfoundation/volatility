@@ -110,5 +110,9 @@ class linux_hidden_modules(linux_common.AbstractLinuxCommand):
         for module in data:
             yield (0, [Address(module.obj_offset), str(module.name)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Offset (V)", "[addrpad]"), ("Name", "")])
 
+        for module in data:
+            self.table_row(outfd, module.obj_offset, str(module.name))
 

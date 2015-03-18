@@ -167,5 +167,13 @@ class linux_bash(linux_pslist.linux_pslist):
                            str(hist_entry.time_object()), 
                            str(hist_entry.line.dereference())])
             
-
-
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Command Time", "30"),
+                                  ("Command", ""),])
+                                    
+        for task, hist_entry in data:
+            self.table_row(outfd, task.pid, task.comm, 
+                           hist_entry.time_object(), 
+                           hist_entry.line.dereference())

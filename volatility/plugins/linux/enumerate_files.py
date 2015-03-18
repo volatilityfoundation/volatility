@@ -48,4 +48,8 @@ class linux_enumerate_files(linux_common.AbstractLinuxCommand):
     def generator(self, data):
         for inode, inum, path in data:
             yield (0, [int(inum), Address(inode.v()), str(path)])
-            
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Inode Number", "25"), ("Inode", "[addr]"), ("Path", "")])
+        for inode, inum, path in data:
+            self.table_row(outfd, inode, inum, path) 

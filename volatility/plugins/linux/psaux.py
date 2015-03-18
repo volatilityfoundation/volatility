@@ -41,3 +41,9 @@ class linux_psaux(linux_pslist.linux_pslist):
     def generator(self, data):
         for task in data:
             yield (0, [str(task.get_commandline()), int(task.pid), int(task.uid), int(task.gid)])
+
+    def render_text(self, outfd, data):
+        outfd.write("{1:6s} {2:6s} {3:6s} {0:64s}\n".format("Arguments", "Pid", "Uid", "Gid"))
+
+        for task in data:
+            outfd.write("{1:6s} {2:6s} {3:6s} {0:64s}\n".format(task.get_commandline(), str(task.pid), str(task.uid), str(task.gid)))

@@ -92,6 +92,9 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
         for (i, _, idt_addr, sym_name, hooked) in data:
             yield (0, [Address(i), Address(idt_addr), str(sym_name)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Index", "[addr]"), ("Address", "[addrpad]"), ("Symbol", "<30")])
 
-
+        for (i, _, idt_addr, sym_name, hooked) in data:
+            self.table_row(outfd, i, idt_addr, sym_name)
 

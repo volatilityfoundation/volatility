@@ -61,9 +61,7 @@ class linux_check_creds(linux_pslist.linux_pslist):
     def generator(self, data):
         # print out processes that are sharing cred structures              
         for htable in data:
-            
             for (addr, pids) in htable.items():
-
                 if len(pids) > 1:
                     pid_str = ""
                     for pid in pids:
@@ -72,3 +70,16 @@ class linux_check_creds(linux_pslist.linux_pslist):
 
                     yield(0, [str(pid_str)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("PIDs", "8")]) 
+                    
+        # print out processes that are sharing cred structures              
+        for htable in data:
+            for (addr, pids) in htable.items():
+                if len(pids) > 1:
+                    pid_str = ""
+                    for pid in pids:
+                        pid_str = pid_str + "{0:d}, ".format(pid)
+                    pid_str = pid_str[:-2]
+
+                    self.table_row(outfd, pid_str)

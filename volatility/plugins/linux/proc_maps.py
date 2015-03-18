@@ -67,3 +67,27 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                 int(minor),
                 int(ino),
                 str(fname)])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"),
+                                  ("Start", "#018x"),
+                                  ("End",   "#018x"),
+                                  ("Flags", "6"),
+                                  ("Pgoff", "[addr]"),
+                                  ("Major", "6"),
+                                  ("Minor", "6"),
+                                  ("Inode", "10"),
+                                  ("File Path", ""),                    
+                                 ]) 
+        for task, vma in data:
+            (fname, major, minor, ino, pgoff) = vma.info(task)
+
+            self.table_row(outfd, task.pid, 
+                vma.vm_start,
+                vma.vm_end,
+                str(vma.vm_flags),
+                pgoff,
+                major,
+                minor,
+                ino,
+                fname)
