@@ -37,3 +37,13 @@ class Cmdline(taskmods.DllList):
                 cmdline = "{0}".format(str(task.Peb.ProcessParameters.CommandLine or '')).strip()
             yield (0, [str(task.ImageFileName), int(task.UniqueProcessId), str(cmdline)])
 
+    def render_text(self, outfd, data):
+        for task in data:
+            pid = task.UniqueProcessId
+
+            outfd.write("*" * 72 + "\n")
+            outfd.write("{0} pid: {1:6}\n".format(task.ImageFileName, pid))
+
+            if task.Peb:
+                outfd.write("Command line : {0}\n".format(str(task.Peb.ProcessParameters.CommandLine or '')))
+

@@ -71,6 +71,41 @@ class AtomScan(common.AbstractScanCommand):
 
     text_sort_column = "Atom"
 
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd,
+                         [(self.offset_column(), "[addr]"),
+                          ("AtomOfs(V)", "[addrpad]"),
+                          ("Atom", "[addr]"),
+                          ("Refs", "6"),
+                          ("Pinned", "6"),
+                          ("Name", ""),
+                         ])
+
+        for atom_table in data:
+
+            # This defeats the purpose of having a generator, but
+            # its required if we want to be able to sort. We also
+            # filter string atoms here. 
+            atoms = [a for a in atom_table.atoms() if a.is_string_atom()]
+
+            if self._config.SORT_BY == "atom":
+                attr = "Atom"
+            elif self._config.SORT_BY == "refcount":
+                attr = "ReferenceCount"
+            else:
+                attr = "obj_offset"
+
+            for atom in sorted(atoms, key = lambda x: getattr(x, attr)):
+
+                self.table_row(outfd,
+                    atom_table.obj_offset,
+                    atom.obj_offset,
+                    atom.Atom, atom.ReferenceCount,
+                    atom.Pinned,
+                    str(atom.Name or "")
+                    )
+
     def unified_output(self, data):
 
         return renderers.TreeGrid(
@@ -168,3 +203,35 @@ class Atoms(common.AbstractWindowsCommand):
                     int(atom.Pinned),
                     str(atom.Name or "")]
                     )
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd,
+                         [("Offset(V)", "[addr]"),
+                          ("Session", "^10"),
+                          ("WindowStation", "^18"),
+                          ("Atom", "[addr]"),
+                          ("RefCount", "^10"),
+                          ("HIndex", "^10"),
+                          ("Pinned", "^10"),
+                          ("Name", ""),
+                         ])
+
+        for atom_table, window_station in data:
+            for atom in atom_table.atoms():
+            
+                ## Filter string atoms 
+                if not atom.is_string_atom():
+                    continue 
+            
+                self.table_row(outfd,
+                    atom_table.PhysicalAddress,
+                    window_station.dwSessionId,
+                    window_station.Name,
+                    atom.Atom,
+                    atom.ReferenceCount,
+                    atom.HandleIndex,
+                    atom.Pinned,
+                    str(atom.Name or "")
+                    )
+

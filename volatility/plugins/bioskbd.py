@@ -47,6 +47,12 @@ class BiosKbd(common.AbstractWindowsCommand):
         for c, s in data:
             yield (0, [str(self.format_char(c)), Address(ord(c)), Address(s)])
 
+    def render_text(self, outfd, data):
+        """Displays the character codes"""
+        outfd.write("Ascii     Scancode\n")
+        for c, s in data:
+            outfd.write("{0} (0x{1:02x})   0x{2:02x}\n".format(self.format_char(c), ord(c), s))
+
     def format_char(self, c):
         """Prints out an ascii printable character"""
         if c in '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]{};\'#:@~,./<>?!"$%^&*()_+-=`\\|':
