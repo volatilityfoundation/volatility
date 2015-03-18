@@ -150,10 +150,11 @@ class SaveConfig(kdbgscan.KDBGScan): # common.AbstractWindowsCommand):
 		print ("No configuration file created")
 	else:
         	if len(self.suglist) > 1:
-            		outfd.write("\nSuggested profiles: {}\n".format(", ".join(self.suglist)))
+            		outfd.write("Suggested profiles: {}\n".format(", ".join(self.suglist)))
         	if self.suglist:
-           		outfd.write("Selected profile: {}\n".format(self.suglist[0]))
+           		outfd.write("Selected profile: {}\n\n".format(self.suglist[0]))
 
+		print ("Saved configuration options:")
         	self.table_header(outfd, [("Option", self.max_width()[0]), ("Value", self.max_width()[1])])
         	## Print out the final saved configuration
         	for opt, val in self.new_config.items("DEFAULT"):
