@@ -59,7 +59,7 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
 
         # walk the ->tasks list, note that this will *not* display "swapper"
         for task in init_task.tasks:
-                yield task
+            yield task
 
     def calculate(self):
         linux_common.set_plugin_members(self)
