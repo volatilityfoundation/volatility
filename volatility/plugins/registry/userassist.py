@@ -280,15 +280,21 @@ class UserAssist(common.AbstractWindowsCommand):
                         if guid in folder_guids:
                             subname = subname.replace(guid, folder_guids[guid])
                     dat = self.parse_data_dict(dat_raw)
-                    yield (0, [str(reg),
-                        str(self.regapi.reg_get_key_path(key)),
-                        str(key.LastWriteTime), "",
-                        str(subname),
-                        dat["ID"],
-                        dat["count"],
-                        dat["focus"],
-                        dat["time"],
-                        dat["lastupdate"]])
+                    if dat:
+                        yield (0, [str(reg),
+                            str(self.regapi.reg_get_key_path(key)),
+                            str(key.LastWriteTime), "",
+                            str(subname),
+                            dat["ID"],
+                            dat["count"],
+                            dat["focus"],
+                            dat["time"],
+                            dat["lastupdate"]])
+                    else:
+                        yield (0, [str(reg),
+                            str(self.regapi.reg_get_key_path(key)),
+                            str(key.LastWriteTime), "",
+                            str(subname), -1, -1, -1, "-", "-"])
         if not keyfound:
             debug.error("The requested key could not be found in the hive(s) searched")
 
