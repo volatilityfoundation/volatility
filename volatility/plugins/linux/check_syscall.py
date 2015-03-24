@@ -305,4 +305,8 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         for (tableaddr, table_name, i, idx_name, call_addr, sym_name, _) in data:
             yield (0, [str(table_name), int(i), str(idx_name), Address(call_addr), str(sym_name)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Table Name", "6"), ("Index", "5"), ("System Call", "24"), ("Handler Address", "[addrpad]"), ("Symbol", "<60")])
+        for (tableaddr, table_name, i, idx_name, call_addr, sym_name, _) in data:
+            self.table_row(outfd, table_name, i, idx_name, call_addr, sym_name)
 

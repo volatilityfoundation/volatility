@@ -39,7 +39,7 @@ class mac_threads_simple(pstasks.mac_tasks):
         return TreeGrid([("PID",int),
                         ("Name", str),
                         ("Start Time", str),
-                        ("Priority", str),
+                        ("Priority", int),
                         ("Start Function", Address),
                         ("Function Map", str),
                         ], self.generator(data))
@@ -63,10 +63,36 @@ class mac_threads_simple(pstasks.mac_tasks):
                     int(proc.p_pid),
                     str(proc.p_comm),
                     str(th.start_time()),
-                    str(th.priority),
+                    int(th.priority),
                     Address(func_addr),
                     str(handler),
                     ])
 
+    def render_text(self, outfd, data):
+        common.set_plugin_members(self)
+        self.table_header(outfd, [("PID","8"),
+                                  ("Name", "16"),
+                                  ("Start Time", "32"),
+                                  ("Priority", "6"),
+                                  ("Start Function", "[addrpad]"),
+                                  ("Function Map", ""),
+                                 ])
+ 
+        kaddr_info = common.get_handler_name_addrs(self)
+        for proc in data:
+            for th in proc.threads():
+                func_addr = th.continuation
 
+                (module, handler_sym) = common.get_handler_name(kaddr_info, func_addr)
+                if handler_sym:
+                    handler = handler_sym
+                elif module:
+                    handler = module
+                else:
+                    handler = proc.find_map_path(func_addr)
+                
+                self.table_row(outfd, proc.p_pid, proc.p_comm, 
+                    th.start_time(), 
+                    th.priority, 
+                    func_addr, handler)
    

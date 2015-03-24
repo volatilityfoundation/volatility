@@ -103,3 +103,22 @@ class ModDump(procdump.ProcDump):
                                  ("Result", str)],
                                 self.generator(data))
         return tg
+
+    def render_text(self, outfd, data):
+        if self._config.DUMP_DIR == None:
+            debug.error("Please specify a dump directory (--dump-dir)")
+        if not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
+
+        self.table_header(outfd, [("Module Base", "[addrpad]"),
+                           ("Module Name", "20"),
+                           ("Result", "")])
+
+        for addr_space, procs, mod_base, mod_name in data:
+            space = tasks.find_space(addr_space, procs, mod_base)
+            if space == None:
+                result = "Error: Cannot acquire AS"
+            else:
+                dump_file = "driver.{0:x}.sys".format(mod_base)
+                result = self.dump_pe(space, mod_base, dump_file)
+            self.table_row(outfd, mod_base, mod_name, result)

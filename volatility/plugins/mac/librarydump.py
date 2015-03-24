@@ -71,4 +71,24 @@ class mac_librarydump(mac_tasks.mac_tasks):
                     str(file_path),
                     ])
 
+    def render_text(self, outfd, data):
+        if (not self._config.DUMP_DIR or not os.path.isdir(self._config.DUMP_DIR)):
+            debug.error("Please specify an existing output dir (--dump-dir)")
+ 
+        self.table_header(outfd, [("Task", "25"), 
+                                  ("Pid", "6"),
+                                  ("Address", "[addrpad]"),
+                                  ("Path", "")])
+       
+        for proc in data:
+            addresses = []
+            if self._config.BASE:
+                addresses = [self._config.BASE]
+            else:
+                for map in proc.get_dyld_maps():        
+                    addresses.append(map.imageLoadAddress)
+ 
+            for address in addresses:
+                file_path = mac_common.write_macho_file(self._config.DUMP_DIR, proc, address)
+                self.table_row(outfd, proc.p_comm, proc.p_pid, address, file_path)
 

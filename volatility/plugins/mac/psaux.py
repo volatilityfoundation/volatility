@@ -26,6 +26,7 @@
 
 import volatility.plugins.mac.pstasks as pstasks
 from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class mac_psaux(pstasks.mac_tasks):
     """ Prints processes with arguments in user land (**argv) """
@@ -34,9 +35,9 @@ class mac_psaux(pstasks.mac_tasks):
         return TreeGrid([("Pid", int),
                         ("Name", str),
                         ("Bits", str),
-                        ("Stack", str),
-                        ("Length", str),
-                        ("Argc", str),
+                        ("Stack", Address),
+                        ("Length", int),
+                        ("Argc", int),
                         ("Arguments", str)
                         ], self.generator(data))
 
@@ -46,8 +47,27 @@ class mac_psaux(pstasks.mac_tasks):
                     int(proc.p_pid),
                     str(proc.p_comm),
                     str(proc.task.map.pmap.pm_task_map),
-                    str(proc.user_stack),
-                    str(proc.p_argslen),
-                    str(proc.p_argc),
+                    Address(proc.user_stack),
+                    int(proc.p_argslen),
+                    int(proc.p_argc),
                     str(proc.get_arguments()),
                     ])
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Bits", "16"),
+                                  ("Stack", "#018x"),
+                                  ("Length", "8"),
+                                  ("Argc", "8"),
+                                  ("Arguments", "")])
+        for proc in data:
+            self.table_row(outfd, 
+                           proc.p_pid, 
+                           proc.p_comm, 
+                           str(proc.task.map.pmap.pm_task_map or '')[9:],
+                           proc.user_stack,
+                           proc.p_argslen,
+                           proc.p_argc,
+                           proc.get_arguments())

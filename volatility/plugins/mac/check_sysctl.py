@@ -137,3 +137,22 @@ class mac_check_sysctl(common.AbstractMacCommand):
                str(status),
                ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [
+                                  ("Name", "30"), 
+                                  ("Number", "8"), 
+                                  ("Perms", "6"), 
+                                  ("Handler", "[addrpad]"), 
+                                  ("Value", "20"),
+                                  ("Module", "40"),
+                                  ("Status", "5")])
+
+        for (sysctl, name, val, is_known, module_name, status) in data:
+            self.table_row(outfd, 
+               name, 
+               sysctl.oid_number, 
+               sysctl.get_perms(),
+               sysctl.oid_handler, 
+               val,
+               module_name,
+               status)

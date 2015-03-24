@@ -239,3 +239,33 @@ class mac_apihooks(pstasks.mac_tasks):
                 str(addr_mapping),
                 ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Name", "16"),
+                                  ("PID", "6"),
+                                  ("Symbol", "25"),
+                                  ("Sym Address", "[addrpad]"),
+                                  ("Lazy", "5"),
+                                  ("Ptr Hook", "6"),
+                                  ("API Hook", "6"),
+                                  ("Hook Type", "6"),
+                                  ("Hook Addr", "[addrpad]"),
+                                  ("Hook Library", ""),
+                                 ])       
+ 
+        for (task, name, addr, is_lazy, is_ptr_hooked, is_api_hooked, hook_type, hook_addr, addr_mapping) in data:
+            if is_lazy:
+                is_lazy = "True"
+            else:
+                is_lazy = "False"
+
+            if is_ptr_hooked:
+                is_ptr_hooked = "True"
+            else:
+                is_ptr_hooked = "False"
+
+            if is_api_hooked:
+                is_api_hooked = "True"
+            else:
+                is_api_hooked = "False"
+
+            self.table_row(outfd, task.p_comm, task.p_pid, name, addr, is_lazy, is_ptr_hooked, is_api_hooked, hook_type, hook_addr, addr_mapping)

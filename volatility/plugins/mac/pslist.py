@@ -106,4 +106,30 @@ class mac_pslist(common.AbstractMacCommand):
                        str(proc.start_time()),
                        ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Offset", "[addrpad]"),
+                          ("Name", "20"),
+                          ("Pid", "8"),
+                          ("Uid", "8"),
+                          ("Gid", "8"),
+                          ("PGID", "8"),
+                          ("Bits", "12"), 
+                          ("DTB", "#018x"),
+                          ("Start Time", "")])
 
+        for proc in data:
+            if not proc.is_valid() or len(proc.p_comm) == 0:
+                continue
+
+            # Strip the "TASK_MAP_" prefix from the enumeration 
+            bit_string = str(proc.task.map.pmap.pm_task_map or '')[9:]
+
+            self.table_row(outfd, proc.v(),
+                                  proc.p_comm,
+                                  str(proc.p_pid),
+                                  str(proc.p_uid),
+                                  str(proc.p_gid),
+                                  str(proc.p_pgrpid),
+                                  bit_string,
+                                  proc.task.dereference_as("task").map.pmap.pm_cr3,
+                                  proc.start_time())

@@ -101,7 +101,7 @@ class mac_network_conns(common.AbstractMacCommand):
                                  ], self.generator(data))
 
     def generator(self, data):
-        for (proto, pcb, lip, lport, rip, rport, state) in data: 
+        for (proto, pcb, lip, lport, rip, rport, state) in data:
             yield(0, [
                 Address(pcb.obj_offset),
                 str(proto),
@@ -112,3 +112,15 @@ class mac_network_conns(common.AbstractMacCommand):
                 str(state),
                 ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Offset (V)", "[addrpad]"), 
+                                  ("Protocol", "4"),
+                                  ("Local IP", "20"),
+                                  ("Local Port", "6"),
+                                  ("Remote IP", "20"),
+                                  ("Remote Port", "6"),
+                                  ("State", ""),
+                                 ])
+
+        for (proto, pcb, lip, lport, rip, rport, state) in data: 
+            self.table_row(outfd, pcb.obj_offset, proto, lip, lport, rip, rport, state)

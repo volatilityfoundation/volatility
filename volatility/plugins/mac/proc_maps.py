@@ -67,3 +67,22 @@ class mac_proc_maps(pstasks.mac_tasks):
                     ])
 
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"), 
+                          ("Name", "20"),
+                          ("Start", "#018x"),
+                          ("End", "#018x"),
+                          ("Perms", "9"),
+                          ("Map Name", "")])
+
+        for (proc, map) in data:
+            path = map.get_path()
+            if path == "":
+                path = map.get_special_path()
+
+            self.table_row(outfd, 
+                           str(proc.p_pid), proc.p_comm, 
+                           map.links.start, 
+                           map.links.end, 
+                           map.get_perms(), 
+                           path)

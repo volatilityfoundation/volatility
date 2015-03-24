@@ -100,3 +100,28 @@ class mac_psxview(common.AbstractMacCommand):
 
 
 
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd, [('Offset(V)', '[addrpad]'),
+                                  ('Name', '<20'),
+                                  ('PID', '>6'),
+                                  ('pslist', '5'),
+                                  ('parents', '5'),
+                                  ('pid_hash', '5'),
+                                  ('pgrp_hash_table', '5'),
+                                  ('session leaders', '5'),
+                                  ('task processes', '5'),
+                                  ])
+
+        for offset, process, ps_sources in data:
+            self.table_row(outfd,
+                offset,
+                process.p_comm,
+                str(process.p_pid),
+                str(ps_sources['pslist'].__contains__(offset)),
+                str(ps_sources['parents'].__contains__(offset)),
+                str(ps_sources['pid_hash'].__contains__(offset)),
+                str(ps_sources['pgrp_hash_table'].__contains__(offset)),
+                str(ps_sources['session_hash_table'].__contains__(offset)),
+                str(ps_sources['procs_from_tasks'].__contains__(offset)),
+                )

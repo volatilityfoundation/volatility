@@ -281,3 +281,22 @@ class ShimCache(common.AbstractWindowsCommand):
                 yield (0, [str(lm), str(lu), str(path).strip()])
             else:
                 yield (0, [str(lm), "-", str(path).strip()])
+
+    def render_text(self, outfd, data):
+        first = True
+        for path, lm, lu in data:
+            if lu:
+                if first:
+                    self.table_header(outfd, [("Last Modified", "30"),
+                                              ("Last Update", "30"),
+                                              ("Path", ""),
+                                             ])
+                    first = False
+                outfd.write("{0:30} {1:30} {2}\n".format(lm, lu, path))
+            else:
+                if first:
+                    self.table_header(outfd, [("Last Modified", "30"),
+                                              ("Path", ""),
+                                             ])
+                    first = False
+                outfd.write("{0:30} {1}\n".format(lm, path))

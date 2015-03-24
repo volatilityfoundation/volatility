@@ -95,5 +95,21 @@ class mac_moddump(common.AbstractMacCommand):
                 str(file_name),
                 ])
 
+    def render_text(self, outfd, data):
+        if (not self._config.DUMP_DIR or not os.path.isdir(self._config.DUMP_DIR)):
+            debug.error("Please specify an existing output dir (--dump-dir)")
+ 
+        self.table_header(outfd, [("Address", "[addrpad]"), 
+                                  ("Size", "8"), 
+                                  ("Output Path", "")])
+        for kmod in data:
+            start = kmod.address
+            size  = kmod.m("size")
 
+            file_name = "{0}.{1:#x}.kext".format(kmod.name, kmod.obj_offset)
+            mod_file = open(os.path.join(self._config.DUMP_DIR, file_name), 'wb')
+            mod_data = self.addr_space.zread(kmod.address, size)
+            mod_file.write(mod_data)
+            mod_file.close()
+            self.table_row(outfd, start, size, file_name)
 

@@ -201,6 +201,29 @@ class UserAssist(common.AbstractWindowsCommand):
                     if count.Name == "Count":
                         yield win7, name, count
 
+    def parse_data_dict(self, dat_raw):
+        item = {}
+        item["ID"] = -1
+        item["focus"] = -1
+        item["time"] = "N/A"
+        bufferas = addrspace.BufferAddressSpace(self._config, data = dat_raw)
+        uadata = obj.Object("_VOLUSER_ASSIST_TYPES", offset = 0, vm = bufferas)
+        if len(dat_raw) < bufferas.profile.get_obj_size('_VOLUSER_ASSIST_TYPES') or uadata == None:
+            return None
+        if hasattr(uadata, "ID"):
+            item["ID"] = int(uadata.ID)
+        if hasattr(uadata, "Count"):
+            item["count"] = int(uadata.Count)
+        else:
+            item["count"] = int(uadata.CountStartingAtFive if uadata.CountStartingAtFive < 5 else uadata.CountStartingAtFive - 5)
+        if hasattr(uadata, "FocusCount"):
+            seconds = (uadata.FocusTime + 500) / 1000.0
+            time = datetime.timedelta(seconds = seconds) if seconds > 0 else uadata.FocusTime
+            item["focus"] = int(uadata.FocusCount)
+            item["time"] = str(time)
+        item["lastupdate"] = str(uadata.LastUpdated)
+        return item
+
     def parse_data(self, dat_raw):
         bufferas = addrspace.BufferAddressSpace(self._config, data = dat_raw)
         uadata = obj.Object("_VOLUSER_ASSIST_TYPES", offset = 0, vm = bufferas)
@@ -228,7 +251,11 @@ class UserAssist(common.AbstractWindowsCommand):
                       ("LastWrite", str),
                       ("Subkey", str),
                       ("Value", str),
-                      ("Data", str),
+                      ("ID", int),
+                      ("Count", int),
+                      ("FocusCount", int),
+                      ("TimeFocused", str),
+                      ("LastUpdated", str)
                       ], self.generator(data))
 
     def generator(self, data):
@@ -241,7 +268,7 @@ class UserAssist(common.AbstractWindowsCommand):
                         item = "Unknown subkey: " + s.Name.reason
                     else:
                         item = s.Name
-                    yield (0, [str(reg), str(self.regapi.reg_get_key_path(key)), str(key.LastWriteTime), str(item), "", ""])
+                    yield (0, [str(reg), str(self.regapi.reg_get_key_path(key)), str(key.LastWriteTime), str(item), "", -1, -1, "N/A", "N/A"])
                 for subname, dat in self.regapi.reg_yield_values(None, None, given_root = key, thetype = "REG_BINARY"):
                     dat_raw = dat
                     try:
@@ -252,7 +279,59 @@ class UserAssist(common.AbstractWindowsCommand):
                         guid = subname.split("\\")[0]
                         if guid in folder_guids:
                             subname = subname.replace(guid, folder_guids[guid])
-                    dat = self.parse_data(dat_raw)
-                    yield (0, [str(reg), str(self.regapi.reg_get_key_path(key)), str(key.LastWriteTime), "", str(subname), str(dat)])
+                    dat = self.parse_data_dict(dat_raw)
+                    if dat:
+                        yield (0, [str(reg),
+                            str(self.regapi.reg_get_key_path(key)),
+                            str(key.LastWriteTime), "",
+                            str(subname),
+                            dat["ID"],
+                            dat["count"],
+                            dat["focus"],
+                            dat["time"],
+                            dat["lastupdate"]])
+                    else:
+                        yield (0, [str(reg),
+                            str(self.regapi.reg_get_key_path(key)),
+                            str(key.LastWriteTime), "",
+                            str(subname), -1, -1, -1, "-", "-"])
         if not keyfound:
             debug.error("The requested key could not be found in the hive(s) searched")
+
+    def render_text(self, outfd, data):
+        keyfound = False
+        for win7, reg, key in data:
+            if key:
+                keyfound = True
+                outfd.write("----------------------------\n")
+                outfd.write("Registry: {0}\n".format(reg))
+                outfd.write("Path: {0}\n".format(self.regapi.reg_get_key_path(key)))
+                outfd.write("Last updated: {0}\n".format(key.LastWriteTime))
+                outfd.write("\n")
+                outfd.write("Subkeys:\n")
+                for s in self.regapi.reg_get_all_subkeys(None, None, given_root = key):
+                    if s.Name == None:
+                        outfd.write("  Unknown subkey: " + s.Name.reason + "\n")
+                    else:
+                        outfd.write("  {0}\n".format(s.Name))
+                outfd.write("\n")
+                outfd.write("Values:\n")
+                for subname, dat in self.regapi.reg_yield_values(None, None, given_root = key, thetype = "REG_BINARY"):
+                    dat_raw = dat
+                    dat = "\n".join(["{0:#010x}  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(dat)])
+                    try:
+                        subname = subname.encode('rot_13')
+                    except UnicodeDecodeError:
+                        pass
+                    if win7:
+                        guid = subname.split("\\")[0]
+                        if guid in folder_guids:
+                            subname = subname.replace(guid, folder_guids[guid])
+                    d = self.parse_data(dat_raw)
+                    if d != None:
+                        dat = "{0}Raw Data:\n{1}".format(d, dat)
+                    else:
+                        dat = "Raw Data:\n{0}".format(dat)
+                    outfd.write("\n{0:13} {1:15} : {2}\n".format("REG_BINARY", subname, dat))
+        if not keyfound:
+            outfd.write("The requested key could not be found in the hive(s) searched\n")

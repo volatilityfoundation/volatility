@@ -58,4 +58,14 @@ class linux_elfs(linux_pslist.linux_pslist):
             yield (0, [int(task.pid), str(task.comm), Address(start), Address(end), str(soname), ",".join(needed)])
  
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"),
+                                  ("Name", "17"),
+                                  ("Start", "[addrpad]"),
+                                  ("End", "[addrpad]"),
+                                  ("Elf Path", "60"),
+                                  ("Needed", "")
+                                ])
+        for task, elf, start, end, soname, needed in data:
+            self.table_row(outfd, task.pid, task.comm, start, end, soname, ",".join(needed))
 

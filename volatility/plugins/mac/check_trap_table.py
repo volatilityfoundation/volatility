@@ -105,7 +105,7 @@ class mac_check_trap_table(common.AbstractMacCommand):
  
     def unified_output(self, data):
         return TreeGrid([("Table Name", str),
-                        ("Index", str),
+                        ("Index", int),
                         ("Address", Address),
                         ("Symbol", str),
                         ], self.generator(data))
@@ -114,7 +114,16 @@ class mac_check_trap_table(common.AbstractMacCommand):
         for (_, table_name, i, call_addr, sym_name, _) in data:
             yield(0, [
                 str(table_name),
-                str(i),
+                int(i),
                 Address(call_addr),
                 str(sym_name),
                 ])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Table Name", "15"), 
+                                  ("Index", "6"), 
+                                  ("Address", "[addrpad]"), 
+                                  ("Symbol", "<50")])
+
+        for (_, table_name, i, call_addr, sym_name, _) in data:
+            self.table_row(outfd, table_name, i, call_addr, sym_name)

@@ -79,4 +79,9 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
         for outer, inner, hook_addr, hooked in data:
             yield (0, [str(outer), str(inner), Address(hook_addr), str(hooked)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Proto", "5"), ("Hook", "16"), ("Handler", "[addrpad]"), ("Is Hooked", "5")])
+
+        for outer, inner, hook_addr, hooked in data:
+            self.table_row(outfd, outer, inner, hook_addr, hooked)
 

@@ -117,7 +117,7 @@ class mac_adium(pstasks.mac_tasks):
         return TreeGrid([("Pid", int),
                          ("Name", str),
                          ("Start", Address),
-                         ("Size", str),
+                         ("Size", int),
                          ("Path", str),
                          ], 
                          self.generator(data))
@@ -132,12 +132,32 @@ class mac_adium(pstasks.mac_tasks):
             fd.close()
 
             yield(0, [
-                    str(proc.p_pid), 
+                    int(proc.p_pid),
                     str(proc.p_comm), 
                     Address(start),
-                    str(len(msg)),
+                    int(len(msg)),
                     str(file_path),
                     ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"), 
+                          ("Name", "20"),
+                          ("Start", "[addrpad]"),
+                          ("Size", "8"),
+                          ("Path", "")])
 
+        for (proc, start, msg) in data:
+            fname = "Adium.{0}.{1:x}.txt".format(proc.p_pid, start)
+            file_path = os.path.join(self._config.DUMP_DIR, fname)            
+
+            fd = open(file_path, "wb+")
+            fd.write(msg)
+            fd.close()
+
+            self.table_row(outfd, 
+                           str(proc.p_pid), 
+                           proc.p_comm, 
+                           start,
+                           len(msg),
+                           file_path)
 

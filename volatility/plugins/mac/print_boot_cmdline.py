@@ -48,3 +48,8 @@ class mac_print_boot_cmdline(common.AbstractMacCommand):
     def generator(self, data):
         for cmdline in data:
             yield(0, [str(cmdline),])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Command Line", "")])
+        for cmdline in data:
+            self.table_row(outfd, cmdline)

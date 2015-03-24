@@ -209,3 +209,29 @@ class GetSIDs(taskmods.DllList):
              ("Name", str),
             ], generator(data))
 
+    def render_text(self, outfd, data):
+        """Renders the sids as text"""
+
+        user_sids = self.lookup_user_sids()
+        for task in data:
+            token = task.get_token()
+
+            if not token:
+                outfd.write("{0} ({1}): Token unreadable\n".format(task.ImageFileName, int(task.UniqueProcessId)))
+                continue
+
+            for sid_string in token.get_sids():
+                if sid_string in well_known_sids:
+                    sid_name = " ({0})".format(well_known_sids[sid_string])
+                elif sid_string in getservicesids.servicesids:
+                    sid_name = " ({0})".format(getservicesids.servicesids[sid_string])
+                elif sid_string in user_sids:   
+                    sid_name = " ({0})".format(user_sids[sid_string])
+                else:
+                    sid_name_re = find_sid_re(sid_string, well_known_sid_re)
+                    if sid_name_re:
+                        sid_name = " ({0})".format(sid_name_re)
+                    else:
+                        sid_name = ""
+
+                outfd.write("{0} ({1}): {2}{3}\n".format(task.ImageFileName, task.UniqueProcessId, sid_string, sid_name))

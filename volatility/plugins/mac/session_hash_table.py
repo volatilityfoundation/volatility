@@ -57,12 +57,11 @@ class mac_list_sessions(pslist.mac_pslist):
 
     def generator(self, data):
         for sess in data:
+            pid = -1
+            pname = "<INVALID LEADER>"
             if sess.s_leader:
                 pid  = sess.s_leader.p_pid
                 pname = sess.s_leader.p_comm
-            else:
-                pid = -1
-                pname = "<INVALID LEADER>"
                     
             yield(0, [
                 int(pid),
@@ -70,3 +69,16 @@ class mac_list_sessions(pslist.mac_pslist):
                 str(sess.s_login),
                 ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Leader (Pid)",  "8"),
+                                  ("Leader (Name)", "20"),
+                                  ("Login Name", "25")])
+
+        for sess in data:
+            pid = -1
+            pname = "<INVALID LEADER>"
+            if sess.s_leader:
+                pid  = sess.s_leader.p_pid
+                pname = sess.s_leader.p_comm
+                    
+            self.table_row(outfd, pid, pname, sess.s_login)

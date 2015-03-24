@@ -74,3 +74,7 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
         for mod in data:
             yield (0, [Address(mod), str(mod.name)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Module Address", "[address]"), ("Module Name", "24")])
+        for mod in data:
+            self.table_row(outfd, mod, str(mod.name))

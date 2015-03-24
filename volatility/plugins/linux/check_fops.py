@@ -152,4 +152,11 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
         for (what, member, address) in data:
             yield (0, [str(what), str(member), Address(address)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Symbol Name", "42"), 
+                                  ("Member", "30"), 
+                                  ("Address", "[addr]")])
+                                  
+        for (what, member, address) in data:
+            self.table_row(outfd, what, member, address)
 

@@ -97,10 +97,9 @@ class mac_check_syscalls(common.AbstractMacCommand):
 
     def generator(self, data):
         for (_, table_name, i, call_addr, sym_name, hooked) in data:
+            status = "OK"
             if hooked:
                 status = "HOOKED"
-            else:
-                status = "OK"
 
             yield(0, [
                 str(table_name),
@@ -110,5 +109,12 @@ class mac_check_syscalls(common.AbstractMacCommand):
                 str(status),
                 ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Table Name", "15"), ("Index", "6"), ("Address", "[addrpad]"), ("Symbol", "<30"), ("Status", "")])
+        for (_, table_name, i, call_addr, sym_name, hooked) in data:
+            status = "OK"
+            if hooked:
+                status = "HOOKED"
 
+            self.table_row(outfd, table_name, i, call_addr, sym_name, status)
 

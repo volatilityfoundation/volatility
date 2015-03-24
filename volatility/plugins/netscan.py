@@ -245,6 +245,11 @@ class Netscan(common.AbstractScanCommand):
 
             lendpoint = "{0}:{1}".format(laddr, lport)
             rendpoint = "{0}:{1}".format(raddr, rport)
+            pid = -1
+            owner = ""
+            if net_object.Owner != None:
+                pid = int(net_object.Owner.UniqueProcessId)
+                owner = str(net_object.Owner.ImageFileName)
 
             yield (0, 
                 [Address(net_object.obj_offset), 
@@ -252,7 +257,27 @@ class Netscan(common.AbstractScanCommand):
                 lendpoint,
                 rendpoint, 
                 str(state), 
-                int(net_object.Owner.UniqueProcessId),
-                str(net_object.Owner.ImageFileName),
+                pid,
+                owner,
                 str(net_object.CreateTime or '')])
 
+    def render_text(self, outfd, data):
+        outfd.write("{0:<18} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
+            self.offset_column(), "Proto", "Local Address", "Foreign Address",
+            "State", "Pid", "Owner", "Created"))
+
+        for net_object, proto, laddr, lport, raddr, rport, state in data:
+            lendpoint = "{0}:{1}".format(laddr, lport)
+            rendpoint = "{0}:{1}".format(raddr, rport)
+            pid = -1
+            owner = ""
+            if net_object.Owner != None:
+                pid = int(net_object.Owner.UniqueProcessId)
+                owner = str(net_object.Owner.ImageFileName)
+
+            outfd.write("{0:<#18x} {1:<8} {2:<30} {3:<20} {4:<16} {5:<8} {6:<14} {7}\n".format(
+                net_object.obj_offset, proto, lendpoint,
+                rendpoint, state, pid,
+                owner,
+                str(net_object.CreateTime or '')
+                ))

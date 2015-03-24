@@ -71,14 +71,14 @@ class mac_socket_filters(lsmod.mac_lsmod):
             cur = cur.sf_global_next.tqe_next
 
     def unified_output(self, data):
-        return  TreeGrid([("Offset (V)", Address),
-                          ("Filter Name", str),
-                          ("Filter Member", str),
-                          ("Socket (V)", Address),
-                          ("Handler", Address),
-                          ("Module", str),
-                          ("Status", str),
-                          ], self.generator(data))
+        return TreeGrid([("Offset (V)", Address),
+                        ("Filter Name", str),
+                        ("Filter Member", str),
+                        ("Socket (V)", Address),
+                        ("Handler", Address),
+                        ("Module", str),
+                        ("Status", str),
+                        ], self.generator(data))
 
     def generator(self, data):
         for (good, filter, filter_name, filter_socket, member, ptr, module) in data:
@@ -96,3 +96,17 @@ class mac_socket_filters(lsmod.mac_lsmod):
                 str(status),
                 ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Offset (V)", "[addrpad]"),
+                                  ("Filter Name", "50"), 
+                                  ("Filter Member", "16"),
+                                  ("Socket (V)", "[addrpad]"),
+                                  ("Handler", "[addrpad]"), 
+                                  ("Module", "30"),
+                                  ("Status", "")])
+
+        for (good, filter, filter_name, filter_socket, member, ptr, module) in data:
+            status = "OK"
+            if good == 0:
+                status = "UNKNOWN"
+            self.table_row(outfd, filter.obj_offset, filter_name, member, filter_socket, ptr, module, status)

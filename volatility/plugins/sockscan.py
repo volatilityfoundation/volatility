@@ -96,3 +96,24 @@ class SockScan(common.AbstractScanCommand):
                            str(protos.protos.get(sock_obj.Protocol.v(), "-")),
                            str(sock_obj.LocalIpAddress),
                            str(sock_obj.CreateTime)])
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd, [(self.offset_column(), '[addrpad]'),
+                                  ('PID', '>8'),
+                                  ('Port', '>6'),
+                                  ('Proto', '>6'),
+                                  ('Protocol', '15'),
+                                  ('Address', '15'),
+                                  ('Create Time', '')
+                                  ])
+
+        for sock_obj in data:
+            self.table_row(outfd,
+                           sock_obj.obj_offset,
+                           sock_obj.Pid,
+                           sock_obj.LocalPort,
+                           sock_obj.Protocol,
+                           protos.protos.get(sock_obj.Protocol.v(), "-"),
+                           sock_obj.LocalIpAddress,
+                           sock_obj.CreateTime)

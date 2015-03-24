@@ -69,6 +69,31 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
             else:
                 yield (0, [int(pid), Address(0), Hex(0), Hex(0), "Error reading PEB for pid"])
 
+    def render_text(self, outfd, data):
+        for task in data:
+            pid = task.UniqueProcessId
+
+            outfd.write("*" * 72 + "\n")
+            outfd.write("{0} pid: {1:6}\n".format(task.ImageFileName, pid))
+
+            if task.Peb:
+                ## REMOVE this after 2.4, since we have the cmdline plugin now
+                outfd.write("Command line : {0}\n".format(str(task.Peb.ProcessParameters.CommandLine or '')))
+                if task.IsWow64:
+                    outfd.write("Note: use ldrmodules for listing DLLs in Wow64 processes\n")
+                outfd.write("{0}\n".format(str(task.Peb.CSDVersion or '')))
+                outfd.write("\n")
+                self.table_header(outfd,
+                                  [("Base", "[addrpad]"),
+                                   ("Size", "[addr]"),
+                                   ("LoadCount", "[addr]"),
+                                   ("Path", ""),
+                                   ])
+                for m in task.get_load_modules():
+                    self.table_row(outfd, m.DllBase, m.SizeOfImage, m.LoadCount, str(m.FullDllName or ''))
+            else:
+                outfd.write("Unable to read PEB for task.\n")
+
     def filter_tasks(self, tasks):
         """ Reduce the tasks based on the user selectable PIDS parameter.
 
@@ -136,6 +161,70 @@ class PSList(DllList):
                           default = False, cache_invalidator = False,
                           help = "Display physical offsets instead of virtual",
                           action = "store_true")
+
+    def render_text(self, outfd, data):
+
+        offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
+        self.table_header(outfd,
+                          [("Offset{0}".format(offsettype), "[addrpad]"),
+                           ("Name", "20s"),
+                           ("PID", ">6"),
+                           ("PPID", ">6"),
+                           ("Thds", ">6"),
+                           ("Hnds", ">8"),
+                           ("Sess", ">6"),
+                           ("Wow64", ">6"),
+                           ("Start", "30"),
+                           ("Exit", "30")]
+                          )
+
+        for task in data:
+            # PHYSICAL_OFFSET must STRICTLY only be used in the results.  If it's used for anything else,
+            # it needs to have cache_invalidator set to True in the options
+            if not self._config.PHYSICAL_OFFSET:
+                offset = task.obj_offset
+            else:
+                offset = task.obj_vm.vtop(task.obj_offset)
+            self.table_row(outfd,
+                offset,
+                task.ImageFileName,
+                task.UniqueProcessId,
+                task.InheritedFromUniqueProcessId,
+                task.ActiveThreads,
+                task.ObjectTable.HandleCount,
+                task.SessionId,
+                task.IsWow64,
+                str(task.CreateTime or ''),
+                str(task.ExitTime or ''),
+                )
+
+    def render_dot(self, outfd, data):
+        objects = set()
+        links = set()
+ 
+        for eprocess in data:
+            label = "{0} | {1} |".format(eprocess.UniqueProcessId,
+                eprocess.ImageFileName)
+            if eprocess.ExitTime:
+                label += "exited\\n{0}".format(eprocess.ExitTime)
+                options = ' style = "filled" fillcolor = "lightgray" '
+            else:
+                label += "running"
+                options = ''
+ 
+            objects.add('pid{0} [label="{1}" shape="record" {2}];\n'.format(eprocess.UniqueProcessId,
+                label, options))
+            links.add("pid{0} -> pid{1} [];\n".format(eprocess.InheritedFromUniqueProcessId,
+                eprocess.UniqueProcessId))
+ 
+        ## Now write the dot file
+        outfd.write("digraph processtree { \ngraph [rankdir = \"TB\"];\n")
+        for link in links:
+            outfd.write(link)
+
+        for item in objects:
+            outfd.write(item)
+        outfd.write("}")
 
     def unified_output(self, data):
 

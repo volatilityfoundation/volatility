@@ -547,3 +547,12 @@ class GetServiceSids(common.AbstractWindowsCommand):
             if not service:
                 continue
             yield (0, [str(sid), str(service)])
+
+    def render_text(self, outfd, data):
+        """ output to Service SIDs as a dictionary for future use"""
+        outfd.write("servicesids = { \n")
+        for sid, service in data:
+            if not service:
+                continue
+            outfd.write("    '" + sid + "': '" + service + "',\n")
+        outfd.write("}\n")

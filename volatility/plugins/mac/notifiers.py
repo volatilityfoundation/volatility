@@ -137,4 +137,16 @@ class mac_notifiers(lsmod.mac_lsmod):
                 str(status),
                 ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Key", "30"), 
+                                  ("Matches", "40"),
+                                  ("Handler", "[addrpad]"),
+                                  ("Module", "40"),
+                                  ("Status", "")])
 
+        for (good, module, key, _, matches, handler) in data:
+            status = "OK"
+            if good == 0:
+                status = "UNKNOWN"
+
+            self.table_row(outfd, key, matches, handler, module, status)

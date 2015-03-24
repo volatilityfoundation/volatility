@@ -58,6 +58,28 @@ class Modules(common.AbstractWindowsCommand):
                            ], self.generator(data))
         return tg
 
+    def render_text(self, outfd, data):
+        offsettype = "(V)" if not self._config.PHYSICAL_OFFSET else "(P)"
+        self.table_header(outfd,
+                          [("Offset{0}".format(offsettype), "[addrpad]"),
+                           ("Name", "20"),
+                           ('Base', "[addrpad]"),
+                           ('Size', "[addr]"),
+                           ('File', "")
+                           ])
+
+        for module in data:
+            if not self._config.PHYSICAL_OFFSET:
+                offset = module.obj_offset
+            else:
+                offset = module.obj_vm.vtop(module.obj_offset)
+            self.table_row(outfd,
+                         offset,
+                         str(module.BaseDllName  or ''),
+                         module.DllBase,
+                         module.SizeOfImage,
+                         str(module.FullDllName or ''))
+
 
     @cache.CacheDecorator("tests/lsmod")
     def calculate(self):
@@ -84,6 +106,17 @@ class UnloadedModules(common.AbstractWindowsCommand):
                                  ('EndAddress', Address),
                                  ('Time', str)],
                                   generator(data))
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [
+                           ("Name", "20"),
+                           ('StartAddress', "[addrpad]"),
+                           ('EndAddress', "[addrpad]"),
+                           ('Time', "")])
+
+        for drv in data:
+            self.table_row(outfd, drv.Name, drv.StartAddress, 
+                          drv.EndAddress, drv.CurrentTime) 
 
     def calculate(self):
         addr_space = utils.load_as(self._config)

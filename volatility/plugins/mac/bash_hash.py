@@ -30,6 +30,7 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.mac.common as mac_common
 import volatility.plugins.mac.pslist as mac_pslist
+from volatility.renderers import TreeGrid
 
 mac_bash_hash_vtypes = {
     'mac32_pathdata' : [ 8, {
@@ -216,6 +217,29 @@ class mac_bash_hash(mac_pslist.mac_pslist):
         mac_pslist.mac_pslist.__init__(self, config, *args, **kwargs)
         self._config.add_option('SCAN_ALL', short_option = 'A', default = False, help = 'scan all processes, not just those named bash', action = 'store_true')    
 
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                            ("Name", str),
+                            ("Hits", int),
+                            ("Command", str),
+                            ("Full Path", str),
+                            ], self.generator(data))
+
+    def generator(self, data):
+        for task in data:
+            # Do we scan everything or just /bin/bash instances?
+            if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
+                continue
+
+            for bucket in task.bash_hash_entries():
+                yield (0, [
+                    int(task.p_pid),
+                    str(task.p_comm),
+                    int(bucket.times_found),
+                    str(bucket.key),
+                    str(bucket.data.path),
+                    ])
+
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Pid", "8"), 
                                   ("Name", "20"),
@@ -233,5 +257,4 @@ class mac_bash_hash(mac_pslist.mac_pslist):
                            bucket.times_found,
                            str(bucket.key),
                            str(bucket.data.path))
-
 

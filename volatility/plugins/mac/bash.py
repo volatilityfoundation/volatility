@@ -166,3 +166,18 @@ class mac_bash(mac_tasks.mac_tasks):
                     str(hist_entry.time_object()),
                     str(hist_entry.line()),
                     ])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Name", "20"),
+                                  ("Command Time", "30"),
+                                  ("Command", ""),])
+                                    
+        for task in data:
+            if not (self._config.SCAN_ALL or str(task.p_comm) == "bash"):
+                continue
+            
+            for hist_entry in task.bash_history_entries():
+                self.table_row(outfd, task.p_pid, task.p_comm, 
+                           hist_entry.time_object(), 
+                           hist_entry.line())

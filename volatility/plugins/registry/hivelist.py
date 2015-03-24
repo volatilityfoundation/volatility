@@ -70,6 +70,23 @@ class HiveList(hs.HiveScan):
                 yield (0, [Address(hive.obj_offset), Address(hive.obj_vm.vtop(hive.obj_offset)), str(name)])
                 hive_offsets.append(hive.obj_offset)
 
+    def render_text(self, outfd, result):
+        self.table_header(outfd, [('Virtual', '[addrpad]'),
+                                  ('Physical', '[addrpad]'),
+                                  ('Name', ''),
+                                  ])
+
+        hive_offsets = []
+        for hive in result:
+            if hive.Hive.Signature == 0xbee0bee0 and hive.obj_offset not in hive_offsets:
+                try:
+                    name = str(hive.FileFullPath or '') or str(hive.FileUserName or '') or str(hive.HiveRootPath or '') or "[no name]"
+                except AttributeError:
+                    name = "[no name]"
+                # Spec of 10 rather than 8 width, since the # puts 0x at the start, which is included in the width
+                self.table_row(outfd, hive.obj_offset, hive.obj_vm.vtop(hive.obj_offset), name)
+                hive_offsets.append(hive.obj_offset)
+
     @cache.CacheDecorator("tests/hivelist")
     def calculate(self):
         flat = utils.load_as(self._config, astype = 'physical')

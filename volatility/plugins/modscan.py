@@ -86,6 +86,22 @@ class ModScan(common.AbstractScanCommand):
              ('File', str)
             ], generator(data))
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd,
+                          [(self.offset_column(), "#018x"),
+                           ('Name', "20"),
+                           ('Base', "[addrpad]"),
+                           ('Size', "[addr]"),
+                           ('File', "")
+                           ])
+        for ldr_entry in data:
+            self.table_row(outfd,
+                         ldr_entry.obj_offset,
+                         str(ldr_entry.BaseDllName or ''),
+                         ldr_entry.DllBase,
+                         ldr_entry.SizeOfImage,
+                         str(ldr_entry.FullDllName or ''))
+
 class PoolScanThread(poolscan.PoolScanner):
     """Pool scanner for thread objects"""
 
@@ -128,4 +144,23 @@ class ThrdScan(common.AbstractScanCommand):
              ("Create Time", str),
              ("Exit Time", str),
             ], generator(data))
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd,
+                          [(self.offset_column(), "#018x"),
+                           ("PID", ">6"),
+                           ("TID", ">6"),
+                           ("Start Address", "[addr]"),
+                           ("Create Time", "30"),
+                           ("Exit Time", "30"),
+                           ])
+
+        for thread in data:
+            self.table_row(outfd, thread.obj_offset,
+                           thread.Cid.UniqueProcess,
+                           thread.Cid.UniqueThread,
+                           thread.StartAddress,
+                           thread.CreateTime or '',
+                           thread.ExitTime or '',
+                           )
 

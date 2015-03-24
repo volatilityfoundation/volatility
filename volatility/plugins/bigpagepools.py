@@ -189,15 +189,32 @@ class BigPools(common.AbstractWindowsCommand):
         for entry in data:
 
             # Not available until Vista 
+            pool_type = ""
             if hasattr(entry, 'PoolType'):
                 pool_type = entry.PoolType
-            else:
-                pool_type = ""
     
             # Not available until Vista 
+            num_bytes = ""
             if hasattr(entry, 'NumberOfBytes'):
                 num_bytes = hex(entry.NumberOfBytes)
-            else:
-                num_bytes = ""
 
             yield (0, [Address(entry.Va), str(entry.Key), str(pool_type), str(num_bytes)])
+
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Allocation", "[addrpad]"), 
+                                  ("Tag", "8"), 
+                                  ("PoolType", "26"), 
+                                  ("NumberOfBytes", "")])
+
+        for entry in data:
+            # Not available until Vista 
+            pool_type = ""
+            if hasattr(entry, 'PoolType'):
+                pool_type = entry.PoolType
+    
+            # Not available until Vista 
+            num_bytes = ""
+            if hasattr(entry, 'NumberOfBytes'):
+                num_bytes = hex(entry.NumberOfBytes)
+
+            self.table_row(outfd, entry.Va, entry.Key, pool_type, num_bytes)

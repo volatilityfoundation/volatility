@@ -34,7 +34,7 @@ class mac_lsof(pstasks.mac_tasks):
 
     def unified_output(self, data):
         return TreeGrid([("PID",int),
-                        ("File Descriptor", str),
+                        ("File Descriptor", int),
                         ("File Path", str),
                         ], self.generator(data))
 
@@ -44,8 +44,17 @@ class mac_lsof(pstasks.mac_tasks):
                 if filepath:
                     yield(0, [
                           int(proc.p_pid),
-                          str(fd),
+                          int(fd),
                           str(filepath),
                           ])
 
-   
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("PID","8"),
+                                  ("File Descriptor", "6"),
+                                  ("File Path", ""),
+                                 ])
+ 
+        for proc in data:
+            for (_, filepath, fd) in proc.lsof():
+                if filepath:
+                    self.table_row(outfd, proc.p_pid, fd, filepath)

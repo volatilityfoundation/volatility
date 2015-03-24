@@ -90,3 +90,11 @@ class linux_ifconfig(linux_common.AbstractLinuxCommand):
         for (name, ip_addr, mac_addr, promisc) in data:
             yield (0, [str(name), str(ip_addr), str(mac_addr), str(promisc)])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Interface", "16"),
+                                  ("IP Address", "20"),
+                                  ("MAC Address", "18"),
+                                  ("Promiscous Mode", "5")])
+
+        for (name, ip_addr, mac_addr, promisc) in data:
+            self.table_row(outfd, name, ip_addr, mac_addr, promisc)

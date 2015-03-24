@@ -370,15 +370,15 @@ class mac_threads(mac_tasks.mac_tasks):
     def unified_output(self, data):
         return TreeGrid([("Offset", Address),
                                   ("Pid", int),
-                                  ("Tid", str),
+                                  ("Tid", int),
                                   ("UID", str),
                                   ("State", str),
                                   ("Is Active?", str),
                                   ("Options", str),
-                                  ("Priority", str),
+                                  ("Priority", int),
                                   ("Startup Addr", Address),
                                   ("Stack Start Addr", Address),
-                                  ("Stack Size (bytes)", str),
+                                  ("Stack Size (bytes)", int),
                                   ("HW Debugged",str),
                                   ("DTraced", str),
                                   ("Arguments", str),
@@ -392,19 +392,55 @@ class mac_threads(mac_tasks.mac_tasks):
             yield (0, [
                         Address(thread.v()),
                         int(proc.p_pid),
-                        str(thread.thread_id),
+                        int(thread.thread_id),
                         str(uid),
                         str(thread.state),
                         str(is_active),
                         str(thread.options),
-                        str(thread.sched_pri),
+                        int(thread.sched_pri),
                         Address(thread.continuation),
                         Address(stack_start),
-                        str(stack_size),
+                        int(stack_size),
                         str(debugged),
                         str(dtraced),
                         str(args),
                         ])
 
+    def render_text(self, outfd, data):
+        self.table_header(outfd, [("Offset", "[addrpad]"),
+                                  ("Pid", "8"),
+                                  ("Tid", "8"),
+                                  ("UID", "8"),
+                                  ("State", "30"),
+                                  ("Is Active?","<10"),
+                                  ("Options", "30"),
+                                  ("Priority", "8"),
+                                  ("Startup Addr", "[addrpad]"),
+                                  ("Stack Start Addr", "[addrpad]"),
+                                  ("Stack Size (bytes)", "<18"),
+                                  ("HW Debugged","<11"),
+                                  ("DTraced","<7"),
+                                  ("Arguments", "")
+                          ])
+
+        for proc, thread, stack_start, stack_size, args, registers, is_active, dtraced, debugged, uid in data:
+            if not thread.is_valid():
+                continue
+
+            self.table_row(outfd, thread.v(),
+                                  str(proc.p_pid),
+                                  str(thread.thread_id),
+                                  str(uid),
+                                  str(thread.state),
+                                  is_active,
+                                  str(thread.options),
+                                  str(thread.sched_pri),
+                                  thread.continuation,
+                                  stack_start,
+                                  stack_size,
+                                  debugged,
+                                  dtraced,
+                                  args
+                           )
             #for reg in registers:
             #    outfd.write("\t{0:<10} {1:}\n".format(reg, registers[reg].strip()))

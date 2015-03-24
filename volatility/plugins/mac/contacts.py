@@ -62,13 +62,20 @@ class mac_contacts(pstasks.mac_tasks):
                          
     def generator(self, data):
         for (proc, person) in data:
-
             # strip the header from the string 
             person = str(person)[len(":ABPerson"):]
 
             # take a maximum of eight parts  
             items = " ".join(person.split(" ")[:8])
             
-            yield(0, [
-                    str(items), 
-                    ])            
+            yield(0, [str(items),])            
+
+    def render_text(self, outfd, data):
+        for (proc, person) in data:
+            # strip the header from the string 
+            person = str(person)[len(":ABPerson"):]
+
+            # take a maximum of eight parts  
+            items = " ".join(person.split(" ")[:8])
+            
+            outfd.write("{0}\n".format(items))

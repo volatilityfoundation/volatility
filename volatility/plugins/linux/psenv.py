@@ -39,3 +39,8 @@ class linux_psenv(linux_pslist.linux_pslist):
     def generator(self, data):
         for task in data:
             yield (0, [str(task.comm), int(task.pid), str(task.get_environment())])
+
+    def render_text(self, outfd, data):
+        outfd.write("{0:6s} {1:6s} {2:12s}\n".format("Name", "Pid", "Environment"))
+        for task in data:
+            outfd.write("{0:17s} {1:6s} {2:s}\n".format(str(task.comm), str(task.pid), task.get_environment()))
