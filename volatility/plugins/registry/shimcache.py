@@ -55,7 +55,7 @@ shimrecs_type_2003vista = {
 
 shimrecs_type_win7 = {
     'ShimRecords' : [ None, {
-        'Magic' : [ 0x0, ['unsigned int']], #0xBADC0FFE
+        'Magic' : [ 0x0, ['unsigned int']], #0xBADC0FEE
         'NumRecords' : [ 0x4, ['int']],
         'Entries' : [0x80, ['array', lambda x: x.NumRecords, ['AppCompatCacheEntry']]],
     } ],
@@ -253,6 +253,10 @@ class ShimCache(common.AbstractWindowsCommand):
         shimdata = obj.Object("ShimRecords", offset = 0, vm = bufferas)
         if shimdata == None:
             debug.warning("No ShimCache data found")
+            raise StopIteration
+
+        if shimdata.Magic not in [0xDEADBEEF, 0xBADC0FFE, 0xBADC0FEE]:
+            debug.warning("ShimRecords.Magic value {0:X} is not valid".format(shimdata.Magic))
             raise StopIteration
 
         for e in shimdata.Entries:
