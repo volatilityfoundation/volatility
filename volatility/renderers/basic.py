@@ -1,7 +1,6 @@
 __author__ = 'mike'
 
 import volatility.utils as utils
-import base64
 
 class Bytes(bytes):
     """String class to allow us to encode binary data"""
@@ -9,14 +8,6 @@ class Bytes(bytes):
         if data == None:
             return str.__new__(cls, "-")
         return str.__new__(cls, data.encode("hex"))
-
-class Base64(str):
-    """String class to allow us to base64 encode binary data"""
-    def __new__(cls, data):
-        if data == None:
-            return str.__new__(cls, "-")
-        string = base64.b64encode(data)
-        return str.__new__(cls, string)
 
 class Address(long):
     """Integer class to allow renderers to differentiate between addresses and numbers"""
