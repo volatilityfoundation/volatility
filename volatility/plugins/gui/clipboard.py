@@ -25,6 +25,8 @@ import volatility.plugins.common as common
 import volatility.plugins.gui.sessions as sessions
 import volatility.plugins.gui.windowstations as windowstations
 import volatility.plugins.gui.constants as consts
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address, Hex, Bytes
 
 class Clipboard(common.AbstractWindowsCommand, sessions.SessionsMixin):
     """Extract the contents of the windows clipboard"""
@@ -92,6 +94,52 @@ class Clipboard(common.AbstractWindowsCommand, sessions.SessionsMixin):
                 continue
             for handle in handles.values():
                 yield sesses[sid], e1, e2, handle
+
+    def unified_output(self, data):
+        return TreeGrid([("Session", int),
+                       ("WindowStation", str),
+                       ("Format", str),
+                       ("Handle", Hex),
+                       ("Object", Address),
+                       ("Data", Bytes)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for session, wndsta, clip, handle in data:
+            # If no tagCLIP is provided, we do not know the format
+            if not clip:
+                fmt = obj.NoneObject("Format unknown")
+            else:
+                # Try to get the format name, but failing that, print
+                # the format number in hex instead.
+                if clip.fmt.v() in consts.CLIPBOARD_FORMAT_ENUM:
+                    fmt = str(clip.fmt)
+                else:
+                    fmt = hex(clip.fmt.v())
+
+            # Try to get the handle from tagCLIP first, but
+            # fall back to using _HANDLEENTRY.phead. Note: this can
+            # be a value like DUMMY_TEXT_HANDLE (1) etc.
+            if clip:
+                handle_value = clip.hData
+            else:
+                handle_value = handle.phead.h
+
+            clip_data = ""
+            if handle:
+                try:
+                    clip_data = ''.join([chr(c) for c in handle.reference_object().abData])
+                except AttributeError:
+                    pass
+
+            yield(0, [int(session.SessionId),
+                str(wndsta.Name),
+                str(fmt),
+                Hex(handle_value),
+                Address(handle.phead.v()),
+                Bytes(clip_data)
+                ])
+
 
     def render_text(self, outfd, data):
 
