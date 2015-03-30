@@ -30,6 +30,8 @@ import volatility.plugins.procdump as procdump
 import volatility.utils as utils
 import volatility.win32.tasks as tasks
 import volatility.plugins.malware.malfind as malfind
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address, Bytes
 
 try:
     import yara
@@ -207,18 +209,19 @@ class DumpCerts(procdump.ProcDump):
                     if val in fields:
                         yield (val, var)
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                       ("Process", str),
+                       ("Address", Address),
+                       ("Type", str),
+                       ("Length", int),
+                       ("File", str),
+                       ("Subject", str),
+                       ("Cert", Bytes)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Pid", "8"), 
-                                  ("Process", "16"), 
-                                  ("Address", "[addrpad]"), 
-                                  ("Type", "20"), 
-                                  ("Length", "8"), 
-                                  ("File", "24"), 
-                                  ("Subject", "")])
-
+    def generator(self, data):
         for process, cert in data:
-
             if cert.obj_name == "_X509_PUBLIC_CERT":
                 ext = ".crt"
             else:
@@ -235,11 +238,52 @@ class DumpCerts(procdump.ProcDump):
             with open(full_path, "wb") as cert_file:
                 cert_file.write(cert.object_as_string())
 
+            parsed_subject = ""
             if self._config.SSL:
                 openssl_string = cert.as_openssl(full_path)
                 parsed_subject = '/'.join([v[1] for v in self.get_parsed_fields(openssl_string)])
+
+            yield (0, [int(process.UniqueProcessId if process else -1),
+                       str(process.ImageFileName if process else "-"),
+                       Address(cert.obj_offset),
+                       str(cert.obj_name),
+                       int(cert.Size),
+                       str(file_name),
+                       str(parsed_subject),
+                       Bytes(cert.object_as_string())])
+
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Process", "16"), 
+                                  ("Address", "[addrpad]"), 
+                                  ("Type", "20"), 
+                                  ("Length", "8"), 
+                                  ("File", "24"), 
+                                  ("Subject", "")])
+
+        for process, cert in data:
+            if cert.obj_name == "_X509_PUBLIC_CERT":
+                ext = ".crt"
             else:
-                parsed_subject = ""
+                ext = ".key"
+
+            if process:
+                file_name = "{0}-{1:x}{2}".format(process.UniqueProcessId, 
+                                                  cert.obj_offset, ext)
+            else:
+                file_name = "phys.{0:x}{1}".format(cert.obj_offset, ext)
+
+            full_path = os.path.join(self._config.DUMP_DIR, file_name)
+
+            with open(full_path, "wb") as cert_file:
+                cert_file.write(cert.object_as_string())
+
+            parsed_subject = ""
+            if self._config.SSL:
+                openssl_string = cert.as_openssl(full_path)
+                parsed_subject = '/'.join([v[1] for v in self.get_parsed_fields(openssl_string)])
 
             self.table_row(outfd, 
                     process.UniqueProcessId if process else "-", 

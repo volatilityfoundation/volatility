@@ -30,7 +30,10 @@ import volatility.win32.tasks as tasks_mod
 import volatility.win32.modules as modules
 import volatility.plugins.common as common
 import volatility.plugins.taskmods as taskmods
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address, Bytes
 import json
+from io import BytesIO
 
 #--------------------------------------------------------------------------------
 # Constants
@@ -1019,6 +1022,137 @@ class DumpFiles(common.AbstractWindowsCommand):
                         summaryinfo['ofpath'] = of_path
                         summaryinfo['vacbary'] = vacbary
                         yield summaryinfo
+
+    def unified_output(self, data):
+        return TreeGrid([("Source", str),
+                       ("Address", Address),
+                       ("PID", int),
+                       ("Name", str),
+                       ("OutputPath", str),
+                       ("Data", Bytes)],
+                        self.generator(data))
+
+    def generator(self, data):
+        summaryfo = None
+        summaryinfo = data
+
+        if self._config.DUMP_DIR == None:
+            debug.error("Please specify a dump directory (--dump-dir)")
+        if not os.path.isdir(self._config.DUMP_DIR):
+            debug.error(self._config.DUMP_DIR + " is not a directory")
+
+        if self._config.SUMMARY_FILE:
+            summaryfo = open(self._config.SUMMARY_FILE, 'wb')
+
+        for summaryinfo in data:
+            if summaryinfo['type'] == "DataSectionObject":
+                if len(summaryinfo['present']) == 0:
+                    continue
+
+                of = BytesIO()
+                for mdata in summaryinfo['present']:
+                    rdata = None
+                    if not mdata[0]:
+                        continue
+
+                    try:
+                        rdata = self.kaddr_space.base.read(mdata[0], mdata[2])
+                    except (IOError, OverflowError):
+                        debug.debug("IOError: Pid: {0} File: {1} PhysAddr: {2} Size: {3}".format(summaryinfo['pid'], summaryinfo['name'], mdata[0], mdata[2]))
+
+                    if not rdata:
+                        continue
+
+                    of.seek(mdata[1])
+                    of.write(rdata)
+                    continue
+                # XXX Verify FileOffsets
+                #for zpad in summaryinfo['pad']:
+                #    of.seek(zpad[0])
+                #    of.write("\0" * zpad[1])
+
+                if self._config.SUMMARY_FILE:
+                    json.dump(summaryinfo, summaryfo)
+                    summaryfo.write("\n")
+                yield(0, ["DataSectionObject",
+                    Address(summaryinfo['fobj']),
+                    int(summaryinfo['pid']),
+                    str(summaryinfo['name']),
+                    str(summaryinfo['ofpath']),
+                    Bytes(of.getvalue())])
+                of.close()
+
+            elif summaryinfo['type'] == "ImageSectionObject":
+                if len(summaryinfo['present']) == 0:
+                    continue
+
+                of = BytesIO()
+                for mdata in summaryinfo['present']:
+                    rdata = None
+                    if not mdata[0]:
+                        continue
+
+                    try:
+                        rdata = self.kaddr_space.base.read(mdata[0], mdata[2])
+                    except (IOError, OverflowError):
+                        debug.debug("IOError: Pid: {0} File: {1} PhysAddr: {2} Size: {3}".format(summaryinfo['pid'], summaryinfo['name'], mdata[0], mdata[2]))
+
+                    if not rdata:
+                        continue
+
+                    of.seek(mdata[1])
+                    of.write(rdata)
+                    continue
+
+                # XXX Verify FileOffsets
+                #for zpad in summaryinfo['pad']:
+                #    print "ZPAD 0x%x"%(zpad[0])
+                #    of.seek(zpad[0])
+                #    of.write("\0" * zpad[1])
+
+                if self._config.SUMMARY_FILE:
+                    json.dump(summaryinfo, summaryfo)
+                    summaryfo.write("\n")
+                yield(0, ["ImageSectionObject",
+                    Address(summaryinfo['fobj']),
+                    int(summaryinfo['pid']),
+                    str(summaryinfo['name']),
+                    str(summaryinfo['ofpath']),
+                    Bytes(of.getvalue())])
+                of.close()
+
+            elif summaryinfo['type'] == "SharedCacheMap":
+                of = BytesIO()
+                for vacb in summaryinfo['vacbary']:
+                    if not vacb:
+                        continue
+                    (rdata, mdata, zpad) = self.audited_read_bytes(self.kaddr_space, vacb['baseaddr'], vacb['size'], True)
+                    ### We need to update the mdata,zpad
+                    if rdata:
+                        try:
+                            of.seek(vacb['foffset'])
+                            of.write(rdata)
+                        except IOError:
+                            # TODO: Handle things like write errors (not enough disk space, etc)
+                            continue
+                    vacb['present'] = mdata
+                    vacb['pad'] = zpad
+
+                if self._config.SUMMARY_FILE:
+                    json.dump(summaryinfo, summaryfo)
+                    summaryfo.write("\n")
+                yield(0, ["SharedCacheMap",
+                    Address(summaryinfo['fobj']),
+                    int(summaryinfo['pid']),
+                    str(summaryinfo['name']),
+                    str(summaryinfo['ofpath']),
+                    Bytes(of.getvalue())])
+                of.close()
+
+            else:
+                return
+        if self._config.SUMMARY_FILE:
+            summaryfo.close()
 
     def render_text(self, outfd, data):
         """Renders output for the dumpfiles plugin. 

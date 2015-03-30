@@ -26,7 +26,7 @@ import volatility.obj as obj
 import volatility.registry as registry
 import volatility.renderers as renderers
 import volatility.addrspace as addrspace
-from volatility.renderers.basic import Address, Address64, Hex
+from volatility.renderers.basic import Address, Address64, Hex, Bytes
 from volatility.renderers.dot import DotRenderer
 from volatility.renderers.html import HTMLRenderer, JSONRenderer
 from volatility.renderers.sqlite import SqliteRenderer
@@ -237,7 +237,7 @@ class Command(object):
                             int: "",
                             str: "<",
                             float: ".2",
-                            bytes: ""}
+                            Bytes: ""}
 
 
     def text_cell_renderers(self, columns):

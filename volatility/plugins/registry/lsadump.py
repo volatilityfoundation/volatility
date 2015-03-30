@@ -35,6 +35,8 @@ import volatility.cache as cache
 import volatility.utils as utils
 import volatility.plugins.common as common
 import volatility.plugins.registry.registryapi as registryapi
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address, Bytes
 
 class LSADump(common.AbstractWindowsCommand):
     """Dump (decrypted) LSA secrets from the registry"""
@@ -82,6 +84,15 @@ class LSADump(common.AbstractWindowsCommand):
                 outfd.write("{0:#010x}  {1:<48}  {2}\n".format(offset, hex, ''.join(chars)))
             outfd.write("\n")
 
+    def unified_output(self, data):
+        return TreeGrid([("Item", str),
+                       ("Data", Bytes)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for k in data:
+            yield (0, [str(k), Bytes(data[k])])
+
 class HashDump(common.AbstractWindowsCommand):
     """Dumps passwords hashes (LM/NTLM) from memory"""
 
@@ -117,6 +128,18 @@ class HashDump(common.AbstractWindowsCommand):
             else:
                 outfd.write(d + "\n")
 
+    # Note: we may want to break up the different fields 
+    # in addition to storing the constructed hash.
+    # for now we're just yielding the hash 
+    # Also applies to CacheDump
+    def unified_output(self, data):
+        return TreeGrid([("Hash", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for d in data:
+            yield (0, [str(d)])
+
 class CacheDump(common.AbstractWindowsCommand):
     """Dumps cached domain hashes from memory"""
 
@@ -151,3 +174,11 @@ class CacheDump(common.AbstractWindowsCommand):
                 debug.debug("Unable to read hashes from registry")
             else:
                 outfd.write(d + "\n")
+
+    def unified_output(self, data):
+        return TreeGrid([("Hash", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for d in data:
+            yield (0, [str(d)])

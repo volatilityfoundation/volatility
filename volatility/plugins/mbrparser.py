@@ -30,6 +30,8 @@ import volatility.scan as scan
 import volatility.obj as obj
 import volatility.utils as utils
 import volatility.debug as debug
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address, Hex, Bytes
 import struct
 import hashlib
 import os
@@ -318,6 +320,110 @@ class MBRParser(commands.Command):
                 ret += hexstuff
                 break
         return ret
+
+    def unified_output(self, data):
+        return TreeGrid([("Offset", Address),
+                       ("DiskSignature", str),
+                       ("BootMD5", str),
+                       ("FullBootMD5", str),
+                       ("Distance", int),
+                       ("PartABootFlag", str),
+                       ("PartAType", str),
+                       ("PartALBA", Hex),
+                       ("PartAStartCHS", str),
+                       ("PartAEndCHS", str),
+                       ("PartASectorSize", Hex),
+                       ("PartBBootFlag", str),
+                       ("PartBType", str),
+                       ("PartBLBA", Hex),
+                       ("PartBStartCHS", str),
+                       ("PartBEndCHS", str),
+                       ("PartBSectorSize", Hex),
+                       ("PartCBootFlag", str),
+                       ("PartCType", str),
+                       ("PartCLBA", Hex),
+                       ("PartCStartCHS", str),
+                       ("PartCEndCHS", str),
+                       ("PartCSectorSize", Hex),
+                       ("PartDBootFlag", str),
+                       ("PartDType", str),
+                       ("PartDLBA", Hex),
+                       ("PartDStartCHS", str),
+                       ("PartDEndCHS", str),
+                       ("PartDSectorSize", Hex), 
+                       ("Bootcode", Bytes)],
+                        self.generator(data))
+
+    def generator(self, data):
+        if self._config.DISOFFSET:
+            dis = self._config.DISOFFSET
+
+        for offset, PARTITION_TABLE, boot_code in data:
+            entry1 = PARTITION_TABLE.Entry1.dereference_as('PARTITION_ENTRY')
+            entry2 = PARTITION_TABLE.Entry2.dereference_as('PARTITION_ENTRY')
+            entry3 = PARTITION_TABLE.Entry3.dereference_as('PARTITION_ENTRY')
+            entry4 = PARTITION_TABLE.Entry4.dereference_as('PARTITION_ENTRY')
+            have_bootable = entry1.is_bootable_and_used() or entry2.is_bootable_and_used() or entry3.is_bootable_and_used() or entry4.is_bootable_and_used()
+            if not self._config.NOCHECK and not have_bootable: 
+                # it doesn't really make sense to have a partition that is bootable, but empty or invalid
+                # but we only skip MBRs with these types of partitions if we are checking
+                continue
+
+            distance = 0
+            h = hashlib.md5()
+            f = hashlib.md5()
+            h.update(self.code_data)
+            f.update(boot_code)
+            if self._config.HASH:
+                hash = "{0}".format(h.hexdigest())
+                if hash.lower() != self._config.HASH.lower():
+                    continue
+            elif self._config.FULLHASH:
+                hash = "{0}".format(f.hexdigest())
+                if hash.lower() != self._config.FULLHASH.lower():
+                    continue
+            if self.disk_mbr:
+                distance = self.levenshtein(self._get_instructions(self.disk_mbr), self._get_instructions(boot_code))
+                if self._config.MAXDISTANCE != None and distance > self._config.MAXDISTANCE:
+                    continue
+
+            disksig = "{0:02x}-{1:02x}-{2:02x}-{3:02x}".format(
+                PARTITION_TABLE.DiskSignature[0],
+                PARTITION_TABLE.DiskSignature[1],
+                PARTITION_TABLE.DiskSignature[2],
+                PARTITION_TABLE.DiskSignature[3])
+
+            yield (0, [Address(offset),
+                  disksig,
+                  str(h.hexdigest()),
+                  str(f.hexdigest()),
+                  int(distance),
+                  "{0:#x} {1}".format(entry1.get_value(entry1.BootableFlag), "(Bootable)" if entry1.is_bootable() else ""),
+                  "{0:#x} ({1})".format(entry1.get_value(entry1.PartitionType), entry1.get_type()),
+                  Hex(entry1.StartingLBA),
+                  "Cylinder: {0} Head: {1} Sector: {2}".format(entry1.StartingCylinder(), entry1.StartingCHS[0], entry1.StartingSector()),
+                  "Cylinder: {0} Head: {1} Sector: {2}".format(entry1.EndingCylinder(), entry1.EndingCHS[0], entry1.EndingSector()),
+                  Hex(entry1.SizeInSectors),
+                  "{0:#x} {1}".format(entry2.get_value(entry2.BootableFlag), "(Bootable)" if entry2.is_bootable() else ""), 
+                  "{0:#x} ({1})".format(entry2.get_value(entry2.PartitionType), entry2.get_type()),
+                  Hex(entry2.StartingLBA),
+                  "Cylinder: {0} Head: {1} Sector: {2}".format(entry2.StartingCylinder(), entry2.StartingCHS[0], entry2.StartingSector()),
+                  "Cylinder: {0} Head: {1} Sector: {2}".format(entry2.EndingCylinder(), entry2.EndingCHS[0], entry2.EndingSector()),
+                  Hex(entry2.SizeInSectors),
+                  "{0:#x} {1}".format(entry3.get_value(entry3.BootableFlag), "(Bootable)" if entry3.is_bootable() else ""), 
+                  "{0:#x} ({1})".format(entry3.get_value(entry3.PartitionType), entry3.get_type()),
+                  Hex(entry3.StartingLBA),
+                  "Cylinder: {0} Head: {1} Sector: {2}".format(entry3.StartingCylinder(), entry3.StartingCHS[0], entry3.StartingSector()),
+                  "Cylinder: {0} Head: {1} Sector: {2}".format(entry3.EndingCylinder(), entry3.EndingCHS[0], entry3.EndingSector()),
+                  Hex(entry3.SizeInSectors),
+                  "{0:#x} {1}".format(entry4.get_value(entry4.BootableFlag), "(Bootable)" if entry4.is_bootable() else ""), 
+                  "{0:#x} ({1})".format(entry4.get_value(entry4.PartitionType), entry4.get_type()),
+                  Hex(entry4.StartingLBA),
+                  "Cylinder: {0} Head: {1} Sector: {2}".format(entry4.StartingCylinder(), entry4.StartingCHS[0], entry4.StartingSector()),
+                  "Cylinder: {0} Head: {1} Sector: {2}".format(entry4.EndingCylinder(), entry4.EndingCHS[0], entry4.EndingSector()),
+                  Hex(entry4.SizeInSectors),
+                  Bytes(boot_code)])
+                       
 
     def render_text(self, outfd, data):
         border = "*" * 75

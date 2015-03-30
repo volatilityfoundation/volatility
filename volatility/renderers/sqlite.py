@@ -1,4 +1,4 @@
-from volatility.renderers.basic import Renderer
+from volatility.renderers.basic import Renderer, Bytes
 from volatility import debug
 import sqlite3
 
@@ -14,7 +14,7 @@ class SqliteRenderer(Renderer):
     column_types = [(str, "TEXT"),
                     (int, "TEXT"),
                     (float, "TEXT"),
-                    (bytes, "BLOB")]
+                    (Bytes, "BLOB")]
 
     def _column_type(self, col_type):
         for (t, v) in self.column_types:
