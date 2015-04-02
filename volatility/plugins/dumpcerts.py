@@ -126,6 +126,18 @@ class SSLKeyModification(obj.ProfileModification):
 class DumpCerts(procdump.ProcDump):
     """Dump RSA private and public SSL keys"""
 
+    # Wildcard signatures to scan for 
+    rules = yara.compile(sources = {
+        'x509' : 'rule x509 {strings: $a = {30 82 ?? ?? 30 82 ?? ??} condition: $a}',
+        'pkcs' : 'rule pkcs {strings: $a = {30 82 ?? ?? 02 01 00} condition: $a}',
+        })
+
+    # These signature names map to these data structures
+    type_map = {
+        'x509' : '_X509_PUBLIC_CERT', 
+        'pkcs' : '_PKCS_PRIVATE_CERT',
+    }
+
     def __init__(self, config, *args, **kwargs):
         procdump.ProcDump.__init__(self, config, *args, **kwargs)
 
@@ -146,27 +158,15 @@ class DumpCerts(procdump.ProcDump):
 
         if not self._config.DUMP_DIR:
             debug.error("You must supply a --dump-dir parameter")
-
-        # Wildcard signatures to scan for 
-        rules = yara.compile(sources = {
-            'x509' : 'rule x509 {strings: $a = {30 82 ?? ?? 30 82 ?? ??} condition: $a}',
-            'pkcs' : 'rule pkcs {strings: $a = {30 82 ?? ?? 02 01 00} condition: $a}',
-            })
-
-        # These signature names map to these data structures
-        type_map = {
-            'x509' : '_X509_PUBLIC_CERT', 
-            'pkcs' : '_PKCS_PRIVATE_CERT',
-        }
         
         if self._config.PHYSICAL:
             # Find the FileAddressSpace
             while addr_space.__class__.__name__ != "FileAddressSpace":
                 addr_space = addr_space.base 
             scanner = malfind.DiscontigYaraScanner(address_space = addr_space, 
-                                                   rules = rules)
+                                                   rules = DumpCerts.rules)
             for hit, address in scanner.scan():
-                cert = obj.Object(type_map.get(hit.rule), 
+                cert = obj.Object(DumpCerts.type_map.get(hit.rule), 
                                             vm = scanner.address_space,
                                             offset = address, 
                                             )
@@ -174,9 +174,9 @@ class DumpCerts(procdump.ProcDump):
                     yield None, cert
         else:
             for process in self.filter_tasks(tasks.pslist(addr_space)):
-                scanner = malfind.VadYaraScanner(task = process, rules = rules)
+                scanner = malfind.VadYaraScanner(task = process, rules = DumpCerts.rules)
                 for hit, address in scanner.scan():
-                    cert = obj.Object(type_map.get(hit.rule), 
+                    cert = obj.Object(DumpCerts.type_map.get(hit.rule), 
                                             vm = scanner.address_space,
                                             offset = address, 
                                             )
