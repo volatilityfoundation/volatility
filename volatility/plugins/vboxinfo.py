@@ -22,7 +22,6 @@ from volatility.commands import Command
 import volatility.plugins.crashinfo as crashinfo
 from volatility.renderers.basic import Address, Hex
 
-
 class VBoxInfo(crashinfo.CrashInfo):
     """Dump virtualbox information"""
 
@@ -54,3 +53,10 @@ class VBoxInfo(crashinfo.CrashInfo):
 
         Command.render_text(self, outfd, data)
     
+class QemuInfo(VBoxInfo):
+    """Dump Qemu information"""
+
+    target_as = ['QemuCoreDumpElf']
+
+    def render_text(self, outfd, data):
+        Command.render_text(self, outfd, data)
