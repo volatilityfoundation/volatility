@@ -112,13 +112,15 @@ class IEHistory(taskmods.DllList):
             "LEAK" : "_URL_RECORD", 
             "REDR" : "_REDR_RECORD"}
  
+        vad_filter = lambda x : hasattr(x, 'ControlArea') and str(x.FileObject.FileName or '').endswith("index.dat")
+
         ## Enumerate processes based on the --pid and --offset 
         for proc in taskmods.DllList(self._config).calculate():
         
             ## Acquire a process specific AS
             ps_as = proc.get_process_address_space()
             
-            for hit in proc.search_process_memory(tags):
+            for hit in proc.search_process_memory(tags, vad_filter = vad_filter):
                 ## Get a preview of the data to see what tag was detected 
                 tag = ps_as.read(hit, 4)
                 
