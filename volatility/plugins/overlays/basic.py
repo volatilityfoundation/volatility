@@ -210,7 +210,7 @@ class VolatilityDTB(obj.VolatilityMagic):
 
     def generate_suggestions(self):
         offset = 0
-        data = self.obj_vm.read(offset, constants.SCAN_BLOCKSIZE)
+        data = self.obj_vm.zread(offset, constants.SCAN_BLOCKSIZE)
         last_range_start, last_range_size = sorted(self.obj_vm.get_available_addresses())[-1]
         max_offset = last_range_start + last_range_size
         while data:
