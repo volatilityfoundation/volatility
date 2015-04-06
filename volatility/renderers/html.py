@@ -1,6 +1,10 @@
 import StringIO
 from volatility.renderers.basic import Renderer
-import json
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 __author__ = 'mike'
 
