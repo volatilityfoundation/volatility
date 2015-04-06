@@ -41,6 +41,8 @@ class SqliteRenderer(Renderer):
         create = "CREATE TABLE IF NOT EXISTS " + self._plugin_name + "( id INTEGER, rowparent INTEGER, " + \
                  ", ".join(['"' + self._sanitize_name(i.name) + '" ' + self._column_type(i.type) for i in grid.columns]) + ")"
         self._db.execute(create)
+        self._db.execute("BEGIN TRANSACTION")
         grid.visit(None, self._add_row, {None: 0})
+        self._db.execute("COMMIT TRANSACTION")
 
 
