@@ -19,12 +19,63 @@
 #
 
 import volatility.plugins.gui.windowstations as windowstations
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address, Hex
 
 class DeskScan(windowstations.WndScan):
     """Poolscaner for tagDESKTOP (desktops)"""
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Offset", Address),
+                       ("Name", str),
+                       ("Next", Hex),
+                       ("SessionId", int),
+                       ("DesktopInfo", Hex),
+                       ("fsHooks", int),
+                       ("spwnd", Hex),
+                       ("Windows", int),
+                       ("Heap", Hex),
+                       ("Size", Hex),
+                       ("Base", Hex),
+                       ("Limit", Hex),
+                       ("ThreadId", int),
+                       ("Process", str),
+                       ("PID", int),
+                       ("PPID", int)
+                        ],
+                        self.generator(data))
 
+    def generator(self, data):
+        seen = []
+
+        for window_station in data:
+            for desktop in window_station.desktops():
+                offset = desktop.PhysicalAddress
+                if offset in seen:
+                    continue
+                seen.append(offset)
+                name = "{0}\\{1}".format(desktop.WindowStation.Name, desktop.Name)
+
+                for thrd in desktop.threads():
+                    yield (0, [Address(offset),
+                        name,
+                        Hex(desktop.rpdeskNext.v()),
+                        int(desktop.dwSessionId),
+                        Hex(desktop.pDeskInfo.v()),
+                        int(desktop.DeskInfo.fsHooks),
+                        Hex(desktop.DeskInfo.spwnd),
+                        int(len(list(desktop.windows(desktop.DeskInfo.spwnd)))),
+                        Hex(desktop.pheapDesktop.v()),
+                        Hex(desktop.DeskInfo.pvDesktopLimit - desktop.DeskInfo.pvDesktopBase),
+                        Hex(desktop.DeskInfo.pvDesktopBase),
+                        Hex(desktop.DeskInfo.pvDesktopLimit),
+                        int(thrd.pEThread.Cid.UniqueThread),
+                        str(thrd.ppi.Process.ImageFileName),
+                        int(thrd.ppi.Process.UniqueProcessId),
+                        int(thrd.ppi.Process.InheritedFromUniqueProcessId)])
+                        
+
+    def render_text(self, outfd, data):
         seen = []
 
         for window_station in data:
