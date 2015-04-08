@@ -133,12 +133,13 @@ class VADInfo(taskmods.DllList):
                     numberOfPfnReferences = -1
                     numberOfMappedViews = -1
                     numberOfUserReferences = -1
-                    controlFlags = ''
+                    controlFlags = ""
                     fileObjectAddr = 0
-                    fileNameWithDevice = ''
+                    fileNameWithDevice = ""
                     firstPrototypePteAddr = 0
                     lastContiguousPteAddr = 0
-                    flags2 = ''
+                    flags2 = ""
+                    vadType = ""
                     
                     protection = PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), hex(vad.VadFlags.Protection))
                     
@@ -146,8 +147,6 @@ class VADInfo(taskmods.DllList):
                     # translate the vad type if its available (> XP)
                     if hasattr(vad.VadFlags, "VadType"):
                         vadType = MI_VAD_TYPE.get(vad.VadFlags.VadType.v(), hex(vad.VadFlags.VadType))
-                    else: 
-                        vadType = ''
 
                     try:
                         control_area = vad.ControlArea
@@ -162,12 +161,11 @@ class VADInfo(taskmods.DllList):
                                 numberOfMappedViews = control_area.NumberOfMappedViews
                                 numberOfUserReferences = control_area.NumberOfUserReferences
                                 controlFlags = control_area.u.Flags 
-                                
                                 file_object = vad.FileObject
 
                                 if file_object:
                                     fileObjectAddr = file_object.obj_offset
-                                    fileNameWithDevice = file_object.file_name_with_device()                            
+                                    fileNameWithDevice = file_object.file_name_with_device()
                     except AttributeError:
                         pass
                     try:
@@ -176,8 +174,27 @@ class VADInfo(taskmods.DllList):
                         flags2 = str(vad.u2.VadFlags2)
                     except AttributeError:
                         pass
-                
-                    yield(0, [int(task.UniqueProcessId), Address(vad.obj_offset), Address(vad.Start), Address(vad.End), str(vad.Tag or ''), str(vad.VadFlags or ''), str(protection or ''), str(vadType or ''), Address(controlAreaAddr), Address(segmentAddr), int(numberOfSectionReferences), int(numberOfPfnReferences), int(numberOfMappedViews), int(numberOfUserReferences), str(controlFlags or ''), Address(fileObjectAddr), str(fileNameWithDevice or ''), Address(firstPrototypePteAddr), Address(lastContiguousPteAddr), str(flags2 or '')])
+
+                    yield(0, [int(task.UniqueProcessId),
+                            Address(vad.obj_offset),
+                            Address(vad.Start),
+                            Address(vad.End),
+                            str(vad.Tag or ''),
+                            str(vad.VadFlags or ''),
+                            str(protection or ''),
+                            str(vadType or ''),
+                            Address(controlAreaAddr),
+                            Address(segmentAddr),
+                            int(numberOfSectionReferences),
+                            int(numberOfPfnReferences),
+                            int(numberOfMappedViews),
+                            int(numberOfUserReferences),
+                            str(controlFlags or ''),
+                            Address(fileObjectAddr),
+                            str(fileNameWithDevice or ''),
+                            Address(firstPrototypePteAddr),
+                            Address(lastContiguousPteAddr),
+                            str(flags2 or '')])
                 
                 
     def render_text(self, outfd, data):
