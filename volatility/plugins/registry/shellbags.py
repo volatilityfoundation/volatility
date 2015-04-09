@@ -910,7 +910,7 @@ class ShellBags(common.AbstractWindowsCommand):
 
     def generator(self, data):
         for name, reg, key, items in data:
-            if not key: 
+            if not key:
                 continue
             for item in items:
                 if item == "MruListEx":
@@ -927,7 +927,7 @@ class ShellBags(common.AbstractWindowsCommand):
                             things.get("Create", ""),
                             things.get("Access", ""),
                             things.get("Attributes", ""),
-                            things.get("Unicode", ""), 
+                            things.get("Unicode", ""),
                             str(full_path)])
 
     def render_text(self, outfd, data):
