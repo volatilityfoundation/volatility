@@ -40,15 +40,16 @@ class MultiScan(common.AbstractScanCommand):
             self.scanners.append(netscan.PoolScanUdpEndpoint)
             self.scanners.append(netscan.PoolScanTcpListener)
             self.scanners.append(netscan.PoolScanTcpEndpoint)
+            self.scanners.append(callbacks.PoolScanDbgPrintCallback)
+            self.scanners.append(callbacks.PoolScanRegistryCallback)
+            self.scanners.append(callbacks.PoolScanPnp9)
+            self.scanners.append(callbacks.PoolScanPnpD)
+            self.scanners.append(callbacks.PoolScanPnpC)
 
         self.scanners.append(callbacks.PoolScanFSCallback)
         self.scanners.append(callbacks.PoolScanShutdownCallback)
         self.scanners.append(callbacks.PoolScanGenericCallback)
-        self.scanners.append(callbacks.PoolScanDbgPrintCallback)
-        self.scanners.append(callbacks.PoolScanRegistryCallback)
-        self.scanners.append(callbacks.PoolScanPnp9)
-        self.scanners.append(callbacks.PoolScanPnpD)
-        self.scanners.append(callbacks.PoolScanPnpC)
+
 
         for objct in self.scan_results(addr_space):
             yield objct
