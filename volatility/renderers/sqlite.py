@@ -2,7 +2,7 @@ from volatility.renderers.basic import Renderer, Bytes
 from volatility import debug
 import sqlite3
 
-__author__ = 'mike and Sebastien Bourdon-Richard'
+__author__ = 'mike'
 
 class SqliteRenderer(Renderer):
 
@@ -58,16 +58,16 @@ class QuickSqliteRenderer(SqliteRenderer):
             debug.error("Please specify a valid output file using --output-file")
 
         self._db = sqlite3.connect(self._config.OUTPUT_FILE, isolation_level = None)
-        create = "CREATE TABLE IF NOT EXISTS " + self._plugin_name + "( id INTEGER, rowparent INTEGER, " + \
+        create = "CREATE TABLE IF NOT EXISTS " + self._plugin_name + "( id INTEGER, " + \
                  ", ".join(['"' + self._sanitize_name(i.name) + '" ' + self._column_type(i.type) for i in grid.columns]) + ")"
         self._db.execute(create)
 
         def _add_multiple_row(node, accumulator):
             accumulator[0] = accumulator[0] + 1 #id
-            accumulator[1].append([accumulator[0], 0] + [str(v) for v in node.values])
+            accumulator[1].append([accumulator[0]] + [str(v) for v in node.values])
             if len(accumulator[1]) > 20000:
                 self._db.execute("BEGIN TRANSACTION")
-                insert = "INSERT INTO " + self._plugin_name + " VALUES (?, ?, " + ", ".join(["?"] * len(node.values)) + ")"
+                insert = "INSERT INTO " + self._plugin_name + " VALUES (?, " + ", ".join(["?"] * len(node.values)) + ")"
                 self._db.executemany(insert, accumulator[1])
                 accumulator = [accumulator[0], []]
                 self._db.execute("COMMIT TRANSACTION")
@@ -79,6 +79,6 @@ class QuickSqliteRenderer(SqliteRenderer):
         #Insert last nodes
         if len(self._accumulator[1]) > 0:
             self._db.execute("BEGIN TRANSACTION")
-            insert = "INSERT INTO " + self._plugin_name + " VALUES (?, ?, " + ", ".join(["?"] * (len(self._accumulator[1][0])-2)) + ")"
+            insert = "INSERT INTO " + self._plugin_name + " VALUES (?, " + ", ".join(["?"] * (len(self._accumulator[1][0])-1)) + ")"
             self._db.executemany(insert, self._accumulator[1])
             self._db.execute("COMMIT TRANSACTION")    
