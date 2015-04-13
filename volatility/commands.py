@@ -29,7 +29,7 @@ import volatility.addrspace as addrspace
 from volatility.renderers.basic import Address, Address64, Hex, Bytes
 from volatility.renderers.dot import DotRenderer
 from volatility.renderers.html import HTMLRenderer, JSONRenderer
-from volatility.renderers.sqlite import SqliteRenderer
+from volatility.renderers.sqlite import SqliteRenderer, QuickSqliteRenderer
 from volatility.renderers.text import TextRenderer, FormatCellRenderer, QuickTextRenderer
 from volatility.renderers.xlsx import XLSXRenderer
 
@@ -116,7 +116,7 @@ class Command(object):
         ## Then we render the result in some way based on the
         ## requested output mode:
         function_name = "render_{0}".format(self._config.OUTPUT)
-        if not self._config.OUTPUT == "sqlite" and self._config.OUTPUT_FILE:
+        if not self._config.OUTPUT == "sqlite" and not self._config.OUTPUT == "quicksqlite" and self._config.OUTPUT_FILE:
             if os.path.exists(self._config.OUTPUT_FILE):
                 debug.error("File " + self._config.OUTPUT_FILE + " already exists.  Cowardly refusing to overwrite it...")
             outfd = open(self._config.OUTPUT_FILE, 'wb')
@@ -282,7 +282,10 @@ class Command(object):
 
     def render_sqlite(self, outfd, data):
         self._render(outfd, SqliteRenderer(self.__class__.__name__, self._config), data)
-
+        
+    def render_quicksqlite(self, outfd, data):
+        self._render(outfd, QuickSqliteRenderer(self.__class__.__name__, self._config), data)
+		
     def render_dot(self, outfd, data):
         self._render(outfd, DotRenderer(self.text_cell_renderers, self._config), data)
 
