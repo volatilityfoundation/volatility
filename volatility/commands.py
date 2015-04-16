@@ -275,19 +275,37 @@ class Command(object):
                                          config = self._config), data)
 
     def render_quick(self, outfd, data):
-        self._render(outfd, QuickTextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
+        try:
+            self._render(outfd, QuickTextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
+        except NotImplementedError, e:
+            print e
 
     def render_json(self, outfd, data):
-        self._render(outfd, JSONRenderer(), data)
+        try:
+            self._render(outfd, JSONRenderer(), data)
+        except NotImplementedError, e:
+            print e
 
     def render_sqlite(self, outfd, data):
-        self._render(outfd, SqliteRenderer(self.__class__.__name__, self._config), data)
+        try:
+            self._render(outfd, SqliteRenderer(self.__class__.__name__, self._config), data)
+        except NotImplementedError, e:
+            print e
 
     def render_dot(self, outfd, data):
-        self._render(outfd, DotRenderer(self.text_cell_renderers, self._config), data)
+        try:
+            self._render(outfd, DotRenderer(self.text_cell_renderers, self._config), data)
+        except NotImplementedError, e:
+            print e
 
     def render_html(self, outfd, data):
-        self._render(outfd, HTMLRenderer(), data)
+        try:
+            self._render(outfd, HTMLRenderer(), data)
+        except NotImplementedError, e:
+            print e
 
     def render_xlsx(self, outfd, data):
-        self._render(outfd, XLSXRenderer(self.text_cell_renderers, self._config), data)
+        try:
+            self._render(outfd, XLSXRenderer(self.text_cell_renderers, self._config), data)
+        except NotImplementedError, e:
+            print e
