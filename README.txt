@@ -519,6 +519,5 @@ Command Reference
 The following url contains a reference of all commands supported by 
 Volatility.
 
-    https://github.com/volatilityfoundation/volatility/wiki/Command-Reference23
-
+    https://github.com/volatilityfoundation/volatility/wiki
 
