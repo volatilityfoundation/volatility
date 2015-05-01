@@ -69,7 +69,6 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     def entry_present(self, entry):
         if entry:
             if (entry & 1):
-                print hex(entry)
                 return True
 
             # The page is in transition and not a prototype.
