@@ -95,7 +95,7 @@ class IA32PagedMemory(paged.AbstractWritablePagedMemory):
             if (entry & (1 << 11)) and not (entry & (1 << 10)):
                 return True
 
-            # Linux pages that have had mprotect() called on them
+            # Linux pages that have had mprotect(...PROT_NONE) called on them
             # have the present bit cleared and global bit set
             if self.profile.metadata.get('os', 'Unknown').lower() == "linux" and (entry & (1 << 8)):
                 return True
