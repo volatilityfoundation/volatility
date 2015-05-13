@@ -132,7 +132,7 @@ class TreeGrid(object):
         output = ""
         for letter in text.lower():
             if letter != ' ':
-                output += (letter if letter in 'abcdefghiljklmnopqrstuvwxyz_' else '_')
+                output += (letter if letter in '0123456789abcdefghiljklmnopqrstuvwxyz_' else '_')
         return output
 
     def populate(self, func = None, initial_accumulator = None):
