@@ -448,11 +448,11 @@ yarascan                   - Scan process or kernel memory with Yara signatures
    more information on a particular command.  A Command Reference wiki
    is also available on the Google Code site:
 
-        https://github.com/volatilityfoundation/volatility/wiki/Command-Reference23
+        https://github.com/volatilityfoundation/volatility/wiki
 
    as well as Basic Usage:
 
-        https://github.com/volatilityfoundation/volatility/wiki/Volatility-Usage23
+        https://github.com/volatilityfoundation/volatility/wiki/Volatility-Usage
 
 Licensing and Copyright
 =======================
@@ -519,6 +519,5 @@ Command Reference
 The following url contains a reference of all commands supported by 
 Volatility.
 
-    https://github.com/volatilityfoundation/volatility/wiki/Command-Reference23
-
+    https://github.com/volatilityfoundation/volatility/wiki
 

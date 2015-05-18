@@ -26,7 +26,7 @@ import volatility.obj as obj
 import volatility.registry as registry
 import volatility.renderers as renderers
 import volatility.addrspace as addrspace
-from volatility.renderers.basic import Address, Address64, Hex
+from volatility.renderers.basic import Address, Address64, Hex, Bytes
 from volatility.renderers.dot import DotRenderer
 from volatility.renderers.html import HTMLRenderer, JSONRenderer
 from volatility.renderers.sqlite import SqliteRenderer
@@ -237,7 +237,7 @@ class Command(object):
                             int: "",
                             str: "<",
                             float: ".2",
-                            bytes: ""}
+                            Bytes: ""}
 
 
     def text_cell_renderers(self, columns):
@@ -275,19 +275,49 @@ class Command(object):
                                          config = self._config), data)
 
     def render_quick(self, outfd, data):
-        self._render(outfd, QuickTextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
+        try:
+            self._render(outfd, QuickTextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
+        except NotImplementedError, why:
+            debug.error(why)
+        except TypeError, why:
+            debug.error(why)
 
     def render_json(self, outfd, data):
-        self._render(outfd, JSONRenderer(), data)
+        try:
+            self._render(outfd, JSONRenderer(), data)
+        except NotImplementedError, why:
+            debug.error(why)
+        except TypeError, why:
+            debug.error(why)
 
     def render_sqlite(self, outfd, data):
-        self._render(outfd, SqliteRenderer(self.__class__.__name__, self._config), data)
+        try:
+            self._render(outfd, SqliteRenderer(self.__class__.__name__, self._config), data)
+        except NotImplementedError, why:
+            debug.error(why)
+        except TypeError, why:
+            debug.error(why)
 
     def render_dot(self, outfd, data):
-        self._render(outfd, DotRenderer(self.text_cell_renderers, self._config), data)
+        try:
+            self._render(outfd, DotRenderer(self.text_cell_renderers, self._config), data)
+        except NotImplementedError, why:
+            debug.error(why)
+        except TypeError, why:
+            debug.error(why)
 
     def render_html(self, outfd, data):
-        self._render(outfd, HTMLRenderer(), data)
+        try:
+            self._render(outfd, HTMLRenderer(), data)
+        except NotImplementedError, why:
+            debug.error(why)
+        except TypeError, why:
+            debug.error(why)
 
     def render_xlsx(self, outfd, data):
-        self._render(outfd, XLSXRenderer(self.text_cell_renderers, self._config), data)
+        try:
+            self._render(outfd, XLSXRenderer(self.text_cell_renderers, self._config), data)
+        except NotImplementedError, why:
+            debug.error(why)
+        except TypeError, why:
+            debug.error(why)

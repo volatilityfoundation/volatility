@@ -30,6 +30,8 @@ import volatility.plugins.procdump as procdump
 import volatility.utils as utils
 import volatility.win32.tasks as tasks
 import volatility.plugins.malware.malfind as malfind
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address, Bytes
 
 try:
     import yara
@@ -124,6 +126,18 @@ class SSLKeyModification(obj.ProfileModification):
 class DumpCerts(procdump.ProcDump):
     """Dump RSA private and public SSL keys"""
 
+    # Wildcard signatures to scan for 
+    rules = yara.compile(sources = {
+        'x509' : 'rule x509 {strings: $a = {30 82 ?? ?? 30 82 ?? ??} condition: $a}',
+        'pkcs' : 'rule pkcs {strings: $a = {30 82 ?? ?? 02 01 00} condition: $a}',
+        })
+
+    # These signature names map to these data structures
+    type_map = {
+        'x509' : '_X509_PUBLIC_CERT', 
+        'pkcs' : '_PKCS_PRIVATE_CERT',
+    }
+
     def __init__(self, config, *args, **kwargs):
         procdump.ProcDump.__init__(self, config, *args, **kwargs)
 
@@ -144,27 +158,15 @@ class DumpCerts(procdump.ProcDump):
 
         if not self._config.DUMP_DIR:
             debug.error("You must supply a --dump-dir parameter")
-
-        # Wildcard signatures to scan for 
-        rules = yara.compile(sources = {
-            'x509' : 'rule x509 {strings: $a = {30 82 ?? ?? 30 82 ?? ??} condition: $a}',
-            'pkcs' : 'rule pkcs {strings: $a = {30 82 ?? ?? 02 01 00} condition: $a}',
-            })
-
-        # These signature names map to these data structures
-        type_map = {
-            'x509' : '_X509_PUBLIC_CERT', 
-            'pkcs' : '_PKCS_PRIVATE_CERT',
-        }
         
         if self._config.PHYSICAL:
             # Find the FileAddressSpace
             while addr_space.__class__.__name__ != "FileAddressSpace":
                 addr_space = addr_space.base 
             scanner = malfind.DiscontigYaraScanner(address_space = addr_space, 
-                                                   rules = rules)
+                                                   rules = DumpCerts.rules)
             for hit, address in scanner.scan():
-                cert = obj.Object(type_map.get(hit.rule), 
+                cert = obj.Object(DumpCerts.type_map.get(hit.rule), 
                                             vm = scanner.address_space,
                                             offset = address, 
                                             )
@@ -172,9 +174,9 @@ class DumpCerts(procdump.ProcDump):
                     yield None, cert
         else:
             for process in self.filter_tasks(tasks.pslist(addr_space)):
-                scanner = malfind.VadYaraScanner(task = process, rules = rules)
+                scanner = malfind.VadYaraScanner(task = process, rules = DumpCerts.rules)
                 for hit, address in scanner.scan():
-                    cert = obj.Object(type_map.get(hit.rule), 
+                    cert = obj.Object(DumpCerts.type_map.get(hit.rule), 
                                             vm = scanner.address_space,
                                             offset = address, 
                                             )
@@ -207,18 +209,19 @@ class DumpCerts(procdump.ProcDump):
                     if val in fields:
                         yield (val, var)
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                       ("Process", str),
+                       ("Address", Address),
+                       ("Type", str),
+                       ("Length", int),
+                       ("File", str),
+                       ("Subject", str),
+                       ("Cert", Bytes)],
+                        self.generator(data))
 
-        self.table_header(outfd, [("Pid", "8"), 
-                                  ("Process", "16"), 
-                                  ("Address", "[addrpad]"), 
-                                  ("Type", "20"), 
-                                  ("Length", "8"), 
-                                  ("File", "24"), 
-                                  ("Subject", "")])
-
+    def generator(self, data):
         for process, cert in data:
-
             if cert.obj_name == "_X509_PUBLIC_CERT":
                 ext = ".crt"
             else:
@@ -235,11 +238,52 @@ class DumpCerts(procdump.ProcDump):
             with open(full_path, "wb") as cert_file:
                 cert_file.write(cert.object_as_string())
 
+            parsed_subject = ""
             if self._config.SSL:
                 openssl_string = cert.as_openssl(full_path)
                 parsed_subject = '/'.join([v[1] for v in self.get_parsed_fields(openssl_string)])
+
+            yield (0, [int(process.UniqueProcessId if process else -1),
+                       str(process.ImageFileName if process else "-"),
+                       Address(cert.obj_offset),
+                       str(cert.obj_name),
+                       int(cert.Size),
+                       str(file_name),
+                       str(parsed_subject),
+                       Bytes(cert.object_as_string())])
+
+
+    def render_text(self, outfd, data):
+
+        self.table_header(outfd, [("Pid", "8"), 
+                                  ("Process", "16"), 
+                                  ("Address", "[addrpad]"), 
+                                  ("Type", "20"), 
+                                  ("Length", "8"), 
+                                  ("File", "24"), 
+                                  ("Subject", "")])
+
+        for process, cert in data:
+            if cert.obj_name == "_X509_PUBLIC_CERT":
+                ext = ".crt"
             else:
-                parsed_subject = ""
+                ext = ".key"
+
+            if process:
+                file_name = "{0}-{1:x}{2}".format(process.UniqueProcessId, 
+                                                  cert.obj_offset, ext)
+            else:
+                file_name = "phys.{0:x}{1}".format(cert.obj_offset, ext)
+
+            full_path = os.path.join(self._config.DUMP_DIR, file_name)
+
+            with open(full_path, "wb") as cert_file:
+                cert_file.write(cert.object_as_string())
+
+            parsed_subject = ""
+            if self._config.SSL:
+                openssl_string = cert.as_openssl(full_path)
+                parsed_subject = '/'.join([v[1] for v in self.get_parsed_fields(openssl_string)])
 
             self.table_row(outfd, 
                     process.UniqueProcessId if process else "-", 

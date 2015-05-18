@@ -497,7 +497,7 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
                     continue
             yield vad, process_space
 
-    def search_process_memory(self, s):
+    def search_process_memory(self, s, vad_filter = None):
         """
         Search memory for a simple byte string. 
         
@@ -522,7 +522,7 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
             s = [s]
 
         # All MMVADs that belong to this process.
-        for vad, address_space in self.get_vads(skip_max_commit = True):
+        for vad, address_space in self.get_vads(vad_filter, skip_max_commit = True):
             offset = vad.Start
             out_of_range = vad.Start + vad.Length
             while offset < out_of_range:

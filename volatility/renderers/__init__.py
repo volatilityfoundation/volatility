@@ -132,7 +132,7 @@ class TreeGrid(object):
         output = ""
         for letter in text.lower():
             if letter != ' ':
-                output += (letter if letter in 'abcdefghiljklmnopqrstuvwxyz_' else '_')
+                output += (letter if letter in '0123456789abcdefghiljklmnopqrstuvwxyz_' else '_')
         return output
 
     def populate(self, func = None, initial_accumulator = None):
@@ -193,8 +193,14 @@ class TreeGrid(object):
 
     def _append(self, parent, values):
         """Adds a new node at the top level if parent is None, or under the parent node otherwise, after all other children."""
-        children = self.children(parent)
-        return self._insert(parent, len(children), values)
+        parent_path = ""
+        children = self._find_children(parent)
+        if parent is not None:
+            parent_path = parent.path + self.path_sep
+        newpath = parent_path + str(len(children))
+        tree_item = TreeNode(newpath, self, parent, values)
+        children.append((tree_item, []))
+        return tree_item
 
     def _insert(self, parent, position, values):
         """Inserts an element into the tree at a specific position"""

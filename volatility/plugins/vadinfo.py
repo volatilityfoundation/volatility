@@ -30,6 +30,8 @@ import volatility.obj as obj
 import volatility.plugins.taskmods as taskmods
 import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.constants as constants
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 # Vad Protections. Also known as page protections. _MMVAD_FLAGS.Protection,
 # 3-bits, is an index into nt!MmProtectToValue (the following list). 
@@ -92,7 +94,109 @@ class VADInfo(taskmods.DllList):
         config.add_option('ADDR', short_option = 'a', default = None,
                           help = 'Show info on VAD at or containing this address',
                           action = 'store', type = 'int')
+                          
+    def unified_output(self, data):
+        return TreeGrid([("Pid", int),
+                       ("VADNodeAddress", Address),
+                       ("Start", Address),
+                       ("End", Address),
+                       ("Tag", str),
+                       ("Flags", str),
+                       ("Protection", str),
+                       ("VadType", str),
+                       ("ControlArea", Address),
+                       ("Segment", Address),
+                       ("NumberOfSectionReferences", int),
+                       ("NumberOfPfnReferences", int),
+                       ("NumberOfMappedViews", int),
+                       ("NumberOfUserReferences", int),
+                       ("Control Flags", str),
+                       ("FileObject", Address),
+                       ("FileNameWithDevice", str),
+                       ("FirstPrototypePte", Address),
+                       ("LastContiguousPte", Address),
+                       ("Flags2", str)],
+                        self.generator(data))
 
+    def generator(self, data):
+        for task in data:
+            for vad in task.VadRoot.traverse():
+                if (self._config.ADDR is not None and 
+                            (self._config.ADDR < vad.Start or 
+                            self._config.ADDR > vad.End)):
+                    continue
+                if vad != None:    
+                    #Init vad control and ext variables 
+                    controlAreaAddr = 0
+                    segmentAddr = 0
+                    numberOfSectionReferences = -1
+                    numberOfPfnReferences = -1
+                    numberOfMappedViews = -1
+                    numberOfUserReferences = -1
+                    controlFlags = ""
+                    fileObjectAddr = 0
+                    fileNameWithDevice = ""
+                    firstPrototypePteAddr = 0
+                    lastContiguousPteAddr = 0
+                    flags2 = ""
+                    vadType = ""
+                    
+                    protection = PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), hex(vad.VadFlags.Protection))
+                    
+                    
+                    # translate the vad type if its available (> XP)
+                    if hasattr(vad.VadFlags, "VadType"):
+                        vadType = MI_VAD_TYPE.get(vad.VadFlags.VadType.v(), hex(vad.VadFlags.VadType))
+
+                    try:
+                        control_area = vad.ControlArea
+                        # even if the ControlArea is not NULL, it is only meaningful 
+                        # for shared (non private) memory sections. 
+                        if vad.VadFlags.PrivateMemory != 1 and control_area:                
+                            if control_area:        
+                                controlAreaAddr = control_area.dereference().obj_offset
+                                segmentAddr = control_area.Segment
+                                numberOfSectionReferences = control_area.NumberOfSectionReferences
+                                numberOfPfnReferences = control_area.NumberOfPfnReferences
+                                numberOfMappedViews = control_area.NumberOfMappedViews
+                                numberOfUserReferences = control_area.NumberOfUserReferences
+                                controlFlags = control_area.u.Flags 
+                                file_object = vad.FileObject
+
+                                if file_object:
+                                    fileObjectAddr = file_object.obj_offset
+                                    fileNameWithDevice = file_object.file_name_with_device()
+                    except AttributeError:
+                        pass
+                    try:
+                        firstPrototypePteAddr = vad.FirstPrototypePte
+                        lastContiguousPteAddr = vad.LastContiguousPte
+                        flags2 = str(vad.u2.VadFlags2)
+                    except AttributeError:
+                        pass
+
+                    yield(0, [int(task.UniqueProcessId),
+                            Address(vad.obj_offset),
+                            Address(vad.Start),
+                            Address(vad.End),
+                            str(vad.Tag or ''),
+                            str(vad.VadFlags or ''),
+                            str(protection or ''),
+                            str(vadType or ''),
+                            Address(controlAreaAddr),
+                            Address(segmentAddr),
+                            int(numberOfSectionReferences),
+                            int(numberOfPfnReferences),
+                            int(numberOfMappedViews),
+                            int(numberOfUserReferences),
+                            str(controlFlags or ''),
+                            Address(fileObjectAddr),
+                            str(fileNameWithDevice or ''),
+                            Address(firstPrototypePteAddr),
+                            Address(lastContiguousPteAddr),
+                            str(flags2 or '')])
+                
+                
     def render_text(self, outfd, data):
         for task in data:
             outfd.write("*" * 72 + "\n")

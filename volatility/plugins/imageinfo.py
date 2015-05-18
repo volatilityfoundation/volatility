@@ -27,18 +27,28 @@ import volatility.obj as obj
 import volatility.cache as cache
 import volatility.registry as registry
 import volatility.plugins.kdbgscan as kdbgscan
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class ImageInfo(kdbgscan.KDBGScan):
     """ Identify information for the image """
+    def unified_output(self, data):
+        columns = []
+        values = []
+        for l, t, v in data:
+          columns.append( (l, t) )
+          values.append(v)
+        return TreeGrid(columns, [(0, values)])
+
     def render_text(self, outfd, data):
         """Renders the calculated data as text to outfd"""
-        for k, v in data:
-            outfd.write("{0:>30} : {1}\n".format(k, v))
+        for k, t, v in data:
+            outfd.write("{0:>30} : {1}\n".format(k, hex(v) if t is Address else v))
 
     @cache.CacheDecorator("tests/imageinfo")
     def calculate(self):
         """Calculates various information about the image"""
-        print "Determining profile based on KDBG search...\n"
+        debug.info("Determining profile based on KDBG search...")
         profilelist = [ p.__name__ for p in registry.get_plugin_classes(obj.Profile).values() ]
 
         bestguess = None
@@ -70,22 +80,23 @@ class ImageInfo(kdbgscan.KDBGScan):
                 suggestion = 'No suggestion'
             suggestion += ' (Instantiated with ' + chosen + ')'
 
-        yield ('Suggested Profile(s)', suggestion)
+        yield ('Suggested Profile(s)', str, suggestion)
 
         tmpas = addr_space
         count = 0
         while tmpas:
             count += 1
-            yield ('AS Layer' + str(count), tmpas.__class__.__name__ + " (" + tmpas.name + ")")
+            yield ('AS Layer' + str(count), str,
+                   tmpas.__class__.__name__ + " (" + tmpas.name + ")")
             tmpas = tmpas.base
 
         if not hasattr(addr_space, "pae"):
-            yield ('PAE type', "No PAE")
+            yield ('PAE type', str, "No PAE")
         else:
-            yield ('PAE type', "PAE" if addr_space.pae else "No PAE")
+            yield ('PAE type', str, "PAE" if addr_space.pae else "No PAE")
 
         if hasattr(addr_space, "dtb"):
-            yield ('DTB', hex(addr_space.dtb))
+            yield ('DTB', Address, Address(addr_space.dtb))
 
         volmagic = obj.VolMagic(addr_space)
         if hasattr(addr_space, "dtb"):
@@ -93,22 +104,24 @@ class ImageInfo(kdbgscan.KDBGScan):
             if type(kdbg) == int:
                 kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = kdbg, vm = addr_space)
             if kdbg.is_valid():
-                yield ('KDBG', hex(kdbg.obj_offset))
+                yield ('KDBG', Address, Address(kdbg.obj_offset))
                 kpcr_list = list(kdbg.kpcrs())
-                yield ('Number of Processors', len(kpcr_list))
-                yield ('Image Type (Service Pack)', kdbg.ServicePack)
+                yield ('Number of Processors', int, len(kpcr_list))
+                yield ('Image Type (Service Pack)', int, kdbg.ServicePack)
                 for kpcr in kpcr_list:
-                    yield ('KPCR for CPU {0}'.format(kpcr.ProcessorBlock.Number), hex(kpcr.obj_offset))
+                    yield ('KPCR for CPU {0}'.format(kpcr.ProcessorBlock.Number),
+                        Address, Address(kpcr.obj_offset))
 
             KUSER_SHARED_DATA = volmagic.KUSER_SHARED_DATA.v()
             if KUSER_SHARED_DATA:
-                yield ('KUSER_SHARED_DATA', hex(KUSER_SHARED_DATA))
+                yield ('KUSER_SHARED_DATA', Address, Address(KUSER_SHARED_DATA))
 
             data = self.get_image_time(addr_space)
 
             if data:
-                yield ('Image date and time', data['ImageDatetime'])
-                yield ('Image local date and time', timefmt.display_datetime(data['ImageDatetime'].as_datetime(), data['ImageTz']))
+                yield ('Image date and time', str, str(data['ImageDatetime']))
+                yield ('Image local date and time', str,
+                       timefmt.display_datetime(data['ImageDatetime'].as_datetime(), data['ImageTz']))
 
         # Make sure to reset the profile to its original value to keep the invalidator from blocking the cache
         self._config.update('PROFILE', origprofile)

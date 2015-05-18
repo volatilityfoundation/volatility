@@ -33,6 +33,7 @@ import volatility.obj as obj
 import volatility.addrspace as addrspace
 import volatility.plugins.overlays.basic as basic
 import volatility.timefmt as timefmt
+from volatility.renderers import TreeGrid
 import struct
 import datetime 
 
@@ -308,6 +309,16 @@ class ITEMPOS(obj.CType):
                 self.get_file_attrs(),
                 str(self.Attributes.UnicodeFilename))
 
+    def get_items(self):
+        items = {}
+        items["FileName"] = str(self.Attributes.FileName)
+        items["Modified"] = str(self.Attributes.ModifiedDate)
+        items["Create"] = str(self.Attributes.CreatedDate)
+        items["Access"] = str(self.Attributes.AccessDate)
+        items["Attributes"] = self.get_file_attrs()
+        items["Unicode"] = str(self.Attributes.UnicodeFilename)
+        return items
+
     def get_header(self):
         return [("File Name", "14s"),
                 ("Modified Date", "30"),
@@ -342,6 +353,15 @@ class FILE_ENTRY(ITEMPOS):
                 str(self.Attributes.CreatedDate),
                 str(self.Attributes.AccessDate),
                 self.get_file_attrs())
+
+    def get_items(self):
+        items = {}
+        items["FileName"] = str(self.Attributes.FileName)
+        items["Modified"] = str(self.Attributes.ModifiedDate)
+        items["Create"] = str(self.Attributes.CreatedDate)
+        items["Access"] = str(self.Attributes.AccessDate)
+        items["Attributes"] = self.get_file_attrs()
+        return items
 
     def get_header(self):
         return [("File Name", "14s"),
@@ -628,7 +648,7 @@ itempos_types_Vista = {
         'CreatedDate': [ lambda x: x.Unknown2.obj_offset + 2, ['DosDate', dict(is_utc = True)]],
         'AccessDate': [ lambda x: x.CreatedDate.obj_offset + 4, ['DosDate', dict(is_utc = True)]],
         'Unknown3': [ lambda x: x.AccessDate.obj_offset + 4, ['unsigned int']],
-        'FileReference': [ lambda x: x.Unknown3.obj_offset + 4, ['unsigned long long']], #MFT entry index 0-6, Sequense number 6-7
+        'FileReference': [ lambda x: x.Unknown3.obj_offset + 4, ['unsigned long long']], #MFT entry index 0-6, Sequence number 6-7
         'Unknown4': [ lambda x: x.FileReference.obj_offset + 8, ['unsigned long long']],
         'LongStringSize': [ lambda x: x.Unknown4.obj_offset + 8, ['unsigned short']],
         'UnicodeFilename': [ lambda x: x.LongStringSize.obj_offset + 2, ['NullString', dict(length = 4096, encoding = 'utf8')]],
@@ -683,7 +703,7 @@ itempos_types_Win7 = {
         'CreatedDate': [ lambda x: x.Unknown2.obj_offset + 2, ['DosDate', dict(is_utc = True)]],
         'AccessDate': [ lambda x: x.CreatedDate.obj_offset + 4, ['DosDate', dict(is_utc = True)]],
         'Unknown3': [ lambda x: x.AccessDate.obj_offset + 4, ['unsigned int']],
-        'FileReference': [ lambda x: x.Unknown3.obj_offset + 4, ['unsigned long long']], #MFT entry index 0-6, Sequense number 6-7
+        'FileReference': [ lambda x: x.Unknown3.obj_offset + 4, ['unsigned long long']], #MFT entry index 0-6, Sequence number 6-7
         'Unknown4': [ lambda x: x.FileReference.obj_offset + 8, ['unsigned long long']],
         'LongStringSize': [ lambda x: x.Unknown4.obj_offset + 8, ['unsigned short']],
         'Unknown5': [ lambda x: x.LongStringSize.obj_offset + 2, ['unsigned int']],
@@ -874,6 +894,41 @@ class ShellBags(common.AbstractWindowsCommand):
                         outfd.write("{0}".format(shell.body("FullPath: {0}/Registry: {1}/Key: {2}/LW: {3}".format(full_path, reg, name, str(key.LastWriteTime)))))
                     elif type(shell) == _VOLUSER_ASSIST_TYPES:
                         outfd.write("{0}".format(shell.body(reg, name, item, str(key.LastWriteTime))))
+
+    def unified_output(self, data):
+        return TreeGrid([("Registry", str),
+                       ("Key", str),
+                       ("LastWrite", str),
+                       ("FileName", str),
+                       ("Create", str),
+                       ("Access", str),
+                       ("Attributes", str),
+                       ("Unicode", str),
+                       ("Path", str),
+                       ],
+                        self.generator(data))
+
+    def generator(self, data):
+        for name, reg, key, items in data:
+            if not key:
+                continue
+            for item in items:
+                if item == "MruListEx":
+                    continue
+                for shell in items[item]:
+                    full_path = ""
+                    if type(shell) == ITEMPOS or type(shell) == FILE_ENTRY:
+                        full_path = self.build_path(reg, name, shell).replace("\\\\", "\\")
+                        things = shell.get_items()
+                        yield (0, [str(reg),
+                            str(name),
+                            str(key.LastWriteTime),
+                            things.get("FileName", ""),
+                            things.get("Create", ""),
+                            things.get("Access", ""),
+                            things.get("Attributes", ""),
+                            things.get("Unicode", ""),
+                            str(full_path)])
 
     def render_text(self, outfd, data):
         border = "*" * 75

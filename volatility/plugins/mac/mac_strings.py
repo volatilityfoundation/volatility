@@ -43,7 +43,7 @@ class mac_strings(strings.Strings, mac_common.AbstractMacCommand):
         try:
             if self._config.PID is not None:
                 pidlist = [int(p) for p in self._config.PID.split(',')]
-                tasks = [t for t in tasks if int(t.pid) in pidlist]
+                tasks = [t for t in tasks if int(t.p_pid) in pidlist]
         except (ValueError, TypeError):
             debug.error("Invalid PID {0}".format(self._config.PID))
 

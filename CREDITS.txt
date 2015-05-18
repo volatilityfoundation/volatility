@@ -14,12 +14,14 @@ intentional. Please bring it to our attention!
 
 Volatility 2.5: 
 
+Sebastien Bourdon-Richard for various patches and bug fixes
 Bruno Constanzo for various patches to enhance performance/optimization 
 Karl Vogel for pointing out an issue with IPv4 addresses on big endian systems
 Glenn P. Edwards, Jr for adding combined user/kernel scans, --case, and ascii/unicode options to yarascan
 Cem Gurkok for submitting the mac_threads plugin
 Wyatt Roersma for converting a large number of plugins to the unified output format
 @masdif for contributing a fix for kernel 3.7+ in linux/module.c
+@TakahiroHaruyama for noticing and fixing a bug in impscan
 
 Volatility 2.4:
 
