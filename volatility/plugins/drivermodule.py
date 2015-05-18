@@ -5,6 +5,8 @@ import volatility.plugins.common as common
 import volatility.plugins.malware.devicetree as dtree
 import volatility.win32.modules as modules
 import volatility.win32.tasks as tasks
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class drivermodule(common.AbstractWindowsCommand):
 
@@ -52,6 +54,16 @@ class drivermodule(common.AbstractWindowsCommand):
                     module_name = "UNKNOWN"
 
                 yield (module_name, driver_name)
+
+    def generator(self, data):
+
+        for module_name, driver_name in data:
+            yield( 0, [str(module_name), str(driver_name)])
+
+    def unified_output(self, data):
+        return TreeGrid([("Module", str),
+                         ("Driver", str)],
+                        self.generator(data))
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Module", "36"), ("Driver", "")])
