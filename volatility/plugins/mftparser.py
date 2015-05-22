@@ -381,23 +381,24 @@ class STANDARD_INFORMATION(obj.CType):
                ]
 
     def __str__(self):
-
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
+        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0)
         try:
             modified = str(self.ModifiedTime)
         except struct.error:
-            modified = 0 
+            modified = nulltime
         try:
             mftaltered = str(self.MFTAlteredTime)
         except struct.error:
-            mftaltered = 0 
+            mftaltered = nulltime
         try:
             creation = str(self.CreationTime)
         except struct.error:
-            creation = 0 
+            creation = nulltime
         try:
             accessed = str(self.FileAccessedTime)
         except struct.error:
-            accessed = 0
+            accessed = nulltime
 
         return "{0:20} {1:30} {2:30} {3:30} {4}".format(creation, modified, mftaltered, accessed, self.get_type())
 
@@ -485,23 +486,24 @@ class FILE_NAME(STANDARD_INFORMATION):
                ]
 
     def __str__(self):
-
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
+        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0)
         try:
             modified = str(self.ModifiedTime)
         except struct.error:
-            modified = 0 
+            modified = nulltime
         try:
             mftaltered = str(self.MFTAlteredTime)
         except struct.error:
-            mftaltered = 0 
+            mftaltered = nulltime
         try:
             creation = str(self.CreationTime)
         except struct.error:
-            creation = 0 
+            creation = nulltime
         try:
             accessed = str(self.FileAccessedTime)
         except struct.error:
-            accessed = 0
+            accessed = nulltime
 
         return "{0:20} {1:30} {2:30} {3:30} {4}".format(creation, modified, mftaltered, accessed,
             self.remove_unprintable(self.get_name()))
