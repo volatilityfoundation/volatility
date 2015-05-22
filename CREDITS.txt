@@ -22,6 +22,7 @@ Cem Gurkok for submitting the mac_threads plugin
 Wyatt Roersma for converting a large number of plugins to the unified output format
 @masdif for contributing a fix for kernel 3.7+ in linux/module.c
 @TakahiroHaruyama for noticing and fixing a bug in impscan
+@f-s-p for converting some plugins to unfied output format
 
 Volatility 2.4:
 
