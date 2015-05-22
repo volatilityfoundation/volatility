@@ -382,7 +382,7 @@ class STANDARD_INFORMATION(obj.CType):
 
     def __str__(self):
         bufferas = addrspace.BufferAddressSpace(self.obj_vm._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
-        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0)
+        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0, is_utc = True)
         try:
             modified = str(self.ModifiedTime)
         except struct.error:
@@ -487,7 +487,7 @@ class FILE_NAME(STANDARD_INFORMATION):
 
     def __str__(self):
         bufferas = addrspace.BufferAddressSpace(self.obj_vm._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
-        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0)
+        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0, is_utc = True)
         try:
             modified = str(self.ModifiedTime)
         except struct.error:
