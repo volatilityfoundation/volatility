@@ -99,6 +99,8 @@ class HiveAddressSpace(addrspace.BaseAddressSpace):
             stuff_read = self.base.read(paddr, first_block)
             if not stuff_read and zero:
                 stuff_read = "\0" * first_block
+            elif not stuff_read:
+                return None
 
         new_vaddr = vaddr + first_block
         for _i in range(0, full_blocks):
