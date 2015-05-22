@@ -400,16 +400,33 @@ class STANDARD_INFORMATION(obj.CType):
                 # given physical offset in memory for example
                 path = "{0} {1}".format(record["filename"], path)
 
+        try:
+            modified = self.ModifiedTime.v()
+        except struct.error:
+            modified = 0
+        try:
+            mftaltered = self.MFTAlteredTime.v()
+        except struct.error:
+            mftaltered = 0
+        try:
+            creation = self.CreationTime.v()
+        except struct.error:
+            creation = 0
+        try:
+            accessed = self.FileAccessedTime.v()
+        except struct.error:
+            accessed = 0
+
         return "[{9}MFT STD_INFO] {0} (Offset: 0x{1:x})|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
             path,
             offset,
             record_num,
             self.get_type_short(),
             size,
-            self.FileAccessedTime.v(),
-            self.ModifiedTime.v(),
-            self.MFTAlteredTime.v(),
-            self.CreationTime.v(),
+            accessed,
+            modified,
+            mftaltered,
+            creation,
             self.obj_vm._config.MACHINE)
 
 class FILE_NAME(STANDARD_INFORMATION):
@@ -471,16 +488,32 @@ class FILE_NAME(STANDARD_INFORMATION):
             return None
 
     def body(self, path, record_num, size, offset):
+        try:
+            modified = self.ModifiedTime.v()
+        except struct.error:
+            modified = 0
+        try:
+            mftaltered = self.MFTAlteredTime.v()
+        except struct.error:
+            mftaltered = 0
+        try:
+            creation = self.CreationTime.v()
+        except struct.error:
+            creation = 0
+        try:
+            accessed = self.FileAccessedTime.v()
+        except struct.error:
+            accessed = 0
         return "[{9}MFT FILE_NAME] {0} (Offset: 0x{1:x})|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
             path,
             offset,
             record_num,
             self.get_type_short(),
             size,
-            self.FileAccessedTime.v(),
-            self.ModifiedTime.v(),
-            self.MFTAlteredTime.v(),
-            self.CreationTime.v(),
+            accessed,
+            modified,
+            mftaltered,
+            creation,
             self.obj_vm._config.MACHINE)
 
 class OBJECT_ID(obj.CType):
