@@ -509,11 +509,29 @@ class FILE_NAME(STANDARD_INFORMATION):
             self.remove_unprintable(self.get_name()))
 
     def get_full(self, full):
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
+        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0, is_utc = True)
         try:
-            return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
-                str(self.ModifiedTime),
-                str(self.MFTAlteredTime),
-                str(self.FileAccessedTime),
+            modified = str(self.ModifiedTime)
+        except struct.error:
+            modified = nulltime
+        try:
+            mftaltered = str(self.MFTAlteredTime)
+        except struct.error:
+            mftaltered = nulltime
+        try:
+            creation = str(self.CreationTime)
+        except struct.error:
+            creation = nulltime
+        try:
+            accessed = str(self.FileAccessedTime)
+        except struct.error:
+            accessed = nulltime
+        try:
+            return "{0:20} {1:30} {2:30} {3:30} {4}".format(creation,
+                modified,
+                mftaltered,
+                accessed,
                 self.remove_unprintable(full))
         except struct.error:
             return None
@@ -894,6 +912,8 @@ class MFTParser(common.AbstractWindowsCommand):
                             ("Value", str)], self.generator(data))
 
     def generator(self, data):
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
+        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0, is_utc = True)
         for offset, mft_entry, attributes in data:
             if not len(attributes):
                 continue
@@ -902,16 +922,48 @@ class MFTParser(common.AbstractWindowsCommand):
                 if i == None:
                     attrdata = ["Invalid (" + a + ")", "", "", "", "", ""]
                 elif a.startswith("STANDARD_INFORMATION"):
-                    attrdata = [a, str(i.CreationTime),
-                                str(i.ModifiedTime),
-                                str(i.MFTAlteredTime),
-                                str(i.FileAccessedTime),
+                    try:
+                        modified = str(self.ModifiedTime)
+                    except struct.error:
+                        modified = nulltime
+                    try:
+                        mftaltered = str(self.MFTAlteredTime)
+                    except struct.error:
+                        mftaltered = nulltime
+                    try:
+                        creation = str(self.CreationTime)
+                    except struct.error:
+                        creation = nulltime
+                    try:
+                        accessed = str(self.FileAccessedTime)
+                    except struct.error:
+                        accessed = nulltime
+                    attrdata = [a, creation,
+                                modified,
+                                mftaltered,
+                                accessed,
                                 i.get_type()]
                 elif a.startswith("FILE_NAME"):
-                    attrdata = [a, str(i.CreationTime),
-                                str(i.ModifiedTime),
-                                str(i.MFTAlteredTime),
-                                str(i.FileAccessedTime),
+                    try:
+                        modified = str(self.ModifiedTime)
+                    except struct.error:
+                        modified = nulltime
+                    try:
+                        mftaltered = str(self.MFTAlteredTime)
+                    except struct.error:
+                        mftaltered = nulltime
+                    try:
+                        creation = str(self.CreationTime)
+                    except struct.error:
+                        creation = nulltime
+                    try:
+                        accessed = str(self.FileAccessedTime)
+                    except struct.error:
+                        accessed = nulltime
+                    attrdata = [a, creation,
+                                modified,
+                                mftaltered,
+                                accessed,
                                 i.remove_unprintable(i.get_name())]
                 else:
                     attrdata = [a, "", "", "", "", ""]
