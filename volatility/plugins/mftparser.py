@@ -381,11 +381,25 @@ class STANDARD_INFORMATION(obj.CType):
                ]
 
     def __str__(self):
-        return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
-            str(self.ModifiedTime),
-            str(self.MFTAlteredTime),
-            str(self.FileAccessedTime),
-            self.get_type())
+
+        try:
+            modified = str(self.ModifiedTime)
+        except struct.error:
+            modified = 0 
+        try:
+            mftaltered = str(self.MFTAlteredTime)
+        except struct.error:
+            mftaltered = 0 
+        try:
+            creation = str(self.CreationTime)
+        except struct.error:
+            creation = 0 
+        try:
+            accessed = str(self.FileAccessedTime)
+        except struct.error:
+            accessed = 0
+
+        return "{0:20} {1:30} {2:30} {3:30} {4}".format(creation, modified, mftaltered, accessed, self.get_type())
 
     def body(self, path, record_num, size, offset):
         if path.strip() == "" or path == None:
@@ -471,10 +485,25 @@ class FILE_NAME(STANDARD_INFORMATION):
                ]
 
     def __str__(self):
-        return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
-            str(self.ModifiedTime),
-            str(self.MFTAlteredTime),
-            str(self.FileAccessedTime),
+
+        try:
+            modified = str(self.ModifiedTime)
+        except struct.error:
+            modified = 0 
+        try:
+            mftaltered = str(self.MFTAlteredTime)
+        except struct.error:
+            mftaltered = 0 
+        try:
+            creation = str(self.CreationTime)
+        except struct.error:
+            creation = 0 
+        try:
+            accessed = str(self.FileAccessedTime)
+        except struct.error:
+            accessed = 0
+
+        return "{0:20} {1:30} {2:30} {3:30} {4}".format(creation, modified, mftaltered, accessed,
             self.remove_unprintable(self.get_name()))
 
     def get_full(self, full):
