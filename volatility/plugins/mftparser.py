@@ -912,7 +912,7 @@ class MFTParser(common.AbstractWindowsCommand):
                             ("Value", str)], self.generator(data))
 
     def generator(self, data):
-        bufferas = addrspace.BufferAddressSpace(self.obj_vm._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
+        bufferas = addrspace.BufferAddressSpace(self._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
         nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0, is_utc = True)
         for offset, mft_entry, attributes in data:
             if not len(attributes):
@@ -923,19 +923,19 @@ class MFTParser(common.AbstractWindowsCommand):
                     attrdata = ["Invalid (" + a + ")", "", "", "", "", ""]
                 elif a.startswith("STANDARD_INFORMATION"):
                     try:
-                        modified = str(self.ModifiedTime)
+                        modified = str(i.ModifiedTime)
                     except struct.error:
                         modified = nulltime
                     try:
-                        mftaltered = str(self.MFTAlteredTime)
+                        mftaltered = str(i.MFTAlteredTime)
                     except struct.error:
                         mftaltered = nulltime
                     try:
-                        creation = str(self.CreationTime)
+                        creation = str(i.CreationTime)
                     except struct.error:
                         creation = nulltime
                     try:
-                        accessed = str(self.FileAccessedTime)
+                        accessed = str(i.FileAccessedTime)
                     except struct.error:
                         accessed = nulltime
                     attrdata = [a, creation,
@@ -945,19 +945,19 @@ class MFTParser(common.AbstractWindowsCommand):
                                 i.get_type()]
                 elif a.startswith("FILE_NAME"):
                     try:
-                        modified = str(self.ModifiedTime)
+                        modified = str(i.ModifiedTime)
                     except struct.error:
                         modified = nulltime
                     try:
-                        mftaltered = str(self.MFTAlteredTime)
+                        mftaltered = str(i.MFTAlteredTime)
                     except struct.error:
                         mftaltered = nulltime
                     try:
-                        creation = str(self.CreationTime)
+                        creation = str(i.CreationTime)
                     except struct.error:
                         creation = nulltime
                     try:
-                        accessed = str(self.FileAccessedTime)
+                        accessed = str(i.FileAccessedTime)
                     except struct.error:
                         accessed = nulltime
                     attrdata = [a, creation,
