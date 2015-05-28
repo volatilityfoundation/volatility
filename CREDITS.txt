@@ -16,24 +16,25 @@ Volatility 2.5:
 
 Sebastien Bourdon-Richard for various patches and bug fixes
 Bruno Constanzo for various patches to enhance performance/optimization 
-Karl Vogel for pointing out an issue with IPv4 addresses on big endian systems
 Glenn P. Edwards, Jr for adding combined user/kernel scans, --case, and ascii/unicode options to yarascan
+@f-s-p for converting some plugins to unfied output format
 Cem Gurkok for submitting the mac_threads plugin
-Wyatt Roersma for converting a large number of plugins to the unified output format
+Takahiro Haruyama for noticing and fixing a bug in impscan
 @masdif for contributing a fix for kernel 3.7+ in linux/module.c
-@TakahiroHaruyama for noticing and fixing a bug in impscan
+Wyatt Roersma for converting a large number of plugins to the unified output format
+Karl Vogel for pointing out an issue with IPv4 addresses on big endian systems
 
 Volatility 2.4:
 
-Justin Capella and Espen Olsen for their work on the Qemu ELF core dumps
+Steven Adair for assistance identifying a large memory PAE bug
 Sebastien Bourdon-Richard for his work on the VMware vmem/vmss split (with meta) AS 
-Stewart McIntyre for extending apihooks for detecting JMP FAR instructions
-Matt McCormack for supplying a patch to rebase dumped PE files 
-Kevin Marker for contributing over 160 standard build Linux profiles 
-Steven Adair for assistance identifying a large memory PAE bug 
+Justin Capella and Espen Olsen for their work on the Qemu ELF core dumps
 Cem Gurkok for help updating Mac OS X support for 10.9
+Matt McCormack for supplying a patch to rebase dumped PE files
+Stewart McIntyre for extending apihooks for detecting JMP FAR instructions
+Kevin Marker for contributing over 160 standard build Linux profiles 
+synack33 for creating various Mac OS X profiles, including initial ones for 10.10
 Raphaël Vinot for his patch to fix IPython within volshell
-synack33 for creating various Mac OS X profiles, including initial ones for 10.10 
 
 Volatility 2.3:
 

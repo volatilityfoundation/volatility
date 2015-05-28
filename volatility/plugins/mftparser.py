@@ -381,11 +381,26 @@ class STANDARD_INFORMATION(obj.CType):
                ]
 
     def __str__(self):
-        return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
-            str(self.ModifiedTime),
-            str(self.MFTAlteredTime),
-            str(self.FileAccessedTime),
-            self.get_type())
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
+        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0, is_utc = True)
+        try:
+            modified = str(self.ModifiedTime)
+        except struct.error:
+            modified = nulltime
+        try:
+            mftaltered = str(self.MFTAlteredTime)
+        except struct.error:
+            mftaltered = nulltime
+        try:
+            creation = str(self.CreationTime)
+        except struct.error:
+            creation = nulltime
+        try:
+            accessed = str(self.FileAccessedTime)
+        except struct.error:
+            accessed = nulltime
+
+        return "{0:20} {1:30} {2:30} {3:30} {4}".format(creation, modified, mftaltered, accessed, self.get_type())
 
     def body(self, path, record_num, size, offset):
         if path.strip() == "" or path == None:
@@ -400,16 +415,33 @@ class STANDARD_INFORMATION(obj.CType):
                 # given physical offset in memory for example
                 path = "{0} {1}".format(record["filename"], path)
 
+        try:
+            modified = self.ModifiedTime.v()
+        except struct.error:
+            modified = 0
+        try:
+            mftaltered = self.MFTAlteredTime.v()
+        except struct.error:
+            mftaltered = 0
+        try:
+            creation = self.CreationTime.v()
+        except struct.error:
+            creation = 0
+        try:
+            accessed = self.FileAccessedTime.v()
+        except struct.error:
+            accessed = 0
+
         return "[{9}MFT STD_INFO] {0} (Offset: 0x{1:x})|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
             path,
             offset,
             record_num,
             self.get_type_short(),
             size,
-            self.FileAccessedTime.v(),
-            self.ModifiedTime.v(),
-            self.MFTAlteredTime.v(),
-            self.CreationTime.v(),
+            accessed,
+            modified,
+            mftaltered,
+            creation,
             self.obj_vm._config.MACHINE)
 
 class FILE_NAME(STANDARD_INFORMATION):
@@ -454,33 +486,83 @@ class FILE_NAME(STANDARD_INFORMATION):
                ]
 
     def __str__(self):
-        return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
-            str(self.ModifiedTime),
-            str(self.MFTAlteredTime),
-            str(self.FileAccessedTime),
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
+        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0, is_utc = True)
+        try:
+            modified = str(self.ModifiedTime)
+        except struct.error:
+            modified = nulltime
+        try:
+            mftaltered = str(self.MFTAlteredTime)
+        except struct.error:
+            mftaltered = nulltime
+        try:
+            creation = str(self.CreationTime)
+        except struct.error:
+            creation = nulltime
+        try:
+            accessed = str(self.FileAccessedTime)
+        except struct.error:
+            accessed = nulltime
+
+        return "{0:20} {1:30} {2:30} {3:30} {4}".format(creation, modified, mftaltered, accessed,
             self.remove_unprintable(self.get_name()))
 
     def get_full(self, full):
+        bufferas = addrspace.BufferAddressSpace(self.obj_vm._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
+        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0, is_utc = True)
         try:
-            return "{0:20} {1:30} {2:30} {3:30} {4}".format(str(self.CreationTime),
-                str(self.ModifiedTime),
-                str(self.MFTAlteredTime),
-                str(self.FileAccessedTime),
+            modified = str(self.ModifiedTime)
+        except struct.error:
+            modified = nulltime
+        try:
+            mftaltered = str(self.MFTAlteredTime)
+        except struct.error:
+            mftaltered = nulltime
+        try:
+            creation = str(self.CreationTime)
+        except struct.error:
+            creation = nulltime
+        try:
+            accessed = str(self.FileAccessedTime)
+        except struct.error:
+            accessed = nulltime
+        try:
+            return "{0:20} {1:30} {2:30} {3:30} {4}".format(creation,
+                modified,
+                mftaltered,
+                accessed,
                 self.remove_unprintable(full))
         except struct.error:
             return None
 
     def body(self, path, record_num, size, offset):
+        try:
+            modified = self.ModifiedTime.v()
+        except struct.error:
+            modified = 0
+        try:
+            mftaltered = self.MFTAlteredTime.v()
+        except struct.error:
+            mftaltered = 0
+        try:
+            creation = self.CreationTime.v()
+        except struct.error:
+            creation = 0
+        try:
+            accessed = self.FileAccessedTime.v()
+        except struct.error:
+            accessed = 0
         return "[{9}MFT FILE_NAME] {0} (Offset: 0x{1:x})|{2}|{3}|0|0|{4}|{5}|{6}|{7}|{8}".format(
             path,
             offset,
             record_num,
             self.get_type_short(),
             size,
-            self.FileAccessedTime.v(),
-            self.ModifiedTime.v(),
-            self.MFTAlteredTime.v(),
-            self.CreationTime.v(),
+            accessed,
+            modified,
+            mftaltered,
+            creation,
             self.obj_vm._config.MACHINE)
 
 class OBJECT_ID(obj.CType):
@@ -830,6 +912,8 @@ class MFTParser(common.AbstractWindowsCommand):
                             ("Value", str)], self.generator(data))
 
     def generator(self, data):
+        bufferas = addrspace.BufferAddressSpace(self._config, data = "\x00\x00\x00\x00\x00\x00\x00\x00")
+        nulltime = obj.Object("WinTimeStamp", vm = bufferas, offset = 0, is_utc = True)
         for offset, mft_entry, attributes in data:
             if not len(attributes):
                 continue
@@ -838,16 +922,48 @@ class MFTParser(common.AbstractWindowsCommand):
                 if i == None:
                     attrdata = ["Invalid (" + a + ")", "", "", "", "", ""]
                 elif a.startswith("STANDARD_INFORMATION"):
-                    attrdata = [a, str(i.CreationTime),
-                                str(i.ModifiedTime),
-                                str(i.MFTAlteredTime),
-                                str(i.FileAccessedTime),
+                    try:
+                        modified = str(i.ModifiedTime)
+                    except struct.error:
+                        modified = nulltime
+                    try:
+                        mftaltered = str(i.MFTAlteredTime)
+                    except struct.error:
+                        mftaltered = nulltime
+                    try:
+                        creation = str(i.CreationTime)
+                    except struct.error:
+                        creation = nulltime
+                    try:
+                        accessed = str(i.FileAccessedTime)
+                    except struct.error:
+                        accessed = nulltime
+                    attrdata = [a, creation,
+                                modified,
+                                mftaltered,
+                                accessed,
                                 i.get_type()]
                 elif a.startswith("FILE_NAME"):
-                    attrdata = [a, str(i.CreationTime),
-                                str(i.ModifiedTime),
-                                str(i.MFTAlteredTime),
-                                str(i.FileAccessedTime),
+                    try:
+                        modified = str(i.ModifiedTime)
+                    except struct.error:
+                        modified = nulltime
+                    try:
+                        mftaltered = str(i.MFTAlteredTime)
+                    except struct.error:
+                        mftaltered = nulltime
+                    try:
+                        creation = str(i.CreationTime)
+                    except struct.error:
+                        creation = nulltime
+                    try:
+                        accessed = str(i.FileAccessedTime)
+                    except struct.error:
+                        accessed = nulltime
+                    attrdata = [a, creation,
+                                modified,
+                                mftaltered,
+                                accessed,
                                 i.remove_unprintable(i.get_name())]
                 else:
                     attrdata = [a, "", "", "", "", ""]
