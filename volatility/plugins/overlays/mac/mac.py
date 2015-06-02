@@ -540,11 +540,10 @@ class proc(obj.CType):
         seen_threads = []
         qentry = self.task.threads
         for thread in qentry.thread_walk_list(qentry.obj_offset):
-            if thread.obj_offset not in seen_threads:
-                seen_threads.append(thread.obj_offset)
-                threads.append(thread)
-            else:
+            if thread.obj_offset in seen_threads:
                 break
+            seen_threads.append(thread.obj_offset)
+            threads.append(thread)
 
         return threads 
 
