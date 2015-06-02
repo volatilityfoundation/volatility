@@ -1721,7 +1721,7 @@ class task_struct(obj.CType):
         thread_offset = self.obj_vm.profile.get_obj_offset("task_struct", "thread_group")
         threads = [self]
         x = obj.Object('task_struct', self.thread_group.next.v() - thread_offset, self.obj_vm)
-        while x not in threads:
+        while x not in threads and x.thread_group.next.is_valid():
             threads.append(x)
             x = obj.Object('task_struct', x.thread_group.next.v() - thread_offset, self.obj_vm)
         return threads
