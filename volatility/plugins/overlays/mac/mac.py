@@ -543,6 +543,8 @@ class proc(obj.CType):
             if thread.obj_offset not in seen_threads:
                 seen_threads.append(thread.obj_offset)
                 threads.append(thread)
+            else:
+                break
 
         return threads 
 
