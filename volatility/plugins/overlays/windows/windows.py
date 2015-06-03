@@ -199,7 +199,7 @@ class _UNICODE_STRING(obj.CType):
         return format(self.v(), formatspec)
 
     def __str__(self):
-        return str(self.dereference())
+        return str(self.v())
 
     def __unicode__(self):
         return unicode(self.dereference())
