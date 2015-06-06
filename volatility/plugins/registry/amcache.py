@@ -122,7 +122,7 @@ class AmCache(common.AbstractWindowsCommand):
                         if str(vname) in ["11", "12", "17"]:
                             try:
                                 bufferas = addrspace.BufferAddressSpace(self._config, data = struct.pack("<Q", value))
-                                result["timestamp"] = obj.Object("WinTimeStamp", vm = bufferas, offset = 0)
+                                result["timestamp"] = obj.Object("WinTimeStamp", vm = bufferas, offset = 0, is_utc = True)
                             except struct.error:
                                 result["timestamp"] = ""
                         yield result
@@ -140,7 +140,7 @@ class AmCache(common.AbstractWindowsCommand):
                     if str(vname) == "a":
                         try:
                             bufferas = addrspace.BufferAddressSpace(self._config, data = struct.pack("<I", value))
-                            result["timestamp"] = obj.Object("UnixTimeStamp", vm = bufferas, offset = 0)
+                            result["timestamp"] = obj.Object("UnixTimeStamp", vm = bufferas, offset = 0, is_utc = True)
                         except struct.error:
                             pass
                     yield result
