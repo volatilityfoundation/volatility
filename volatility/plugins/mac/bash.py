@@ -89,7 +89,11 @@ class _mac_hist_entry(obj.CType):
             if idx != -1:
                 buf = buf[:idx]  
 
-        return "".join([c for c in buf if c in string.printable])
+            ret = "".join([c for c in buf if c in string.printable])
+        else:
+            ret = ""
+
+        return ret
 
     @property
     def time_as_integer(self):
