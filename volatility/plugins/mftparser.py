@@ -347,7 +347,10 @@ class STANDARD_INFORMATION(obj.CType):
                 accessed != 0 or creation != 0)
 
     def get_type_short(self):
-        if self.Flags == None:
+        try:
+            if self.Flags == None:
+                return "?"
+        except struct.error:
             return "?"
         type = ""
         for i, j in sorted(SHORT_STANDARD_INFO_FLAGS.items()):
@@ -359,8 +362,12 @@ class STANDARD_INFORMATION(obj.CType):
 
 
     def get_type(self):
-        if self.Flags == None:
+        try:
+            if self.Flags == None:
+                return "Unknown Type"
+        except struct.error:
             return "Unknown Type"
+
         type = None
         for i in VERBOSE_STANDARD_INFO_FLAGS:
             if (i & self.Flags) == i:
