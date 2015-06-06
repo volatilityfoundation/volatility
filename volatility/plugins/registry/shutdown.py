@@ -36,7 +36,7 @@ import volatility.utils as utils
 import datetime
 import struct
 
-class Shutdown(common.AbstractWindowsCommand):
+class ShutdownTime(common.AbstractWindowsCommand):
     "Print userassist registry keys and information"
 
     def __init__(self, config, *args, **kwargs):
