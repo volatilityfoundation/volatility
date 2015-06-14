@@ -30,6 +30,7 @@ from volatility import renderers
 
 import volatility.plugins.common as common
 from volatility.renderers.basic import Address
+import volatility.plugins.overlays.basic as basic
 import volatility.scan as scan
 import volatility.utils as utils
 import volatility.addrspace as addrspace
@@ -39,6 +40,22 @@ import struct
 import binascii
 import os
 import volatility.poolscan as poolscan
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+class UnicodeString(basic.String):
+    def __str__(self):
+        result = self.obj_vm.zread(self.obj_offset, self.length).split("\x00\x00")[0].decode("utf16", "ignore")
+        if not result:
+            result = ""
+        return result
+
+    def v(self):
+        result = self.obj_vm.zread(self.obj_offset, self.length).split("\x00\x00")[0].decode("utf16", "ignore")
+        if not result:
+            return obj.NoneObject("Cannot read string length {0} at {1:#x}".format(self.length, self.obj_offset))
+        return result
 
 ATTRIBUTE_TYPE_ID = {
     0x10:"STANDARD_INFORMATION",
@@ -120,7 +137,7 @@ MFT_PATHS_FULL = {}
 
 class MFT_FILE_RECORD(obj.CType):
     def remove_unprintable(self, str):
-        return ''.join([c for c in str if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
+        return str.encode("utf8", "ignore")
 
     def add_path(self, fileinfo):
         # it doesn't really make sense to add regular files to parent directory,
@@ -231,7 +248,7 @@ class MFT_FILE_RECORD(obj.CType):
                         adsname = ""
                         if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
                             nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
-                            adsname = obj.Object("NullString", vm = self.obj_vm, offset = nameloc, length = next_attr.Header.NameLength * 2)
+                            adsname = obj.Object("UnicodeString", vm = self.obj_vm, offset = nameloc, length = next_attr.Header.NameLength * 2)
                             if adsname != None and adsname.strip() != "" and dataseen:
                                 attr += " ADS Name: {0}".format(adsname.strip())
                     dataseen = True
@@ -347,7 +364,10 @@ class STANDARD_INFORMATION(obj.CType):
                 accessed != 0 or creation != 0)
 
     def get_type_short(self):
-        if self.Flags == None:
+        try:
+            if self.Flags == None:
+                return "?"
+        except struct.error:
             return "?"
         type = ""
         for i, j in sorted(SHORT_STANDARD_INFO_FLAGS.items()):
@@ -359,8 +379,12 @@ class STANDARD_INFORMATION(obj.CType):
 
 
     def get_type(self):
-        if self.Flags == None:
+        try:
+            if self.Flags == None:
+                return "Unknown Type"
+        except struct.error:
             return "Unknown Type"
+
         type = None
         for i in VERBOSE_STANDARD_INFO_FLAGS:
             if (i & self.Flags) == i:
@@ -446,7 +470,7 @@ class STANDARD_INFORMATION(obj.CType):
 
 class FILE_NAME(STANDARD_INFORMATION):
     def remove_unprintable(self, str):
-        return ''.join([c for c in str if (ord(c) > 31 or ord(c) == 9) and ord(c) <= 126])
+        return str.encode("utf8", "ignore")
 
     # XXX need a better check than this
     # we return valid if we have _any_ timestamp other than Null
@@ -469,13 +493,13 @@ class FILE_NAME(STANDARD_INFORMATION):
         except struct.error:
             accessed = 0
         return obj.CType.is_valid(self) and (modified != 0 or mftaltered != 0 or \
-                accessed != 0 or creation != 0) and \
-                self.remove_unprintable(self.get_name()) != ""
+                accessed != 0 or creation != 0) #and \
+                #self.remove_unprintable(self.get_name()) != ""
 
     def get_name(self):
         if self.NameLength == None or self.NameLength == 0:
             return ""
-        return "{0}".format(str(self.Name).replace("\x00", ""))
+        return self.remove_unprintable(self.Name)
 
     def get_header(self):
         return [("Creation", "30"),
@@ -679,7 +703,7 @@ MFT_types = {
         'ReparseValue': [0x3c, ['unsigned int']],
         'NameLength': [0x40, ['unsigned char']],
         'Namespace': [0x41, ['unsigned char']],
-        'Name': [0x42, ['NullString', dict(length = lambda x: x.NameLength * 2)]],
+        'Name': [0x42, ['UnicodeString', dict(length = lambda x: x.NameLength * 2)]],
     }],
 
     'ATTRIBUTE_LIST': [0x19, {
@@ -760,6 +784,7 @@ class MFTTYPES(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows'}
     def modification(self, profile):
         profile.object_classes.update({
+            'UnicodeString':UnicodeString,
             'MFT_FILE_RECORD':MFT_FILE_RECORD,
             'FILE_NAME':FILE_NAME,
             'STANDARD_INFORMATION':STANDARD_INFORMATION,
