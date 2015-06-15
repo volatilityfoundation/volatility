@@ -1075,6 +1075,9 @@ class OSString(obj.CType):
         if self.string == 0:
             return ""
 
+        if self.length > 4096:
+            return ""
+
         string_object = obj.Object("String", offset = self.string, vm = self.obj_vm, length = self.length)
         return str(string_object or '')
 
