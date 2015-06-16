@@ -181,10 +181,11 @@ class UserAssist(common.AbstractWindowsCommand):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
         config.add_option('HIVE-OFFSET', short_option = 'o',
                           help = 'Hive offset (virtual)', type = 'int')
-        self.regapi = registryapi.RegistryApi(self._config)
+        self.regapi = None
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
+        self.regapi = registryapi.RegistryApi(self._config)
         win7 = addr_space.profile.metadata.get('major', 0) == 6 and addr_space.profile.metadata.get('minor', 0) >= 1
         skey = "software\\microsoft\\windows\\currentversion\\explorer\\userassist"
 
