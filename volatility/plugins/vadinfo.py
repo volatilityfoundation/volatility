@@ -461,9 +461,17 @@ class VADDump(VADInfo):
                 vad_start = self.format_value(vad.Start, "[addrpad]")
                 vad_end = self.format_value(vad.End, "[addrpad]")
 
+                # if vad is file_object and has a FileName use it (replacing backslashes to underscores)
+                name=".dmp"
+                if vad.VadFlags.PrivateMemory != 1:
+                    control_area = vad.ControlArea
+                    if control_area:
+                        file_object = vad.FileObject
+			name=str(file_object.FileName or '').replace("\\","_")
+
                 path = os.path.join(
-                    self._config.DUMP_DIR, "{0}.{1:x}.{2}-{3}.dmp".format(
-                    task.ImageFileName, offset, vad_start, vad_end))
+                    self._config.DUMP_DIR, "{0}.{1:x}.{2}-{3}{4}".format(
+                    task.ImageFileName, offset, vad_start, vad_end,name ))
 
                 result = self.dump_vad(path, vad, task_space)
 
