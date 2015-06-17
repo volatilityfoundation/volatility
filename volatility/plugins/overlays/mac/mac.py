@@ -1361,7 +1361,7 @@ class dyld32_image_info(obj.CType):
         if addr == None:
             return ""
 
-        buf = self.obj_vm.read(addr, 256)
+        buf = self.obj_vm.zread(addr, 256)
         if buf:
             idx = buf.find("\x00")
             if idx != -1:
@@ -1393,7 +1393,7 @@ class dyld64_image_info(obj.CType):
         if addr == None:
             return ""
 
-        buf = self.obj_vm.read(addr, 256)
+        buf = self.obj_vm.zread(addr, 256)
         if buf:
             idx = buf.find("\x00")
             if idx != -1:
