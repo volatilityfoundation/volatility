@@ -1052,10 +1052,16 @@ class vm_area_struct(obj.CType):
 
         flags_str  = self.flags()
        
-        if flags_str == "VM_READ|VM_WRITE|VM_EXEC":
+#        if flags_str == "VM_READ|VM_WRITE|VM_EXEC":
+#           ret = True #
+#
+#        elif flags_str == "VM_READ|VM_EXEC" and not self.vm_file:
+#            ret = True
+
+        if flags_str.startswith("VM_READ|VM_WRITE|VM_EXEC"):
            ret = True 
 
-        elif flags_str == "VM_READ|VM_EXEC" and not self.vm_file:
+        elif flags_str.startswith("VM_READ|VM_EXEC") and not self.vm_file:
             ret = True
 
         return ret
