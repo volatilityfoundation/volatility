@@ -1852,12 +1852,6 @@ mac_overlay = {
     'sysctl_oid' : [ None, { 
         'oid_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
         }], 
-    'dyld32_image_info' : [ None, { 
-        'imageFilePath' : [ None, ['pointer', ['String', dict(length = 256)]]], 
-        }], 
-    'dyld64_image_info' : [ None, { 
-        'imageFilePath' : [ None, ['pointer', ['String', dict(length = 256)]]], 
-        }], 
     'sockaddr_un': [ None, { 
         'sun_path' : [ None, ['String', dict(length = 104)]],
         }],
