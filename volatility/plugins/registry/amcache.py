@@ -88,16 +88,17 @@ programsitems = {
 }
 
 class AmCache(common.AbstractWindowsCommand):
-    "Print userassist registry keys and information"
+    "Print AmCache information"
 
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
         config.add_option('HIVE-OFFSET', short_option = 'o',
                           help = 'Hive offset (virtual)', type = 'int')
-        self.regapi = registryapi.RegistryApi(self._config)
+        self.regapi = None
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
+        self.regapi = registryapi.RegistryApi(self._config)
         filekey = "root\\file"
         progkey = "root\\programs"
 

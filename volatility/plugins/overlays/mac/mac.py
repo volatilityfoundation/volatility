@@ -1075,6 +1075,9 @@ class OSString(obj.CType):
         if self.string == 0:
             return ""
 
+        if self.length > 4096:
+            return ""
+
         string_object = obj.Object("String", offset = self.string, vm = self.obj_vm, length = self.length)
         return str(string_object or '')
 
@@ -1358,7 +1361,7 @@ class dyld32_image_info(obj.CType):
         if addr == None:
             return ""
 
-        buf = self.obj_vm.read(addr, 256)
+        buf = self.obj_vm.zread(addr, 256)
         if buf:
             idx = buf.find("\x00")
             if idx != -1:
@@ -1390,7 +1393,7 @@ class dyld64_image_info(obj.CType):
         if addr == None:
             return ""
 
-        buf = self.obj_vm.read(addr, 256)
+        buf = self.obj_vm.zread(addr, 256)
         if buf:
             idx = buf.find("\x00")
             if idx != -1:
@@ -1848,12 +1851,6 @@ mac_overlay = {
         }], 
     'sysctl_oid' : [ None, { 
         'oid_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
-        }], 
-    'dyld32_image_info' : [ None, { 
-        'imageFilePath' : [ None, ['pointer', ['String', dict(length = 256)]]], 
-        }], 
-    'dyld64_image_info' : [ None, { 
-        'imageFilePath' : [ None, ['pointer', ['String', dict(length = 256)]]], 
         }], 
     'sockaddr_un': [ None, { 
         'sun_path' : [ None, ['String', dict(length = 104)]],
