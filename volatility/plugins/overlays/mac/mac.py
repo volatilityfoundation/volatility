@@ -255,10 +255,11 @@ class vnode(obj.CType):
         phys_as = utils.load_as(self.obj_vm.get_config(), astype = 'physical')
         
         while cur and cur.is_valid() and cur.offset < file_size:
-            buf = phys_as.zread(cur.phys_page * 4096, 4096)              
+            if cur.offset > 0:
+                buf = phys_as.zread(cur.phys_page * 4096, 4096)              
 
-            yield (cur.offset.v(), buf)
- 
+                yield (cur.offset.v(), buf)
+     
             cur = cur.listq.next.dereference_as("vm_page")
 
 class fileglob(obj.CType):

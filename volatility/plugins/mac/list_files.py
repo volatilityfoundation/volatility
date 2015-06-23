@@ -38,12 +38,29 @@ class mac_list_files(common.AbstractMacCommand):
 
         mounts = mac_mount.mac_mount(self._config).calculate()
 
+        seen  = {}
+        paths = {}
+
         for mount in mounts:
             vnode = mount.mnt_vnodelist.tqh_first
 
             while vnode:
-                path = vnode.full_path()
+                if vnode.v() in seen:
+                    break
+ 
+                seen[vnode.v()] = 1
 
+                # check if parent has been seen before
+                parent_key = vnode.v_parent.v()
+
+                # if not then calc full path and store in cache
+                if not parent_key in paths:    
+                    paths[parent_key] = vnode.v_parent.full_path()
+
+                # figure out our full path and store it
+                path = paths[parent_key] + str(vnode.v_name.dereference())
+                paths[vnode.v()] = path
+                
                 yield vnode, path
 
                 vnode = vnode.v_mntvnodes.tqe_next        
