@@ -110,7 +110,6 @@ class Command(object):
                 else:
                     debug.error("You must set a profile!")
            
-            print self 
             if self._config.PROFILE not in profs:
                 debug.error("Invalid profile " + self._config.PROFILE + " selected")
             if not self.is_valid_profile(profs[self._config.PROFILE]()):
