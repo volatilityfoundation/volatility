@@ -24,34 +24,134 @@
 """
 
 import volatility.obj as obj
+import volatility.debug as debug
+import volatility.scan as scan
 import volatility.utils as utils
 import volatility.addrspace as addrspace
 import volatility.registry as registry
 import volatility.plugins.mac.common as common
 
+profiles = [
+["MacYosemite_10_10_2_14C1514x64", 18446743523963607600, 18446743523964534784, 1],
+["MacYosemite_10_10_3_14D131x64", 18446743523963609408, 18446743523964534784, 1],
+["MacYosemite_10_10_3_14D136x64", 18446743523963609408, 18446743523964534784, 1],
+["MacYosemite_10_10_14A389x64", 18446743523963612480, 18446743523964534784, 1],
+["MacYosemite_10_10_14B25x64", 18446743523963612480, 18446743523964534784, 1],
+["MacLeopard_10_5_3_Intelx86", 4850472, 1708032, 0],
+["MacLeopard_10_5_4_Intelx86", 4850488, 1708032, 0],
+["MacLeopard_10_5_5_Intelx86", 4850568, 1708032, 0],
+["MacLeopard_10_5_6_Intelx86", 4859540, 1712128, 0],
+["MacLeopard_10_5_7_Intelx86", 4880064, 1716224, 0],
+["MacLeopard_10_5_8_Intelx86", 4882736, 1716224, 0],
+["MacLeopard_10_5_Intelx86", 4823024, 1703936, 0],
+["MacSnowLeopard_10_6_1_AMDx64", 18446743523959762264, 18446743523956649984, 0],
+["MacSnowLeopard_10_6_2_AMDx64", 18446743523959767128, 18446743523956654080, 0],
+["MacSnowLeopard_10_6_4_AMDx64", 18446743523959767504, 18446743523956662272, 0],
+["MacSnowLeopard_10_6_5_AMDx64", 18446743523959780720, 18446743523956666368, 0],
+["MacSnowLeopard_10_6_6_AMDx64", 18446743523959780936, 18446743523956666368, 0],
+["MacSnowLeopard_10_6_7_AMDx64", 18446743523959800160, 18446743523956666368, 0],
+["MacSnowLeopard_10_6_8_AMDx64", 18446743523959819016, 18446743523956670464, 0],
+["MacSnowLeopard_10_6_AMDx64", 18446743523959762264, 18446743523956649984, 0],
+["MacSnowLeopard_10_6_1_Intelx86", 6139972, 2744320, 0],
+["MacSnowLeopard_10_6_2_Intelx86", 6144688, 2748416, 0],
+["MacSnowLeopard_10_6_3_Intelx86", 6139684, 2752512, 0],
+["MacSnowLeopard_10_6_4_Intelx86", 6143412, 2752512, 0],
+["MacSnowLeopard_10_6_5_Intelx86", 6165360, 2760704, 0],
+["MacSnowLeopard_10_6_6_Intelx86", 6165676, 2760704, 0],
+["MacSnowLeopard_10_6_7_Intelx86", 6186376, 2760704, 0],
+["MacSnowLeopard_10_6_8_Intelx86", 6203832, 2764800, 0],
+["MacSnowLeopard_10_6_Intelx86", 6139972, 2744320, 0],
+["MacLion_10_7_1_AMDx64", 18446743523961030696, 18446743523956600832, 0],
+["MacLion_10_7_2_AMDx64", 18446743523961030368, 18446743523956600832, 0],
+["MacLion_10_7_3_AMDx64", 18446743523961032256, 18446743523956600832, 0],
+["MacLion_10_7_4_AMDx64", 18446743523961048360, 18446743523956609024, 0],
+["MacLion_10_7_5_AMDx64", 18446743523961053360, 18446743523956609024, 0],
+["MacLion_10_7_AMDx64", 18446743523961030304, 18446743523956600832, 0],
+["MacLion_10_7_1_Intelx86", 7447336, 2899968, 0],
+["MacLion_10_7_2_Intelx86", 7451396, 2904064, 0],
+["MacLion_10_7_3_Intelx86", 7453552, 2904064, 0],
+["MacLion_10_7_4_Intelx86", 7464424, 2908160, 0],
+["MacLion_10_7_5_Intelx86", 7468772, 2908160, 0],
+["MacLion_10_7_Intelx86", 7446904, 2899968, 0],
+["MacMountainLion_10_8_1_AMDx64", 18446743523961328192, 18446743523962269696, 1],
+["MacMountainLion_10_8_2_AMDx64", 18446743523961340528, 18446743523962269696, 1],
+["MacMountainLion_10_8_3_AMDx64", 18446743523961294000, 18446743523962269696, 1],
+["MacMountainLion_10_8_4_12e55_AMDx64", 18446743523961302256, 18446743523962269696, 1],
+["MacMountainLion_10_8_5_12f37_AMDx64", 18446743523961347136, 18446743523962273792, 1],
+["MacMountainLion_10_8_5_12f45_AMDx64", 18446743523961347136, 18446743523962273792, 1],
+["MacMavericks_10_9_1_AMDx64", 18446743523961749984, 18446743523962273792, 1],
+["MacMavericks_10_9_2_13C1021_AMDx64", 18446743523961751392, 18446743523962273792, 1],
+["MacMavericks_10_9_2__13C64_AMDx64", 18446743523961753424, 18446743523962273792, 1],
+["MacMavericks_10_9_3_AMDx64", 18446743523961765744, 18446743523962273792, 1],
+["MacMavericks_10_9_4_AMDx64", 18446743523961767008, 18446743523962273792, 1],
+["MacMavericks_10_9_5_AMDx64", 18446743523961765968, 18446743523962273792, 1],
+]
+
+
+class catfishScan(scan.BaseScanner):
+    """ Scanner for Catfish string for Mountain Lion """
+    checks = []
+
+    def __init__(self, needles = None):
+        self.needles = needles
+        self.checks = [ ("MultiStringFinderCheck", {'needles':needles}) ]
+        scan.BaseScanner.__init__(self) 
+
+    def scan(self, address_space, offset = 0, maxlen = None):
+        for offset in scan.BaseScanner.scan(self, address_space, offset, maxlen):
+            yield offset
+
 # based on kdbgscan
 class mac_get_profile(common.AbstractMacCommand):
 
+
+    def _check_address(self, ver_addr, aspace):
+        if ver_addr > 0xffffffff:
+            ver_addr = ver_addr - 0xffffff8000000000
+        elif ver_addr > 0xc0000000:
+            ver_addr = ver_addr - 0xc0000000
+
+        ver_buf = aspace.read(ver_addr, 32)
+
+        if ver_buf and ver_buf.startswith("Darwin Kernel"):
+            ret = True
+        else:
+            ret = False
+
+        return ret
+
     def calculate(self):
-        profilelist = [ p.__name__ for p in registry.get_plugin_classes(obj.Profile).values() ]
-            
+        aspace = utils.load_as(self._config, astype = 'physical')
 
-        for p in profilelist:
-            self._config.update('PROFILE', p)
-           
-            buf = addrspace.BufferAddressSpace(self._config)
-            if buf.profile.metadata.get('os', 'unknown') != 'mac':
-                continue
-        
-            aspace = utils.load_as(self._config, astype = 'any')
+        found = False
 
-            ver_addr = buf.profile.get_symbol("_version") 
+        for p, ver_addr, lowglo, aslr in profiles:
+            if self._check_address(ver_addr, aspace):
+                yield p, 0
+                found = True
+                break
 
-            ver_buf = aspace.read(ver_addr, 32)
+        # didn't find a direct translation, so look for KASLR kernels
+        if found == False:
+            scanner = catfishScan(needles = ["Catfish \x00\x00"])
+            for catfish_offset in scanner.scan(aspace):
+                for p, ver_addr, lowglo, aslr in profiles:
+                    if not aslr or not lowglo:
+                        continue
 
-            if ver_buf and ver_buf.startswith("Darwin Kernel"):
-                yield p, buf.profile.shift_address
+                    shift_address = catfish_offset - (lowglo % 0xFFFFFF80)
 
+                    if self._check_address(ver_addr + shift_address, aspace):
+                        yield p, shift_address
+                        found = True
+                        break
+    
+                if found == True:
+                    break
+
+        if found == False:
+            debug.error("Unable to find an OS X profile for the given memory sample.")
+                    
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Profile", "50"), ("Shift Address", "[addrpad]")])
 
