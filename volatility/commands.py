@@ -104,12 +104,13 @@ class Command(object):
         plugin_name = self.__class__.__name__.lower()
 
         if plugin_name != "mac_get_profile":
-            if self.config.PROFILE == None:
+            if self._config.PROFILE == None:
                 if plugin_name in ["kdbgscan", "imageinfo"]:
                     self._config.update("PROFILE", "WinXPSP2x86")
                 else:
                     debug.error("You must set a profile!")
-            
+           
+            print self 
             if self._config.PROFILE not in profs:
                 debug.error("Invalid profile " + self._config.PROFILE + " selected")
             if not self.is_valid_profile(profs[self._config.PROFILE]()):
