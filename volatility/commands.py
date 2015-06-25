@@ -103,6 +103,19 @@ class Command(object):
         #  other than kdbgscan or imageinfo are given:
         if self.__class__.__name__.lower() in ["kdbgscan", "imageinfo"] and self._config.PROFILE == None:
             self._config.update("PROFILE", "WinXPSP2x86")
+        elif self.__class__.__name__.lower() == "mac_get_profile":
+            profile = ""
+
+            for p in profs:
+                self._config.update('PROFILE', p)
+                buf = addrspace.BufferAddressSpace(self._config)
+                if buf.profile.metadata.get('os', 'unknown') == 'mac':
+                    profile = p
+                    break
+         
+            if profile == "":
+                debug.error("No mac profiles installd for mac_get_profile to use.")
+
         elif self._config.PROFILE == None:
             debug.error("You must set a profile!")
         if self._config.PROFILE not in profs:
