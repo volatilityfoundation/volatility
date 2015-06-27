@@ -57,8 +57,13 @@ class mac_list_files(common.AbstractMacCommand):
                 if not parent_key in paths:    
                     paths[parent_key] = vnode.v_parent.full_path()
 
+                if paths[parent_key] == "/":
+                    sep = ""
+                else:
+                    sep = "/"
+
                 # figure out our full path and store it
-                path = paths[parent_key] + str(vnode.v_name.dereference())
+                path = paths[parent_key] + sep + str(vnode.v_name.dereference())
                 paths[vnode.v()] = path
                 
                 yield vnode, path
