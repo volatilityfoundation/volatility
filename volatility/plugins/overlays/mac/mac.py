@@ -347,7 +347,16 @@ class proc(obj.CType):
             htable_type     = "mac64_bash_hash_table"
             nbuckets_offset = self.obj_vm.profile.get_obj_offset(htable_type, "nbuckets") 
 
+        shared_start = self.task.shared_region.sr_base_address 
+        shared_end   = shared_start + self.task.shared_region.sr_size
+
         for map in self.get_proc_maps():
+            if shared_start <= map.start <= shared_end:
+                continue
+
+            if map.get_perms() != "rw-":
+                continue
+
             if map.get_path() != "":
                 continue
 
