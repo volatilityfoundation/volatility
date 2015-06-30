@@ -2092,28 +2092,32 @@ class VolatilityDTB(obj.VolatilityMagic):
         
         if profile.metadata.get('memory_model', '32bit') == "32bit":
             sym   = "swapper_pg_dir"
-            shift = 0xc0000000
+            shifts = [0xc0000000]
         else:
             sym   = "init_level4_pgt"
-            shift = 0xffffffff80000000
-        
-        sym_addr = profile.get_symbol(sym) - shift
+            shifts = [0xffffffff80000000, 0xffffffff80000000 + 0x1000000, 0xffffffff7fe00000]       
 
-        pas = self.obj_vm
+        good_dtb = -1
+ 
+        for shift in shifts:
+            sym_addr = profile.get_symbol(sym) - shift
 
-        init_task_addr = profile.get_symbol("init_task") 
-        offset         = profile.get_obj_offset("task_struct", "comm")
-   
-        read_addr = init_task_addr - shift + offset
+            pas = self.obj_vm
 
-        buf = pas.read(read_addr, 12)        
-      
-        if buf:
-            idx = buf.find("swapper")
-            if idx != 0:
-                sym_addr = sym_addr + 0x1000000
+            init_task_addr = profile.get_symbol("init_task") 
+            offset         = profile.get_obj_offset("task_struct", "comm")
+       
+            read_addr = init_task_addr - shift + offset
 
-        yield sym_addr
+            buf = pas.read(read_addr, 12)        
+          
+            if buf:
+                idx = buf.find("swapper")
+                if idx == 0:
+                    good_dtb = sym_addr
+                    break
+
+        yield good_dtb
 
 # the intel check, simply checks for the static paging of init_task
 class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
@@ -2124,19 +2128,20 @@ class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
         init_task_addr = self.obj_vm.profile.get_symbol("init_task")
 
         if self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit":
-            shift = 0xc0000000
+            shifts = [0xc0000000]
         else:
-            shift = 0xffffffff80000000
+            shifts = [0xffffffff80000000, 0xffffffff80000000 + 0x1000000, 0xffffffff7fe00000]       
 
-        phys  = self.obj_vm.vtop(init_task_addr)
-        check = init_task_addr - shift
-        if phys == check:
-            yield True
-        elif phys == check + 0x1000000:
-            yield True
-        else:
-            yield False
+        ret = False
 
+        for shift in shifts:
+            phys  = self.obj_vm.vtop(init_task_addr)
+            check = init_task_addr - shift
+            if phys == check:
+                ret = True
+                break
+
+        yield ret
 
 # the ARM check, has to check multiple values b/c phones do not map RAM at 0
 class VolatilityLinuxARMValidAS(obj.VolatilityMagic):
