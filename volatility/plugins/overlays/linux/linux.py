@@ -899,6 +899,9 @@ class module_struct(obj.CType):
         return val
 
     def get_params(self):
+        if not hasattr(self, "kp"):
+            return ""
+
         params = ""
         param_array = obj.Object(theType = 'Array', offset = self.kp, vm = self.obj_vm, targetType = 'kernel_param', count = self.num_kp)
         
