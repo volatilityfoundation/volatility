@@ -1950,7 +1950,11 @@ class task_struct(obj.CType):
         
     def get_task_start_time(self):
 
-        start_time = self.real_start_time
+        if hasattr(self, "real_start_time"):
+            start_time = self.real_start_time
+        else:
+            start_time = self.start_time
+
         if type(start_time) == volatility.obj.NativeType and type(start_time.v()) == long:
             start_time = linux_common.vol_timespec(start_time.v() / 0x989680 / 100, 0)
 
