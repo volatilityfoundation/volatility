@@ -360,6 +360,11 @@ class proc(obj.CType):
             if map.get_path() != "":
                 continue
 
+            ## 1 GB limit to prevent major delays...the bash hash data
+            ## should not be found in a region larger than this. 
+            if map.end - map.start > 0x40000000:
+                continue
+
             off = map.start
 
             while off < map.end:

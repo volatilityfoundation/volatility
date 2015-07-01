@@ -43,13 +43,21 @@ class MapYaraScanner(malfind.BaseYaraScanner):
         self.task = task
         malfind.BaseYaraScanner.__init__(self, address_space = task.get_process_address_space(), **kwargs)
 
-    def scan(self, offset = 0, maxlen = None):
+    def scan(self, offset = 0, maxlen = None, max_size = None):
         for map in self.task.get_proc_maps():
-            for match in malfind.BaseYaraScanner.scan(self, map.links.start, map.links.end - map.links.start):
+            length = map.links.end - map.links.start 
+            if max_size and length > max_size:
+                debug.warning("Skipping max size entry {0:#x} - {1:#x}".format(map.links.start, map.links.end))
+                continue
+            for match in malfind.BaseYaraScanner.scan(self, map.links.start, length):
                 yield match
 
 class mac_yarascan(malfind.YaraScan):
     """Scan memory for yara signatures"""
+
+    def __init__(self, config, *args, **kwargs):
+        malfind.YaraScan.__init__(self, config, *args, **kwargs)
+        self._config.add_option('MAX-SIZE', short_option = 'M', default = 0x40000000, action = 'store', type = 'long', help = 'Set the maximum size (default is 1GB)') 
 
     @staticmethod
     def is_valid_profile(profile):
@@ -119,7 +127,7 @@ class mac_yarascan(malfind.YaraScan):
                 if task.p_pid == 0:
                     continue
                 scanner = MapYaraScanner(task = task, rules = rules)
-                for hit, address in scanner.scan():
+                for hit, address in scanner.scan(max_size = self._config.MAX_SIZE):
                     yield (task, address, hit, 
                             scanner.address_space.zread(address - self._config.REVERSE, self._config.SIZE))
     
