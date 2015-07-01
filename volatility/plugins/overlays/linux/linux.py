@@ -799,7 +799,12 @@ class net_device(obj.CType):
             macaddr = ":".join(["{0:02x}".format(x) for x in hwaddr][:6])
         
         if macaddr == "00:00:00:00:00:00":
-            hwaddr = self.obj_vm.zread(self.dev_addr.obj_offset, 6)
+            if type(self.dev_addr) == volatility.obj.Pointer:
+                addr = self.dev_addr.v()
+            else:
+                addr = self.dev_addr.obj_offset
+    
+            hwaddr = self.obj_vm.zread(addr, 6)
             macaddr = ":".join(["{0:02x}".format(ord(x)) for x in hwaddr][:6])
                         
         return macaddr
