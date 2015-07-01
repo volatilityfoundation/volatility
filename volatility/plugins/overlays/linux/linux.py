@@ -1883,8 +1883,10 @@ class task_struct(obj.CType):
         This just figures out which is in use and returns the correct variables
         '''
 
-        wall_addr = self.obj_vm.profile.get_symbol("wall_to_monotonic")
-        sleep_addr = self.obj_vm.profile.get_symbol("total_sleep_time")
+        wall_addr       = self.obj_vm.profile.get_symbol("wall_to_monotonic")
+        sleep_addr      = self.obj_vm.profile.get_symbol("total_sleep_time")
+        timekeeper_addr = self.obj_vm.profile.get_symbol("timekeeper")
+        tkcore_addr     = self.obj_vm.profile.get_symbol("tk_core") 
 
         # old way
         if wall_addr and sleep_addr:
@@ -1896,11 +1898,32 @@ class task_struct(obj.CType):
             timeo = linux_common.vol_timespec(0, 0)
     
         # timekeeper way
-        else:
-            timekeeper_addr = self.obj_vm.profile.get_symbol("timekeeper")
+        elif timekeeper_addr:
             timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm = self.obj_vm)
             wall = timekeeper.wall_to_monotonic
             timeo = timekeeper.total_sleep_time
+
+        # 3.17(ish) - 3.19(ish) way
+        elif tkcore_addr and hasattr("timekeeper", "total_sleep_time"):
+            # skip seqcount
+            timekeeper = obj.Object("timekeeper", offset = tkcore_addr + 4, vm = self.obj_vm)
+            wall = timekeeper.wall_to_monotonic
+            timeo = timekeeper.total_sleep_time
+
+        # 3.19(ish)+
+        # getboottime from 3.19.x
+        elif tkcore_addr:
+            # skip seqcount
+            timekeeper = obj.Object("timekeeper", offset = tkcore_addr + 8, vm = self.obj_vm)
+            wall = timekeeper.wall_to_monotonic
+
+            oreal = timekeeper.offs_real
+            oboot = timekeeper.offs_boot
+ 
+            tv64 = (oreal.tv64 & 0xffffffff) - (oboot.tv64 & 0xffffffff)
+
+            tv64 = (tv64 / 100000000) * -1
+            timeo = linux_common.vol_timespec(tv64, 0) 
 
         return (wall, timeo)
 
@@ -1922,22 +1945,23 @@ class task_struct(obj.CType):
             secs = secs - 1
 
         boot_time = secs + (nsecs / linux_common.nsecs_per / 100)
+
         return boot_time
         
     def get_task_start_time(self):
 
-        start_time = self.start_time
-        if type(start_time) == long:
-            start_secs = start_time
-        else: 
-            start_secs = start_time.tv_sec + (start_time.tv_nsec / linux_common.nsecs_per / 100)
+        start_time = self.real_start_time
+        if type(start_time) == volatility.obj.NativeType and type(start_time.v()) == long:
+            start_time = linux_common.vol_timespec(start_time.v() / 0x989680 / 100, 0)
+
+        start_secs = start_time.tv_sec + (start_time.tv_nsec / linux_common.nsecs_per / 100)
 
         sec = self.get_boot_time() + start_secs
-                
+               
         # convert the integer as little endian 
         try:
             data = struct.pack("<I", sec)
-        except struct.error:
+        except struct.error, e:
             # in case we exceed 0 <= number <= 4294967295
             return 0
 
