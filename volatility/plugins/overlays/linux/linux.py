@@ -2287,7 +2287,6 @@ class page(obj.CType):
         return phys_offset
 
 class mount(obj.CType):
-
     @property
     def mnt_sb(self):
 
@@ -2319,6 +2318,10 @@ class mount(obj.CType):
         return ret
 
 class vfsmount(obj.CType):
+    def is_valid(self):
+        return self.mnt_sb.is_valid() and \
+               self.mnt_root.is_valid() and \
+               self.mnt_parent.is_valid()
 
     def _get_real_mnt(self):
 
@@ -2354,5 +2357,10 @@ class LinuxMountOverlay(obj.ProfileModification):
 
         if profile.vtypes.get("mount"):
             profile.object_classes.update({'mount' : mount, 'vfsmount' : vfsmount})
+        else:
+            profile.object_classes.update({'vfsmount' : vfsmount})
+
+
+
 
 

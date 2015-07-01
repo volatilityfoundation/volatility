@@ -80,21 +80,35 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
         hash_mnts = {}
         for (idx, outerlist) in enumerate(mnt_list):
-            if outerlist == outerlist.next:
+            if outerlist == outerlist.next or not outerlist.m("next").is_valid():
                 continue
 
             for mnt in outerlist.list_of_type(mnttype, "mnt_hash"):
-                hash_mnts[mnt]            = 1
-                hash_mnts[mnt.mnt_parent] = 1
-                hash_mnts[mnt.mnt_parent.mnt_parent] = 1
+                if mnt.is_valid():
+                    hash_mnts[mnt]            = 1
+                else:
+                    break   
+ 
+                if mnt.mnt_parent.is_valid():
+                    hash_mnts[mnt.mnt_parent] = 1
+    
+                if mnt.mnt_parent.mnt_parent.is_valid():    
+                    hash_mnts[mnt.mnt_parent.mnt_parent] = 1
 
         child_mnts = {}
         for mnt in hash_mnts:
             for child_mnt in mnt.mnt_child.list_of_type(mnttype, "mnt_child"):
+                if not child_mnt.is_valid():
+                    break
+  
                 child_mnts[child_mnt]            = 1
-                child_mnts[child_mnt.mnt_parent] = 1
-                child_mnts[child_mnt.mnt_parent.mnt_parent] = 1
-        
+  
+                if child_mnt.mnt_parent.is_valid():
+                    child_mnts[child_mnt.mnt_parent] = 1
+                
+                if child_mnt.mnt_parent.mnt_parent.is_valid():
+                    child_mnts[child_mnt.mnt_parent.mnt_parent] = 1
+
         all_mnts = list(set(hash_mnts.keys() + child_mnts.keys()))
 
         list_mnts    = {} 
@@ -109,12 +123,17 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                 if idx > 20:
                     break
 
-                list_mnts[child_mnt]            = 1
-                list_mnts[child_mnt.mnt_parent] = 1
-                list_mnts[child_mnt.mnt_parent.mnt_parent] = 1
+                if child_mnt.is_valid():
+                    list_mnts[child_mnt]            = 1
+                
+                if child_mnt.mnt_parent.is_valid():
+                    list_mnts[child_mnt.mnt_parent] = 1
+                
+                if child_mnt.mnt_parent.mnt_parent.is_valid():
+                    list_mnts[child_mnt.mnt_parent.mnt_parent] = 1
 
         all_mnts = list(set(all_mnts + list_mnts.keys()))
- 
+
         seen = {}
         for (idx, mnt) in enumerate(all_mnts):
             if mnt.mnt_sb.v() not in seen:
