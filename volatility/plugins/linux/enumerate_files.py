@@ -42,14 +42,14 @@ class linux_enumerate_files(linux_common.AbstractLinuxCommand):
             yield inode, inode.i_ino, file_path
 
     def unified_output(self, data):
-        return TreeGrid([("Inode Number", int), ("Inode", Address), ("Path", str)],
+        return TreeGrid([("Inode Address", Address), ("Inode Number", int), ("Path", str)],
                         self.generator(data))
 
     def generator(self, data):
         for inode, inum, path in data:
-            yield (0, [int(inum), Address(inode.v()), str(path)])
+            yield (0, [Address(inode.v()), int(inum), str(path)])
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Inode Number", "25"), ("Inode", "[addr]"), ("Path", "")])
+        self.table_header(outfd, [("Inode Address", "[addr]"), ("Inode Number", "25"), ("Path", "")])
         for inode, inum, path in data:
             self.table_row(outfd, inode, inum, path) 
