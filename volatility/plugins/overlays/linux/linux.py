@@ -2131,7 +2131,7 @@ class VolatilityDTB(obj.VolatilityMagic):
             shifts = [0xc0000000]
         else:
             sym   = "init_level4_pgt"
-            shifts = [0xffffffff80000000, 0xffffffff80000000 + 0x1000000, 0xffffffff7fe00000]       
+            shifts = [0xffffffff80000000, 0xffffffff80000000 - 0x1000000, 0xffffffff7fe00000]       
 
         good_dtb = -1
  
@@ -2166,7 +2166,7 @@ class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
         if self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit":
             shifts = [0xc0000000]
         else:
-            shifts = [0xffffffff80000000, 0xffffffff80000000 + 0x1000000, 0xffffffff7fe00000]       
+            shifts = [0xffffffff80000000, 0xffffffff80000000 - 0x1000000, 0xffffffff7fe00000]       
 
         ret = False
 
