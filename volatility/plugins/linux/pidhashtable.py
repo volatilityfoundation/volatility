@@ -83,9 +83,7 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
 
             upid = self.get_obj(pid_chain.next, "upid", "pid_chain")
 
-    def calculate_v3(self):
-        self.seen_tasks = {}
-
+    def _get_pidhash_array(self):
         pidhash_shift = obj.Object("unsigned int", offset = self.addr_space.profile.get_symbol("pidhash_shift"), vm = self.addr_space)
         pidhash_size = 1 << pidhash_shift
 
@@ -95,8 +93,14 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         # pidhash is an array of hlist_heads
         pidhash = obj.Object(theType = 'Array', offset = pidhash_ptr, vm = self.addr_space, targetType = 'hlist_head', count = pidhash_size)
 
-        for hlist in pidhash:
+        return pidhash
 
+    def calculate_v3(self):
+        self.seen_tasks = {}
+
+        pidhash = self._get_pidhash_array()
+
+        for hlist in pidhash:
             # each entry in the hlist is a upid which is wrapped in a pid
             ent = hlist.first
 
@@ -118,7 +122,42 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         debug.error("{0:s}: This profile is currently unsupported by this plugin. Please file a bug report on our issue tracker to have support added.".format(func_name))
 
     def calculate_v2(self):
-        self.profile_unsupported("calculate_v2")
+        poff = self.addr_space.profile.get_obj_offset("task_struct", "pids") 
+
+        pidhash    = self._get_pidhash_array()
+
+        for p  in pidhash:
+            if p.v() == 0:
+                continue
+            
+            ptr = obj.Object("Pointer", offset = p.v(), vm = self.addr_space)
+    
+            if ptr.v() == 0:
+                continue
+
+            pidl = obj.Object("pid_link", offset = ptr.v(), vm = self.addr_space)
+
+            nexth = pidl.pid
+
+            if not nexth.is_valid():
+                continue
+         
+            nexth = obj.Object("task_struct", offset = nexth - poff, vm = self.addr_space)
+
+            while 1:
+                if not pidl:
+                    break
+
+                yield nexth
+               
+                pidl = pidl.node.m("next").dereference_as("pid_link")    
+                
+                nexth = pidl.pid
+
+                if not nexth.is_valid():
+                    break
+ 
+                nexth = obj.Object("task_struct", offset = nexth - poff, vm = self.addr_space)
 
     def calculate_v1(self):
         self.profile_unsupported("calculate_v1")
@@ -127,7 +166,6 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         self.profile_unsupported("refresh_pid_hash_task_table")
 
     def get_both(self):
-
         has_pid_link = self.profile.has_type("pid_link")
         has_link_pid = self.profile.obj_has_member("pid_link", "pid")
 
@@ -154,7 +192,6 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         return func
 
     def determine_func(self):
-
         pidhash = self.addr_space.profile.get_symbol("pidhash")
         pid_hash = self.addr_space.profile.get_symbol("pid_hash")
         pidhash_shift = self.addr_space.profile.get_symbol("pidhash_shift")
