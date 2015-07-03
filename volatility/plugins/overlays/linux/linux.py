@@ -670,10 +670,9 @@ class gate_struct64(obj.CType):
 
     @property
     def Address(self):
-
-        low = self.offset_low
+        low    = self.offset_low
         middle = self.offset_middle
-        high = self.offset_high
+        high   = self.offset_high
 
         ret = (high << 32) | (middle << 16) | low
 
@@ -683,7 +682,6 @@ class desc_struct(obj.CType):
 
     @property
     def Address(self):
-
         return (self.b & 0xffff0000) | (self.a & 0x0000ffff)
 
 class module_sect_attr(obj.CType):
@@ -2232,7 +2230,6 @@ class LinuxObjectClasses(obj.ProfileModification):
             'VolatilityLinuxARMValidAS' : VolatilityLinuxARMValidAS,
             'kernel_param' : kernel_param,
             'kparam_array' : kparam_array,
-            'gate_struct64' : gate_struct64,
             'desc_struct' : desc_struct,
             'page': page,
             'LinuxPermissionFlags': LinuxPermissionFlags,
@@ -2359,6 +2356,14 @@ class LinuxMountOverlay(obj.ProfileModification):
             profile.object_classes.update({'mount' : mount, 'vfsmount' : vfsmount})
         else:
             profile.object_classes.update({'vfsmount' : vfsmount})
+
+class LinuxGate64Overlay(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'linux'}
+    before = ['BasicObjectClasses'] # , 'LinuxVTypes']
+
+    def modification(self, profile):
+        if profile.has_type("gate_struct64"): 
+            profile.object_classes.update({'gate_struct64' : gate_struct64})
 
 
 
