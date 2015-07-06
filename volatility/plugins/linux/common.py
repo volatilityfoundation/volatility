@@ -201,7 +201,7 @@ def get_new_sock_pipe_path(task, filp):
 def get_path(task, filp):
     dentry = filp.dentry
 
-    if dentry.d_op and dentry.d_op.d_dname:
+    if dentry.d_op and hasattr(dentry.d_op, "d_dname") and dentry.d_op.d_dname:
         ret = get_new_sock_pipe_path(task, filp)
     else:
         ret = _get_path_file(task, filp)

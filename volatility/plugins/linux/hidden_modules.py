@@ -38,6 +38,11 @@ class linux_hidden_modules(linux_common.AbstractLinuxCommand):
     def walk_modules_address_space(self, addr_space):
         list_mods = [x[0].obj_offset for x in linux_lsmod.linux_lsmod(self._config).calculate()]
 
+        # this for is for pre-2008 kernels:
+        # https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/kernel/module.c?id=3a642e99babe0617febb6f402e1e063479f489db)
+        if addr_space.profile.get_symbol("module_addr_min") == None:
+            return
+
         min_addr_sym = obj.Object("unsigned long", offset = addr_space.profile.get_symbol("module_addr_min"), vm = addr_space)
         max_addr_sym = obj.Object("unsigned long", offset = addr_space.profile.get_symbol("module_addr_max"), vm = addr_space)
 

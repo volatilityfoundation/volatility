@@ -255,10 +255,11 @@ class vnode(obj.CType):
         phys_as = utils.load_as(self.obj_vm.get_config(), astype = 'physical')
         
         while cur and cur.is_valid() and cur.offset < file_size:
-            buf = phys_as.zread(cur.phys_page * 4096, 4096)              
+            if cur.offset > 0:
+                buf = phys_as.zread(cur.phys_page * 4096, 4096)              
 
-            yield (cur.offset.v(), buf)
- 
+                yield (cur.offset.v(), buf)
+     
             cur = cur.listq.next.dereference_as("vm_page")
 
 class fileglob(obj.CType):
@@ -346,8 +347,22 @@ class proc(obj.CType):
             htable_type     = "mac64_bash_hash_table"
             nbuckets_offset = self.obj_vm.profile.get_obj_offset(htable_type, "nbuckets") 
 
+        shared_start = self.task.shared_region.sr_base_address 
+        shared_end   = shared_start + self.task.shared_region.sr_size
+
         for map in self.get_proc_maps():
+            if shared_start <= map.start <= shared_end:
+                continue
+
+            if map.get_perms() != "rw-":
+                continue
+
             if map.get_path() != "":
+                continue
+
+            ## 1 GB limit to prevent major delays...the bash hash data
+            ## should not be found in a region larger than this. 
+            if map.end - map.start > 0x40000000:
                 continue
 
             off = map.start
@@ -1075,6 +1090,9 @@ class OSString(obj.CType):
         if self.string == 0:
             return ""
 
+        if self.length > 4096:
+            return ""
+
         string_object = obj.Object("String", offset = self.string, vm = self.obj_vm, length = self.length)
         return str(string_object or '')
 
@@ -1358,7 +1376,7 @@ class dyld32_image_info(obj.CType):
         if addr == None:
             return ""
 
-        buf = self.obj_vm.read(addr, 256)
+        buf = self.obj_vm.zread(addr, 256)
         if buf:
             idx = buf.find("\x00")
             if idx != -1:
@@ -1390,7 +1408,7 @@ class dyld64_image_info(obj.CType):
         if addr == None:
             return ""
 
-        buf = self.obj_vm.read(addr, 256)
+        buf = self.obj_vm.zread(addr, 256)
         if buf:
             idx = buf.find("\x00")
             if idx != -1:
@@ -1848,12 +1866,6 @@ mac_overlay = {
         }], 
     'sysctl_oid' : [ None, { 
         'oid_name' : [ None, ['pointer', ['String', dict(length = 256)]]], 
-        }], 
-    'dyld32_image_info' : [ None, { 
-        'imageFilePath' : [ None, ['pointer', ['String', dict(length = 256)]]], 
-        }], 
-    'dyld64_image_info' : [ None, { 
-        'imageFilePath' : [ None, ['pointer', ['String', dict(length = 256)]]], 
         }], 
     'sockaddr_un': [ None, { 
         'sun_path' : [ None, ['String', dict(length = 104)]],

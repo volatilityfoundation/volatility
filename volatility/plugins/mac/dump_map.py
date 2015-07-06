@@ -36,6 +36,7 @@ class mac_dump_maps(proc_maps.mac_proc_maps):
         proc_maps.mac_proc_maps.__init__(self, config, *args, **kwargs)         
         self._config.add_option('MAP_ADDRESS', short_option = 's', default = None, help = 'Filter by starting address of map', action = 'store', type = 'long')
         self._config.add_option('DUMP-DIR', short_option = 'D', default = None, help = 'Output directory', action = 'store', type = 'str')
+        self._config.add_option('MAX-SIZE', short_option = 'M', default = 0x40000000, action = 'store', type = 'long', help = 'Set the maximum size (default is 1GB)') 
  
     def render_text(self, outfd, data):
         if (not self._config.DUMP_DIR or not os.path.isdir(self._config.DUMP_DIR)):
@@ -54,6 +55,10 @@ class mac_dump_maps(proc_maps.mac_proc_maps):
 
         for proc, map in data: 
             if map_address and map_address != map.links.start:
+                continue
+
+            if map.links.end - map.links.start > self._config.MAX_SIZE:
+                debug.warning("Skipping max size entry {0:#x} - {1:#x}".format(map.links.start, map.links.end))
                 continue
 
             file_name = "task.{0}.{1:#x}.dmp".format(proc.p_pid, map.links.start)

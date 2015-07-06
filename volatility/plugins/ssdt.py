@@ -161,7 +161,9 @@ class SSDT(common.AbstractWindowsCommand):
             for i, desc in enumerate(ssdt_obj.Descriptors):
                 # Apply some extra checks - KiServiceTable should reside in kernel memory and ServiceLimit 
                 # should be greater than 0 but not unbelievably high
-                if desc.is_valid() and desc.ServiceLimit > 0 and desc.ServiceLimit < 0xFFFF and desc.KiServiceTable > 0x80000000:
+                if not desc.is_valid() or desc.ServiceLimit <= 0 or desc.ServiceLimit >= 0xFFFF or desc.KiServiceTable <= 0x80000000:
+                    break
+                else:
                     tables.add((i, desc.KiServiceTable.v(), desc.ServiceLimit.v()))
 
         print "Finding appropriate address space for tables..."
