@@ -269,8 +269,11 @@ class fileglob(obj.CType):
         ret = self.members.get("fg_type")
         if ret:
             ret = self.m("fg_type")
-        else:    
-            ret = self.fg_ops.fo_type
+        else:
+            if self.fg_ops.is_valid(): 
+                ret = self.fg_ops.fo_type
+            else:
+                ret = 'INVALID'
 
         ret = str(ret)
         return ret
@@ -691,7 +694,10 @@ class proc(obj.CType):
 
     def get_dyld_maps(self):        
         proc_as = self.get_process_address_space()
-
+    
+        if proc_as == None:
+            return
+    
         if self.pack_size == 4:
             dtype = "dyld32_all_image_infos"
             itype = "dyld32_image_info"
