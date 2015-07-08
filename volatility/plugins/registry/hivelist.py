@@ -62,10 +62,7 @@ class HiveList(hs.HiveScan):
 
         for hive in data:
             if hive.Hive.Signature == 0xbee0bee0 and hive.obj_offset not in hive_offsets:
-                try:
-                    name = str(hive.FileFullPath or '') or str(hive.FileUserName or '') or str(hive.HiveRootPath or '') or "[no name]"
-                except AttributeError:
-                    name = "[no name]"
+                name = hive.get_name()
                 # Spec of 10 rather than 8 width, since the # puts 0x at the start, which is included in the width
                 yield (0, [Address(hive.obj_offset), Address(hive.obj_vm.vtop(hive.obj_offset)), str(name)])
                 hive_offsets.append(hive.obj_offset)
@@ -79,10 +76,7 @@ class HiveList(hs.HiveScan):
         hive_offsets = []
         for hive in result:
             if hive.Hive.Signature == 0xbee0bee0 and hive.obj_offset not in hive_offsets:
-                try:
-                    name = str(hive.FileFullPath or '') or str(hive.FileUserName or '') or str(hive.HiveRootPath or '') or "[no name]"
-                except AttributeError:
-                    name = "[no name]"
+                name = hive.get_name()
                 # Spec of 10 rather than 8 width, since the # puts 0x at the start, which is included in the width
                 self.table_row(outfd, hive.obj_offset, hive.obj_vm.vtop(hive.obj_offset), name)
                 hive_offsets.append(hive.obj_offset)
