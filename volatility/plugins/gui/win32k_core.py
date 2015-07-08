@@ -633,6 +633,36 @@ class _RTL_ATOM_TABLE(tagWINDOWSTATION):
                     self.Signature == 0x6d6f7441 and
                     self.NumBuckets < 0xFFFF)
 
+    @property
+    def NumBuckets(self):
+        """Dynamically retrieve the number of atoms in the hash table. 
+        First we take into account the offset from the current profile
+        but if it fails and the profile is Win7SP1x64 then we auto set 
+        it to the value found in the recently patched versions.
+
+        This is a temporary fix until we have support better support
+        for parsing pdb symbols on the fly. """
+
+        if self.m('NumBuckets') < 0xFFFF:
+            return self.m('NumBuckets')
+
+        profile = self.obj_vm.profile
+        meta = profile.metadata 
+        major = meta.get('major', 0)
+        minor = meta.get('minor', 0)
+        build = meta.get('build', 0)
+        vers = (major, minor, build)
+        
+        if meta.get('memory_model') != '64bit' or vers != (6, 1, 7601):
+            return self.m('NumBuckets')
+
+        ## its 0x58 on the patched versions and 0x18 on the non-patched versions
+        ## so we just add 0x40 here to make up the difference 
+        offset = profile.get_obj_offset("_RTL_ATOM_TABLE", "NumBuckets")
+        number = obj.Object("unsigned long", offset = self.obj_offset + offset + 0x40, vm = self.obj_vm)
+
+        return number
+
     def atoms(self):
         """Carve all atoms out of this atom table"""
         # The default hash buckets should be 0x25 
