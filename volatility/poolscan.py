@@ -23,6 +23,7 @@ import volatility.constants as constants
 import volatility.utils as utils
 import volatility.obj as obj
 import volatility.registry as registry
+import volatility.plugins.obheadercookie as obheadercookie
 
 #--------------------------------------------------------------------------------
 # A multi-concurrent pool scanner 
@@ -196,10 +197,17 @@ class MultiScanInterface(object):
 
     def scan(self):
 
-        if self.scan_virtual:
+        # determine if we're using windows 10
+        meta = self.address_space.profile.metadata
+        win10 = (meta.get("major"), meta.get("minor")) == (6, 4)
+
+        if self.scan_virtual or win10:
             space = self.address_space
         else:
             space = self.address_space.physical_space()
+
+        inst = obheadercookie.ObHeaderCookieStore.instance()
+        inst.findcookie(space)
 
         # create instances of the various scanners linked
         # to the desired address space 
