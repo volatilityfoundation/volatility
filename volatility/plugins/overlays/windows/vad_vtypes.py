@@ -515,7 +515,7 @@ class Win81Vad(obj.ProfileModification):
     before = ["WindowsOverlay"]
     conditions = {"os": lambda x: x == "windows", 
                   "major": lambda x: x == 6, 
-                  "minor": lambda x: x == 3}
+                  "minor": lambda x: x >= 3}
 
     def modification(self, profile):
         profile.object_classes.update({
@@ -529,7 +529,7 @@ class Win81Vad(obj.ProfileModification):
 # Windows 10
 #----------------------------------------------------------------------
 
-class _MMVAD_SHORT_WIN10(_MMVAD_SHORT_WIN81):
+class _MMVAD_SHORT_WIN10x64(_MMVAD_SHORT_WIN81):
     
     @property
     def Start(self):
@@ -539,7 +539,7 @@ class _MMVAD_SHORT_WIN10(_MMVAD_SHORT_WIN81):
     def End(self):
         return (((self.EndingVpn + 1) << 12) | (self.EndingVpnHigh << 44)) - 1
 
-class _MMVAD_WIN10(_MMVAD_WIN81):
+class _MMVAD_WIN10x64(_MMVAD_WIN81):
 
     @property
     def Start(self):
@@ -554,12 +554,11 @@ class Win10Vad(obj.ProfileModification):
     before = ["WindowsOverlay"]
     conditions = {"os": lambda x: x == "windows", 
                   "major": lambda x: x == 6, 
-                  "minor": lambda x: x == 4}
+                  "minor": lambda x: x == 4,
+                  "memory_model": lambda x: x == "64bit"}
 
     def modification(self, profile):
         profile.object_classes.update({
-            '_MMVAD': _MMVAD_WIN10,
-            '_MMVAD_SHORT': _MMVAD_SHORT_WIN10,
-            '_RTL_AVL_TREE': _RTL_AVL_TREE,
-            '_RTL_BALANCED_NODE': _RTL_BALANCED_NODE,
+            '_MMVAD': _MMVAD_WIN10x64,
+            '_MMVAD_SHORT': _MMVAD_SHORT_WIN10x64,
             })

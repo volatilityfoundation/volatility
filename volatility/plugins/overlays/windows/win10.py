@@ -45,6 +45,22 @@ class Win10x64DTB(obj.ProfileModification):
             'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\xb4\x00")]],
             }]})
 
+class Win10x86DTB(obj.ProfileModification):
+    """The Windows 10 32-bit DTB signature"""
+
+    before = ['WindowsOverlay', 'Win8x86DTB']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 4,
+                  'memory_model': lambda x: x == '32bit',
+                  }
+
+    def modification(self, profile):
+        profile.merge_overlay({
+            'VOLATILITY_MAGIC': [ None, {
+            'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\x2A\x00")]],
+            }]})
+
 class Win10x64(obj.Profile):
     """ A Profile for Windows 10 x64 """
     _md_memory_model = '64bit'
@@ -54,3 +70,11 @@ class Win10x64(obj.Profile):
     _md_build = 9841
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_vtypes'
 
+class Win10x86(obj.Profile):
+    """ A Profile for Windows 10 x86 """
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 9841
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_vtypes'

@@ -58,7 +58,7 @@ class ObHeaderCookieStore(object):
         vers = (meta.get("major", 0), meta.get("minor", 0))
 
         # this algorithm only applies to Windows 10 or greater 
-        if vers > (6, 4):
+        if vers < (6, 4):
             return True 
 
         # prevent subsequent attempts from recalculating the existing value 
@@ -95,16 +95,29 @@ class ObHeaderCookieStore(object):
         addr = None
 
         # search backwards from the RET and find the MOVZX 
-        # movzx ecx, byte ptr cs:ObHeaderCookie 
-        for op in reversed(ops):
-            if (op.size == 7 and 
-                        'FLAG_RIP_RELATIVE' in op.flags and
-                        len(op.operands) == 2 and 
-                        op.operands[0].type == 'Register' and 
-                        op.operands[1].type == 'AbsoluteMemory' and 
-                        op.operands[1].size == 8):
-                addr = op.address + op.size + op.operands[1].disp 
-                break
+
+        if model == "32bit":
+            # movzx ecx, byte ptr ds:_ObHeaderCookie
+            for op in reversed(ops):
+                if (op.size == 7 and 
+                            'FLAG_DST_WR' in op.flags and
+                            len(op.operands) == 2 and 
+                            op.operands[0].type == 'Register' and 
+                            op.operands[1].type == 'AbsoluteMemoryAddress' and 
+                            op.operands[1].size == 8):
+                    addr = op.operands[1].disp & 0xFFFFFFFF
+                    break
+        else:
+            # movzx ecx, byte ptr cs:ObHeaderCookie 
+            for op in reversed(ops):
+                if (op.size == 7 and 
+                            'FLAG_RIP_RELATIVE' in op.flags and
+                            len(op.operands) == 2 and 
+                            op.operands[0].type == 'Register' and 
+                            op.operands[1].type == 'AbsoluteMemory' and 
+                            op.operands[1].size == 8):
+                    addr = op.address + op.size + op.operands[1].disp 
+                    break
 
         if not addr:
             debug.warning("Cannot find nt!ObHeaderCookie")
