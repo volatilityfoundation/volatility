@@ -67,7 +67,7 @@ class mac_check_trap_table(common.AbstractMacCommand):
             if major == 10:
                 vtypes = x64_10_vtypes
 
-            elif major == 13:
+            elif major >= 13:
                 vtypes = x64_13_vtypes
 
             else:
