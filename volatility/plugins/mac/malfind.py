@@ -38,6 +38,13 @@ class mac_malfind(mac_pstasks.mac_tasks):
         for task in data:
             proc_as = task.get_process_address_space()
 
+            bit_string = str(task.task.map.pmap.pm_task_map or '')[9:]
+
+            if bit_string == "64BIT":
+                bits = '64bit'
+            else:
+                bits = '32bit'
+
             for map in task.get_proc_maps():
                 if map.is_suspicious():
                     fname = map.get_path()                    
@@ -60,7 +67,7 @@ class mac_malfind(mac_pstasks.mac_tasks):
                     outfd.write("\n")
                     outfd.write("\n".join(
                         ["{0:#x} {1:<16} {2}".format(o, h, i)
-                        for o, i, h in malfind.Disassemble(content, map.start)
+                        for o, i, h in malfind.Disassemble(content, map.start, bits = bits)
                         ]))
                 
                     outfd.write("\n\n")
