@@ -39,7 +39,7 @@ class mac_ip_filters(lsmod.mac_lsmod):
             return
 
         # change the last paramter to 1 to get messages about which good modules hooks were found in
-        good = common.is_known_address(ptr, kernel_symbol_addresses, kmods) 
+        good = common.is_known_address_name(ptr, kernel_symbol_addresses, kmods) 
 
         return (good, context, fname, ptr)
 
