@@ -61,12 +61,6 @@ class PrintKey(hivelist.HiveList):
         config.add_option('KEY', short_option = 'K',
                           help = 'Registry Key', type = 'str')
 
-    def hive_name(self, hive):
-        try:
-            return hive.FileFullPath.v() or hive.FileUserName.v() or hive.HiveRootPath.v() or "[no name]"
-        except AttributeError:
-            return "[no name]"
-
     def calculate(self):
         addr_space = utils.load_as(self._config)
 
@@ -77,7 +71,7 @@ class PrintKey(hivelist.HiveList):
 
         for hoff in set(hive_offsets):
             h = hivemod.HiveAddressSpace(addr_space, self._config, hoff)
-            name = self.hive_name(obj.Object("_CMHIVE", vm = addr_space, offset = hoff))
+            name = obj.Object("_CMHIVE", vm = addr_space, offset = hoff).get_name()
             root = rawreg.get_root(h)
             if not root:
                 if self._config.HIVE_OFFSET:

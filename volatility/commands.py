@@ -101,14 +101,19 @@ class Command(object):
         profs = registry.get_plugin_classes(obj.Profile)
         # force user to give a profile if a plugin
         #  other than kdbgscan or imageinfo are given:
-        if self.__class__.__name__.lower() in ["kdbgscan", "imageinfo"] and self._config.PROFILE == None:
-            self._config.update("PROFILE", "WinXPSP2x86")
-        elif self._config.PROFILE == None:
-            debug.error("You must set a profile!")
-        if self._config.PROFILE not in profs:
-            debug.error("Invalid profile " + self._config.PROFILE + " selected")
-        if not self.is_valid_profile(profs[self._config.PROFILE]()):
-            debug.error("This command does not support the profile " + self._config.PROFILE)
+        plugin_name = self.__class__.__name__.lower()
+
+        if plugin_name != "mac_get_profile":
+            if self._config.PROFILE == None:
+                if plugin_name in ["kdbgscan", "imageinfo"]:
+                    self._config.update("PROFILE", "WinXPSP2x86")
+                else:
+                    debug.error("You must set a profile!")
+           
+            if self._config.PROFILE not in profs:
+                debug.error("Invalid profile " + self._config.PROFILE + " selected")
+            if not self.is_valid_profile(profs[self._config.PROFILE]()):
+                debug.error("This command does not support the profile " + self._config.PROFILE)
 
         # # Executing plugins is done in two stages - first we calculate
         data = self.calculate()

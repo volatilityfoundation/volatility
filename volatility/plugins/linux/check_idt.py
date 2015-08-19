@@ -30,6 +30,25 @@ import volatility.plugins.linux.common as linux_common
 from volatility.renderers import TreeGrid
 from volatility.renderers.basic import Address
 
+idt_vtype_64 = {
+    'idt_desc': [ 16 , {
+    'offset_low'    : [0,  ['unsigned short']],
+    'segment'       : [2,  ['unsigned short']],
+    'ist'           : [4,  ['unsigned short']],
+    'offset_middle' : [6,  ['unsigned short']],
+    'offset_high'   : [8,  ['unsigned int']],
+    'unused'        : [12, ['unsigned int']],  
+    }],
+}
+
+class LinuxIDTTypes(obj.ProfileModification):
+    conditions = {"os" : lambda x : x in ["linux"]}
+
+    def modification(self, profile):       
+        if profile.metadata.get('memory_model', '64bit') == "64bit":
+            profile.vtypes.update(idt_vtype_64)
+
+
 class linux_check_idt(linux_common.AbstractLinuxCommand):
     """ Checks if the IDT has been altered """
 
@@ -53,24 +72,32 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
         if self.profile.metadata.get('memory_model', '32bit') == "32bit":
             idt_type = "desc_struct"
         else:
-            idt_type = "gate_struct64"
+            if self.profile.has_type("gate_struct64"):
+                idt_type = "gate_struct64"
+            else:
+                idt_type = "idt_desc"
 
         # this is written as a list b/c there are supposdly kernels with per-CPU IDTs
         # but I haven't found one yet...
         addrs = [self.addr_space.profile.get_symbol("idt_table")]
 
         for tableaddr in addrs:
-
             table = obj.Object(theType = 'Array', offset = tableaddr, vm = self.addr_space, targetType = idt_type, count = tblsz)
 
             for i in check_idxs:
-
                 ent = table[i]
 
                 if not ent:
                     continue
 
-                idt_addr = ent.Address
+                if hasattr(ent, "Address"):
+                    idt_addr = ent.Address
+                else:
+                    low    = ent.offset_low
+                    middle = ent.offset_middle
+                    high   = ent.offset_high
+
+                    idt_addr = (high << 32) | (middle << 16) | low
 
                 if idt_addr != 0:
                     if not idt_addr in sym_addrs:

@@ -48,7 +48,12 @@ class linux_psxview(linux_common.AbstractLinuxCommand):
         return [x.obj_offset for x in linux_pslist_cache.linux_pslist_cache(self._config).calculate()]
 
     def _get_task_parents(self):
-        return [x.real_parent.v() for x in linux_pslist.linux_pslist(self._config).calculate()]
+        if self.addr_space.profile.obj_has_member("task_struct", "real_parent"): 
+            ret = [x.real_parent.v() for x in linux_pslist.linux_pslist(self._config).calculate()] 
+        else:
+            ret = [x.parent.v() for x in linux_pslist.linux_pslist(self._config).calculate()]
+
+        return ret
     
     def _get_thread_leaders(self):
         return [x.group_leader.v() for x in linux_pidhashtable.linux_pidhashtable(self._config).calculate()]

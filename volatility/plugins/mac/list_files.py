@@ -23,7 +23,6 @@
 @contact:      atcuno@gmail.com
 @organization: 
 """
-
 import volatility.obj as obj
 import volatility.plugins.mac.common as common
 import volatility.plugins.mac.mount as mac_mount
@@ -38,13 +37,44 @@ class mac_list_files(common.AbstractMacCommand):
 
         mounts = mac_mount.mac_mount(self._config).calculate()
 
+        seen  = {}
+        paths = {}
+
         for mount in mounts:
             vnode = mount.mnt_vnodelist.tqh_first
 
             while vnode:
-                path = vnode.full_path()
+                if vnode.v() in seen:
+                    break
+ 
+                seen[vnode.v()] = 1
 
-                yield vnode, path
+                if vnode.v_flag.v() & 0x000001 != 0:
+                    yield vnode, vnode.full_path()
+                    
+                    fname = ""
+                    parent_vnode = None
+                else:
+                    fname = str(vnode.v_name.dereference() or '')
+                    parent_vnode = vnode.v_parent
+
+                if parent_vnode != None and fname != "":
+                    parent_key = parent_vnode.v()
+
+                    # if not then calc full path and store in cache
+                    if not parent_key in paths:    
+                        paths[parent_key] = parent_vnode.full_path()
+
+                    if paths[parent_key] == "/":
+                        sep = ""
+                    else:
+                        sep = "/"
+
+                    # figure out our full path and store it
+                    path = paths[parent_key] + sep + fname
+                    paths[vnode.v()] = path
+                    
+                    yield vnode, path
 
                 vnode = vnode.v_mntvnodes.tqe_next        
  

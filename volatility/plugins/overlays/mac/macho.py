@@ -13,8 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
-#
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import volatility.obj as obj
 
@@ -309,7 +308,10 @@ class macho_header(macho):
         rtsize = self.obj_vm.profile.get_obj_size(rtname)
 
         tname = "macho_load_command"
-        
+       
+        if self.macho_obj == None:
+            return
+
         # the load commands start after the header
         hdr_size = self.macho_obj.size()
          
