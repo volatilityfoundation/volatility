@@ -1993,11 +1993,15 @@ class task_struct(obj.CType):
             if argv:
                 # split the \x00 buffer into args
                 env = " ".join(argv.split("\x00"))
+
             else:
                 env = ""
         else:
             # kernel thread
             env = ""
+
+        if len(env) > 1 and env[-1] == " ":
+            env = env[:-1]
 
         return env
 
@@ -2019,6 +2023,9 @@ class task_struct(obj.CType):
         else:
             # kernel thread
             name = "[" + self.comm + "]"
+    
+        if len(name) > 1 and name[-1] == " ":
+            name = name[:-1]
 
         return name
 
