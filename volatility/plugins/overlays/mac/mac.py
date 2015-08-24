@@ -913,7 +913,7 @@ class proc(obj.CType):
                     vnode = f.f_fglob.fg_data.dereference_as("vnode")
                     path = vnode.full_path()
                 else:
-                    path = ""
+                    path = "<%s>" % ftype.replace("DTYPE_", "").lower()
                         
                 yield f, path, i
 
