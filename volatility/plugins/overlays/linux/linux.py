@@ -1213,19 +1213,9 @@ class task_struct(obj.CType):
             # test the number of buckets
             htable = obj.Object("_bash_hash_table", offset = off - nbuckets_offset, vm = proc_as)
             
-            if htable.is_valid():
-                bucket_array = obj.Object(theType="Array", targetType="Pointer", offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
-       
-                for bucket_ptr in bucket_array:
-                    bucket = bucket_ptr.dereference_as("bucket_contents")
-                    while bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
-                        pdata = bucket.data 
+            for ent in htable:
+                yield ent            
 
-                        if pdata.path.is_valid() and (0 <= pdata.flags <= 2):
-                            yield bucket
-
-                        bucket = bucket.next
-        
             off = off + 1
 
     def ldrmodules(self):
@@ -1529,22 +1519,7 @@ class task_struct(obj.CType):
 
                 yield (key, val) 
 
-    def bash_environment(self):
-        # Are we dealing with 32 or 64-bit pointers
-        if self.obj_vm.profile.metadata.get('memory_model', '32bit') == '32bit':
-            pack_format = "<I"
-            addr_sz = 4
-        else:
-            pack_format = "<Q"
-            addr_sz = 8
-
-        proc_as = self.get_process_address_space()
-        
-        # In cases when mm is an invalid pointer 
-        if not proc_as:
-            return
-
-        procvars = []
+    def _dynamic_env(self, proc_as, pack_format, addr_sz):
         for vma in self.get_proc_maps():
             if not (vma.vm_file and str(vma.vm_flags) == "rw-"):
                 continue
@@ -1576,7 +1551,7 @@ class task_struct(obj.CType):
                         # single char name, =
                         if nullidx >= eqidx:
                             env_start = addr
-
+            
             if env_start == 0:
                 continue
 
@@ -1610,6 +1585,74 @@ class task_struct(obj.CType):
                     else:
                         break
 
+    def _shell_variables(self, proc_as, pack_format, addr_sz):
+        bash_was_last = False
+        for vma in self.get_proc_maps():
+            if vma.vm_file:
+                fname = vma.info(self)[0]
+       
+                if fname.endswith("/bin/bash"):
+                    bash_was_last = True
+                else:
+                    bash_was_last = False
+            
+            # we are looking for the bss of bash 
+            if vma.vm_file or str(vma.vm_flags) != "rw-":
+                continue
+            
+            # we are looking for the bss of bash 
+            if bash_was_last == False:
+                continue
+        
+            nbuckets_offset = self.obj_vm.profile.get_obj_offset("_bash_hash_table", "nbuckets") 
+
+            for off in range(vma.vm_start, vma.vm_end, 4):
+                ptr_test = proc_as.read(off, 4)
+                if not ptr_test:
+                    continue
+
+                ptr = struct.unpack(pack_format, ptr_test)[0]
+                
+                ptr_test2 = proc_as.read(ptr + 20, 4)
+                if not ptr_test2:
+                    continue
+
+                ptr2 = struct.unpack(pack_format, ptr_test2)[0]
+                
+                test = proc_as.read(ptr2 + 4, 4)
+                if not test or test != "\x40\x00\x00\x00":
+                    continue
+
+                htable = obj.Object("_bash_hash_table", offset = ptr2, vm = proc_as)
+                
+                for ent in htable:
+                    key = str(ent.key.dereference())    
+                    val = str(ent.data.dereference_as("_envdata").value.dereference())
+
+                    yield key, val
+
+            bash_was_last = False
+
+    def bash_environment(self):
+        proc_as = self.get_process_address_space()
+        
+        # In cases when mm is an invalid pointer 
+        if not proc_as:
+            return
+
+        # Are we dealing with 32 or 64-bit pointers
+        if self.obj_vm.profile.metadata.get('memory_model', '32bit') == '32bit':
+            pack_format = "<I"
+            addr_sz = 4
+        else:
+            pack_format = "<Q"
+            addr_sz = 8
+
+        for key, val in self._dynamic_env(proc_as, pack_format, addr_sz):
+            yield key, val        
+
+        for key, val in self._shell_variables(proc_as, pack_format, addr_sz):
+            yield key, val
 
     def lsof(self):
         fds = self.files.get_fds()
