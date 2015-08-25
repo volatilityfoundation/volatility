@@ -38,6 +38,11 @@ mac_bash_hash_vtypes = {
     'flags': [0x4, ['int']],
     }],
 
+    'mac32_envdata' : [ 8, {
+    'name'   : [0x0, ['pointer', ['String', dict(length = 1024)]]],
+    'value'  : [0x4, ['pointer', ['String', dict(length = 1024)]]],
+    }],
+
     'mac32_bucket_contents' : [ 20, {
     'next' : [0x0, ['pointer', ['mac32_bucket_contents']]],
     'key'  : [0x4, ['pointer', ['String', dict(length = 1024)]]],
@@ -54,6 +59,11 @@ mac_bash_hash_vtypes = {
     'mac64_pathdata' : [ 12, {
     'path'  : [ 0, ['pointer', ['String', dict(length = 1024)]]],
     'flags' : [ 8, ['int']],
+    }],
+
+    'mac64_envdata' : [ 16, {
+    'name'   : [0x0, ['pointer', ['String', dict(length = 1024)]]],
+    'value'  : [0x8, ['pointer', ['String', dict(length = 1024)]]],
     }],
 
     'mac64_bucket_contents' : [ 32, {
@@ -161,11 +171,26 @@ class mac64_bash_hash_table(bash_funcs):
         if (not obj.CType.is_valid(self) or
                 not self.obj_vm.is_valid_address(self.bucket_array) or 
                 not self.nbuckets == 64 or
-                not self.nentries > 1):
+                not self.nentries >= 0):
             return False
 
         return True
     
+    def __iter__(self):
+        if self.is_valid():
+            bucket_array = obj.Object(theType="Array", targetType="Pointer", offset = self.bucket_array, vm = self.nbuckets.obj_vm, count = 64)
+   
+            for bucket_ptr in bucket_array:
+                bucket = bucket_ptr.dereference_as("mac64_bucket_contents")
+                #print "-b: %x" % bucket.v()
+                
+                while bucket.is_valid():
+                    yield bucket
+                    #print "--b: %x" % bucket.v()
+
+                    bucket = bucket.next
+                    #print "---b: %x" % bucket.v()
+ 
 class mac32_bash_hash_table(bash_funcs):
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         bash_funcs.__init__(self, 32, theType, offset, vm, name, **kwargs)    
@@ -178,7 +203,20 @@ class mac32_bash_hash_table(bash_funcs):
             return False
 
         return True
-    
+ 
+    def __iter__(self):
+        if self.is_valid():
+            bucket_array = obj.Object(theType="Array", targetType="Pointer", offset = self.bucket_array, vm = self.nbuckets.obj_vm, count = 64)
+   
+            for bucket_ptr in bucket_array:
+                bucket = bucket_ptr.dereference_as("mac32_bucket_contents")
+                while bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
+                    yield bucket
+
+                    bucket = bucket.next
+ 
+
+   
 class mac64_pathdata(bash_funcs):
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         bash_funcs.__init__(self, 64, theType, offset, vm, name, **kwargs)    

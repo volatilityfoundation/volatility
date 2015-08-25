@@ -440,14 +440,7 @@ class proc(obj.CType):
         for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
             yield hist              
 
-    def bash_environment(self):
-        proc_as = self.get_process_address_space()
-        
-        # In cases when mm is an invalid pointer 
-        if not proc_as:
-            return
-        
-        procvars = []
+    def _dynamic_env(self, proc_as, pack_format, addr_sz):
         for mapping in self.get_proc_maps():
             if not str(mapping.get_perms()) == "rw-" or mapping.get_path().find("bash") == -1:
                 continue
@@ -506,6 +499,88 @@ class proc(obj.CType):
                         yield (key, val) 
                     else:
                         break         
+
+    def _shell_variables(self, proc_as, pack_format, addr_sz, htable_type):
+        bash_was_last = False
+        
+        nbuckets_offset = self.obj_vm.profile.get_obj_offset(htable_type, "nbuckets") 
+
+        if addr_sz == 4:
+            skip_sz = 20
+            edata_type = "mac32_envdata"
+        else:
+            skip_sz = 32
+            edata_type = "mac64_envdata"
+
+        seen = {}
+
+        for vma in self.get_proc_maps():
+            if vma.get_perms() != "rw-" or vma.get_path().endswith("/bin/bash"):
+                continue
+            
+            off = vma.start
+            end = vma.end
+            while off < end:
+                ptr_test = proc_as.read(off, addr_sz)
+                if not ptr_test:
+                    off = ((off & ~0xfff) | 0xfff) + 1
+                    continue    
+                    
+                off = off + 1
+
+                ptr = struct.unpack(pack_format, ptr_test)[0]
+              
+                if ptr in seen:
+                    continue
+                else:
+                    seen[ptr] = 1
+ 
+                ptr_test2 = proc_as.read(ptr + skip_sz, addr_sz)
+                if not ptr_test2:
+                    continue
+
+                ptr2 = struct.unpack(pack_format, ptr_test2)[0]
+
+                test = proc_as.read(ptr2 + addr_sz, 4)
+                if not test or test != "\x40\x00\x00\x00":
+                    continue
+
+                htable = obj.Object(htable_type, offset = ptr2, vm = proc_as)
+            
+                for ent in htable:
+                    key = str(ent.key)    
+                    val_addr = ent.data.dereference_as(edata_type).value
+                    if val_addr.is_valid():
+                        val = str(val_addr.dereference())
+                    else:
+                        val = ""
+
+                    yield key, val
+
+            bash_was_last = False
+
+    def bash_environment(self):
+        proc_as = self.get_process_address_space()
+        
+        # In cases when mm is an invalid pointer 
+        if not proc_as:
+            return
+
+        # Are we dealing with 32 or 64-bit pointers
+        if self.obj_vm.profile.metadata.get('memory_model', '32bit') == '32bit':
+            pack_format = "<I"
+            addr_sz = 4
+            htable_type = "mac32_bash_hash_table"
+        else:
+            pack_format = "<Q"
+            addr_sz = 8
+            htable_type = "mac64_bash_hash_table"
+
+        #for key, val in self._dynamic_env(proc_as, pack_format, addr_sz):
+        #    yield key, val        
+
+        for key, val in self._shell_variables(proc_as, pack_format, addr_sz, htable_type):
+            yield key, val
 
     def netstat(self):
         for (filp, _, _) in self.lsof():
