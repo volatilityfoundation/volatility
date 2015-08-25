@@ -576,8 +576,8 @@ class proc(obj.CType):
             addr_sz = 8
             htable_type = "mac64_bash_hash_table"
 
-        #for key, val in self._dynamic_env(proc_as, pack_format, addr_sz):
-        #    yield key, val        
+        for key, val in self._dynamic_env(proc_as, pack_format, addr_sz):
+            yield key, val        
 
         for key, val in self._shell_variables(proc_as, pack_format, addr_sz, htable_type):
             yield key, val
