@@ -127,10 +127,12 @@ class DumpCerts(procdump.ProcDump):
     """Dump RSA private and public SSL keys"""
 
     # Wildcard signatures to scan for 
-    rules = yara.compile(sources = {
-        'x509' : 'rule x509 {strings: $a = {30 82 ?? ?? 30 82 ?? ??} condition: $a}',
-        'pkcs' : 'rule pkcs {strings: $a = {30 82 ?? ?? 02 01 00} condition: $a}',
-        })
+    rules = {}
+    if has_yara:
+        rules = yara.compile(sources = {
+            'x509' : 'rule x509 {strings: $a = {30 82 ?? ?? 30 82 ?? ??} condition: $a}',
+            'pkcs' : 'rule pkcs {strings: $a = {30 82 ?? ?? 02 01 00} condition: $a}',
+            })
 
     # These signature names map to these data structures
     type_map = {
