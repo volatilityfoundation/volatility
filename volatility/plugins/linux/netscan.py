@@ -23,12 +23,19 @@
 @contact:      atcuno@gmail.com
 @organization: 
 """
-import struct, yara, socket
+import struct, socket
 
+import volatility.debug as debug
 import volatility.obj as obj
 import volatility.utils as utils
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.malware.malfind as malfind
+
+try:
+    import yara
+    has_yara = True
+except ImportError:
+    has_yara = False
 
 class linux_netscan(linux_common.AbstractLinuxCommand):
     """Carves for network connection structures"""
@@ -51,6 +58,9 @@ class linux_netscan(linux_common.AbstractLinuxCommand):
         return i.sk.__sk_common.skc_family  in (socket.AF_INET, socket.AF_INET6) #pylint: disable-msg=W0212
 
     def calculate(self):
+        if not has_yara:
+            debug.error("Please install Yara from https://plusvic.github.io/yara/")
+
         linux_common.set_plugin_members(self)
 
         ## the start of kernel memory taken from VolatilityLinuxIntelValidAS
