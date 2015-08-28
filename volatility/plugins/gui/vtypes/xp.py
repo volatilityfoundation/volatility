@@ -157,7 +157,7 @@ class XP2003x86BaseVTypes(obj.ProfileModification):
             'right' : [ 0x8, ['long']],
             'bottom' : [ 0xc, ['long']],
             }],
-            'tagWND' : [ 0x90, {
+            'tagWND' : [ 0xA4, {
             'head' : [ 0x0, ['_THRDESKHEAD']],
             'ExStyle' : [ 0x1c, ['unsigned long']],
             'style' : [ 0x20, ['unsigned long']],
