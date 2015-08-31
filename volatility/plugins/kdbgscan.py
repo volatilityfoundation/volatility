@@ -140,7 +140,7 @@ class KDBGScan(common.AbstractWindowsCommand):
                         suspects.append((l, kdbg))
                         count += 1
             for p, k in suspects:
-                if not self._config.FULL:
+                if not self._config.FORCE:
                     yield p, k
                     continue
                 self._config.update("PROFILE", p)
