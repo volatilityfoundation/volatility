@@ -21,7 +21,6 @@
 @author:       Andrew Case
 @license:      GNU General Public License 2.0
 @contact:      atcuno@gmail.com
-@organization: 
 """
 
 import volatility.obj as obj
@@ -43,7 +42,9 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                     yield task, vma            
 
     def unified_output(self, data):
-        return TreeGrid([("Pid", int),
+        return TreeGrid([("Offset",Address),
+                        ("Pid", int),
+                         ("Name",str),
                        ("Start", Address),
                        ("End", Address),
                        ("Flags", str),
@@ -58,7 +59,9 @@ class linux_proc_maps(linux_pslist.linux_pslist):
         for task, vma in data:
             (fname, major, minor, ino, pgoff) = vma.info(task)
 
-            yield (0, [int(task.pid),
+            yield (0, [Address(task.obj_offset),
+                       int(task.pid),
+                       str(task.comm),
                 Address(vma.vm_start),
                 Address(vma.vm_end),
                 str(vma.vm_flags),
@@ -69,7 +72,9 @@ class linux_proc_maps(linux_pslist.linux_pslist):
                 str(fname)])
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Pid", "8"),
+        self.table_header(outfd, [("Offset","#018x"),
+                                  ("Pid", "8"),
+                                  ("Name","20"),
                                   ("Start", "#018x"),
                                   ("End",   "#018x"),
                                   ("Flags", "6"),
@@ -82,7 +87,9 @@ class linux_proc_maps(linux_pslist.linux_pslist):
         for task, vma in data:
             (fname, major, minor, ino, pgoff) = vma.info(task)
 
-            self.table_row(outfd, task.pid, 
+            self.table_row(outfd, task.obj_offset,
+                task.pid,
+                task.comm,
                 vma.vm_start,
                 vma.vm_end,
                 str(vma.vm_flags),

@@ -19,39 +19,65 @@
 @author:       Andrew Case
 @license:      GNU General Public License 2.0
 @contact:      atcuno@gmail.com
-@organization: 
 """
 
 import volatility.plugins.linux.pslist as linux_pslist
+from volatility.renderers.basic import Address
+from volatility.renderers import TreeGrid
+from collections import OrderedDict
 
 class linux_pstree(linux_pslist.linux_pslist):
     '''Shows the parent/child relationship between processes'''
 
     def __init__(self, *args, **kwargs):
         self.procs = {}
+        self.changed = True
         linux_pslist.linux_pslist.__init__(self, *args, **kwargs)
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Offset",Address),
+                        ("Name",str),
+                        ("Level",str),
+                         ("Pid",int),
+                         ("Ppid",int),
+                            ("Uid", int),
+                            ("Gid",int),
+                            ("Euid",int)],
+                        self.generator(data))
 
-        self.procs = {}
-        outfd.write("{0:20s} {1:15s} {2:15s}\n".format("Name", "Pid", "Uid"))
+    def generator(self, data):
+        self.procs = OrderedDict()
         for task in data:
-            self.recurse_task(outfd, task, 0)
+            self.recurse_task(task, 0, 0,self.procs)
+            if self.changed:
+                for offset,name,level,pid,ppid,uid,euid,gid in self.procs.values():
+                    if offset:
+                        yield(0,[Address(offset),
+                                 str(name),
+                                 str(level),
+                                 int(pid),
+                                 int(ppid),
+                                 int(uid),
+                                 int(gid),
+                                 int(euid)])
 
-    def recurse_task(self, outfd, task, level):
-
-        if task.pid in self.procs:
-            return
-
-        if task.mm:
-            proc_name = task.comm
+    def recurse_task(self,task,ppid,level,procs):
+        """
+        Fill a dictionnary with all the children of a given task(including itself)
+        :param task: task that we want to get the children from
+        :param ppid: pid of the parent task
+        :param level: depth from the root task
+        :param procs: dictionnary that we fill
+        """
+        if not procs.has_key(task.pid):
+            self.changed = True
+            if task.mm:
+                proc_name = task.comm
+            else:
+                proc_name = "[" + task.comm + "]"
+            procs[task.pid] = (task.obj_offset,proc_name,"." * level + proc_name,task.pid,ppid,task.uid,task.euid,task.gid)
+            for child in task.children.list_of_type("task_struct", "sibling"):
+                self.recurse_task(child,task.pid, level + 1,procs)
         else:
-            proc_name = "[" + task.comm + "]"
-
-        proc_name = "." * level + proc_name
-        outfd.write("{0:20s} {1:15s} {2:15s}\n".format(proc_name, str(task.pid), str(task.uid or '')))
-        self.procs[task.pid] = 1
-
-        for child in task.children.list_of_type("task_struct", "sibling"):
-            self.recurse_task(outfd, child, level + 1)
+            self.changed = False
 

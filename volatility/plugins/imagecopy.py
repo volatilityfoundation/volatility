@@ -35,6 +35,9 @@ class ImageCopy(commands.Command):
         self._config.add_option("OUTPUT-IMAGE", short_option = "O", default = None,
                                 help = "Writes a raw DD image out to OUTPUT-IMAGE",
                                 action = 'store', type = 'str')
+        self._config.add_option("COUNT", short_option = "c", default = False,
+                                help = "Show status of copy in byte count",
+                                action = 'store_true')
 
     def calculate(self):
         blocksize = self._config.BLOCKSIZE
@@ -47,7 +50,8 @@ class ImageCopy(commands.Command):
 
         for s, l in available_addresses:
             for i in range(s, s + l, blocksize):
-                yield i, addr_space.zread(i, min(blocksize, s + l - i))
+                block_length = min(blocksize, s + l - i)
+                yield i, block_length, addr_space.zread(i, block_length)
 
     def human_readable(self, value):
         for i in ['B', 'KB', 'MB', 'GB']:
@@ -64,21 +68,37 @@ class ImageCopy(commands.Command):
         if os.path.exists(self._config.OUTPUT_IMAGE) and (os.path.getsize(self._config.OUTPUT_IMAGE) > 1):
             debug.error("Refusing to overwrite an existing file, please remove it before continuing")
 
-        outfd.write("Writing data (" + self.human_readable(self._config.BLOCKSIZE) + " chunks): |")
         f = file(self._config.OUTPUT_IMAGE, "wb+")
         progress = 0
         try:
-            for o, block in data:
-                f.seek(o)
-                f.write(block)
-                f.flush()
-                outfd.write(".")
-                outfd.flush()
-                progress = o
+            # Big if block to reduce number of ifs in for loop. Think Big-O.
+            if self._config.COUNT: # --count/-c for human-friendly output
+                report_at = 0
+                bytes_so_far = 0
+                for o, block_length, block in data:
+                    f.seek(o)
+                    f.write(block)
+                    f.flush()
+                    bytes_so_far += block_length
+                    if bytes_so_far > report_at:
+                        outfd.write("Written: {0:,} bytes...\r".format(bytes_so_far))
+                        report_at += self._config.BLOCKSIZE
+                    outfd.flush()
+                    progress = o
+                outfd.write("\nDone: {0:,} bytes.\n".format(bytes_so_far))
+            else: # |...| progress bar
+                outfd.write("Writing data (" + self.human_readable(self._config.BLOCKSIZE) + " chunks): |")
+                for o, block_length, block in data:
+                    f.seek(o)
+                    f.write(block)
+                    f.flush()
+                    outfd.write(".")
+                    outfd.flush()
+                    progress = o
+                outfd.write("|\n")
         except TypeError, why:
             debug.error("Error when reading from address space: {0}".format(why))
         except BaseException, e:
             debug.error("Unexpected error ({1}) during copy, recorded data up to offset {0:0x}".format(progress, str(e)))
         finally:
             f.close()
-        outfd.write("|\n")
