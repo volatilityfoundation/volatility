@@ -101,6 +101,7 @@ class Win2003x64DTB(obj.ProfileModification):
 
     def modification(self, profile):
         overlay = {'VOLATILITY_MAGIC': [ None, {
+                        'KPCR' : [ None, ['VolatilityKPCR', dict(configname = "KPCR")]],
                         'DTBSignature': [ None, ['VolatilityMagic', dict(value = "\x03\x00\x2e\x00")]]}
                                         ]}
         profile.merge_overlay(overlay)

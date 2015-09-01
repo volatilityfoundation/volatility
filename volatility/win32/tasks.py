@@ -43,16 +43,21 @@ def get_kdbg(addr_space):
     OwnerTag even in that case. 
     """
 
+    # we can use the hard coded KPCR value instead of scanning for KDBG
+    # like back in the old days of version 1.x
+    # this works for XP/2003 x86
+    # all other machines that do not have hardcoded KPCR values
+    # will fall back on the previous methodology
+    if obj.VolMagic(addr_space).KPCR.value:
+        kpcr = obj.Object("_KPCR", offset = obj.VolMagic(addr_space).KPCR.value, vm = addr_space)
+        kdbg = kpcr.get_kdbg()
+        if kdbg.is_valid():
+            return kdbg
+        
     kdbg = obj.VolMagic(addr_space).KDBG.v()
 
     if kdbg.is_valid():
         return kdbg
-
-    # skip the KPCR backup method for x64 
-    memmode = addr_space.profile.metadata.get('memory_model', '32bit')
-
-    version = (addr_space.profile.metadata.get('major', 0), 
-               addr_space.profile.metadata.get('minor', 0))
 
     if memmode == '32bit' or version <= (6, 1):
         
