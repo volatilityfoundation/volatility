@@ -39,6 +39,7 @@ class ModDump(procdump.ProcDump):
         procdump.ProcDump.__init__(self, config, *args, **kwargs)
         config.remove_option("PID")
         config.remove_option("OFFSET")
+        config.remove_option("NAME")
         config.add_option('REGEX', short_option = 'r',
                       help = 'Dump modules matching REGEX',
                       action = 'store', type = 'string')
