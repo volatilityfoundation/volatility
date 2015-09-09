@@ -81,3 +81,14 @@ class linux_pstree(linux_pslist.linux_pslist):
         else:
             self.changed = False
 
+
+    def render_text(self, outfd, data):
+        self.procs = OrderedDict()
+        outfd.write("{0:20s} {1:15s} {2:15s}\n".format("Name", "Pid", "Uid"))
+        for task in data:
+            self.recurse_task(task, 0, 0, self.procs)
+            if self.changed:
+                for offset,_,proc_name,pid,_,uid,_,_ in self.procs.values():
+                    if offset:
+                        outfd.write("{0:20s} {1:15s} {2:15s}\n".format(proc_name, str(pid), str(task.uid or '')))    
+
