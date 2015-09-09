@@ -126,7 +126,7 @@ class Command(object):
             out_file = '{0}_{1}.txt'.format(time.strftime('%Y%m%d%H%M%S'), plugin_name) if self._config.OUTPUT_FILE == '.' else self._config.OUTPUT_FILE
             if os.path.exists(out_file):
                 debug.error("File " + out_file + " already exists.  Cowardly refusing to overwrite it...")
-            debug.info('Outputting to: {0}'.format(out_file))
+            print 'Outputting to: {0}'.format(out_file)
             outfd = open(out_file, 'wb')
         else:
             outfd = sys.stdout
