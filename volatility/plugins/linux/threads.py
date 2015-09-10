@@ -72,3 +72,14 @@ class linux_threads(linux_pslist.linux_pslist):
         addr_space = thread.get_process_address_space()
         offset = thread.obj_offset + addrvar_offset
         return addr_space.read_long_phys(offset)
+
+    def render_text(self, outfd, data):
+        for task in data:
+            outfd.write("\nProcess Name: {}\nProcess ID: {}\n".format(task.comm, task.tgid))
+            self.table_header(outfd, [('Thread PID', '13'), ('Thread Name', '16')])
+            for thread in task.threads():
+                self.table_row(outfd, str(thread.pid), thread.comm)
+
+    
+
+
