@@ -42,7 +42,7 @@ class Win10x64DTB(obj.ProfileModification):
     def modification(self, profile):
         profile.merge_overlay({
             'VOLATILITY_MAGIC': [ None, {
-            'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\xb4\x00")]],
+            'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\xb6\x00")]],
             }]})
 
 class Win10x86DTB(obj.ProfileModification):
