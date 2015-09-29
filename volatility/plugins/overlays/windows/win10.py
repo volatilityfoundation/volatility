@@ -29,6 +29,22 @@ This file provides support for Windows 10.
 import volatility.plugins.overlays.windows.windows as windows
 import volatility.obj as obj
 
+class _HMAP_ENTRY(obj.CType):
+
+    @property
+    def BlockAddress(self):
+        return self.PermanentBinAddress & 0xFFFFFFFFFFF0
+
+class Win10Registry(obj.ProfileModification):
+    """The Windows 10 registry HMAP"""
+
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 4}
+
+    def modification(self, profile):
+        profile.object_classes.update({"_HMAP_ENTRY": _HMAP_ENTRY})
+
 class Win10x64DTB(obj.ProfileModification):
     """The Windows 10 64-bit DTB signature"""
 
