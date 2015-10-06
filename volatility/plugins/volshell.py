@@ -31,11 +31,24 @@ import volatility.win32 as win32
 import volatility.utils as utils
 import volatility.obj as obj
 import volatility.plugins.taskmods as taskmods
+import volatility.scan as scan
 
 try:
     import distorm3 #pylint: disable-msg=F0401
 except ImportError:
     pass
+
+class FindScanner(scan.BaseScanner):
+    """Find bytes in memory"""
+
+    def __init__(self, needle):
+        needles = [ needle ]
+        self.checks = [ ("MultiStringFinderCheck", {'needles':needles})]
+        scan.BaseScanner.__init__(self)
+
+    def scan(self, address_space):
+        for offset in scan.BaseScanner.scan(self, address_space):
+            yield offset
 
 class volshell(common.AbstractWindowsCommand):
     """Shell in the memory image"""
@@ -461,7 +474,23 @@ class volshell(common.AbstractWindowsCommand):
             for (offset, _size, instruction, hexdump) in iterable:
                 print "{0:<#8x} {1:<32} {2}".format(offset, hexdump, instruction)
 
-        shell_funcs = {'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis, 'dq': dq, 'modules': modules, 'sc': sc, 'addrspace': addrspace, 'proc': proc, 'getprocs': getprocs, 'getmods': getmods}
+        def find(needle, max = 1, shift = 0, skip = 0, count = False, length = 0x80):
+            """Find bytes in the current process's memory"""
+
+            scanner = FindScanner(needle)
+            hit_count = 0
+            for hit in scanner.scan(self._proc.get_process_address_space()):
+                hit_count += 1
+                if hit_count > skip:
+                    db(hit + shift, length=length)
+                    if hit_count - skip == max:
+                        break
+                    print '-' * 16
+            if count:
+                print '-' * 16
+                print 'Found {}.'.format(hit_count - skip)
+
+        shell_funcs = {'find': find, 'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis, 'dq': dq, 'modules': modules, 'sc': sc, 'addrspace': addrspace, 'proc': proc, 'getprocs': getprocs, 'getmods': getmods}
         def hh(cmd = None):
             """Get help on a command."""
             shell_funcs['hh'] = hh
