@@ -333,7 +333,7 @@ class VADTree(VADInfo):
                             except AttributeError:
                                 pass                        
                         outfd.write("vad_{0:08x} [label = \"{{ {1}\\n{2:08x} - {3:08x} }}\""
-                                "shape = \"record\" color = \"blue\" fillcolor = \"{4}\"];\n".format(
+                                "shape = \"record\" color = \"blue\" style = \"filled\" fillcolor = \"{4}\"];\n".format(
                         vad.obj_offset,
                         vad.Tag,
                         vad.Start,
