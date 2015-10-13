@@ -23,7 +23,6 @@ import volatility.constants as constants
 import volatility.utils as utils
 import volatility.obj as obj
 import volatility.registry as registry
-import volatility.plugins.obheadercookie as obheadercookie
 
 #--------------------------------------------------------------------------------
 # A multi-concurrent pool scanner 
@@ -206,8 +205,7 @@ class MultiScanInterface(object):
         else:
             space = self.address_space.physical_space()
 
-        inst = obheadercookie.ObHeaderCookieStore.instance()
-        inst.findcookie(space)
+        cookie = obj.VolMagic(space).ObHeaderCookie.v()
 
         # create instances of the various scanners linked
         # to the desired address space 

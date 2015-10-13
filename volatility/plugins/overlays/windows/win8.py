@@ -38,7 +38,6 @@ import volatility.plugins.overlays.windows.pe_vtypes as pe_vtypes
 import volatility.plugins.overlays.windows.ssdt_vtypes as ssdt_vtypes
 import volatility.plugins.overlays.windows.win7 as win7
 import volatility.plugins.overlays.windows.vista as vista
-import volatility.plugins.obheadercookie as obheadercookie
 
 try:
     import distorm3
@@ -292,8 +291,7 @@ class _OBJECT_HEADER_10(_OBJECT_HEADER):
         """Wrap the TypeIndex member with a property that decodes it 
         with the nt!ObHeaderCookie value."""
 
-        inst = obheadercookie.ObHeaderCookieStore.instance()
-        cook = inst.cookie()
+        cook = obj.VolMagic(self.obj_vm).ObHeaderCookie.v()
         addr = self.obj_offset 
         indx = int(self.m("TypeIndex"))
 
