@@ -284,6 +284,89 @@ class _OBJECT_HEADER_81R2(_OBJECT_HEADER):
                 46: 'DxgkSharedResource',
             }
 
+class _OBJECT_HEADER_10(_OBJECT_HEADER):
+        
+    @property
+    def TypeIndex(self):
+        """Wrap the TypeIndex member with a property that decodes it 
+        with the nt!ObHeaderCookie value."""
+
+        cook = obj.VolMagic(self.obj_vm).ObHeaderCookie.v()
+        addr = self.obj_offset 
+        indx = int(self.m("TypeIndex"))
+
+        return ((addr >> 8) ^ cook ^ indx) & 0xFF
+
+    def is_valid(self):
+        """Determine if a given object header is valid"""
+
+        if not obj.CType.is_valid(self):
+            return False
+
+        if self.InfoMask > 0x88:
+            return False
+
+        if self.PointerCount > 0x1000000 or self.PointerCount < 0:
+            return False
+
+        return True
+
+    type_map = {
+        2: 'Type',
+        3: 'Directory',
+        4: 'SymbolicLink',
+        5: 'Token',
+        6: 'Job',
+        7: 'Process',
+        8: 'Thread',
+        9: 'UserApcReserve',
+        10: 'IoCompletionReserve',
+        11: 'Silo',
+        12: 'DebugObject',
+        13: 'Event',
+        14: 'Mutant',
+        15: 'Callback',
+        16: 'Semaphore',
+        17: 'Timer',
+        18: 'IRTimer',
+        19: 'Profile',
+        20: 'KeyedEvent',
+        21: 'WindowStation',
+        22: 'Desktop',
+        23: 'Composition',
+        24: 'RawInputManager',
+        25: 'TpWorkerFactory',
+        26: 'Adapter',
+        27: 'Controller',
+        28: 'Device',
+        29: 'Driver',
+        30: 'IoCompletion',
+        31: 'WaitCompletionPacket',
+        32: 'File',
+        33: 'TmTm',
+        34: 'TmTx',
+        35: 'TmRm',
+        36: 'TmEn',
+        37: 'Section',
+        38: 'Session',
+        39: 'Partition',
+        40: 'Key',
+        41: 'ALPC Port',
+        42: 'PowerRequest',
+        43: 'WmiGuid',
+        44: 'EtwRegistration',
+        45: 'EtwConsumer',
+        46: 'DmaAdapter',
+        47: 'DmaDomain',
+        48: 'PcwObject',
+        49: 'FilterConnectionPort',
+        50: 'FilterCommunicationPort',
+        51: 'NetworkNamespace',
+        52: 'DxgkSharedResource',
+        53: 'DxgkSharedSyncObject',
+        54: 'DxgkSharedSwapChainObject',
+        }
+
 class Win8KDBG(windows.AbstractKDBGMod):
     """The Windows 8 / 2012 KDBG signatures"""
 
@@ -385,7 +468,7 @@ class Win8ObjectClasses(obj.ProfileModification):
             handletable = _HANDLE_TABLE32
             pspcidtable = _PSP_CID_TABLE32
         else:
-            if (major, minor) == (6, 3):
+            if (major, minor) >= (6, 3):
                 handletable = _HANDLE_TABLE_81R264
                 pspcidtable = _PSP_CID_TABLE_81R264
             else:
@@ -394,6 +477,8 @@ class Win8ObjectClasses(obj.ProfileModification):
 
         if (major, minor) == (6, 3):
             objheader = _OBJECT_HEADER_81R2
+        elif (major, minor) == (6, 4):
+            objheader = _OBJECT_HEADER_10
         else:
             objheader = _OBJECT_HEADER
 
