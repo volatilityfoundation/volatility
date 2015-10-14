@@ -99,6 +99,9 @@ class PoolTracker(common.AbstractWindowsCommand):
 
         track_table = track_table.dereference_as("address")
 
+        if not kernel_space.is_valid_address(track_table) or table_size > 100000:
+            debug.error("Cannot find the table or its size is unexpected: {0}".format(table_size))
+
         entries = obj.Object("Array", targetType = "_POOL_TRACKER_TABLE", 
             offset = track_table, count = table_size, 
             vm = kernel_space
