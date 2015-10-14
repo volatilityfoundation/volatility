@@ -205,7 +205,8 @@ class MultiScanInterface(object):
         else:
             space = self.address_space.physical_space()
 
-        cookie = obj.VolMagic(space).ObHeaderCookie.v()
+        if win10:
+            cookie = obj.VolMagic(space).ObHeaderCookie.v()
 
         # create instances of the various scanners linked
         # to the desired address space 
