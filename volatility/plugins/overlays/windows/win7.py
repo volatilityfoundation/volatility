@@ -149,7 +149,10 @@ class _OBJECT_HEADER(windows._OBJECT_HEADER):
 
     def get_object_type(self):
         """Return the object's type as a string"""
-        return self.type_map.get(self.TypeIndex.v(), '')
+        
+        # wrap this in int() rather than calling .v() because the win10
+        # property may return an int by default which doesn't have .v()
+        return self.type_map.get(int(self.TypeIndex), '')
 
 class Win7ObjectClasses(obj.ProfileModification):
     before = ['WindowsOverlay', 'WindowsObjectClasses']

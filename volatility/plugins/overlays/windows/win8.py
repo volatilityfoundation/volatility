@@ -385,7 +385,7 @@ class Win8ObjectClasses(obj.ProfileModification):
             handletable = _HANDLE_TABLE32
             pspcidtable = _PSP_CID_TABLE32
         else:
-            if (major, minor) == (6, 3):
+            if (major, minor) >= (6, 3):
                 handletable = _HANDLE_TABLE_81R264
                 pspcidtable = _PSP_CID_TABLE_81R264
             else:
