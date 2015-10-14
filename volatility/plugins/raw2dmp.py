@@ -132,12 +132,13 @@ class Raw2dmp(imagecopy.ImageCopy):
         headerspace.write(CommentOffset, "File was converted with Volatility" + "\x00")
 
         # Yield the header
-        yield 0, headerspace.read(0, headerlen)
+        yield 0, headerlen, headerspace.read(0, headerlen)
     
         # Write the main body
         for s, l in pspace.get_available_addresses():
             for i in range(s, s + l, blocksize):
-                yield i + headerlen, pspace.read(i, min(blocksize, s + l - i))
+                len_to_read = min(blocksize, s + l - i)
+                yield i + headerlen, len_to_read, pspace.read(i, len_to_read)
 
         # Reset the config so volatility opens the crash dump 
         config.LOCATION = "file://" + output 
