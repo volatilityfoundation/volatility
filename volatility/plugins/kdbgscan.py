@@ -97,7 +97,7 @@ class KDBGScan(common.AbstractWindowsCommand):
     @staticmethod
     def register_options(config):
         config.add_option('KDBG', short_option = 'g', default = None, type = 'int',
-                          help = "Specify a specific KDBG virtual address")
+                          help = "Specify a KDBG virtual address (Note: for 64-bit Windows 8 and above this is the address of KdCopyDataBlock)")
 
         config.add_option("FORCE", default = False, action = "store_true",
                           help = "Force utilization of suspect profile")
