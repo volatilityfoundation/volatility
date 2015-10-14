@@ -23,7 +23,7 @@
 
 import os, sys
 
-VERSION = "2.4"
+VERSION = "2.5"
 
 SCAN_BLOCKSIZE = 1024 * 1024 * 10
 
