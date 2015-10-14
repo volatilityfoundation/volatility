@@ -62,7 +62,8 @@ class NoneObject(object):
     Instantiate with the reason for the error.
     """
     def __init__(self, reason = '', strict = False):
-        debug.debug("None object instantiated: " + reason, 2)
+        if not hasattr(sys, "frozen"):
+            debug.debug("None object instantiated: " + reason, 2)
         self.reason = reason
         self.strict = strict
         if strict:
