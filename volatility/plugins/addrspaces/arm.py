@@ -26,6 +26,8 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.plugins.addrspaces.paged as paged
 
 class ArmAddressSpace(paged.AbstractWritablePagedMemory):
+    """Address space for ARM processors"""
+
     order = 800
     pae = False
     paging_address_space = True

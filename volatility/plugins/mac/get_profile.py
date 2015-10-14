@@ -87,7 +87,6 @@ profiles = [
 ["MacMavericks_10_9_5_AMDx64", 18446743523961765968, 18446743523962273792, 1],
 ]
 
-
 class catfishScan(scan.BaseScanner):
     """ Scanner for Catfish string for Mountain Lion """
     checks = []
@@ -103,7 +102,7 @@ class catfishScan(scan.BaseScanner):
 
 # based on kdbgscan
 class mac_get_profile(common.AbstractMacCommand):
-
+    """Automatically detect Mac profiles"""
 
     def _check_address(self, ver_addr, aspace):
         if ver_addr > 0xffffffff:
@@ -157,11 +156,3 @@ class mac_get_profile(common.AbstractMacCommand):
 
         for profile, shift_address in data:
             self.table_row(outfd, profile, shift_address)
-
-
-
-
-
-
-
-
