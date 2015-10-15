@@ -78,6 +78,10 @@ ability to convert between these formats:
 For a more detailed list of capabilities, see the following:
 
     https://github.com/volatilityfoundation/volatility/wiki
+    
+Also see the community plugins repository:
+
+    https://github.com/volatilityfoundation/community
 
 Example Data
 ============
