@@ -30,7 +30,7 @@ from volatility.renderers.basic import Address, Address64, Hex, Bytes
 from volatility.renderers.dot import DotRenderer
 from volatility.renderers.html import HTMLRenderer, JSONRenderer
 from volatility.renderers.sqlite import SqliteRenderer
-from volatility.renderers.text import TextRenderer, FormatCellRenderer, QuickTextRenderer
+from volatility.renderers.text import TextRenderer, FormatCellRenderer, GrepTextRenderer
 from volatility.renderers.xlsx import XLSXRenderer
 
 
@@ -279,9 +279,9 @@ class Command(object):
         self._render(outfd, TextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column,
                                          config = self._config), data)
 
-    def render_quick(self, outfd, data):
+    def render_greptext(self, outfd, data):
         try:
-            self._render(outfd, QuickTextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
+            self._render(outfd, GrepTextRenderer(self.text_cell_renderers, sort_column = self.text_sort_column), data)
         except NotImplementedError, why:
             debug.error(why)
         except TypeError, why:
