@@ -29,7 +29,7 @@ import volatility.addrspace as addrspace
 from volatility.renderers.basic import Address, Address64, Hex, Bytes
 from volatility.renderers.dot import DotRenderer
 from volatility.renderers.html import HTMLRenderer, JSONRenderer
-from volatility.renderers.sqlite import SqliteRenderer, QuickSqliteRenderer
+from volatility.renderers.sqlite import SqliteRenderer
 from volatility.renderers.text import TextRenderer, FormatCellRenderer, QuickTextRenderer
 from volatility.renderers.xlsx import XLSXRenderer
 
@@ -298,14 +298,6 @@ class Command(object):
     def render_sqlite(self, outfd, data):
         try:
             self._render(outfd, SqliteRenderer(self.__class__.__name__, self._config), data)
-        except NotImplementedError, why:
-            debug.error(why)
-        except TypeError, why:
-            debug.error(why)
-
-    def render_quicksqlite(self, outfd, data):
-        try:
-            self._render(outfd, QuickSqliteRenderer(self.__class__.__name__, self._config), data)
         except NotImplementedError, why:
             debug.error(why)
         except TypeError, why:
