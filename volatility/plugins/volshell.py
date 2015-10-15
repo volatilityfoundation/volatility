@@ -38,18 +38,6 @@ try:
 except ImportError:
     pass
 
-class FindScanner(scan.BaseScanner):
-    """Find bytes in memory"""
-
-    def __init__(self, needle):
-        needles = [ needle ]
-        self.checks = [ ("MultiStringFinderCheck", {'needles':needles})]
-        scan.BaseScanner.__init__(self)
-
-    def scan(self, address_space):
-        for offset in scan.BaseScanner.scan(self, address_space):
-            yield offset
-
 class volshell(common.AbstractWindowsCommand):
     """Shell in the memory image"""
 
@@ -475,11 +463,23 @@ class volshell(common.AbstractWindowsCommand):
                 print "{0:<#8x} {1:<32} {2}".format(offset, hexdump, instruction)
 
         def find(needle, max = 1, shift = 0, skip = 0, count = False, length = 0x80):
-            """Find bytes in the current process's memory"""
+            """Find bytes in the current process's memory
+            needle - string or list/tuple of strings to find
+            max    - number of results to return; 0 means find all
+            shift  - when outputting bytes, start output this many bytes before/after hit offset
+            skip   - ignore this many hits
+            count  - if True, displays a message reporting how many hits found; only really useful for max == 0
+            length - output this many bytes for each hit
+            """
+            
+            if isinstance(needle, basestring):
+                needle = [ needle ]
+            elif not isinstance(needle, (list, tuple)) or not all([isinstance(x, basestring) for x in needle]):
+                print 'Error: needle must be a string or a list/tuple of strings'
+                return
 
-            scanner = FindScanner(needle)
             hit_count = 0
-            for hit in scanner.scan(self._proc.get_process_address_space()):
+            for hit in self._proc.search_process_memory(needle):
                 hit_count += 1
                 if hit_count > skip:
                     db(hit + shift, length=length)
@@ -488,7 +488,7 @@ class volshell(common.AbstractWindowsCommand):
                     print '-' * 16
             if count:
                 print '-' * 16
-                print 'Found {}.'.format(hit_count - skip)
+                print 'Found {} matches.'.format(hit_count - skip)
 
         shell_funcs = {'find': find, 'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis, 'dq': dq, 'modules': modules, 'sc': sc, 'addrspace': addrspace, 'proc': proc, 'getprocs': getprocs, 'getmods': getmods}
         def hh(cmd = None):
