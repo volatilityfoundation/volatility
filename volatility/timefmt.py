@@ -121,5 +121,5 @@ def tz_from_string(_option, _opt_str, value, parser):
 
 config.add_option("TZ", action = "callback", callback = tz_from_string,
                   cache_invalidator = False,
-                  help = "Sets the timezone for displaying timestamps",
+                  help = "Sets the (Olson) timezone for displaying timestamps using pytz (if installed) or tzset",
                   default = None, nargs = 1, type = str)

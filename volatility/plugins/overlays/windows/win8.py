@@ -385,7 +385,7 @@ class Win8ObjectClasses(obj.ProfileModification):
             handletable = _HANDLE_TABLE32
             pspcidtable = _PSP_CID_TABLE32
         else:
-            if (major, minor) == (6, 3):
+            if (major, minor) >= (6, 3):
                 handletable = _HANDLE_TABLE_81R264
                 pspcidtable = _PSP_CID_TABLE_81R264
             else:
@@ -447,3 +447,21 @@ class Win8SP1x86(obj.Profile):
     _md_minor = 3
     _md_build = 9600
     _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp1_x86_vtypes'
+
+class Win81U1x64(obj.Profile):
+    """ A Profile for Windows 8.1 Update 1 x64 """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 3
+    _md_build = 17031 
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win81_u1_x64_vtypes'
+
+class Win81U1x86(obj.Profile):
+    """ A Profile for Windows 8.1 Update 1 x86 """
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 3
+    _md_build = 17031 
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win81_u1_x86_vtypes'

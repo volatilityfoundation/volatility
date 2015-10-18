@@ -68,6 +68,8 @@ class BigPageTableMagic(obj.ProfileModification):
             (6, 2, '32bit') : [92, 88],
             (6, 2, '64bit') : [-5200, -5224], 
             (6, 3, '32bit') : [116, 120],
+            (6, 4, '64bit') : [168, 192],
+            (6, 4, '32bit') : [-168, -164],
         }
 
         version = (m.get('major', 0), m.get('minor', 0), m.get('memory_model', '32bit'))

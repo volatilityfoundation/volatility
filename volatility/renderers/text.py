@@ -177,7 +177,7 @@ class TextRenderer(Renderer):
         grid.visit(None, print_row, output, sort_key = sort_key)
         outfd.write("\r\n".join(output) + "\r\n")
 
-class QuickTextRenderer(TextRenderer):
+class GrepTextRenderer(TextRenderer):
     def render(self, outfd, grid):
         self._validate_grid(grid)
 

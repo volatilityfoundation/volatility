@@ -77,7 +77,7 @@ class BaseAddressSpace(object):
         ## By default load the profile that the user asked for
         config.add_option("PROFILE", default = "WinXPSP2x86", type = 'str',
                           nargs = 1, action = "callback", callback = check_valid_profile,
-                          help = "Name of the profile to load")
+                          help = "Name of the profile to load (use --info to see a list of supported profiles)")
 
         config.add_option("LOCATION", default = None, short_option = 'l',
                           help = "A URN location from which to load an address space")

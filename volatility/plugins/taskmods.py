@@ -301,8 +301,10 @@ class MemMap(DllList):
                     pa = task_space.vtop(p[0])
                     # pa can be 0, according to the old memmap, but can't == None(NoneObject)
                     if pa != None:
-                        yield (0, [proc, int(pid), Address(p[0]), Address(pa), Address(p[1]), Address(offset)])
-                        offset += p[1]
+                        data = task_space.read(p[0], p[1])
+                        if data != None:
+                            yield (0, [proc, int(pid), Address(p[0]), Address(pa), Address(p[1]), Address(offset)])
+                            offset += p[1]
 
     def render_text(self, outfd, data):
         first = True
@@ -326,10 +328,10 @@ class MemMap(DllList):
                     pa = task_space.vtop(p[0])
                     # pa can be 0, according to the old memmap, but can't == None(NoneObject)
                     if pa != None:
-                        self.table_row(outfd, p[0], pa, p[1], offset)
-                    #else:
-                    #    outfd.write("0x{0:10x} 0x000000     0x{1:12x}\n".format(p[0], p[1]))
-                        offset += p[1]
+                        data = task_space.read(p[0], p[1])
+                        if data != None:
+                            self.table_row(outfd, p[0], pa, p[1], offset)
+                            offset += p[1]
             else:
                 outfd.write("Unable to read pages for task.\n")
 
@@ -371,7 +373,7 @@ class MemDump(MemMap):
                     data = task_space.read(p[0], p[1])
                     if data == None:
                         if self._config.verbose:
-                            outfd.write("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(p[0], task.obj_offset, p[1]))
+                            outfd.write("Memory Not Accessible: Virtual Address: 0x{0:x} Size: 0x{1:x}\n".format(p[0], p[1]))
                     else:
                         f.write(data)
             else:

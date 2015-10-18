@@ -58,6 +58,11 @@ well_known_sid_re = [
   (re.compile(r'S-1-5-21-[0-9-]+-518$'), 'Schema Admins'),
   (re.compile(r'S-1-5-21-[0-9-]+-519$'), 'Enterprise Admins'),
   (re.compile(r'S-1-5-21-[0-9-]+-553$'), 'RAS Servers'),
+  (re.compile(r'S-1-5-21-[0-9-]+-498$'), 'Enterprise Read-Only Domain Controllers'),
+  (re.compile(r'S-1-5-21-[0-9-]+-521$'), 'Read-Only Domain Controllers'),
+  (re.compile(r'S-1-5-21-[0-9-]+-522$'), 'Cloneable Domain Controllers'),
+  (re.compile(r'S-1-5-21-[0-9-]+-525$'), 'Protected Users'),
+  (re.compile(r'S-1-5-21-[0-9-]+-553$'), 'Remote Access Services (RAS)'),
 ]
 
 well_known_sids = {
@@ -132,6 +137,22 @@ well_known_sids = {
   'S-1-16-16384': 'System Mandatory Level',
   'S-1-16-20480': 'Protected Process Mandatory Level',
   'S-1-16-28672': 'Secure Process Mandatory Level',
+  'S-1-5-21-0-0-0-496': 'Compounded Authentication',
+  'S-1-5-21-0-0-0-497': 'Claims Valid',
+  'S-1-5-32-575': 'RDS Remote Application Services',
+  'S-1-5-32-576': 'RDS Endpoint Servers',
+  'S-1-5-32-577': 'RDS Management Servers',
+  'S-1-5-32-578': 'Hyper-V Admins',
+  'S-1-5-32-579': 'Access Control Assistance Ops',
+  'S-1-5-32-580': 'Remote Management Users',
+  'S-1-5-65-1': 'This Organization Certificate (Kerberos PAC)',
+  'S-1-5-84-0-0-0-0-0': 'Usermode Drivers',
+  'S-1-5-113': 'Local Account',
+  'S-1-5-114': 'Local Account (Member of Administrators)',
+  'S-1-5-1000': 'Other Organization',
+  'S-1-15-2-1': 'Application Package Context',
+  'S-1-18-1': 'Authentication Authority Asserted Identity',
+  'S-1-18-2': 'Service Asserted Identity',
 }
 
 class GetSIDs(taskmods.DllList):

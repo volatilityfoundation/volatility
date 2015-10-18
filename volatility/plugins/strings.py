@@ -134,6 +134,16 @@ class Strings(common.AbstractWindowsCommand):
             debug.error("Strings file not found")
 
         addr_space = utils.load_as(self._config)
+
+        layers = [addr_space]
+        base = addr_space.base
+        while base:
+            layers.append(base)
+            base = base.base 
+
+        if len(layers) > 2:
+            debug.error("Raw memory needed, got {0} (convert with imagecopy)".format(layers[1].__class__.__name__))
+
         tasks = self.get_processes(addr_space)
 
         stringlist = open(self._config.STRING_FILE, "r")
@@ -239,7 +249,6 @@ class Strings(common.AbstractWindowsCommand):
                 continue
         
         return reverse_map
-
 
     def unified_output(self, data):
         return TreeGrid([("Offset(P)", Address),

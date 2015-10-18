@@ -31,7 +31,6 @@ class linux_pstree(linux_pslist.linux_pslist):
 
     def __init__(self, *args, **kwargs):
         self.procs = {}
-        self.changed = True
         linux_pslist.linux_pslist.__init__(self, *args, **kwargs)
 
     def unified_output(self, data):
@@ -49,17 +48,17 @@ class linux_pstree(linux_pslist.linux_pslist):
         self.procs = OrderedDict()
         for task in data:
             self.recurse_task(task, 0, 0,self.procs)
-            if self.changed:
-                for offset,name,level,pid,ppid,uid,euid,gid in self.procs.values():
-                    if offset:
-                        yield(0,[Address(offset),
-                                 str(name),
-                                 str(level),
-                                 int(pid),
-                                 int(ppid),
-                                 int(uid),
-                                 int(gid),
-                                 int(euid)])
+        
+        for offset,name,level,pid,ppid,uid,euid,gid in self.procs.values():
+            if offset:
+                yield(0,[Address(offset),
+                         str(name),
+                         str(level),
+                         int(pid),
+                         int(ppid),
+                         int(uid),
+                         int(gid),
+                         int(euid)])
 
     def recurse_task(self,task,ppid,level,procs):
         """
@@ -69,15 +68,22 @@ class linux_pstree(linux_pslist.linux_pslist):
         :param level: depth from the root task
         :param procs: dictionnary that we fill
         """
-        if not procs.has_key(task.pid):
-            self.changed = True
+        if not procs.has_key(task.pid.v()):
             if task.mm:
                 proc_name = task.comm
             else:
                 proc_name = "[" + task.comm + "]"
-            procs[task.pid] = (task.obj_offset,proc_name,"." * level + proc_name,task.pid,ppid,task.uid,task.euid,task.gid)
+            procs[task.pid.v()] = (task.obj_offset,proc_name,"." * level + proc_name,task.pid,ppid,task.uid,task.euid,task.gid)
             for child in task.children.list_of_type("task_struct", "sibling"):
                 self.recurse_task(child,task.pid, level + 1,procs)
-        else:
-            self.changed = False
+
+    def render_text(self, outfd, data):
+        self.procs = OrderedDict()
+        outfd.write("{0:20s} {1:15s} {2:15s}\n".format("Name", "Pid", "Uid"))
+        for task in data:
+            self.recurse_task(task, 0, 0, self.procs)
+        
+        for offset,_,proc_name,pid,_,uid,_,_ in self.procs.values():
+            if offset:
+                outfd.write("{0:20s} {1:15s} {2:15s}\n".format(proc_name, str(pid), str(uid or '')))    
 

@@ -14,6 +14,7 @@ intentional. Please bring it to our attention!
 
 Volatility 2.5: 
 
+Adam Bridge for adding a --count option (humanly readable byte stats) to imagecopy/raw2dmp
 Sebastien Bourdon-Richard for various patches and bug fixes
 Bruno Constanzo for various patches to enhance performance/optimization 
 Glenn P. Edwards, Jr for adding combined user/kernel scans, --case, and ascii/unicode options to yarascan

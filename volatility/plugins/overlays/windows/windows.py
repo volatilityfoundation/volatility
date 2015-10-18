@@ -793,6 +793,13 @@ class _HANDLE_TABLE(obj.CType):
         yielding all handles. We take care of recursing into the
         nested tables automatically.
         """
+
+        magic = obj.VolMagic(self.obj_vm)
+        if hasattr(magic, 'ObHeaderCookie'):
+            cookie = magic.ObHeaderCookie.v()
+            if not cookie:
+                raise StopIteration("Cannot find nt!ObHeaderCookie")
+
         # This should work equally for 32 and 64 bit systems
         LEVEL_MASK = 7
 
