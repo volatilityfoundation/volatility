@@ -19,72 +19,76 @@
 #
 
 """
-@author:       Jamie Levy (gleeda)
+@author:       Jared Smith
 @license:      GNU General Public License 2.0
-@contact:      jamie@memoryanalysis.net
+@contact:      jaredsmith359@gmail.com
 @organization: Volatility Foundation
 """
 
-import volatility.utils as utils
-import volatility.plugins.getsids as getsids
-import volatility.plugins.registry.registryapi as registryapi
-import volatility.plugins.getservicesids as getservicesids
+
+import volatility
+import volatility.conf as conf
 import volatility.plugins.common as common
 import volatility.utils as utils
-import volatility.win32.tasks as tasks
-import volatility.addrspace as addrspace
-import volatility.obj as obj
-import volatility.debug as debug
-import os, datetime, ntpath
-from volatility.renderers import TreeGrid
+import os, subprocess, ntpath
+import string
+
+
+config = conf.config
 
 
 class EvtxLogs(common.AbstractWindowsCommand):
+
+    """Extract Windows Event Logs (Vista/7/8/10 only)"""
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
 
-        config.add_option('SAVE-EVTX', short_option = 'S', default = False,
-                          action = 'store_true', help = 'Save the raw .evtx files also')
-
         config.add_option('DUMP-DIR', short_option = 'D', default = None,
                           cache_invalidator = False,
-                          help = 'Directory in which to dump executable files')
+                          help = 'Directory in which to dump log files')
 
     @staticmethod
     def is_valid_profile(profile):
+        """This plugin is valid on Vista and later"""
         return (profile.metadata.get('os', 'unknown') == 'windows' and
-                profile.metadata.get('major', 0) > 5)
+                profile.metadata.get('major', 0) == 6)
 
     def calculate(self):
-        """The calculate function should carry out the main operation against any memory images being analyzed.
-        This function takes no arguments and returns a single "data" variable, which can be of any form as long
-        as it is then successfully processed by the plugin's render_<type> functions."""
-        pass
+        evtxpath = os.path.dirname(volatility.__file__)
+        image_path = (config.LOCATION).replace('file://', '')
+        image_path = image_path.replace('%28', '(')
+        image_path = image_path.replace('%29', ')')
 
-    def parse_evtx_info(self):
-        pass
+        args_1 = [
+            'python',
+            '{}/EVTXtract/find_evtx_chunks.py'.format(evtxpath),
+            '{}'.format(image_path)
+        ]
+        result = subprocess.check_output(args_1)
+        args_2 = [
+            'python',
+            '{}/EVTXtract/extract_valid_evtx_records_and_templates.py'.format(evtxpath),
+            '{}'.format(image_path)
+        ]
+        result = subprocess.check_output(args_2)
+        args_3 = [
+            'python',
+            '{}/EVTXtract/find_evtx_records.py'.format(evtxpath),
+            '{}'.format(image_path)
+        ]
+        result = subprocess.check_output(args_3)
+        args_4 = [
+            'python',
+            '{}/EVTXtract/show_valid_records.py'.format(evtxpath),
+            '{}'.format(image_path)
+        ]
+        records = subprocess.check_output(args_4)
+
+        return records
 
     def render_text(self, outfd, data):
-        if self._config.DUMP_DIR == None:
-            debug.error("Please specify a dump directory (--dump-dir)")
-        if not os.path.isdir(self._config.DUMP_DIR):
-            debug.error(self._config.DUMP_DIR + " is not a directory")
-
-        for name, buf in data:
-            ## We can use the ntpath module instead of manually replacing the slashes
-            ofname = ntpath.basename(name)
-
-            ## Dump the raw event log so it can be parsed with other tools
-            if self._config.SAVE_EVTX:
-                fh = open(os.path.join(self._config.DUMP_DIR, ofname), 'wb')
-                fh.write(buf)
-                fh.close()
-                outfd.write('Saved raw .evtx file to {0}\n'.format(ofname))
-
-            ## Now dump the parsed, pipe-delimited event records to a file
-            ofname = ofname.replace(".evt", ".txt")
-            fh = open(os.path.join(self._config.DUMP_DIR, ofname), 'wb')
-            for fields in self.parse_evt_info(name, buf):
-                fh.write('|'.join(fields) + "\n")
-            fh.close()
-            outfd.write('Parsed data sent to {0}\n'.format(ofname))
+        name = 'evtx-output.txt'
+        fh = open(os.path.join(self._config.DUMP_DIR, name), 'wb')
+        fh.write(data)
+        fh.close()
+        outfd.write('Parsed data sent to {0}\n'.format(name))
