@@ -39,8 +39,8 @@ Windows:
 * 64-bit Windows 10 (initial support)
 
 Linux: 
-* 32-bit Linux kernels 2.6.11 to 4.3.2
-* 64-bit Linux kernels 2.6.11 to 4.3.2
+* 32-bit Linux kernels 2.6.11 to 4.2.3
+* 64-bit Linux kernels 2.6.11 to 4.2.3
 * OpenSuSE, Ubuntu, Debian, CentOS, Fedora, Mandriva, etc
 
 Mac OSX:
