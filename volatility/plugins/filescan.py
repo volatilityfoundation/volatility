@@ -46,7 +46,7 @@ class PoolScanFile(poolscan.PoolScanner):
         self.checks = [ 
                ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
-               ('CheckPoolIndex', dict(value = 0)),
+               ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                ]
 
 class FileScan(common.AbstractScanCommand):
@@ -116,7 +116,7 @@ class PoolScanDriver(poolscan.PoolScanner):
         self.checks = [ 
                ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
-               ('CheckPoolIndex', dict(value = 0)),
+               ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                ]
 
 class DriverScan(common.AbstractScanCommand):
@@ -246,7 +246,7 @@ class PoolScanMutant(poolscan.PoolScanner):
         self.checks = [ 
                ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
-               ('CheckPoolIndex', dict(value = 0)),
+               ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                ]
 
 class MutantScan(common.AbstractScanCommand):
@@ -331,7 +331,7 @@ class PoolScanProcess(poolscan.PoolScanner):
         self.checks = [ 
                 ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                 ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
-                ('CheckPoolIndex', dict(value = 0)),
+                ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                 ]
 
 class PSScan(common.AbstractScanCommand):
