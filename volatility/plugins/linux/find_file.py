@@ -48,7 +48,12 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
     def _walk_sb(self, dentry_param, parent):
         ret = []
             
-        for dentry in dentry_param.d_subdirs.list_of_type("dentry", "d_u"):
+        if hasattr(dentry_param, "d_child"):
+            walk_member = "d_child"
+        else:
+            walk_member = "d_u"
+
+        for dentry in dentry_param.d_subdirs.list_of_type("dentry", walk_member):
             # corruption
             if dentry.v() == dentry_param.v():
                 continue

@@ -43,9 +43,16 @@ class linux_arp(linux_common.AbstractLinuxCommand):
     def calculate(self):
         linux_common.set_plugin_members(self)
 
-        ntables_ptr = obj.Object("Pointer", offset = self.addr_space.profile.get_symbol("neigh_tables"), vm = self.addr_space)
+        neigh_tables_addr = self.addr_space.profile.get_symbol("neigh_tables")
 
-        for ntable in linux_common.walk_internal_list("neigh_table", "next", ntables_ptr):
+        if hasattr("neigh_table", "next"):
+            ntables_ptr = obj.Object("Pointer", offset = neigh_tables_addr, vm = self.addr_space)
+            tables = linux_common.walk_internal_list("neigh_table", "next", ntables_ptr)
+        else:
+            tables_arr = obj.Object(theType="Array", targetType="Pointer", offset = neigh_tables_addr, vm = self.addr_space, count = 4)
+            tables = [t.dereference_as("neigh_table") for t in tables_arr]
+
+        for ntable in tables:
             for aent in self.handle_table(ntable):
                 yield aent
 
