@@ -608,7 +608,10 @@ class proc(obj.CType):
             return -1
 
         if hasattr(cred, "cr_posix"):
-            ret = cred.cr_posix.cr_groups[0]
+            try:
+                ret = cred.cr_posix.cr_groups[0]
+            except IndexError:
+                ret = obj.Object("unsigned int", offset = cred.cr_posix.cr_groups.obj_offset, vm = self.obj_vm)
         else:
             ret = cred.cr_groups[0]     
     
@@ -1045,21 +1048,16 @@ class rtentry(obj.CType):
     
     @property
     def source_ip(self):
-        return self.rt_nodes[0].rn_u.rn_leaf.rn_Key.dereference_as("sockaddr").get_address()
+        try:
+            node = self.rt_nodes[0]
+        except IndexError:
+            node = obj.Object("radix_node", offset = self.rt_nodes.obj_offset, vm = self.obj_vm)
+
+        return node.rn_u.rn_leaf.rn_Key.dereference_as("sockaddr").get_address()
 
     @property
     def dest_ip(self):
         return self.rt_gateway.get_address()
-
-
-
-
-
-
- 
-
-
-    
 
 class queue_entry(obj.CType):
 
@@ -1177,6 +1175,15 @@ class OSString(obj.CType):
         string_object = obj.Object("String", offset = self.string, vm = self.obj_vm, length = self.length)
         return str(string_object or '')
 
+class vm_map_object(obj.CType):
+    def object(self):
+        if hasattr(self, "vm_object"):
+            ret = self.m("vm_object")
+        else:
+            ret = self.vmo_object
+
+        return ret
+
 class vm_map_entry(obj.CType):
     @property
     def start(self):
@@ -1198,21 +1205,22 @@ class vm_map_entry(obj.CType):
 
         return perms
 
-
     # used to find heap, stack, etc.
     def get_special_path(self):
         # check the heap
         ret = ""
 
-        for i in [1, 2, 3, 4, 6, 7, 8, 9]:
-            if self.alias == i:
-                ret = "[heap]"
-                break
+        # TODO - figure out how to track heap regions once el cap source code is released
+        if hasattr(self, "alias"):
+            for i in [1, 2, 3, 4, 6, 7, 8, 9]:
+                if self.alias == i:
+                    ret = "[heap]"
+                    break
 
         if ret != "":
             return ret
 
-        if self.alias == 30:
+        if hasattr(self, "alias") and self.alias == 30:
             ret = "[stack]"
 
         return ret 
@@ -1234,6 +1242,15 @@ class vm_map_entry(obj.CType):
                 
         return ret
 
+    @property
+    def object(self): 
+        if hasattr(self, "vme_object"):
+            ret = self.vme_object
+        else:
+            ret = self.m("object")
+
+        return ret
+
     def get_vnode(self):
         map_obj = self
 
@@ -1241,7 +1258,7 @@ class vm_map_entry(obj.CType):
             return "sub_map"
 
         # find_vnode_object
-        vnode_object = map_obj.object.vm_object 
+        vnode_object = map_obj.object.object() 
 
         while vnode_object.shadow.dereference() != None:
             vnode_object = vnode_object.shadow.dereference()
@@ -1897,6 +1914,7 @@ class MacObjectClasses(obj.ProfileModification):
             'sockaddr' : sockaddr, 
             'sockaddr_dl' : sockaddr_dl,
             'vm_map_entry' : vm_map_entry,
+            'vm_map_object' : vm_map_object,
             'rtentry' : rtentry,
             'queue_entry' : queue_entry,
         })
