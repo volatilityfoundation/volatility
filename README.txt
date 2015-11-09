@@ -65,7 +65,7 @@ Volatility supports a variety of sample file formats and the
 ability to convert between these formats:
 
   - Raw linear sample (dd)
-  - Hibernation file
+  - Hibernation file (from Windows 7 and earlier)
   - Crash dump file
   - VirtualBox ELF64 core dump
   - VMware saved state and snapshot files
