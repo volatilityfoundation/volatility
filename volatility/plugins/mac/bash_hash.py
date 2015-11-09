@@ -182,14 +182,13 @@ class mac64_bash_hash_table(bash_funcs):
    
             for bucket_ptr in bucket_array:
                 bucket = bucket_ptr.dereference_as("mac64_bucket_contents")
-                #print "-b: %x" % bucket.v()
+                seen = {}
                 
-                while bucket.is_valid():
+                while bucket.is_valid() and bucket.v() not in seen:
                     yield bucket
-                    #print "--b: %x" % bucket.v()
 
+                    seen[bucket.v()] = 1
                     bucket = bucket.next
-                    #print "---b: %x" % bucket.v()
  
 class mac32_bash_hash_table(bash_funcs):
     def __init__(self, theType, offset, vm, name = None, **kwargs):
