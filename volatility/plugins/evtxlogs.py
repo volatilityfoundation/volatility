@@ -19,16 +19,9 @@
 #
 
 """
-@author:       Jared Smith
+@author:       Jared Smith, Matthew Veca
 @license:      GNU General Public License 2.0
-@contact:      jared@jaredsmith.io
-@organization: Volatility Foundation
-"""
-
-"""
-@author:       Matthew Veca
-@license:      GNU General Public License 2.0
-@contact:      mattveca@gmail.com
+@contact:      jared@jaredsmith.io, mattveca@gmail.com
 @organization: Volatility Foundation
 """
 
