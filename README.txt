@@ -71,7 +71,7 @@ ability to convert between these formats:
   - VMware saved state and snapshot files
   - EWF format (E01) 
   - LiME (Linux Memory Extractor) format
-  - Mach-o file format 
+  - Mach-O file format
   - QEMU virtual machine dumps
   - Firewire 
   - HPAK (FDPro)
@@ -182,16 +182,16 @@ HPAKAddressSpace              - This AS supports the HPAK format
 IA32PagedMemory               - Standard IA-32 paging address space.
 IA32PagedMemoryPae            - This class implements the IA-32 PAE paging address space. It is responsible
 LimeAddressSpace              - Address space for Lime
-MachOAddressSpace             - Address space for mach-o files to support atc-ny memory reader
+MachOAddressSpace             - Address space for Mach-O files to support atc-ny memory reader
 OSXPmemELF                    - This AS supports VirtualBox ELF64 coredump format
 QemuCoreDumpElf               - This AS supports Qemu ELF32 and ELF64 coredump format
 VMWareAddressSpace            - This AS supports VMware snapshot (VMSS) and saved state (VMSS) files
 VMWareMetaAddressSpace        - This AS supports the VMEM format with VMSN/VMSS metadata
 VirtualBoxCoreDumpElf64       - This AS supports VirtualBox ELF64 coredump format
-WindowsCrashDumpSpace32       - This AS supports windows Crash Dump format
-WindowsCrashDumpSpace64       - This AS supports windows Crash Dump format
+WindowsCrashDumpSpace32       - This AS supports Windows Crash Dump format
+WindowsCrashDumpSpace64       - This AS supports Windows Crash Dump format
 WindowsCrashDumpSpace64BitMap - This AS supports Windows BitMap Crash Dump format
-WindowsHiberFileSpace32       - This is a hibernate address space for windows hibernation files.
+WindowsHiberFileSpace32       - This is a hibernate address space for Windows hibernation files.
 
 Plugins
 -------
@@ -476,7 +476,7 @@ yarascan                   - Scan process or kernel memory with Yara signatures
 4. Run some other plugins. -f is a required option for all plugins. Some
    also require/accept other options. Run "python vol.py <plugin> -h" for
    more information on a particular command.  A Command Reference wiki
-   is also available on the Google Code site:
+   is also available on the GitHub site:
 
         https://github.com/volatilityfoundation/volatility/wiki
 

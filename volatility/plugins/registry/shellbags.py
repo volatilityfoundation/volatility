@@ -46,7 +46,7 @@ http://www.dfrws.org/2009/proceedings/p69-zhu.pdf
     Using shellbag information to reconstruct user activities (pdf) by Yuandong Zhu, Pavel Gladyshev and Joshua James
 http://www.williballenthin.com/forensics/shellbags/index.html
     Windows shellbag forensics by Willi Ballenthin
-http://code.google.com/p/registrydecoder/source/browse/trunk/templates/template_files/ShellBagMRU.py
+https://github.com/504ensicsLabs/registrydecoder/blob/master/templates/template_files/ShellBagMRU.py
     ShellBagMRU.py from Registry Decoder by Kevin Moore
 http://code.google.com/p/regripper/wiki/ShellBags
     Shellbags RegRipper plugin by Harlan Carvey
