@@ -57,18 +57,22 @@ class SqliteRenderer(Renderer):
             accumulator[1].append([accumulator[0]] + [str(v) for v in node.values])
             if len(accumulator[1]) > 20000:
                 self._db.execute("BEGIN TRANSACTION")
-                insert = "INSERT INTO " + self._plugin_name + " VALUES (?, " + ", ".join(["?"] * len(node.values)) + ")"
+                insert = "INSERT INTO " + self._plugin_name + " (id, " + \
+                     ", ".join(['"' + self._sanitize_name(i.name) + '"' for i in grid.columns]) + ") " + \
+                     " VALUES (?, " + ", ".join(["?"] * len(node.values)) + ")"
                 self._db.executemany(insert, accumulator[1])
                 accumulator = [accumulator[0], []]
                 self._db.execute("COMMIT TRANSACTION")
             self._accumulator = accumulator
-            return accumulator            
+            return accumulator
 
         grid.populate(_add_multiple_row, self._accumulator)
-        
+
         #Insert last nodes
         if len(self._accumulator[1]) > 0:
             self._db.execute("BEGIN TRANSACTION")
-            insert = "INSERT INTO " + self._plugin_name + " VALUES (?, " + ", ".join(["?"] * (len(self._accumulator[1][0])-1)) + ")"
+            insert = "INSERT INTO " + self._plugin_name + " (id, " + \
+                     ", ".join(['"' + self._sanitize_name(i.name) + '"' for i in grid.columns]) + ") " + \
+                     " VALUES (?, " + ", ".join(["?"] * (len(self._accumulator[1][0])-1)) + ")"
             self._db.executemany(insert, self._accumulator[1])
             self._db.execute("COMMIT TRANSACTION")  
