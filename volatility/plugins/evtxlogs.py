@@ -3651,6 +3651,7 @@ class EvtxLogs(common.AbstractWindowsCommand):
         config.add_option('DUMP-DIR', short_option = 'D', default = None,
                           cache_invalidator = False,
                           help = 'Directory in which to dump log files')
+        self.files_to_remove = []
 
     @staticmethod
     def is_valid_profile(profile):
@@ -3879,12 +3880,14 @@ class EvtxLogs(common.AbstractWindowsCommand):
         image_path = image_path.replace('%29', ')')
 
         with State("default") as state:
+            self.files_to_remove.append(os.path.realpath(state._filename))
             with Mmap(image_path) as buf:
                 num_chunks_found = self.find_evtx_chunks(state, buf)
             print("# Found %d valid chunks." % num_chunks_found)
 
         with State("default") as state:
             with TemplateDatabase("default.db") as templates:
+                self.files_to_remove.append(os.path.realpath(templates._filename))
                 with Mmap(image_path) as buf:
                     num_templates_before = templates.get_number_of_templates()
                     num_valid_records_before = len(state.get_valid_records())
@@ -3925,3 +3928,9 @@ class EvtxLogs(common.AbstractWindowsCommand):
             fh.write(str(record))
         fh.close()
         outfd.write('Parsed data sent to {0}\n'.format(name))
+
+        # Delete temp files made during the extraction process. If you don't
+        # delete these, the plugin will not work when moving between different
+        # images.
+        for f in self.files_to_remove:
+            os.remove(f)
