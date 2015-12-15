@@ -383,6 +383,9 @@ class proc(obj.CType):
         if not proc_as:
             return
 
+        shared_start = self.task.shared_region.sr_base_address 
+        shared_end   = shared_start + self.task.shared_region.sr_size
+
         bit_string = str(self.task.map.pmap.pm_task_map or '')[9:]
         if bit_string.find("64BIT") == -1:
             addr_type       = "unsigned int"
@@ -439,8 +442,9 @@ class proc(obj.CType):
                                 bucket = bucket.next_bucket()
                                 continue
 
-                            if pdata.is_valid() and (0 <= pdata.flags <= 2):
-                                yield bucket
+                            if bucket.key != None and bucket.data != None and pdata.is_valid() and (0 <= pdata.flags <= 2):
+                                if len(str(bucket.key)) > 0 or len(str(bucket.data.path)) > 0:
+                                    yield bucket
 
                             bucket = bucket.next_bucket()
                 
