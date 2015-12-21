@@ -21,10 +21,9 @@
 @author:       Andrew Case
 @license:      GNU General Public License 2.0
 @contact:      atcuno@gmail.com
-@organization: 
+@organization:
 """
 import os
-import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.netstat as linux_netstat
 import volatility.plugins.linux.common as linux_common
@@ -43,14 +42,14 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
         wrote = 0
 
         fname = "{0:s}.{1:d}.{2:d}".format(name, pid, fd_num)
-        fd = None 
- 
+        fd = None
+
         sk_buff = queue.m("next")
 
         while sk_buff and sk_buff != queue.v():
 
             pkt_len = sk_buff.len
-            
+
             if pkt_len > 0 and pkt_len != 0xffffffff:
 
                 # only open once we have a packet with data
@@ -64,16 +63,16 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
                 fd.write(data)
 
                 wrote = wrote + pkt_len
-                
+
             sk_buff = sk_buff.next
-                
+
         if wrote:
             yield "Wrote {0:d} bytes to {1:s}".format(wrote, fname)
 
         if fd:
             fd.close()
 
-    def calculate(self):
+    def render_text(self, outfd, data):
         linux_common.set_plugin_members(self)
         self.edir = self._config.DUMP_DIR
 
@@ -83,16 +82,20 @@ class linux_pkt_queues(linux_netstat.linux_netstat):
         if not os.path.isdir(self.edir):
             debug.error(self.edir + " is not a directory")
 
-        for (task, fd_num, _, inet_sock) in linux_netstat.linux_netstat(self._config).calculate():
+        for task in linux_netstat.linux_netstat(self._config).calculate():
+            sfop = task.obj_vm.profile.get_symbol("socket_file_ops")
+            dfop = task.obj_vm.profile.get_symbol("sockfs_dentry_operations")
 
-            sk = inet_sock.sk
-            for msg in self.process_queue("receive", task.pid, fd_num, sk.sk_receive_queue):
-                yield msg
+            for (filp, fdnum) in task.lsof():
+                if filp.f_op == sfop or filp.dentry.d_op == dfop:
+                    iaddr = filp.dentry.d_inode
+                    skt = task.SOCKET_I(iaddr)
+                    sk = skt.sk
 
-            for msg in self.process_queue("write",   task.pid, fd_num, sk.sk_write_queue):
-                yield msg
+                    for msg in self.process_queue(
+                            "receive", task.pid, fdnum, sk.sk_receive_queue):
+                        outfd.write(msg + "\n")
 
-    def render_text(self, outfd, data):
-        for msg in data:
-            outfd.write(msg + "\n")
-
+                    for msg in self.process_queue(
+                            "write", task.pid, fdnum, sk.sk_write_queue):
+                        outfd.write(msg + "\n")
