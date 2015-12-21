@@ -23,8 +23,7 @@ import sys, os
 import zipfile
 import struct
 import time
-import curses
-import curses.ascii
+import string
 from operator import attrgetter
 import volatility.plugins as plugins
 import volatility.debug as debug
@@ -649,7 +648,7 @@ class proc(obj.CType):
 
         test_string = str(test_string)
         for s in test_string:
-            if not curses.ascii.isprint(s):
+            if not s in string.printable:
                 valid = False
                 break
 

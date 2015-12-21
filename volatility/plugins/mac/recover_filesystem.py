@@ -106,8 +106,7 @@ class mac_recover_filesystem(mac_common.AbstractMacCommand):
 
         for (vnode, path) in ff.calculate():
             if self._make_path(vnode, path):
-                if self._write_file(vnode, path):
-                    self._fix_metadata(vnode, path)
+                self._write_file(vnode, path)
 
                 num_files = num_files + 1
 
