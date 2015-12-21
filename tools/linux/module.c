@@ -175,7 +175,7 @@ struct rt_hash_bucket {
   struct rtable __rcu     *chain;
 } rt_hash_bucket;
 
-#ifndef RADIX_TREE_MAX_TAGS
+#ifndef RADIX_TREE_MAP_SHIFT
 #define RADIX_TREE_MAP_SHIFT    (CONFIG_BASE_SMALL ? 4 : 6)
 #define RADIX_TREE_MAP_SIZE     (1UL << RADIX_TREE_MAP_SHIFT)
 #define RADIX_TREE_MAP_MASK     (RADIX_TREE_MAP_SIZE-1)
