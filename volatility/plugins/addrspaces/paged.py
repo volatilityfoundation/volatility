@@ -53,6 +53,38 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
         #self.pagefile = config.PAGEFILE
         self.name = 'Kernel AS'
 
+    def is_user_page(self, entry):
+        """True if the page is accessible to ring 3 code"""
+        raise NotImplementedError
+
+    def is_supervisor_page(self, entry):
+        """True if the page is /only/ accessible to ring 0 code"""
+        raise NotImplementedError
+
+    def is_writeable(self, entry):
+        """True if the page can be written to"""
+        raise NotImplementedError
+        
+    def is_dirty(self, entry):
+        """True if the page has been written to"""
+        raise NotImplementedError
+        
+    def is_nx(self, entry):
+        """True if the page /cannot/ be executed"""
+        raise NotImplementedError
+        
+    def is_accessed(self, entry):
+        """True if the page has been accessed"""
+        raise NotImplementedError
+        
+    def is_copyonwrite(self, entry):
+        """True if the page is copy-on-write"""
+        raise NotImplementedError
+
+    def is_prototype(self, entry):
+        """True if the page is a prototype PTE"""
+        raise NotImplementedError
+
     def load_dtb(self):
         """Loads the DTB as quickly as possible from the config, then the base, then searching for it"""
         try:
