@@ -20,6 +20,7 @@
 import os
 import sys
 import textwrap
+import time
 import volatility.debug as debug
 import volatility.fmtspec as fmtspec
 import volatility.obj as obj
@@ -122,10 +123,11 @@ class Command(object):
         ## requested output mode:
         function_name = "render_{0}".format(self._config.OUTPUT)
         if not self._config.OUTPUT == "sqlite" and self._config.OUTPUT_FILE:
-            if os.path.exists(self._config.OUTPUT_FILE):
-                debug.error("File " + self._config.OUTPUT_FILE + " already exists.  Cowardly refusing to overwrite it...")
-            outfd = open(self._config.OUTPUT_FILE, 'wb')
-            # TODO: We should probably check that this won't blat over an existing file
+            out_file = '{0}_{1}.txt'.format(time.strftime('%Y%m%d%H%M%S'), plugin_name) if self._config.OUTPUT_FILE == '.' else self._config.OUTPUT_FILE
+            if os.path.exists(out_file):
+                debug.error("File " + out_file + " already exists.  Cowardly refusing to overwrite it...")
+            print 'Outputting to: {0}'.format(out_file)
+            outfd = open(out_file, 'wb')
         else:
             outfd = sys.stdout
 
