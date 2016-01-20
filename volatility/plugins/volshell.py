@@ -315,14 +315,16 @@ class volshell(common.AbstractWindowsCommand):
             """
             self.context_display()
 
-        def list_entry(head, objname, offset = -1, fieldname = None, forward = True):
+        def list_entry(head, objname, offset = -1, fieldname = None, forward = True, space = None):
             """Traverse a _LIST_ENTRY.
 
             Traverses a _LIST_ENTRY starting at virtual address head made up of
             objects of type objname. The value of offset should be set to the
             offset of the _LIST_ENTRY within the desired object."""
 
-            vm = self._proc.get_process_address_space()
+            vm = space
+            if space == None:
+                vm = self._proc.get_process_address_space()
             seen = set()
 
             if fieldname:
