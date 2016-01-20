@@ -295,15 +295,29 @@ class vnode(obj.CType):
         cur = memq.m("next").dereference_as("vm_page")
 
         file_size = self.v_un.vu_ubcinfo.ui_size
-        
         phys_as = utils.load_as(self.obj_vm.get_config(), astype = 'physical')
-        
+
+        idx = 0
+        written = 0
+
         while cur and cur.is_valid() and cur.offset < file_size:
-            if cur.offset > 0:
-                buf = phys_as.zread(cur.phys_page * 4096, 4096)              
+            # the last element of the queue seems to track the size of the queue
+            if cur.offset != 0 and cur.offset == idx:
+                break
+                
+            if cur.phys_page != 0 and cur.offset >= 0:
+                sz = 4096
+
+                if file_size - written < 4096:
+                    sz = file_size - written
+
+                buf = phys_as.zread(cur.phys_page * 4096, sz)
 
                 yield (cur.offset.v(), buf)
-     
+
+            idx     = idx + 1
+            written = written + 4096
+
             cur = cur.listq.next.dereference_as("vm_page")
 
 class fileglob(obj.CType):
