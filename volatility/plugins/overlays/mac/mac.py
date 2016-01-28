@@ -1369,23 +1369,15 @@ class vm_map_entry(obj.CType):
 
     # used to find heap, stack, etc.
     def get_special_path(self):
-        # check the heap
-        ret = ""
 
         # TODO - figure out how to track heap regions once el cap source code is released
         if hasattr(self, "alias"):
-            for i in [1, 2, 3, 4, 6, 7, 8, 9]:
-                if self.alias == i:
-                    ret = "[heap]"
-                    break
-
-        if ret != "":
-            return ret
-
-        if hasattr(self, "alias") and self.alias == 30:
-            ret = "[stack]"
-
-        return ret 
+            if 0 < self.alias < 10:
+                return "[heap]"
+            elif self.alias == 30:
+                return "[stack]"
+        
+        return ""
 
     def get_path(self):
         vnode = self.get_vnode()
