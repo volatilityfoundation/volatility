@@ -23,11 +23,10 @@
 @contact:      atcuno@gmail.com
 @organization: 
 """
-import volatility.obj as obj
+
+import os
 import volatility.plugins.mac.common as common
 import volatility.plugins.mac.mount as mac_mount
-from volatility.renderers import TreeGrid
-from volatility.renderers.basic import Address
 
 class mac_list_files(common.AbstractMacCommand):
     """ Lists files in the file cache """
@@ -35,63 +34,98 @@ class mac_list_files(common.AbstractMacCommand):
     def calculate(self):
         common.set_plugin_members(self)
 
-        mounts = mac_mount.mac_mount(self._config).calculate()
+        plugin = mac_mount.mac_mount(self._config)
+        mounts = plugin.calculate()
+        joiner = os.path.join
+        vnodes = {}
+        parent_vnodes = {}
 
-        seen  = {}
-        paths = {}
-
+        ## build an initial table of all vnodes 
         for mount in mounts:
-            vnode = mount.mnt_vnodelist.tqh_first
+            vnode = mount.mnt_vnodelist.tqh_first.dereference()
 
             while vnode:
-                if vnode.v() in seen:
+                ## abort here to prevent going in a loop 
+                if vnode.obj_offset in vnodes:
                     break
+                 
+                ## its ok to call the slower full_path() 
+                ## here because its only done for root 
+                ## nodes which is only a couple per system
+                if int(vnode.v_flag) & 1:
+                    name  = vnode.full_path()
+                
+                    entry = [name, None, vnode]
+                    vnodes[vnode.obj_offset] = entry
  
-                seen[vnode.v()] = 1
-
-                if vnode.v_flag.v() & 0x000001 != 0:
-                    yield vnode, vnode.full_path()
-                    
-                    fname = ""
-                    parent_vnode = None
+                    yield vnode, name
                 else:
-                    fname = str(vnode.v_name.dereference() or '')
-                    parent_vnode = vnode.v_parent
+                    name = vnode.v_name.dereference()
+                    parent = vnode.v_parent.dereference()
+                
+                    if parent:
+                        par_offset = parent.obj_offset 
+                    else: 
+                        par_offset = None
+            
+                    entry = [name, par_offset, vnode]
+                    vnodes[vnode.obj_offset] = entry
+                
+                vnode = vnode.v_mntvnodes.tqe_next.dereference() 
 
-                if parent_vnode != None and fname != "":
-                    parent_key = parent_vnode.v()
+        ## build the full paths for all directories
+        for key, val in vnodes.items():
+            name, parent, vnode = val
 
-                    # if not then calc full path and store in cache
-                    if not parent_key in paths:    
-                        paths[parent_key] = parent_vnode.full_path()
-
-                    if paths[parent_key] == "/":
-                        sep = ""
-                    else:
-                        sep = "/"
-
-                    # figure out our full path and store it
-                    path = paths[parent_key] + sep + fname
-                    paths[vnode.v()] = path
+            ## we can't have unnamed files or directories
+            if not name:
+                continue
+    
+            if not vnode.is_dir():
+                continue
+  
+            if parent in parent_vnodes:
+                full_path = joiner(parent_vnodes[parent], name)
+            else:
+                paths = [str(name)]
+                while parent:
+                    entry = vnodes.get(parent)
+                
+                    ## a vnode's parent wasn't found or 
+                    ## we reached the root directory 
+                    if not entry:
+                        break
                     
-                    yield vnode, path
+                    name, parent, _vnode = entry
+                    if not name:
+                        break
+                    
+                    paths.append(str(name))
+                
+                ## build the path in reverse order 
+                full_path = "/".join(reversed(paths))
+                
+            parent_vnodes[key] = full_path
 
-                vnode = vnode.v_mntvnodes.tqe_next        
- 
-    def unified_output(self, data):
-        return TreeGrid([("Offset (V)", Address),
-                         ("File Path", str),
-                         ], self.generator(data))
+        ## link everything up with their parents 
+        for val in vnodes.values():
+            name, parent, vnode = val
+            
+            if not name:
+                continue
+            
+            entry = parent_vnodes.get(parent) 
+            if not entry:
+                yield vnode, name
+            else:
+                full_path = joiner(entry, name)
+                if full_path[0:2] == "//":
+                    full_path = full_path[1:]
 
-    def generator(self, data):
-        for vnode, path in data:
-            yield (0, [
-                Address(vnode.v()),
-                str(path),
-            ])
+                yield vnode, full_path
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Offset (V)", "[addrpad]"), ("File Path", "")])
         for vnode, path in data:
-            self.table_row(outfd, vnode.v(), path)    
+            self.table_row(outfd, vnode.obj_offset, path)    
 
