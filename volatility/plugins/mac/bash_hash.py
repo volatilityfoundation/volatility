@@ -209,7 +209,7 @@ class mac32_bash_hash_table(bash_funcs):
    
             for bucket_ptr in bucket_array:
                 bucket = bucket_ptr.dereference_as("mac32_bucket_contents")
-                while bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
+                while bucket.is_valid() and bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
                     yield bucket
 
                     bucket = bucket.next
