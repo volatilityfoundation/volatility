@@ -1091,6 +1091,11 @@ class task_struct(obj.CType):
             ret = self.cred.is_valid()
 
         return ret
+    
+    @property
+    def comm(self):
+        c = self.m("comm")
+        return c.replace("\x1b", "\\x1b")
 
     def getcwd(self):
         rdentry = self.fs.get_root_dentry()
@@ -2234,6 +2239,9 @@ class VolatilityLinuxARMValidAS(obj.VolatilityMagic):
 
         init_task_addr = self.obj_vm.profile.get_symbol("init_task")
         do_fork_addr   = self.obj_vm.profile.get_symbol("do_fork") 
+
+        if not do_fork_addr or not init_task_addr:
+            return
 
         sym_addr_diff = (do_fork_addr - init_task_addr)
 
