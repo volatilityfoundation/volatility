@@ -58,7 +58,6 @@ class mac_list_files(common.AbstractMacCommand):
                     entry = [name, None, vnode]
                     vnodes[vnode.obj_offset] = entry
  
-                    yield vnode, name
                 else:
                     name = vnode.v_name.dereference()
                     parent = vnode.v_parent.dereference()
