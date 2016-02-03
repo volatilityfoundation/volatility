@@ -27,14 +27,24 @@
 import os
 import volatility.plugins.mac.common as common
 import volatility.plugins.mac.mount as mac_mount
+import volatility.obj as obj
 
 class mac_list_files(common.AbstractMacCommand):
     """ Lists files in the file cache """
 
-    def calculate(self):
-        common.set_plugin_members(self)
+    def __init__(self, config, *args, **kwargs):
+        common.AbstractMacCommand.__init__(self, config, *args, **kwargs)
+        
+        self._config.add_option('SHOW_ORPHANS', 
+            short_option = 's', 
+            default = False, 
+            help = 'Show orphans (vnodes without a parent)', 
+            action = 'store_true')
 
-        plugin = mac_mount.mac_mount(self._config)
+    @staticmethod
+    def list_files(config):
+    
+        plugin = mac_mount.mac_mount(config)
         mounts = plugin.calculate()
         joiner = os.path.join
         vnodes = {}
@@ -65,12 +75,46 @@ class mac_list_files(common.AbstractMacCommand):
                     if parent:
                         par_offset = parent.obj_offset 
                     else: 
-                        par_offset = None
+                        if config.SHOW_ORPHANS:
+                            par_offset = None
+                        else:
+                            vnode = vnode.v_mntvnodes.tqe_next.dereference() 
+                            continue
             
                     entry = [name, par_offset, vnode]
                     vnodes[vnode.obj_offset] = entry
                 
                 vnode = vnode.v_mntvnodes.tqe_next.dereference() 
+
+        ## account for vnodes that aren't in the list but are 
+        ## referenced from other vnode's v_parent pointers 
+        for key, val in vnodes.items():
+            name, parent, vnode = val    
+            
+            if not name or not parent:
+                continue
+                
+            parent = obj.Object("vnode", 
+                offset = parent, 
+                vm = vnode.obj_vm)
+                
+            while parent:
+            
+                if parent.obj_offset in vnodes:
+                    break
+
+                name = parent.v_name.dereference()
+                next_parent = parent.v_parent.dereference()
+            
+                if next_parent:
+                    par_offset = next_parent.obj_offset 
+                else: 
+                    par_offset = None
+        
+                entry = [name, par_offset, parent]
+                vnodes[parent.obj_offset] = entry
+                
+                parent = next_parent  
 
         ## build the full paths for all directories
         for key, val in vnodes.items():
@@ -118,13 +162,26 @@ class mac_list_files(common.AbstractMacCommand):
                 yield vnode, name
             else:
                 full_path = joiner(entry, name)
-                if full_path[0:2] == "//":
+                
+                ## add a leading slash if one doesn't exist
+                if full_path[0] != "/":
+                    full_path = "/" + full_path
+                    
+                ## otherwise in some cases we may have double 
+                ## slashes so reduce that down to just one 
+                elif full_path[0:2] == "//":
                     full_path = full_path[1:]
 
                 yield vnode, full_path
+
+    def calculate(self):
+        common.set_plugin_members(self)
+        config = self._config
+        
+        for result in mac_list_files.list_files(config):
+            yield result
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Offset (V)", "[addrpad]"), ("File Path", "")])
         for vnode, path in data:
             self.table_row(outfd, vnode.obj_offset, path)    
-
