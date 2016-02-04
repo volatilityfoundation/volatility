@@ -773,7 +773,7 @@ class proc(obj.CType):
 
     def netstat(self):
         for (filp, _, _) in self.lsof():
-            if filp.f_fglob.fg_type == 'DTYPE_SOCKET':
+            if filp.f_fglob.is_valid() and filp.f_fglob.fg_type == 'DTYPE_SOCKET':
                 socket = filp.f_fglob.fg_data.dereference_as("socket") 
                 family = socket.family
     
@@ -785,9 +785,12 @@ class proc(obj.CType):
                     proto = socket.protocol
                     state = socket.state
                    
-                    (lip, lport, rip, rport) = socket.get_connection_info()
- 
-                    yield (family, (socket, proto, lip, lport, rip, rport, state))
+                    vals = socket.get_connection_info()
+
+                    if vals:
+                        (lip, lport, rip, rport) =  vals
+     
+                        yield (family, (socket, proto, lip, lport, rip, rport, state))
 
     @property
     def p_gid(self):
@@ -1147,7 +1150,7 @@ class proc(obj.CType):
 
         for i, fd in enumerate(fds):
             f = fd.dereference_as("fileproc")
-            if f:
+            if f and f.f_fglob.is_valid():
                 ftype = f.f_fglob.fg_type
                 if ftype == 'DTYPE_VNODE': 
                     vnode = f.f_fglob.fg_data.dereference_as("vnode")
@@ -1552,7 +1555,14 @@ class socket(obj.CType):
         inpcb = self.so_pcb.dereference_as("inpcb")
         tcpcb = inpcb.inp_ppcb.dereference_as("tcpcb")
 
-        return tcp_states[tcpcb.t_state]
+        state = tcpcb.t_state
+        
+        if state:
+            ret = tcp_states[tcpcb.t_state]
+        else:
+            ret = "<INVALID>"
+
+        return ret
 
     @property
     def state(self):
@@ -1564,6 +1574,9 @@ class socket(obj.CType):
         return ret
         
     def get_connection_info(self):
+        if not self.so_pcb.is_valid():
+            return None
+
         ipcb = self.so_pcb.dereference_as("inpcb")
         
         if self.family == 2:
