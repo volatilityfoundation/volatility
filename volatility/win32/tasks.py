@@ -42,6 +42,16 @@ def get_kdbg(addr_space):
     even if a user specifies --kdbg, because we check for the 
     OwnerTag even in that case. 
     """
+    # we can use the hard coded KPCR value instead of scanning for KDBG
+    # like back in the old days of version 1.x
+    # this works for XP/2003 x86
+    # all other machines that do not have hardcoded KPCR values
+    # will fall back on the previous methodology
+    if obj.VolMagic(addr_space).KPCR.value:
+        kpcr = obj.Object("_KPCR", offset = obj.VolMagic(addr_space).KPCR.value, vm = addr_space)
+        kdbg = kpcr.get_kdbg()
+        if kdbg.is_valid():
+            return kdbg
 
     kdbg = obj.VolMagic(addr_space).KDBG.v()
 

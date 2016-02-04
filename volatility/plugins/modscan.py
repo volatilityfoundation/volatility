@@ -49,7 +49,7 @@ class PoolScanModule(poolscan.PoolScanner):
         self.checks = [
                ('CheckPoolSize', dict(condition = lambda x: x >= 0x4C)),
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
-               ('CheckPoolIndex', dict(value = 0)),
+               ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                ]
 
 class ModScan(common.AbstractScanCommand):
@@ -118,7 +118,7 @@ class PoolScanThread(poolscan.PoolScanner):
         self.checks = [
                ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
-               ('CheckPoolIndex', dict(value = 0)),
+               ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                ]
 
 class ThrdScan(common.AbstractScanCommand):

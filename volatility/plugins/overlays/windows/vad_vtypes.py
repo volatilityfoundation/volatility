@@ -140,7 +140,7 @@ class VadTagModification(obj.ProfileModification):
                 '_MM_AVL_NODE': [ None, {
                     'Tag': [offset , ['String', dict(length = 4)]],
                 }]})
-        elif version == (6, 3):
+        elif version >= (6, 3):
             overlay.update({
                 '_RTL_BALANCED_NODE': [ None, {
                     'Tag': [offset , ['String', dict(length = 4)]],
@@ -442,11 +442,11 @@ class _MMVAD_SHORT_WIN81(_RTL_BALANCED_NODE):
 
     @property
     def Start(self):
-        return self.StartingVpn << 12
+        return (self.StartingVpn << 12) | (self.StartingVpnHigh << 44)
 
     @property
     def End(self):
-        return ((self.EndingVpn + 1) << 12) - 1
+        return (((self.EndingVpn + 1) << 12) | (self.EndingVpnHigh << 44)) - 1
 
     @property
     def VadFlags(self):
@@ -515,7 +515,7 @@ class Win81Vad(obj.ProfileModification):
     before = ["WindowsOverlay"]
     conditions = {"os": lambda x: x == "windows", 
                   "major": lambda x: x == 6, 
-                  "minor": lambda x: x == 3}
+                  "minor": lambda x: x >= 3}
 
     def modification(self, profile):
         profile.object_classes.update({
@@ -524,3 +524,4 @@ class Win81Vad(obj.ProfileModification):
             '_RTL_AVL_TREE': _RTL_AVL_TREE,
             '_RTL_BALANCED_NODE': _RTL_BALANCED_NODE,
             })
+

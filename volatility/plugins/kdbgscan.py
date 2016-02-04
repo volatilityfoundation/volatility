@@ -97,7 +97,10 @@ class KDBGScan(common.AbstractWindowsCommand):
     @staticmethod
     def register_options(config):
         config.add_option('KDBG', short_option = 'g', default = None, type = 'int',
-                          help = "Specify a specific KDBG virtual address")
+                          help = "Specify a KDBG virtual address (Note: for 64-bit Windows 8 and above this is the address of KdCopyDataBlock)")
+
+        config.add_option("FORCE", default = False, action = "store_true",
+                          help = "Force utilization of suspect profile")
 
     @cache.CacheDecorator(lambda self: "tests/kdbgscan/kdbg={0}".format(self._config.KDBG))
     def calculate(self):
@@ -128,13 +131,26 @@ class KDBGScan(common.AbstractWindowsCommand):
 
             aspace = utils.load_as(self._config, astype = 'any')
 
+            suspects = []
             for offset in scanner.scan(aspace):
                 val = aspace.read(offset, maxlen + 0x10)
                 for l in proflens:
                     if val.find(proflens[l]) >= 0:
                         kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = offset, vm = aspace)
-                        yield l, kdbg
+                        suspects.append((l, kdbg))
                         count += 1
+            for p, k in suspects:
+                if not self._config.FORCE:
+                    yield p, k
+                    continue
+                self._config.update("PROFILE", p)
+                nspace = utils.load_as(self._config, astype = "any")
+                for offset in scanner.scan(nspace):
+                    val = nspace.read(offset, maxlen + 0x10)
+                    if val.find(proflens[p]) >= 0:
+                        kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = offset, vm = nspace)
+                        yield p, kdbg
+            self._config.update('PROFILE', origprofile)
 
         # only perform the special win8/2012 scan if we didn't find 
         # any others and if a virtual x64 address space is available 

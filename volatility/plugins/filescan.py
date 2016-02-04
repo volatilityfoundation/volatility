@@ -46,7 +46,7 @@ class PoolScanFile(poolscan.PoolScanner):
         self.checks = [ 
                ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
-               ('CheckPoolIndex', dict(value = 0)),
+               ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                ]
 
 class FileScan(common.AbstractScanCommand):
@@ -116,7 +116,7 @@ class PoolScanDriver(poolscan.PoolScanner):
         self.checks = [ 
                ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
-               ('CheckPoolIndex', dict(value = 0)),
+               ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                ]
 
 class DriverScan(common.AbstractScanCommand):
@@ -246,7 +246,7 @@ class PoolScanMutant(poolscan.PoolScanner):
         self.checks = [ 
                ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
-               ('CheckPoolIndex', dict(value = 0)),
+               ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                ]
 
 class MutantScan(common.AbstractScanCommand):
@@ -331,7 +331,7 @@ class PoolScanProcess(poolscan.PoolScanner):
         self.checks = [ 
                 ('CheckPoolSize', dict(condition = lambda x: x >= size)),
                 ('CheckPoolType', dict(paged = False, non_paged = True, free = True)),
-                ('CheckPoolIndex', dict(value = 0)),
+                ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                 ]
 
 class PSScan(common.AbstractScanCommand):
@@ -350,10 +350,16 @@ class PSScan(common.AbstractScanCommand):
     meta_info['version'] = '0.1'
 
     def calculate(self):
-        if self._config.VIRTUAL:
-            addr_space = utils.load_as(self._config)
-        else:
-            addr_space = utils.load_as(self._config, astype = 'physical')
+        # start with a physical space so we can find processes without a DTB 
+        addr_space = utils.load_as(self._config, astype = 'physical')
+        meta = addr_space.profile.metadata
+        win10 = (meta.get("major"), meta.get("minor")) == (6, 4)
+
+        # if the user selected virtual space or if we're on win10, switch 
+        # to a virtual kernel space 
+        if self._config.VIRTUAL or win10:
+            addr_space = utils.load_as(self._config) 
+
         return self.scan_results(addr_space)
 
     def render_dot(self, outfd, data):

@@ -165,7 +165,11 @@ class MultiScanInterface(object):
         @param pool_header: the target _POOL_HEADER to check
         """
 
-        return pool_header.PoolIndex == check["value"]
+        value = check["value"]
+        if callable(value):
+            return value(pool_header.PoolIndex)
+        else:
+            return pool_header.PoolIndex == check["value"]
 
     def _run_all_checks(self, checks, pool_header):
         """Execute all constraint checks. 
@@ -196,10 +200,17 @@ class MultiScanInterface(object):
 
     def scan(self):
 
-        if self.scan_virtual:
+        # determine if we're using windows 10
+        meta = self.address_space.profile.metadata
+        win10 = (meta.get("major"), meta.get("minor")) == (6, 4)
+
+        if self.scan_virtual or win10:
             space = self.address_space
         else:
             space = self.address_space.physical_space()
+
+        if win10:
+            cookie = obj.VolMagic(space).ObHeaderCookie.v()
 
         # create instances of the various scanners linked
         # to the desired address space 

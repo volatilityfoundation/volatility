@@ -26,19 +26,21 @@ Windows:
 * 32-bit Windows Vista Service Pack 0, 1, 2
 * 32-bit Windows 2008 Server Service Pack 1, 2 (there is no SP0)
 * 32-bit Windows 7 Service Pack 0, 1
-* 32-bit Windows 8 and 8.1
+* 32-bit Windows 8, 8.1, and 8.1 Update 1
+* 32-bit Windows 10 (initial support)
 * 64-bit Windows XP Service Pack 1 and 2 (there is no SP0)
 * 64-bit Windows 2003 Server Service Pack 1 and 2 (there is no SP0)
 * 64-bit Windows Vista Service Pack 0, 1, 2
 * 64-bit Windows 2008 Server Service Pack 1 and 2 (there is no SP0)
 * 64-bit Windows 2008 R2 Server Service Pack 0 and 1
 * 64-bit Windows 7 Service Pack 0 and 1
-* 64-bit Windows 8 and 8.1 
+* 64-bit Windows 8, 8.1, and 8.1 Update 1
 * 64-bit Windows Server 2012 and 2012 R2 
+* 64-bit Windows 10 (initial support)
 
 Linux: 
-* 32-bit Linux kernels 2.6.11 to 3.5
-* 64-bit Linux kernels 2.6.11 to 3.5
+* 32-bit Linux kernels 2.6.11 to 4.2.3
+* 64-bit Linux kernels 2.6.11 to 4.2.3
 * OpenSuSE, Ubuntu, Debian, CentOS, Fedora, Mandriva, etc
 
 Mac OSX:
@@ -49,6 +51,8 @@ Mac OSX:
 * 64-bit 10.7.x Lion
 * 64-bit 10.8.x Mountain Lion (there is no 32-bit version)
 * 64-bit 10.9.x Mavericks (there is no 32-bit version)
+* 64-bit 10.10.x Yosemite (there is no 32-bit version)
+* 64-bit 10.11.x El Capitan (there is no 32-bit version)
 
 Volatility does not provide memory sample acquisition
 capabilities. For acquisition, there are both free and commercial
@@ -61,13 +65,13 @@ Volatility supports a variety of sample file formats and the
 ability to convert between these formats:
 
   - Raw linear sample (dd)
-  - Hibernation file
+  - Hibernation file (from Windows 7 and earlier)
   - Crash dump file
   - VirtualBox ELF64 core dump
   - VMware saved state and snapshot files
   - EWF format (E01) 
   - LiME (Linux Memory Extractor) format
-  - Mach-o file format 
+  - Mach-O file format
   - QEMU virtual machine dumps
   - Firewire 
   - HPAK (FDPro)
@@ -75,6 +79,10 @@ ability to convert between these formats:
 For a more detailed list of capabilities, see the following:
 
     https://github.com/volatilityfoundation/volatility/wiki
+    
+Also see the community plugins repository:
+
+    https://github.com/volatilityfoundation/community
 
 Example Data
 ============
@@ -125,8 +133,7 @@ Quick Start
    Example:
 
 $ python vol.py --info
-Volatility Foundation Volatility Framework 2.4
-Usage: Volatility - A memory forensics analysis platform.
+Volatility Foundation Volatility Framework 2.5
 
 Profiles
 --------
@@ -136,6 +143,8 @@ VistaSP1x64                - A Profile for Windows Vista SP1 x64
 VistaSP1x86                - A Profile for Windows Vista SP1 x86
 VistaSP2x64                - A Profile for Windows Vista SP2 x64
 VistaSP2x86                - A Profile for Windows Vista SP2 x86
+Win10x64                   - A Profile for Windows 10 x64
+Win10x86                   - A Profile for Windows 10 x86
 Win2003SP0x86              - A Profile for Windows 2003 SP0 x86
 Win2003SP1x64              - A Profile for Windows 2003 SP1 x64
 Win2003SP1x86              - A Profile for Windows 2003 SP1 x86
@@ -153,6 +162,8 @@ Win7SP0x64                 - A Profile for Windows 7 SP0 x64
 Win7SP0x86                 - A Profile for Windows 7 SP0 x86
 Win7SP1x64                 - A Profile for Windows 7 SP1 x64
 Win7SP1x86                 - A Profile for Windows 7 SP1 x86
+Win81U1x64                 - A Profile for Windows 8.1 Update 1 x64
+Win81U1x86                 - A Profile for Windows 8.1 Update 1 x86
 Win8SP0x64                 - A Profile for Windows 8 x64
 Win8SP0x86                 - A Profile for Windows 8 x86
 Win8SP1x64                 - A Profile for Windows 8.1 x64
@@ -165,25 +176,26 @@ WinXPSP3x86                - A Profile for Windows XP SP3 x86
 Address Spaces
 --------------
 AMD64PagedMemory              - Standard AMD 64-bit address space.
-ArmAddressSpace               - No docs        
+ArmAddressSpace               - Address space for ARM processors       
 FileAddressSpace              - This is a direct file AS.
 HPAKAddressSpace              - This AS supports the HPAK format
 IA32PagedMemory               - Standard IA-32 paging address space.
 IA32PagedMemoryPae            - This class implements the IA-32 PAE paging address space. It is responsible
 LimeAddressSpace              - Address space for Lime
-MachOAddressSpace             - Address space for mach-o files to support atc-ny memory reader
+MachOAddressSpace             - Address space for Mach-O files to support atc-ny memory reader
 OSXPmemELF                    - This AS supports VirtualBox ELF64 coredump format
 QemuCoreDumpElf               - This AS supports Qemu ELF32 and ELF64 coredump format
 VMWareAddressSpace            - This AS supports VMware snapshot (VMSS) and saved state (VMSS) files
 VMWareMetaAddressSpace        - This AS supports the VMEM format with VMSN/VMSS metadata
 VirtualBoxCoreDumpElf64       - This AS supports VirtualBox ELF64 coredump format
-WindowsCrashDumpSpace32       - This AS supports windows Crash Dump format
-WindowsCrashDumpSpace64       - This AS supports windows Crash Dump format
+WindowsCrashDumpSpace32       - This AS supports Windows Crash Dump format
+WindowsCrashDumpSpace64       - This AS supports Windows Crash Dump format
 WindowsCrashDumpSpace64BitMap - This AS supports Windows BitMap Crash Dump format
-WindowsHiberFileSpace32       - This is a hibernate address space for windows hibernation files.
+WindowsHiberFileSpace32       - This is a hibernate address space for Windows hibernation files.
 
 Plugins
 -------
+amcache                    - Print AmCache information
 apihooks                   - Detect API hooks in process and kernel memory
 atoms                      - Print session and window station atom tables
 atomscan                   - Pool scanner for atom tables
@@ -204,9 +216,11 @@ devicetree                 - Show device tree
 dlldump                    - Dump DLLs from a process address space
 dlllist                    - Print list of loaded dlls for each process
 driverirp                  - Driver IRP hook detection
+drivermodule               - Associate driver objects to kernel modules
 driverscan                 - Pool scanner for driver objects
 dumpcerts                  - Dump RSA private and public SSL keys
 dumpfiles                  - Extract memory mapped and cached files
+dumpregistry               - Dumps registry files out to disk
 envars                     - Display process environment variables
 eventhooks                 - Print details on windows event hooks
 evtlogs                    - Extract Windows Event Logs (XP/2003 only)
@@ -238,7 +252,7 @@ linux_apihooks             - Checks for userland apihooks
 linux_arp                  - Print the ARP table
 linux_banner               - Prints the Linux banner information
 linux_bash                 - Recover bash history from bash process memory
-linux_bash_env             - Recover bash's environment variables
+linux_bash_env             - Recover a process' dynamic environment variables
 linux_bash_hash            - Recover bash hash table from bash process memory
 linux_check_afinfo         - Verifies the operation function pointers of network protocols
 linux_check_creds          - Checks if any processes are sharing credential structures
@@ -254,9 +268,11 @@ linux_cpuinfo              - Prints info about each active processor
 linux_dentry_cache         - Gather files from the dentry cache
 linux_dmesg                - Gather dmesg buffer
 linux_dump_map             - Writes selected memory mappings to disk
+linux_dynamic_env          - Recover a process' dynamic environment variables
 linux_elfs                 - Find ELF binaries in process mappings
 linux_enumerate_files      - Lists files referenced by the filesystem cache
 linux_find_file            - Lists and recovers files from memory
+linux_getcwd               - Lists current working directory of each process
 linux_hidden_modules       - Carves memory to find hidden kernel modules
 linux_ifconfig             - Gathers active interfaces
 linux_info_regs            - It's like 'info registers' in GDB. It prints out all the
@@ -268,23 +284,24 @@ linux_library_list         - Lists libraries loaded into a process
 linux_librarydump          - Dumps shared libraries in process memory to disk
 linux_list_raw             - List applications with promiscuous sockets
 linux_lsmod                - Gather loaded kernel modules
-linux_lsof                 - Lists open files
+linux_lsof                 - Lists file descriptors and their path
 linux_malfind              - Looks for suspicious process mappings
 linux_memmap               - Dumps the memory map for linux tasks
 linux_moddump              - Extract loaded kernel modules
 linux_mount                - Gather mounted fs/devices
 linux_mount_cache          - Gather mounted fs/devices from kmem_cache
 linux_netfilter            - Lists Netfilter hooks
+linux_netscan              - Carves for network connection structures
 linux_netstat              - Lists open sockets
 linux_pidhashtable         - Enumerates processes through the PID hash table
 linux_pkt_queues           - Writes per-process packet queues out to disk
 linux_plthook              - Scan ELF binaries' PLT for hooks to non-NEEDED images
-linux_proc_maps            - Gathers process maps for linux
+linux_proc_maps            - Gathers process memory maps
 linux_proc_maps_rb         - Gathers process maps for linux through the mappings red-black tree
 linux_procdump             - Dumps a process's executable image to disk
 linux_process_hollow       - Checks for signs of process hollowing
 linux_psaux                - Gathers processes along with full command line and start time
-linux_psenv                - Gathers processes along with their environment
+linux_psenv                - Gathers processes along with their static environment variables
 linux_pslist               - Gather active tasks by walking the task_struct->task list
 linux_pslist_cache         - Gather tasks from the kmem_cache
 linux_pstree               - Shows the parent/child relationship between processes
@@ -314,21 +331,26 @@ mac_check_syscall_shadow   - Looks for shadow system call tables
 mac_check_syscalls         - Checks to see if system call table entries are hooked
 mac_check_sysctl           - Checks for unknown sysctl handlers
 mac_check_trap_table       - Checks to see if mach trap table entries are hooked
+mac_compressed_swap        - Prints Mac OS X VM compressor stats and dumps all compressed pages
 mac_contacts               - Gets contact names from Contacts.app
 mac_dead_procs             - Prints terminated/de-allocated processes
 mac_dead_sockets           - Prints terminated/de-allocated network sockets
 mac_dead_vnodes            - Lists freed vnode structures
 mac_dmesg                  - Prints the kernel debug buffer
 mac_dump_file              - Dumps a specified file
-mac_dump_maps              - Dumps memory ranges of processes
+mac_dump_maps              - Dumps memory ranges of process(es), optionally including pages in compressed swap
 mac_dyld_maps              - Gets memory maps of processes from dyld data structures
 mac_find_aslr_shift        - Find the ASLR shift value for 10.8+ images
+mac_get_profile            - Automatically detect Mac profiles       
 mac_ifconfig               - Lists network interface information for all devices
 mac_ip_filters             - Reports any hooked IP filters
 mac_keychaindump           - Recovers possbile keychain keys. Use chainbreaker to open related keychain files
 mac_ldrmodules             - Compares the output of proc maps with the list of libraries from libdl
 mac_librarydump            - Dumps the executable of a process
 mac_list_files             - Lists files in the file cache
+mac_list_kauth_listeners   - Lists Kauth Scope listeners
+mac_list_kauth_scopes      - Lists Kauth Scopes and their status
+mac_list_raw               - List applications with promiscuous sockets
 mac_list_sessions          - Enumerates sessions
 mac_list_zones             - Prints active zones
 mac_lsmod                  - Lists loaded kernel modules
@@ -344,12 +366,14 @@ mac_netstat                - Lists active per-process network connections
 mac_network_conns          - Lists network connections from kernel network structures
 mac_notesapp               - Finds contents of Notes messages
 mac_notifiers              - Detects rootkits that add hooks into I/O Kit (e.g. LogKext)
+mac_orphan_threads         - Lists threads that don't map back to known modules/processes
 mac_pgrp_hash_table        - Walks the process group hash table
 mac_pid_hash_table         - Walks the pid hash table
 mac_print_boot_cmdline     - Prints kernel boot arguments
 mac_proc_maps              - Gets memory maps of processes
 mac_procdump               - Dumps the executable of a process
 mac_psaux                  - Prints processes with arguments in user land (**argv)
+mac_psenv                  - Prints processes with environment in user land (**envp)
 mac_pslist                 - List Running Processes
 mac_pstree                 - Show parent/child relationship of processes
 mac_psxview                - Find hidden processes with various process listings
@@ -358,6 +382,8 @@ mac_route                  - Prints the routing table
 mac_socket_filters         - Reports socket filters
 mac_strings                - Match physical offsets to virtual addresses (may take a while, VERY verbose)
 mac_tasks                  - List Active Tasks
+mac_threads                - List Process Threads
+mac_threads_simple         - Lists threads along with their start time and priority
 mac_trustedbsd             - Lists malicious trustedbsd policies
 mac_version                - Prints the Mac version
 mac_volshell               - Shell in the memory image
@@ -387,11 +413,14 @@ pslist                     - Print all running processes by following the EPROCE
 psscan                     - Pool scanner for process objects
 pstree                     - Print process list as a tree
 psxview                    - Find hidden processes with various process listings
+qemuinfo                   - Dump Qemu information
 raw2dmp                    - Converts a physical memory sample to a windbg crash dump
 screenshot                 - Save a pseudo-screenshot based on GDI windows
+servicediff                - List Windows services (ala Plugx)
 sessions                   - List details on _MM_SESSION_SPACE (user logon sessions)
 shellbags                  - Prints ShellBags info
 shimcache                  - Parses the Application Compatibility Shim Cache registry key
+shutdowntime               - Print ShutdownTime of machine from registry
 sockets                    - Print list of open sockets
 sockscan                   - Pool scanner for tcp socket objects
 ssdt                       - Display SSDT entries
@@ -416,6 +445,7 @@ vboxinfo                   - Dump virtualbox information
 verinfo                    - Prints out the version information from PE images
 vmwareinfo                 - Dump VMware VMSS/VMSN information
 volshell                   - Shell in the memory image
+win10cookie                - Find the ObHeaderCookie value for Windows 10
 windows                    - Print Desktop Windows (verbose details)
 wintree                    - Print Z-Order Desktop Windows Tree
 wndscan                    - Pool scanner for window stations
@@ -427,7 +457,7 @@ yarascan                   - Scan process or kernel memory with Yara signatures
    Example:
    
     $ python vol.py imageinfo -f WIN-II7VOJTUNGL-20120324-193051.raw 
-    Volatility Foundation Volatility Framework 2.4
+    Volatility Foundation Volatility Framework 2.5
     Determining profile based on KDBG search...
     
               Suggested Profile(s) : Win2008R2SP0x64, Win7SP1x64, Win7SP0x64, Win2008R2SP1x64 (Instantiated with Win7SP0x64)
@@ -446,7 +476,7 @@ yarascan                   - Scan process or kernel memory with Yara signatures
 4. Run some other plugins. -f is a required option for all plugins. Some
    also require/accept other options. Run "python vol.py <plugin> -h" for
    more information on a particular command.  A Command Reference wiki
-   is also available on the Google Code site:
+   is also available on the GitHub site:
 
         https://github.com/volatilityfoundation/volatility/wiki
 
@@ -457,7 +487,7 @@ yarascan                   - Scan process or kernel memory with Yara signatures
 Licensing and Copyright
 =======================
 
-Copyright (C) 2007-2014 Volatility Foundation
+Copyright (C) 2007-2015 Volatility Foundation
 
 All Rights Reserved
 

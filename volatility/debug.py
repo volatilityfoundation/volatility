@@ -70,7 +70,7 @@ def log(msg, level):
         modname = "volatility.debug"
         while modname == "volatility.debug":
             frm = frm.f_back
-            mod = inspect.getmodule(frm)
+            mod = inspect.getfile(frm)
             modname = mod.__name__
     except AttributeError:
         pass

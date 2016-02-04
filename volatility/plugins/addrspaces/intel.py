@@ -109,6 +109,30 @@ class IA32PagedMemory(paged.AbstractWritablePagedMemory):
             return True
         return False
 
+    def is_user_page(self, entry):
+        return entry & (1 << 2) == (1 << 2)
+
+    def is_supervisor_page(self, entry):
+        return not self.is_user_page(entry)
+
+    def is_writeable(self, entry):
+        return entry & (1 << 1) == (1 << 1)
+        
+    def is_dirty(self, entry):
+        return entry & (1 << 6) == (1 << 6)
+        
+    def is_nx(self, entry):
+        return False
+        
+    def is_accessed(self, entry):
+        return entry & (1 << 5) == (1 << 5)
+        
+    def is_copyonwrite(self, entry):
+        return entry & (1 << 9) == (1 << 9)
+
+    def is_prototype(self, entry):
+        return entry & (1 << 10) == (1 << 10)
+
     def pgd_index(self, pgd):
         return (pgd >> pgdir_shift) & (ptrs_per_pgd - 1)
 
@@ -157,21 +181,27 @@ class IA32PagedMemory(paged.AbstractWritablePagedMemory):
         longval, = self._long_struct.unpack(string)
         return longval
 
-    def get_available_pages(self):
+    def get_available_pages(self, with_pte = False):
         pgd_curr = self.dtb
         for i in range(0, ptrs_per_pgd):
             start = (i * ptrs_per_pgd * ptrs_per_pte * 4)
             entry = self.read_long_phys(pgd_curr)
             pgd_curr = pgd_curr + 4
             if self.entry_present(entry) and self.page_size_flag(entry):
-                yield (start, 0x400000)
+                if with_pte: 
+                    yield (entry, start, 0x400000)
+                else:
+                    yield (start, 0x400000)
             elif self.entry_present(entry):
                 pte_curr = entry & ~((1 << page_shift) - 1)
                 for j in range(0, ptrs_per_pte):
                     pte_entry = self.read_long_phys(pte_curr)
                     pte_curr = pte_curr + 4
                     if self.entry_present(pte_entry):
-                        yield (start + j * 0x1000, 0x1000)
+                        if with_pte: 
+                            yield (pte_entry, start + j * 0x1000, 0x1000)
+                        else:
+                            yield (start + j * 0x1000, 0x1000)
 
 class IA32PagedMemoryPae(IA32PagedMemory):
     """
@@ -268,7 +298,7 @@ class IA32PagedMemoryPae(IA32PagedMemory):
         longlongval, = self._longlong_struct.unpack(string)
         return longlongval
 
-    def get_available_pages(self):
+    def get_available_pages(self, with_pte = False):
 
         pdpi_base = self.get_pdptb(self.dtb)
 
@@ -288,11 +318,17 @@ class IA32PagedMemoryPae(IA32PagedMemory):
                 entry = self._read_long_long_phys(pgd_curr)
                 pgd_curr = pgd_curr + 8
                 if self.entry_present(entry) and self.page_size_flag(entry):
-                    yield (soffset, 0x200000)
+                    if with_pte:
+                        yield (entry, soffset, 0x200000)
+                    else:
+                        yield (soffset, 0x200000)
                 elif self.entry_present(entry):
                     pte_curr = entry & ~((1 << page_shift) - 1)
                     for k in range(0, ptrs_per_pae_pte):
                         pte_entry = self._read_long_long_phys(pte_curr)
                         pte_curr = pte_curr + 8
                         if self.entry_present(pte_entry):
-                            yield (soffset + k * 0x1000, 0x1000)
+                            if with_pte:
+                                yield (pte_entry, soffset + k * 0x1000, 0x1000)
+                            else:
+                                yield (soffset + k * 0x1000, 0x1000)

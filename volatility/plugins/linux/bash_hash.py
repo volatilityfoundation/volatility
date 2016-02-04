@@ -40,6 +40,11 @@ bash_hash_vtypes_32 = {
     'flags': [0x4, ['int']],
     }],
 
+    '_envdata' : [ 8, {
+    'name'   : [0x0, ['pointer', ['String', dict(length = 1024)]]],
+    'value'  : [0x4, ['pointer', ['String', dict(length = 1024)]]],
+    }],
+
     'bucket_contents' : [ 20, {
     'next' : [0x0, ['pointer', ['bucket_contents']]],
     'key'  : [0x4, ['pointer', ['String', dict(length = 1024)]]],
@@ -58,6 +63,11 @@ bash_hash_vtypes_64 = {
     '_pathdata' : [ 12, {
     'path'  : [0x0, ['pointer', ['String', dict(length = 1024)]]],
     'flags': [0x8, ['int']],
+    }],
+
+    '_envdata' : [ 16, {
+    'name'   : [0x0, ['pointer', ['String', dict(length = 1024)]]],
+    'value'  : [0x8, ['pointer', ['String', dict(length = 1024)]]],
     }],
 
     'bucket_contents' : [ 32, {
@@ -84,7 +94,21 @@ class _bash_hash_table(obj.CType):
             return False
 
         return True
-        
+       
+    def __iter__(self):
+        if self.is_valid():
+            bucket_array = obj.Object(theType="Array", targetType="Pointer", offset = self.bucket_array, vm = self.nbuckets.obj_vm, count = 64)
+   
+            for bucket_ptr in bucket_array:
+                bucket = bucket_ptr.dereference_as("bucket_contents")
+                while bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
+                    #pdata = bucket.data 
+
+                    #if pdata.path.is_valid() and (0 <= pdata.flags <= 2):
+                    yield bucket
+
+                    bucket = bucket.next
+ 
 class BashHashTypes(obj.ProfileModification):
     conditions = {"os" : lambda x : x in ["linux"]}
 

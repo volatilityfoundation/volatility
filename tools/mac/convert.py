@@ -11,6 +11,7 @@ class DWARFParser(object):
 
     sz2tp = {8: 'long long', 4: 'long', 2: 'short', 1: 'char'}
     tp2vol = {
+        'sizetype' : 'long long',
         'bool' : 'int',
         '_Bool': 'unsigned char',
         'char': 'char',

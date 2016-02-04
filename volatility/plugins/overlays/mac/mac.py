@@ -23,6 +23,7 @@ import sys, os
 import zipfile
 import struct
 import time
+import string
 from operator import attrgetter
 import volatility.plugins as plugins
 import volatility.debug as debug
@@ -35,11 +36,20 @@ import volatility.plugins.addrspaces.intel as intel
 import volatility.plugins.overlays.native_types as native_types
 import volatility.utils as utils
 import volatility.plugins.mac.common as common
+import volatility.plugins.malware.malfind as malfind
+
+try:
+    import yara
+    has_yara = True
+except ImportError:
+    has_yara = False
 
 x64_native_types = copy.deepcopy(native_types.x64_native_types)
 
 x64_native_types['long'] = [8, '<q']
 x64_native_types['unsigned long'] = [8, '<Q']
+
+dynamic_env_hint = None
 
 dyld_vtypes = {
     'dyld32_image_info' : [12, {
@@ -70,6 +80,40 @@ dyld_vtypes = {
         'processDetachedFromSharedRegion': [24, ['unsigned int']],
     }],
 }
+
+class BashEnvYaraScanner(malfind.BaseYaraScanner):
+    """A scanner over all memory regions of a process."""
+
+    def __init__(self, task = None, **kwargs):
+        """Scan the process address space through the VMAs.
+
+        Args:
+          task: The task_struct object for this task.
+        """
+        self.task = task
+        malfind.BaseYaraScanner.__init__(self, address_space = task.get_process_address_space(), **kwargs)
+
+    def scan(self, offset = 0, maxlen = None, max_size = None):
+        shared_start = self.task.task.shared_region.sr_base_address 
+        shared_end   = shared_start + self.task.task.shared_region.sr_size
+
+        for map in self.task.get_proc_maps():
+            start = map.links.start.v()
+            end   = map.links.end.v()
+
+            length = end - start
+
+            if length >= 0x1000000:
+                continue
+
+            if shared_start <= start <= shared_end:
+                continue
+ 
+            if map.get_perms() != "rw-" or map.get_path() != "":
+                continue 
+      
+            for match in malfind.BaseYaraScanner.scan(self, start, length):
+                yield match
 
 class DyldTypes(obj.ProfileModification):
     conditions = {"os" : lambda x : x in ["mac"]}
@@ -251,15 +295,29 @@ class vnode(obj.CType):
         cur = memq.m("next").dereference_as("vm_page")
 
         file_size = self.v_un.vu_ubcinfo.ui_size
-        
         phys_as = utils.load_as(self.obj_vm.get_config(), astype = 'physical')
-        
+
+        idx = 0
+        written = 0
+
         while cur and cur.is_valid() and cur.offset < file_size:
-            if cur.offset > 0:
-                buf = phys_as.zread(cur.phys_page * 4096, 4096)              
+            # the last element of the queue seems to track the size of the queue
+            if cur.offset != 0 and cur.offset == idx:
+                break
+                
+            if cur.phys_page != 0 and cur.offset >= 0:
+                sz = 4096
+
+                if file_size - written < 4096:
+                    sz = file_size - written
+
+                buf = phys_as.zread(cur.phys_page * 4096, sz)
 
                 yield (cur.offset.v(), buf)
-     
+
+            idx     = idx + 1
+            written = written + 4096
+
             cur = cur.listq.next.dereference_as("vm_page")
 
 class fileglob(obj.CType):
@@ -269,8 +327,11 @@ class fileglob(obj.CType):
         ret = self.members.get("fg_type")
         if ret:
             ret = self.m("fg_type")
-        else:    
-            ret = self.fg_ops.fo_type
+        else:
+            if self.fg_ops.is_valid(): 
+                ret = self.fg_ops.fo_type
+            else:
+                ret = 'INVALID'
 
         ret = str(ret)
         return ret
@@ -335,6 +396,9 @@ class proc(obj.CType):
         if not proc_as:
             return
 
+        shared_start = self.task.shared_region.sr_base_address 
+        shared_end   = shared_start + self.task.shared_region.sr_size
+
         bit_string = str(self.task.map.pmap.pm_task_map or '')[9:]
         if bit_string.find("64BIT") == -1:
             addr_type       = "unsigned int"
@@ -346,9 +410,6 @@ class proc(obj.CType):
             bucket_contents_type =  "mac64_bucket_contents"
             htable_type     = "mac64_bash_hash_table"
             nbuckets_offset = self.obj_vm.profile.get_obj_offset(htable_type, "nbuckets") 
-
-        shared_start = self.task.shared_region.sr_base_address 
-        shared_end   = shared_start + self.task.shared_region.sr_size
 
         for map in self.get_proc_maps():
             if shared_start <= map.start <= shared_end:
@@ -394,8 +455,9 @@ class proc(obj.CType):
                                 bucket = bucket.next_bucket()
                                 continue
 
-                            if pdata.is_valid() and (0 <= pdata.flags <= 2):
-                                yield bucket
+                            if bucket.key != None and bucket.data != None and pdata.is_valid() and (0 <= pdata.flags <= 2):
+                                if len(str(bucket.key)) > 0 or len(str(bucket.data.path)) > 0:
+                                    yield bucket
 
                             bucket = bucket.next_bucket()
                 
@@ -437,31 +499,88 @@ class proc(obj.CType):
         for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
             yield hist              
 
-    def bash_environment(self):
-        proc_as = self.get_process_address_space()
-        
-        # In cases when mm is an invalid pointer 
-        if not proc_as:
-            return
-        
-        procvars = []
-        for mapping in self.get_proc_maps():
-            if not str(mapping.get_perms()) == "rw-" or mapping.get_path().find("bash") == -1:
-                continue
+    def _get_libc_range(self, proc_as):
+        libc_map = None
+        mapping = None
 
-            env_start = 0
-            for off in range(mapping.links.start, mapping.links.end):
+        for dmap in self.get_dyld_maps():
+            if dmap.imageFilePath.endswith("libsystem_c.dylib"):
+                libc_map = dmap
+                break
+
+        if libc_map:
+            mh = obj.Object("macho_header", offset = libc_map.imageLoadAddress, vm = proc_as)
+
+            for seg in mh.segments():
+                if str(seg.segname) == "__DATA":
+                    mapping = [[seg.vmaddr, seg.vmaddr + seg.vmsize, seg.vmsize]]
+        
+        return mapping
+
+    # this tries to find libc in memory, which holds the pointer to the dynamic env
+    # if we can't get the address of libc (due to needed data being paged out) then we have ot scan all ranges
+    def _get_env_mappings(self, proc_as):
+        mappings = self._get_libc_range(proc_as)
+
+        if not mappings:
+            mappings = []
+            for mapping in self.get_proc_maps():
+                if str(mapping.get_perms()) != "rw-" or mapping.get_path() == "":
+                    continue
+
+                mappings.append([mapping.start, mapping.end, mapping.end - mapping.start])
+
+            # the mapping holding the environment seems to be high in memory...
+            mappings.reverse()
+    
+        return mappings
+
+    def _carve_mappings_for_env(self, proc_as, mappings):
+        global dynamic_env_hint
+
+        seen_ptrs   = {}
+        seen_firsts = {}
+
+        env_start = 0
+
+        for (start, end, length) in mappings:
+            if env_start:
+                break
+
+            off = start
+          
+            if length >= 0x1000000:
+                continue
+          
+            while off < end:
+                if env_start:
+                    break
+
                 # check the first index
                 addrstr = proc_as.read(off, self.pack_size)
-                if not addrstr or len(addrstr) != self.pack_size:
+                if not addrstr:
+                    off = (off & ~0xfff) + 0xfff + 1
                     continue
+               
+                off = off + 4
+ 
                 addr = struct.unpack(self.pack_fmt, addrstr)[0]
+                if addr in seen_ptrs:
+                    continue
+
+                seen_ptrs[addr] = 1
+    
                 # check first idx...
                 if addr:
                     firstaddrstr = proc_as.read(addr, self.pack_size)
                     if not firstaddrstr or len(firstaddrstr) != self.pack_size:
                         continue
                     firstaddr = struct.unpack(self.pack_fmt, firstaddrstr)[0]
+                    if firstaddr in seen_firsts:
+                        continue
+                    
+                    seen_firsts[firstaddr] = 1
+
                     buf = proc_as.read(firstaddr, 64)
                     if not buf:
                         continue
@@ -472,41 +591,189 @@ class proc(obj.CType):
                         if nullidx >= eqidx:
                             env_start = addr
 
-            if env_start == 0:
+                            if not dynamic_env_hint:
+                                dynamic_env_hint = [start, end, length]
+
+                            break
+
+        return env_start         
+
+    def _get_env_vars(self, proc_as, env_start):
+        good_vars = []
+    
+        envars = obj.Object(theType="Array", targetType=self.addr_type, vm=proc_as, offset=env_start, count=256)
+        for var in envars:
+            if not var or not var.is_valid():
+                break
+
+            sizes = [32, 64, 128, 256, 8, 16, 384, 512, 1024, 2048, 4096]
+            good_varstr = None
+
+            for size in sizes:
+                varstr = proc_as.read(var, size)
+                if not varstr:
+                    break
+
+                eqidx = varstr.find("=")
+                idx = varstr.find("\x00")
+
+                if idx == -1 or eqidx == -1 or idx < eqidx:
+                    continue
+            
+                good_varstr = varstr
+                break
+        
+            if good_varstr:        
+                good_varstr = good_varstr[:idx]
+                key = good_varstr[:eqidx]
+                val = good_varstr[eqidx+1:]
+
+                if len(key) > 0 and len(val) > 0 and self._valid_string(key) and self._valid_string(val):
+                    good_vars.append((key, val))
+            else:
+                break         
+        
+        return good_vars
+
+    def _dynamic_env(self, proc_as, pack_format, addr_sz):
+        env_start = 0
+
+        if dynamic_env_hint:        
+            mappings = [dynamic_env_hint]
+            env_start = self._carve_mappings_for_env(proc_as, mappings)
+            good_vars = self._get_env_vars(proc_as, env_start)
+            if len(good_vars) < 2:
+                env_start = 0
+
+        # find either libc itself or all mappings
+        if env_start == 0:
+            mappings  = self._get_env_mappings(proc_as)
+            env_start = self._carve_mappings_for_env(proc_as, mappings) 
+
+        if env_start != 0:
+            good_vars = self._get_env_vars(proc_as, env_start)
+        else:
+            good_vars = []
+
+        return good_vars
+
+    def _valid_string(self, test_string):
+        valid = True
+
+        test_string = str(test_string)
+        for s in test_string:
+            if not s in string.printable:
+                valid = False
+                break
+
+        return valid
+
+    def _shell_variables(self, proc_as, pack_format, addr_sz, htable_type):
+        if has_yara == False:
+            return
+
+        nbuckets_offset = self.obj_vm.profile.get_obj_offset(htable_type, "nbuckets") 
+
+        if addr_sz == 4:
+            edata_type = "mac32_envdata"
+        else:
+            edata_type = "mac64_envdata"
+
+        seen_ptr = {}
+
+        s = "{ 40 00 00 00 }"
+        rules = yara.compile(sources = {
+                            'n' : 'rule r1 {strings: $a = ' + s + ' condition: $a}'
+                            })
+          
+        scanner = BashEnvYaraScanner(task = self, rules = rules)
+        for hit, off in scanner.scan():
+            htable = obj.Object(htable_type, offset = off - addr_sz, vm = proc_as)
+            if not htable.is_valid():
                 continue
 
-            envars = obj.Object(theType="Array", targetType=self.addr_type, vm=proc_as, offset=env_start, count=256)
-            for var in envars:
-                if var:
-                    sizes = [8, 16, 32, 64, 128, 256, 384, 512, 1024, 2048, 4096]
-                    good_varstr = None
+            for ent in htable:
+                if not ent.m("key").is_valid():
+                    continue
 
-                    for size in sizes:
-                        varstr = proc_as.read(var, size)
-                        if not varstr:
-                            continue
+                if self._valid_string(ent.key):
+                    key = str(ent.key)
+                else:
+                    key = ""
 
-                        eqidx = varstr.find("=")
-                        idx = varstr.find("\x00")
+                val_addr = ent.data.dereference_as(edata_type).value
+                if val_addr.is_valid() and self._valid_string(val_addr.dereference()):
+                    val = str(val_addr.dereference())
+                else:
+                    val = ""
 
-                        if idx == -1 or eqidx == -1 or idx < eqidx:
-                            continue
-                    
-                        good_varstr = varstr
-                        break
-                
-                    if good_varstr:        
-                        good_varstr = good_varstr[:idx]
-                        key = good_varstr[:eqidx]
-                        val = good_varstr[eqidx+1:]
+                if len(key) > 0 and len(val) > 0:
+                    yield key, val
 
-                        yield (key, val) 
-                    else:
-                        break         
+    def _load_time_env(self, proc_as):
+        start = self.user_stack - self.p_argslen
+        skip  = len(self.get_arguments())
+        end   = self.p_argslen
+
+        to_read = end - skip
+    
+        vars_buf = proc_as.read(start + skip, to_read)
+        if vars_buf:
+            ents = vars_buf.split("\x00")
+            for varstr in ents:
+                eqidx = varstr.find("=")
+
+                if eqidx == -1:
+                    continue
+
+                key = varstr[:eqidx]
+                val = varstr[eqidx+1:]
+
+                yield (key, val) 
+
+    def psenv(self):
+        proc_as = self.get_process_address_space()
+        
+        # In cases when mm is an invalid pointer 
+        if not proc_as:
+            return
+
+        # don't scan the kernel
+        if self.p_pid == 0:
+            return
+
+        # Are we dealing with 32 or 64-bit pointers
+        if self.obj_vm.profile.metadata.get('memory_model', '32bit') == '32bit':
+            pack_format = "<I"
+            addr_sz = 4
+            htable_type = "mac32_bash_hash_table"
+        else:
+            pack_format = "<Q"
+            addr_sz = 8
+            htable_type = "mac64_bash_hash_table"
+
+        env_count = 0
+
+        for key, val in self._dynamic_env(proc_as, pack_format, addr_sz):
+            yield key, val        
+            env_count = env_count + 1
+
+        # if the dynamic env isn't in memory (or is corrupt)
+        # then we find the inital program load env
+        # this has the disadvantage of not finding variables added since runtime
+        # and won't catch changes to existing variables
+        if env_count < 3:
+            for key, val in self._load_time_env(proc_as): 
+                yield key, val
+
+        # shell variables only live inside bash (e.g., HISTFILE) 
+        if str(self.p_comm) == "bash": 
+            for key, val in self._shell_variables(proc_as, pack_format, addr_sz, htable_type):
+                yield key, val
 
     def netstat(self):
         for (filp, _, _) in self.lsof():
-            if filp.f_fglob.fg_type == 'DTYPE_SOCKET':
+            if filp.f_fglob.is_valid() and filp.f_fglob.fg_type == 'DTYPE_SOCKET':
                 socket = filp.f_fglob.fg_data.dereference_as("socket") 
                 family = socket.family
     
@@ -518,9 +785,12 @@ class proc(obj.CType):
                     proto = socket.protocol
                     state = socket.state
                    
-                    (lip, lport, rip, rport) = socket.get_connection_info()
- 
-                    yield (family, (socket, proto, lip, lport, rip, rport, state))
+                    vals = socket.get_connection_info()
+
+                    if vals:
+                        (lip, lport, rip, rport) =  vals
+     
+                        yield (family, (socket, proto, lip, lport, rip, rport, state))
 
     @property
     def p_gid(self):
@@ -530,7 +800,10 @@ class proc(obj.CType):
             return -1
 
         if hasattr(cred, "cr_posix"):
-            ret = cred.cr_posix.cr_groups[0]
+            try:
+                ret = cred.cr_posix.cr_groups[0]
+            except IndexError:
+                ret = obj.Object("unsigned int", offset = cred.cr_posix.cr_groups.obj_offset, vm = self.obj_vm)
         else:
             ret = cred.cr_groups[0]     
     
@@ -691,7 +964,10 @@ class proc(obj.CType):
 
     def get_dyld_maps(self):        
         proc_as = self.get_process_address_space()
-
+    
+        if proc_as == None:
+            return
+    
         if self.pack_size == 4:
             dtype = "dyld32_all_image_infos"
             itype = "dyld32_image_info"
@@ -814,33 +1090,6 @@ class proc(obj.CType):
                         yield offset + hit
                 offset += min(to_read, scan_blk_sz)
 
-    def psenv(self):
-        proc_as = self.get_process_address_space()
-
-        # We need a valid process AS to continue 
-        if not proc_as:
-            return
-
-        start = self.user_stack - self.p_argslen
-        skip  = len(self.get_arguments())
-        end   = self.p_argslen
-
-        to_read = end - skip
-    
-        vars_buf = proc_as.read(start + skip, to_read)
-        if vars_buf:
-            ents = vars_buf.split("\x00")
-            for varstr in ents:
-                eqidx = varstr.find("=")
-
-                if eqidx == -1:
-                    continue
-
-                key = varstr[:eqidx]
-                val = varstr[eqidx+1:]
-
-                yield (key, val) 
-    
     def get_environment(self):
         env = ""
 
@@ -901,13 +1150,13 @@ class proc(obj.CType):
 
         for i, fd in enumerate(fds):
             f = fd.dereference_as("fileproc")
-            if f:
+            if f and f.f_fglob.is_valid():
                 ftype = f.f_fglob.fg_type
                 if ftype == 'DTYPE_VNODE': 
                     vnode = f.f_fglob.fg_data.dereference_as("vnode")
                     path = vnode.full_path()
                 else:
-                    path = ""
+                    path = "<%s>" % ftype.replace("DTYPE_", "").lower()
                         
                 yield f, path, i
 
@@ -964,21 +1213,16 @@ class rtentry(obj.CType):
     
     @property
     def source_ip(self):
-        return self.rt_nodes[0].rn_u.rn_leaf.rn_Key.dereference_as("sockaddr").get_address()
+        try:
+            node = self.rt_nodes[0]
+        except IndexError:
+            node = obj.Object("radix_node", offset = self.rt_nodes.obj_offset, vm = self.obj_vm)
+
+        return node.rn_u.rn_leaf.rn_Key.dereference_as("sockaddr").get_address()
 
     @property
     def dest_ip(self):
         return self.rt_gateway.get_address()
-
-
-
-
-
-
- 
-
-
-    
 
 class queue_entry(obj.CType):
 
@@ -1096,6 +1340,15 @@ class OSString(obj.CType):
         string_object = obj.Object("String", offset = self.string, vm = self.obj_vm, length = self.length)
         return str(string_object or '')
 
+class vm_map_object(obj.CType):
+    def object(self):
+        if hasattr(self, "vm_object"):
+            ret = self.m("vm_object")
+        else:
+            ret = self.vmo_object
+
+        return ret
+
 class vm_map_entry(obj.CType):
     @property
     def start(self):
@@ -1117,24 +1370,21 @@ class vm_map_entry(obj.CType):
 
         return perms
 
-
     # used to find heap, stack, etc.
     def get_special_path(self):
-        # check the heap
-        ret = ""
+        if hasattr(self, "alias"):
+            check = self.alias
+        else:
+            check = self.object.v() & 0xfff
 
-        for i in [1, 2, 3, 4, 6, 7, 8, 9]:
-            if self.alias == i:
-                ret = "[heap]"
-                break
-
-        if ret != "":
-            return ret
-
-        if self.alias == 30:
+        if 0 < check < 10:
+            ret = "[heap]"
+        elif check == 30:
             ret = "[stack]"
+        else:
+            ret = ""
 
-        return ret 
+        return ret
 
     def get_path(self):
         vnode = self.get_vnode()
@@ -1153,6 +1403,15 @@ class vm_map_entry(obj.CType):
                 
         return ret
 
+    @property
+    def object(self): 
+        if hasattr(self, "vme_object"):
+            ret = self.vme_object
+        else:
+            ret = self.m("object")
+
+        return ret
+
     def get_vnode(self):
         map_obj = self
 
@@ -1160,7 +1419,7 @@ class vm_map_entry(obj.CType):
             return "sub_map"
 
         # find_vnode_object
-        vnode_object = map_obj.object.vm_object 
+        vnode_object = map_obj.object.object() 
 
         while vnode_object.shadow.dereference() != None:
             vnode_object = vnode_object.shadow.dereference()
@@ -1300,7 +1559,14 @@ class socket(obj.CType):
         inpcb = self.so_pcb.dereference_as("inpcb")
         tcpcb = inpcb.inp_ppcb.dereference_as("tcpcb")
 
-        return tcp_states[tcpcb.t_state]
+        state = tcpcb.t_state
+        
+        if state:
+            ret = tcp_states[tcpcb.t_state]
+        else:
+            ret = "<INVALID>"
+
+        return ret
 
     @property
     def state(self):
@@ -1312,6 +1578,9 @@ class socket(obj.CType):
         return ret
         
     def get_connection_info(self):
+        if not self.so_pcb.is_valid():
+            return None
+
         ipcb = self.so_pcb.dereference_as("inpcb")
         
         if self.family == 2:
@@ -1816,6 +2085,7 @@ class MacObjectClasses(obj.ProfileModification):
             'sockaddr' : sockaddr, 
             'sockaddr_dl' : sockaddr_dl,
             'vm_map_entry' : vm_map_entry,
+            'vm_map_object' : vm_map_object,
             'rtentry' : rtentry,
             'queue_entry' : queue_entry,
         })

@@ -58,22 +58,24 @@ class BigPageTableMagic(obj.ProfileModification):
         m = profile.metadata 
 
         distance_map = {
-            (5, 1, '32bit') : [8, 12], 
-            (5, 2, '32bit') : [24, 28],
-            (5, 2, '64bit') : [48, 56],
-            (6, 0, '32bit') : [20, 24], 
-            (6, 0, '64bit') : [40, 48],
-            (6, 1, '32bit') : [20, 24], 
-            (6, 1, '64bit') : [40, 48],
-            (6, 2, '32bit') : [92, 88],
-            (6, 2, '64bit') : [-5200, -5224], 
-            (6, 3, '32bit') : [116, 120],
+            (5, 1, '32bit') : [[8, 12]], 
+            (5, 2, '32bit') : [[24, 28]],
+            (5, 2, '64bit') : [[48, 56]],
+            (6, 0, '32bit') : [[20, 24]], 
+            (6, 0, '64bit') : [[40, 48]],
+            (6, 1, '32bit') : [[20, 24]], 
+            (6, 1, '64bit') : [[40, 48]],
+            (6, 2, '32bit') : [[92, 88]],
+            (6, 2, '64bit') : [[-5200, -5224]], 
+            (6, 3, '32bit') : [[116, 120]],
+            (6, 4, '64bit') : [[208, 184], [168, 192]],
+            (6, 4, '32bit') : [[-168, -164]],
         }
 
         version = (m.get('major', 0), m.get('minor', 0), m.get('memory_model', '32bit'))
-        distance = [distance_map.get(version)]
+        distance = distance_map.get(version)
 
-        if distance == [None]:
+        if distance == None:
             if version == (6, 3, '64bit'):
                 if m.get('build', 0) == 9601:
                     distance = [[-5192, -5200], [-5224, -5232]]

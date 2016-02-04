@@ -77,7 +77,7 @@ class linux_check_inline_kernel(linux_common.AbstractLinuxCommand):
                 addr = 0 # default in case we cannot extract               
 
                 # check for a mov reg, addr; jmp reg;
-                if prev_op.mnemonic == "MOV" and prev_op.operands[0].type == 'Register' and op.operands[0].type == 'Register':
+                if prev_op is not None and prev_op.mnemonic == "MOV" and prev_op.operands[0].type == 'Register' and op.operands[0].type == 'Register':
                     prev_name = prev_op.operands[0].name
                     
                     # same register

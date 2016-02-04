@@ -308,7 +308,10 @@ class macho_header(macho):
         rtsize = self.obj_vm.profile.get_obj_size(rtname)
 
         tname = "macho_load_command"
-        
+       
+        if self.macho_obj == None:
+            return
+
         # the load commands start after the header
         hdr_size = self.macho_obj.size()
          

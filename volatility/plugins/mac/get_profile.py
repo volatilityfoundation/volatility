@@ -85,8 +85,8 @@ profiles = [
 ["MacMavericks_10_9_3_AMDx64", 18446743523961765744, 18446743523962273792, 1],
 ["MacMavericks_10_9_4_AMDx64", 18446743523961767008, 18446743523962273792, 1],
 ["MacMavericks_10_9_5_AMDx64", 18446743523961765968, 18446743523962273792, 1],
+["MacElCapitan_10_11_15A284x64", 18446743523963516960, 18446743523964547072, 1],
 ]
-
 
 class catfishScan(scan.BaseScanner):
     """ Scanner for Catfish string for Mountain Lion """
@@ -103,53 +103,60 @@ class catfishScan(scan.BaseScanner):
 
 # based on kdbgscan
 class mac_get_profile(common.AbstractMacCommand):
+    """Automatically detect Mac profiles"""
 
-
-    def _check_address(self, ver_addr, aspace):
+    @staticmethod
+    def check_address(ver_addr, aspace):
         if ver_addr > 0xffffffff:
             ver_addr = ver_addr - 0xffffff8000000000
         elif ver_addr > 0xc0000000:
             ver_addr = ver_addr - 0xc0000000
 
         ver_buf = aspace.read(ver_addr, 32)
+        sig = "Darwin Kernel"
+        return ver_buf and ver_buf.startswith(sig)
 
-        if ver_buf and ver_buf.startswith("Darwin Kernel"):
-            ret = True
-        else:
-            ret = False
+    @staticmethod
+    def guess_profile(aspace):
+        """Main interface to guessing Mac profiles. 
+        
+        Args: 
+            aspace: a physical address space.
+            
+        Returns:
+            Tuple containing the profile name and 
+            shift address. 
+            
+            On failure, it implicitly returns None.
+        """
+        
+        for data in profiles:
+            if mac_get_profile.check_address(data[1], aspace):
+                return data[0], 0 
+            
+        # didn't find a direct translation, so look for KASLR kernels
+        scanner = catfishScan(needles = ["Catfish \x00\x00"])
+        for catfish_offset in scanner.scan(aspace):
+            for profile, ver_addr, lowglo, aslr in profiles:
+                if not aslr or not lowglo:
+                    continue
 
-        return ret
+                shift_address = (catfish_offset -\
+                     (lowglo % 0xFFFFFF80))
+
+                ver_addr += shift_address
+                
+                if mac_get_profile.check_address(ver_addr, aspace):
+                    return profile, shift_address
 
     def calculate(self):
         aspace = utils.load_as(self._config, astype = 'physical')
+        
+        result = mac_get_profile.guess_profile(aspace)
 
-        found = False
-
-        for p, ver_addr, lowglo, aslr in profiles:
-            if self._check_address(ver_addr, aspace):
-                yield p, 0
-                found = True
-                break
-
-        # didn't find a direct translation, so look for KASLR kernels
-        if found == False:
-            scanner = catfishScan(needles = ["Catfish \x00\x00"])
-            for catfish_offset in scanner.scan(aspace):
-                for p, ver_addr, lowglo, aslr in profiles:
-                    if not aslr or not lowglo:
-                        continue
-
-                    shift_address = catfish_offset - (lowglo % 0xFFFFFF80)
-
-                    if self._check_address(ver_addr + shift_address, aspace):
-                        yield p, shift_address
-                        found = True
-                        break
-    
-                if found == True:
-                    break
-
-        if found == False:
+        if result:
+            yield result
+        else:
             debug.error("Unable to find an OS X profile for the given memory sample.")
                     
     def render_text(self, outfd, data):
@@ -157,11 +164,3 @@ class mac_get_profile(common.AbstractMacCommand):
 
         for profile, shift_address in data:
             self.table_row(outfd, profile, shift_address)
-
-
-
-
-
-
-
-

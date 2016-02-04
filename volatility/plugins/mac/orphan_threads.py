@@ -31,7 +31,7 @@ from volatility.renderers import TreeGrid
 from volatility.renderers.basic import Address
 
 class mac_orphan_threads(pstasks.mac_tasks):
-    """ Lists per-process opened files """
+    """Lists threads that don't map back to known modules/processes"""
 
     def unified_output(self, data):
         common.set_plugin_members(self)

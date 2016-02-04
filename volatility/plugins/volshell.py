@@ -31,6 +31,7 @@ import volatility.win32 as win32
 import volatility.utils as utils
 import volatility.obj as obj
 import volatility.plugins.taskmods as taskmods
+import volatility.scan as scan
 
 try:
     import distorm3 #pylint: disable-msg=F0401
@@ -314,14 +315,16 @@ class volshell(common.AbstractWindowsCommand):
             """
             self.context_display()
 
-        def list_entry(head, objname, offset = -1, fieldname = None, forward = True):
+        def list_entry(head, objname, offset = -1, fieldname = None, forward = True, space = None):
             """Traverse a _LIST_ENTRY.
 
             Traverses a _LIST_ENTRY starting at virtual address head made up of
             objects of type objname. The value of offset should be set to the
             offset of the _LIST_ENTRY within the desired object."""
 
-            vm = self._proc.get_process_address_space()
+            vm = space
+            if space == None:
+                vm = self._proc.get_process_address_space()
             seen = set()
 
             if fieldname:
@@ -461,7 +464,35 @@ class volshell(common.AbstractWindowsCommand):
             for (offset, _size, instruction, hexdump) in iterable:
                 print "{0:<#8x} {1:<32} {2}".format(offset, hexdump, instruction)
 
-        shell_funcs = {'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis, 'dq': dq, 'modules': modules, 'sc': sc, 'addrspace': addrspace, 'proc': proc, 'getprocs': getprocs, 'getmods': getmods}
+        def find(needle, max = 1, shift = 0, skip = 0, count = False, length = 0x80):
+            """Find bytes in the current process's memory
+            needle - string or list/tuple of strings to find
+            max    - number of results to return; 0 means find all
+            shift  - when outputting bytes, start output this many bytes before/after hit offset
+            skip   - ignore this many hits
+            count  - if True, displays a message reporting how many hits found; only really useful for max == 0
+            length - output this many bytes for each hit
+            """
+            
+            if isinstance(needle, basestring):
+                needle = [ needle ]
+            elif not isinstance(needle, (list, tuple)) or not all([isinstance(x, basestring) for x in needle]):
+                print 'Error: needle must be a string or a list/tuple of strings'
+                return
+
+            hit_count = 0
+            for hit in self._proc.search_process_memory(needle):
+                hit_count += 1
+                if hit_count > skip:
+                    db(hit + shift, length=length)
+                    if hit_count - skip == max:
+                        break
+                    print '-' * 16
+            if count:
+                print '-' * 16
+                print 'Found {} matches.'.format(hit_count - skip)
+
+        shell_funcs = {'find': find, 'cc': cc, 'dd': dd, 'db': db, 'ps': ps, 'dt': dt, 'list_entry': list_entry, 'dis': dis, 'dq': dq, 'modules': modules, 'sc': sc, 'addrspace': addrspace, 'proc': proc, 'getprocs': getprocs, 'getmods': getmods}
         def hh(cmd = None):
             """Get help on a command."""
             shell_funcs['hh'] = hh

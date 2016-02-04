@@ -40,11 +40,11 @@ class Handles(taskmods.DllList):
 
     def generator(self, data):
         if self._config.OBJECT_TYPE:
-            object_list = [s for s in self._config.OBJECT_TYPE.split(',')]
+            object_list = [s.lower() for s in self._config.OBJECT_TYPE.split(',')]
         else:
             object_list = []
         for pid, handle, object_type, name in data:
-            if object_list and object_type not in object_list:
+            if object_list and object_type.lower() not in object_list:
                 continue
             if self._config.SILENT:
                 if len(name.replace("'", "")) == 0:
@@ -86,12 +86,12 @@ class Handles(taskmods.DllList):
                            ])
 
         if self._config.OBJECT_TYPE:
-            object_list = [s for s in self._config.OBJECT_TYPE.split(',')]
+            object_list = [s.lower() for s in self._config.OBJECT_TYPE.split(',')]
         else:
             object_list = []
 
         for pid, handle, object_type, name in data:
-            if object_list and object_type not in object_list:
+            if object_list and object_type.lower() not in object_list:
                 continue
             if self._config.SILENT:
                 if len(name.replace("'", "")) == 0:

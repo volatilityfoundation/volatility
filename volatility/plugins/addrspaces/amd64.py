@@ -90,6 +90,30 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
             return True
         return False
 
+    def is_user_page(self, entry):
+        return entry & (1 << 2) == (1 << 2)
+
+    def is_supervisor_page(self, entry):
+        return not self.is_user_page(entry)
+
+    def is_writeable(self, entry):
+        return entry & (1 << 1) == (1 << 1) 
+        
+    def is_dirty(self, entry):
+        return entry & (1 << 6) == (1 << 6)
+        
+    def is_nx(self, entry):
+        return entry & (1 << 63) == (1 << 63)
+        
+    def is_accessed(self, entry):
+        return entry & (1 << 5) == (1 << 5)
+        
+    def is_copyonwrite(self, entry):
+        return entry & (1 << 9) == (1 << 9)
+        
+    def is_prototype(self, entry):
+        return entry & (1 << 10) == (1 << 10)
+
     def get_2MB_paddr(self, vaddr, pgd_entry):
         paddr = (pgd_entry & 0xFFFFFFFE00000) | (vaddr & 0x00000001fffff)
         return paddr
@@ -219,7 +243,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
         longlongval, = self._longlong_struct.unpack(string)
         return longlongval
 
-    def get_available_pages(self):
+    def get_available_pages(self, with_pte = False):
         '''
         This method generates a list of pages that are
         available within the address space. The entries in
@@ -241,7 +265,10 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
                 if not self.entry_present(pdpte_value):
                     continue
                 if self.page_size_flag(pdpte_value):
-                    yield (vaddr, 0x40000000)
+                    if with_pte: 
+                        yield (pdpte_value, vaddr, 0x40000000)
+                    else:
+                        yield (vaddr, 0x40000000)
                     continue
 
                 pgd_curr = self.pdba_base(pdpte_value)
@@ -250,14 +277,20 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
                     entry = self.read_long_long_phys(pgd_curr)
                     pgd_curr = pgd_curr + 8
                     if self.entry_present(entry) and self.page_size_flag(entry):
-                        yield (soffset, 0x200000)
+                        if with_pte: 
+                            yield (entry, soffset, 0x200000)
+                        else:
+                            yield (soffset, 0x200000)
                     elif self.entry_present(entry):
                         pte_curr = entry & 0xFFFFFFFFFF000
                         for k in range(0, ptrs_per_pae_pte):
                             pte_entry = self.read_long_long_phys(pte_curr)
                             pte_curr = pte_curr + 8
                             if self.entry_present(pte_entry):
-                                yield (soffset + k * 0x1000, 0x1000)
+                                if with_pte:
+                                    yield (pte_entry, soffset + k * 0x1000, 0x1000)
+                                else:
+                                    yield (soffset + k * 0x1000, 0x1000)
 
     @classmethod
     def address_mask(cls, addr):

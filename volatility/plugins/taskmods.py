@@ -133,12 +133,30 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
         # then use the virtual address of its first thread to get into virtual land
         # (Note: the addr_space and flat_addr_space use the same config, so should have the same profile)
         tleoffset = addr_space.profile.get_obj_offset("_ETHREAD", "ThreadListEntry")
-        ethread = obj.Object("_ETHREAD", offset = flateproc.ThreadListHead.Flink.v() - tleoffset, vm = addr_space)
-        # and ask for the thread's process to get an _EPROCESS with a virtual address space
-        virtual_process = ethread.owning_process()
-        # Sanity check the bounce. See Issue 154.
-        if virtual_process and offset == addr_space.vtop(virtual_process.obj_offset):
-            return virtual_process
+
+        # start out with the member offset given to us from the profile 
+        offsets = [tleoffset]
+
+        # if (and only if) we're dealing with 64-bit Windows 7 SP1 
+        # then add the other commonly seen member offset to the list 
+        meta = addr_space.profile.metadata
+        major = meta.get("major", 0)
+        minor = meta.get("minor", 0)
+        build = meta.get("build", 0)
+        version = (major, minor, build)
+
+        if meta.get("memory_model") == "64bit" and version == (6, 1, 7601):
+            offsets.append(tleoffset + 8)
+
+        ## use the member offset from the profile 
+        for ofs in offsets:
+            ethread = obj.Object("_ETHREAD", offset = flateproc.ThreadListHead.Flink.v() - ofs, vm = addr_space)
+            # and ask for the thread's process to get an _EPROCESS with a virtual address space
+            virtual_process = ethread.owning_process()
+            # Sanity check the bounce. See Issue 154.
+            if virtual_process and offset == addr_space.vtop(virtual_process.obj_offset):
+                return virtual_process
+
         return obj.NoneObject("Unable to bounce back from virtual _ETHREAD to virtual _EPROCESS")
 
     @cache.CacheDecorator(lambda self: "tests/pslist/pid={0}/offset={1}".format(self._config.PID, self._config.OFFSET))
@@ -283,8 +301,10 @@ class MemMap(DllList):
                     pa = task_space.vtop(p[0])
                     # pa can be 0, according to the old memmap, but can't == None(NoneObject)
                     if pa != None:
-                        yield (0, [proc, int(pid), Address(p[0]), Address(pa), Address(p[1]), Address(offset)])
-                        offset += p[1]
+                        data = task_space.read(p[0], p[1])
+                        if data != None:
+                            yield (0, [proc, int(pid), Address(p[0]), Address(pa), Address(p[1]), Address(offset)])
+                            offset += p[1]
 
     def render_text(self, outfd, data):
         first = True
@@ -308,10 +328,10 @@ class MemMap(DllList):
                     pa = task_space.vtop(p[0])
                     # pa can be 0, according to the old memmap, but can't == None(NoneObject)
                     if pa != None:
-                        self.table_row(outfd, p[0], pa, p[1], offset)
-                    #else:
-                    #    outfd.write("0x{0:10x} 0x000000     0x{1:12x}\n".format(p[0], p[1]))
-                        offset += p[1]
+                        data = task_space.read(p[0], p[1])
+                        if data != None:
+                            self.table_row(outfd, p[0], pa, p[1], offset)
+                            offset += p[1]
             else:
                 outfd.write("Unable to read pages for task.\n")
 
@@ -353,7 +373,7 @@ class MemDump(MemMap):
                     data = task_space.read(p[0], p[1])
                     if data == None:
                         if self._config.verbose:
-                            outfd.write("Memory Not Accessible: Virtual Address: 0x{0:x} File Offset: 0x{1:x} Size: 0x{2:x}\n".format(p[0], task.obj_offset, p[1]))
+                            outfd.write("Memory Not Accessible: Virtual Address: 0x{0:x} Size: 0x{1:x}\n".format(p[0], p[1]))
                     else:
                         f.write(data)
             else:

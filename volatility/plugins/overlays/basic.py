@@ -31,6 +31,7 @@ import volatility.constants as constants
 import volatility.plugins.overlays.native_types as native_types
 import volatility.utils as utils
 import volatility.timefmt as timefmt
+import encodings.utf_16
 
 class String(obj.BaseObject):
     """Class for dealing with Strings"""

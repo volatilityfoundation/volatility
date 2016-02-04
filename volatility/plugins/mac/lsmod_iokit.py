@@ -62,7 +62,7 @@ class mac_lsmod_iokit(common.AbstractMacCommand):
 
         for (i, kext) in enumerate(kext_arr):
             kext = kext.dereference_as(self._struct_or_class("OSKext"))
-            if kext and kext.is_valid():
+            if kext and kext.is_valid() and kext.kmod_info.address.is_valid():
                 yield kext
 
     def unified_output(self, data):
