@@ -1434,6 +1434,26 @@ class vm_map_entry(obj.CType):
 
         return ret
 
+    def resident_count(self):
+        vmobj = self.object.object()
+
+        if not vmobj:
+            return 0
+
+        # based on OBJ_RESIDENT_COUNT
+        # all versions since OS X 10.6
+        if hasattr(vmobj, "all_reusable"):
+            if vmobj.all_reusable == 1:
+                count = vmobj.wired_page_count.v()
+            else:
+                count = vmobj.resident_page_count.v() - vmobj.reusable_page_count.v()
+
+        # really old systems - OS X 10.5 
+        else:
+           count = vmobj.resident_page_count.v()
+
+        return count
+
     def is_suspicious(self):
         ret = False        
 
