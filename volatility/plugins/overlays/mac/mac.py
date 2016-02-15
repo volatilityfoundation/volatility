@@ -1373,9 +1373,9 @@ class vm_map_entry(obj.CType):
     # used to find heap, stack, etc.
     def get_special_path(self):
         if hasattr(self, "alias"):
-            check = self.alias
+            check = self.alias.v()
         else:
-            check = self.object.v() & 0xfff
+            check = self.vme_offset.v() & 0xfff
 
         if 0 < check < 10:
             ret = "[heap]"
