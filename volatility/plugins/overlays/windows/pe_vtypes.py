@@ -683,6 +683,10 @@ class _IMAGE_DOS_HEADER(obj.CType):
         start_addr = nt_header.FileHeader.SizeOfOptionalHeader + (nt_header.OptionalHeader.obj_offset - self.obj_offset)
         for sect in nt_header.get_sections(unsafe):
             sectheader = self.obj_vm.read(sect.obj_offset, shs)
+            
+            if not sectheader:
+                break
+            
             # Change the PointerToRawData
             sectheader = self.replace_header_field(sect, sectheader, sect.PointerToRawData, sect.VirtualAddress)
             sectheader = self.replace_header_field(sect, sectheader, sect.SizeOfRawData, sect_sizes[counter])
@@ -710,6 +714,11 @@ class _IMAGE_NT_HEADERS(obj.CType):
             s_addr = start_addr + (i * sect_size)
             sect = obj.Object("_IMAGE_SECTION_HEADER", offset = s_addr, vm = self.obj_vm,
                               parent = self, native_vm = self.obj_native_vm)
+                              
+            ## deal with swapped sections...
+            if not sect:
+                continue
+                              
             if not unsafe:
                 sect.sanity_check_section()
             yield sect
