@@ -1612,13 +1612,13 @@ class task_struct(obj.CType):
             nbuckets_offset = self.obj_vm.profile.get_obj_offset("_bash_hash_table", "nbuckets") 
 
             for off in range(vma.vm_start, vma.vm_end, 4):
-                ptr_test = proc_as.read(off, 4)
+                ptr_test = proc_as.read(off, addr_sz)
                 if not ptr_test:
                     continue
 
                 ptr = struct.unpack(pack_format, ptr_test)[0]
                 
-                ptr_test2 = proc_as.read(ptr + 20, 4)
+                ptr_test2 = proc_as.read(ptr + 20, addr_sz)
                 if not ptr_test2:
                     continue
 
