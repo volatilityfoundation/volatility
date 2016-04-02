@@ -1745,7 +1745,7 @@ class task_struct(obj.CType):
             # find the executable part of libdl
             ehdr = obj.Object("elf_hdr", offset = vma.vm_start, vm = proc_as)
 
-            if not ehdr.is_valid():
+            if not ehdr or not ehdr.is_valid():
                 #print "could not get header for  %d | %s" % (self.pid, self.comm)
                 continue
 
