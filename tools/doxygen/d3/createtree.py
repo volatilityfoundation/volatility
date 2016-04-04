@@ -7,7 +7,7 @@ Author: Gleeda <jamie@memoryanalysis.net>
 modified from:
   http://stackoverflow.com/questions/25226208/represent-directory-tree-as-json
 
-Quick and Dirty.  Run from the Volatility root directory and redirct:
+Quick and Dirty.  Run from the Volatility root directory and redirect:
 
 python createtree.py > OUTPUT/d3/vol.json
 
