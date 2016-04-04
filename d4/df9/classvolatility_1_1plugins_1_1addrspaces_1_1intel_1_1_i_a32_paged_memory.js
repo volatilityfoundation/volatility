@@ -1,0 +1,25 @@
+var classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory =
+[
+    [ "__init__", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a0246d740fe8b2af4b1269976c564de28", null ],
+    [ "entry_present", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a4003df2f88387935d537ddbffa192f4c", null ],
+    [ "get_available_pages", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a6c538db6fa055dde0d1b2c970fac6c6f", null ],
+    [ "get_four_meg_paddr", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#aaf59a146ddd72cfddb4815a6ab1809eb", null ],
+    [ "get_paddr", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a0740573985d61b4c5d1f0f2f6df47833", null ],
+    [ "get_pgd", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a5626e9c364377a608547975e80423f22", null ],
+    [ "get_pte", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a6844c3363a8c5298f5d4fef534ff9300", null ],
+    [ "is_accessed", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a8b0869f807e019cb6cc6c8a04ed5edc9", null ],
+    [ "is_copyonwrite", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a3643801cdced0142d8a4a23d9fddc9dc", null ],
+    [ "is_dirty", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a03e469844531110de172d49f4557ac0e", null ],
+    [ "is_nx", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a3c4d59cfaa60067209e6b61d90ae0961", null ],
+    [ "is_prototype", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a29e83c0149346084414a7ec28a92e54f", null ],
+    [ "is_supervisor_page", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a19c9728d8f15ae1c2dab196f2c0b6073", null ],
+    [ "is_user_page", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#aab7beb6769164cc9c8f18487e78b9a18", null ],
+    [ "is_valid_profile", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#aa38bbd06a6be8ccd53f423876cff95f9", null ],
+    [ "is_writeable", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#ace6c6574d82375a6c745d695af126d1c", null ],
+    [ "page_size_flag", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a08f2ccc7e26446b10d006e756efe2a57", null ],
+    [ "pgd_index", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a7d76fa08a08b45a9bbbbbed60bbc66cf", null ],
+    [ "pte_index", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a296e143cdd9abbfaeef135448ad02271", null ],
+    [ "pte_pfn", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#ae68f1cf7a0a48778c2710d15ae95e804", null ],
+    [ "read_long_phys", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#ae00c77ed1465a9ee56140042134c9745", null ],
+    [ "vtop", "d4/df9/classvolatility_1_1plugins_1_1addrspaces_1_1intel_1_1_i_a32_paged_memory.html#a682ce3d8261310a096286f0c53dfb198", null ]
+];

@@ -1,0 +1,25 @@
+var classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header =
+[
+    [ "__init__", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a4b23f12485d6ed41957461416a7ce279", null ],
+    [ "address_for_symbol", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a573bda382fd6fa1edab59966b5dc1cb5", null ],
+    [ "calc_load_diff", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a3bfd0b38e8dcfc8368c86fa53b3bab79", null ],
+    [ "get_indirect_syms", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a50305f2a312b42379002d824fe3bf9a9", null ],
+    [ "get_segment", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a9fc32cf7440eae0203890a767756438e", null ],
+    [ "imports", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a647e1f3494a29bcde66bca290586bce2", null ],
+    [ "is_valid", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a67326869d7f7defe6bde505cb7574eda", null ],
+    [ "load_command_of_type", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#aec3fe814c8e3451dbc567136d664a507", null ],
+    [ "load_commands", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#ace6fe0dadcee0f369be0448aebe28cea", null ],
+    [ "load_commands_of_type", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a945c76f90ff474227a708974e2f64657", null ],
+    [ "needed_libraries", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a16ad91cde6cd025f182bb97e761c90f7", null ],
+    [ "sections_for_segment", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a2664e4037edf4cf8af5b89949d452132", null ],
+    [ "segments", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a1d0d3b2ec0cda60491e35f369c7b7d25", null ],
+    [ "symbol_name", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a9782816300053fad32e7bf6e68e21da6", null ],
+    [ "symbols", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a8b30defcb94a8fd1f572822f644da56c", null ],
+    [ "cached_dysymtab", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a6f6e0dcb582638fe3a5cbeaf639ece23", null ],
+    [ "cached_strtab", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#ae51ed497338223945adc048b2b92c9e4", null ],
+    [ "cached_syms", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#afcfbfd605a6e41004b165c73c939f728", null ],
+    [ "cached_symtab", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a241ad0c1f9f11c3311c3f296bcc11205", null ],
+    [ "load_diff", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a8bb9ad6588fb054c1cb27f4be6794def", null ],
+    [ "macho_obj", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#a83405520e76a93264f3d7de234f83a6a", null ],
+    [ "size_cache", "db/da6/classvolatility_1_1plugins_1_1overlays_1_1mac_1_1macho_1_1macho__header.html#afc8d7ae0f94f71bcfb803475bb3fdf55", null ]
+];
