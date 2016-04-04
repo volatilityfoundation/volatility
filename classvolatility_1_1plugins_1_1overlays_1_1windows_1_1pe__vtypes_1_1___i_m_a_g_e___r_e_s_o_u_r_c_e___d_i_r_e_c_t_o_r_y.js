@@ -1,6 +1,0 @@
-var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1pe__vtypes_1_1___i_m_a_g_e___r_e_s_o_u_r_c_e___d_i_r_e_c_t_o_r_y =
-[
-    [ "__init__", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1pe__vtypes_1_1___i_m_a_g_e___r_e_s_o_u_r_c_e___d_i_r_e_c_t_o_r_y.html#a46a43b6d3d9a4d52624178659230d6a6", null ],
-    [ "get_entries", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1pe__vtypes_1_1___i_m_a_g_e___r_e_s_o_u_r_c_e___d_i_r_e_c_t_o_r_y.html#abd1227c83f16220e061cc980ecec4ced", null ],
-    [ "sectoffset", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1pe__vtypes_1_1___i_m_a_g_e___r_e_s_o_u_r_c_e___d_i_r_e_c_t_o_r_y.html#aa069f59e5f54a32933547805ace11942", null ]
-];

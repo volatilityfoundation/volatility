@@ -1,4 +1,0 @@
-var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1pe__vtypes_1_1___i_m_a_g_e___r_e_s_o_u_r_c_e___d_i_r___s_t_r_i_n_g___u =
-[
-    [ "v", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1pe__vtypes_1_1___i_m_a_g_e___r_e_s_o_u_r_c_e___d_i_r___s_t_r_i_n_g___u.html#a1d47cb722fc46a6f0c0ea4e06c25e71c", null ]
-];

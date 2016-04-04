@@ -1,4 +1,0 @@
-var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1windows_1_1_volatility_a_m_d64_valid_a_s =
-[
-    [ "generate_suggestions", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1windows_1_1_volatility_a_m_d64_valid_a_s.html#a3788d60f86ee73adbbc348bb0db06df4", null ]
-];

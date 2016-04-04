@@ -1,4 +1,0 @@
-var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1pe__vtypes_1_1___i_m_a_g_e___s_e_c_t_i_o_n___h_e_a_d_e_r =
-[
-    [ "sanity_check_section", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1pe__vtypes_1_1___i_m_a_g_e___s_e_c_t_i_o_n___h_e_a_d_e_r.html#a98f82b6a5a91dcac784600f943bdae8a", null ]
-];

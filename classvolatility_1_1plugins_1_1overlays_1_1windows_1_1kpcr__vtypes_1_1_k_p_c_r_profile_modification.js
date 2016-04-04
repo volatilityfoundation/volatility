@@ -1,4 +1,0 @@
-var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1kpcr__vtypes_1_1_k_p_c_r_profile_modification =
-[
-    [ "modification", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1kpcr__vtypes_1_1_k_p_c_r_profile_modification.html#a439654af755f1ed99b00c1b907636d77", null ]
-];

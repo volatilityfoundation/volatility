@@ -1,4 +1,0 @@
-var classvolatility_1_1plugins_1_1overlays_1_1windows_1_1hibernate__vtypes_1_1_hiber_vista_s_p01x64 =
-[
-    [ "modification", "classvolatility_1_1plugins_1_1overlays_1_1windows_1_1hibernate__vtypes_1_1_hiber_vista_s_p01x64.html#a5d19971d02469450708e259726cc250f", null ]
-];
