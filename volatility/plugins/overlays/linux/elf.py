@@ -310,7 +310,12 @@ class elf_hdr(elf):
         # the buffer of headers
         arr_start = self.obj_offset + self.e_phoff
 
-        for i in range(self.e_phnum):
+        if self.e_phnum > 128:
+            phnum = self.e_phnum
+        else:
+            phnum = 128
+
+        for i in range(phnum):
             # use the real size
             idx = i * rtsize
 
@@ -324,19 +329,20 @@ class elf_hdr(elf):
 
         tname = "elf_shdr"
        
-        # the buffer of headers
-        arr_start = self.obj_offset + self.e_shoff
+        if self.e_shoff < 1:
+            arr_start = -1
+        else:
+            # the buffer of headers
+            arr_start = self.obj_offset + self.e_shoff
 
         return (arr_start, rtsize)
 
-    def section_header(self, idx):
-        (arr_start, rtsize) = self._section_headers()
-        idx = idx * rtsize
-        shdr = obj.Object("elf_shdr", offset = arr_start + idx, vm = self.obj_vm, parent = self)
-        return shdr
-    
     def section_headers(self):
         (arr_start, rtsize) = self._section_headers()
+
+        if arr_start == -1:
+            return
+
         for i in range(self.e_shnum):
             # use the real size
             idx = i * rtsize
