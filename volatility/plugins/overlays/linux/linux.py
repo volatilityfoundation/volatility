@@ -1512,13 +1512,13 @@ class task_struct(obj.CType):
             # set the as with our new dtb so we can read from userland
             proc_as = self.get_process_address_space()
             if proc_as == None:
-                return env
+                env = ""
+            else:
+                # read argv from userland
+                start = self.mm.env_start.v()
 
-            # read argv from userland
-            start = self.mm.env_start.v()
-
-            env = proc_as.read(start, self.mm.env_end - self.mm.env_start + 10)
-            
+                env = proc_as.read(start, self.mm.env_end - self.mm.env_start + 10)
+                
         if env:
             ents = env.split("\x00")
             for varstr in ents:
