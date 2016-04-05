@@ -1783,8 +1783,15 @@ class task_struct(obj.CType):
     def get_proc_maps(self):
         if not self.mm:
             return
+        seen = {}
         for vma in linux_common.walk_internal_list("vm_area_struct", "vm_next", self.mm.mmap):
+            val = vma.v()
+            if val in seen:
+                break
+
             yield vma
+
+            seen[val] = 1
    
     def _walk_rb(self, rb):
         if not rb.is_valid():
