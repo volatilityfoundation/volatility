@@ -1119,6 +1119,9 @@ class task_struct(obj.CType):
 
         proc_as = self.get_process_address_space()
 
+        if proc_as == None:
+            return ret
+  
         elf_hdr = obj.Object("elf_hdr", offset = elf_addr, vm = proc_as)
 
         if not elf_hdr.is_valid():
@@ -1216,6 +1219,8 @@ class task_struct(obj.CType):
             return
 
         proc_as = self.get_process_address_space()
+        if proc_as == None:
+            return
 
         for off in self.search_process_memory(["\x40\x00\x00\x00"], heap_only=True):
             # test the number of buckets
@@ -1232,8 +1237,7 @@ class task_struct(obj.CType):
         seen_starts = {}
 
         proc_as = self.get_process_address_space()        
-
-        if not proc_as:
+        if proc_as == None:
             return
 
         # get libraries from proc_maps
@@ -1466,7 +1470,6 @@ class task_struct(obj.CType):
 
     def bash_history_entries(self):
         proc_as = self.get_process_address_space()
-
         if not proc_as:
             return
 
@@ -1508,6 +1511,8 @@ class task_struct(obj.CType):
         if self.mm:
             # set the as with our new dtb so we can read from userland
             proc_as = self.get_process_address_space()
+            if proc_as == None:
+                return env
 
             # read argv from userland
             start = self.mm.env_start.v()
@@ -1643,7 +1648,6 @@ class task_struct(obj.CType):
 
     def bash_environment(self):
         proc_as = self.get_process_address_space()
-        
         # In cases when mm is an invalid pointer 
         if not proc_as:
             return
@@ -1741,7 +1745,9 @@ class task_struct(obj.CType):
 
     def get_libdl_maps(self):
         proc_as = self.get_process_address_space()
-        
+        if proc_as == None:
+            return       
+ 
         found_list = False
 
         for vma in self.get_proc_maps():
@@ -1838,6 +1844,8 @@ class task_struct(obj.CType):
         scan_blk_sz = 1024 * 1024 * 10
 
         addr_space = self.get_process_address_space()
+        if addr_space == None:
+            return
 
         for vma in self.get_proc_maps():
             if heap_only:
@@ -1859,6 +1867,8 @@ class task_struct(obj.CType):
 
     def elfs(self):
         proc_as = self.get_process_address_space()
+        if proc_as == None:
+            return
 
         for vma in self.get_proc_maps():
             elf = obj.Object("elf_hdr", offset = vma.vm_start, vm = proc_as) 
@@ -2042,6 +2052,8 @@ class task_struct(obj.CType):
         if self.mm:
             # set the as with our new dtb so we can read from userland
             proc_as = self.get_process_address_space()
+            if proc_as == None:
+                return ""
 
             # read argv from userland
             start = self.mm.env_start.v()
@@ -2067,6 +2079,8 @@ class task_struct(obj.CType):
         if self.mm:
             # set the as with our new dtb so we can read from userland
             proc_as = self.get_process_address_space()
+            if proc_as == None:
+                return ""
 
             # read argv from userland
             start = self.mm.arg_start.v()
