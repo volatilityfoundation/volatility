@@ -385,6 +385,8 @@ class BufferAddressSpace(BaseAddressSpace):
         self.data = data
 
     def is_valid_address(self, addr):
+        if self.data == None:
+            return False
         return not (addr < self.base_offset or addr > self.base_offset + len(self.data))
 
     def read(self, addr, length):
