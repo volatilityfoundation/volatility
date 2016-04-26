@@ -81,6 +81,9 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         hash_mnts = {}
         seen_outer = {}
         for (idx, outerlist) in enumerate(mnt_list):
+            if outerlist == None or outerlist.next == None:
+                continue
+
             if outerlist.next.v() in seen_outer:
                 continue
 
@@ -102,8 +105,8 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                 if mnt.is_valid():
                     hash_mnts[mnt]            = 1
                 else:
-                    break   
- 
+                    break
+
                 if mnt.mnt_parent.is_valid():
                     hash_mnts[mnt.mnt_parent] = 1
     
