@@ -1060,8 +1060,8 @@ class vm_area_struct(obj.CType):
         ret = False        
 
         flags_str  = self.protection()
-       
-        if flags_str == "VM_READ|VM_WRITE|VM_EXEC":
+      
+        if flags_str.find("VM_READ|VM_WRITE|VM_EXEC") != -1:
             ret = True 
             
         elif flags_str == "VM_READ|VM_EXEC" and not self.vm_file:
