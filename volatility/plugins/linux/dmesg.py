@@ -32,9 +32,9 @@ class linux_dmesg(linux_common.AbstractLinuxCommand):
 
     def _get_log_info(self):
 
-        ptr_addr = self.addr_space.profile.get_symbol("log_buf")
+        ptr_addr = self.addr_space.profile.get_symbol("log_buf", "d")
         log_buf_addr = obj.Object("unsigned long", offset = ptr_addr, vm = self.addr_space)
-        log_buf_len = obj.Object("int", self.addr_space.profile.get_symbol("log_buf_len"), vm = self.addr_space)
+        log_buf_len = obj.Object("int", self.addr_space.profile.get_symbol("log_buf_len", "d"), vm = self.addr_space)
 
         return (log_buf_addr, log_buf_len)
 
