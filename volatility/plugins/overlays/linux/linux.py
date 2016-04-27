@@ -1722,7 +1722,7 @@ class task_struct(obj.CType):
 
                         yield (socket.AF_UNIX, (name, iaddr.i_ino))
 
-                    elif family in (socket.AF_INET, socket.AF_INET6):
+                    elif family in (socket.AF_INET, socket.AF_INET6, 10, 30):
                         sport = inet_sock.src_port 
                         dport = inet_sock.dst_port 
                         saddr = inet_sock.src_addr
