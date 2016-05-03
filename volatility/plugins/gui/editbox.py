@@ -52,9 +52,12 @@ gdi_types_x86 = {
         'selStart': [0x14, ['unsigned long']],
         'selEnd': [0x18, ['unsigned long']],
         'pwdChar': [0x30, ['unsigned short']],
+        'undoBufXP': [0x80, ['unsigned long']],
+        'undoPosXP': [0x84, ['long']],
+        'undoLenXP': [0x88, ['long']],
         'undoBuf': [0x88, ['unsigned long']],
-        'undoPos': [0x8C, ['unsigned long']],
-        'undoLen': [0x90, ['unsigned long']],
+        'undoPos': [0x8C, ['long']],
+        'undoLen': [0x90, ['long']],
         'bEncKeyXP': [0xEC, ['unsigned char']], # XP
         'bEncKey': [0xF4, ['unsigned char']] # Win7/2008R2
         # TODO: bEncKey is hacky. Should have diff types for each.
@@ -89,9 +92,12 @@ gdi_types_x64 = {
         'selStart': [0x18, ['unsigned long']],
         'selEnd': [0x20, ['unsigned long']],
         'pwdChar': [0x34, ['unsigned short']],
+        'undoBufXP': [0xA0, ['unsigned long']], # Guess! Can't get a XPx64 sample!
+        'undoPosXP': [0xA8, ['long']], # Guess! Can't get a XPx64 sample!
+        'undoLenXP': [0xAC, ['long']], # Guess! Can't get a XPx64 sample!
         'undoBuf': [0xA8, ['unsigned long']],
-        'undoPos': [0xB0, ['unsigned long']],
-        'undoLen': [0xB4, ['unsigned long']],
+        'undoPos': [0xB0, ['long']],
+        'undoLen': [0xB4, ['long']],
         'bEncKey': [0x140, ['unsigned char']]
     } ],
     '_LISTBOX_x64': [ 0x100, {
@@ -295,22 +301,29 @@ class EditBox(messagehooks.MessageHooks):
             else:
                 outfd.write('pointer-to hBuf      : -invalid-\n')
 
+            # Are we pre-Vista?
+            metadata = utils.load_as(self._config).profile.metadata
+            version = (metadata.get("major", 0), metadata.get("minor", 0))
+            is_pre_vista = version < (6, 0)
+            undo_buf = editbox.undoBufXP if is_pre_vista else editbox.undoBuf
+            undo_len = editbox.undoLenXP if is_pre_vista else editbox.undoLen
+
             outfd.write('hWnd                 : {0:#x}\n'.format(editbox.hWnd))
             outfd.write('parenthWnd           : {0:#x}\n'.format(editbox.parenthWnd))
-            outfd.write('nChars               : {0} ({0:#x})\n'.format(editbox.nChars))
-            outfd.write('selStart             : {0} ({0:#x})\n'.format(editbox.selStart))
-            outfd.write('selEnd               : {0} ({0:#x})\n'.format(editbox.selEnd))
-            outfd.write('undoPos              : {0} ({0:#x})\n'.format(editbox.undoPos))
-            outfd.write('undoLen              : {0} ({0:#x})\n'.format(editbox.undoLen))
+            outfd.write('nChars               : {0}\n'.format(editbox.nChars))
+            outfd.write('selStart             : {0}\n'.format(editbox.selStart))
+            outfd.write('selEnd               : {0}\n'.format(editbox.selEnd))
+            outfd.write('undoPos              : {0}\n'.format(editbox.undoPosXP if is_pre_vista else editbox.undoPos))
+            outfd.write('undoLen              : {0}\n'.format(editbox.undoLenXP if is_pre_vista else editbox.undoLen))
 
-            if editbox.undoBuf == 0:
+            if undo_buf == 0:
                 outfd.write('address-of undoBuf   : undo-is-empty\n')
                 outfd.write('undoBuf[:100]        : undo-is-empty\n')
             else:
                 outfd.write('address-of undoBuf   : {0:#x} [{1:#x}]\n'.format(
-                    editbox.undoBuf, task_space.vtop(editbox.undoBuf)))
+                    undo_buf, task_space.vtop(undo_buf)))
                 outfd.write('undoBuf[:100]        : {0}\n'.format(
-                    editbox.obj_vm.read(editbox.undoBuf, 2 * editbox.undoLen)[:100]))
+                    editbox.obj_vm.read(undo_buf, 2 * undo_len)[:100]))
 
             if valid_hbuf:
                 outfd.write('text_md5             : {0}\n'.format(md5))
