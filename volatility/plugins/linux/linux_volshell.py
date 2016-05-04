@@ -33,7 +33,10 @@ class linux_volshell(volshell.volshell):
         mods = lsmod.linux_lsmod(self._config).calculate()
 
         for (module, _, __) in mods:
-            print "{0:24} {1:d}".format(module.name, module.init_size + module.core_size)
+            if module.core_layout:
+                print "{0:24} {1:d}".format(module.name, module.core_layout.m('size'))
+            else:
+                print "{0:24} {1:d}".format(module.name, module.init_size + module.core_size)
 
     def getpidlist(self):
         return pslist.linux_pslist(self._config).allprocs()
