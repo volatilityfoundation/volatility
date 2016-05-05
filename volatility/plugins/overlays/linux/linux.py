@@ -1711,7 +1711,7 @@ class task_struct(obj.CType):
                     state = inet_sock.state if inet_sock.protocol == "TCP" else ""
                     family = inet_sock.sk.__sk_common.skc_family #pylint: disable-msg=W0212
 
-                    if family == socket.AF_UNIX:
+                    if family == 1: # AF_UNIX
                         unix_sock = obj.Object("unix_sock", offset = inet_sock.sk.v(), vm = self.obj_vm)
 
                         if unix_sock.addr:
