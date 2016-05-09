@@ -820,6 +820,29 @@ class net_device(obj.CType):
         return self.flags & 0x100 == 0x100 # IFF_PROMISC
 
 class module_struct(obj.CType):
+    
+    @property
+    def init_size(self):
+        if hasattr(self, "init_layout"):
+            ret = self.m("init_layout").m("size")
+        elif hasattr(self, "init_size"):
+            ret = self.m("init_size")
+        else:
+            ret = 0
+
+        return ret
+ 
+    @property 
+    def core_size(self):
+        if hasattr(self, "core_layout"):
+            ret = self.m("core_layout").m("size")
+        elif hasattr(self, "core_size"):
+            ret = self.m("core_size")
+        else:
+            ret = 0
+
+        return ret
+        
     def _get_sect_count(self, grp):
         arr = obj.Object(theType = 'Array', offset = grp.attrs, vm = self.obj_vm, targetType = 'Pointer', count = 25)
 
