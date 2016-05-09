@@ -1201,6 +1201,9 @@ class task_struct(obj.CType):
         else:
             ret = self.m("uid")
 
+        if type(ret) == obj.CType:
+            ret = ret.v()
+
         return ret
 
     @property
@@ -1217,6 +1220,9 @@ class task_struct(obj.CType):
         else:
             ret = self.m("gid")
 
+        if type(ret) == obj.CType:
+            ret = ret.v()
+
         return ret
 
     @property
@@ -1226,6 +1232,9 @@ class task_struct(obj.CType):
             ret = self.cred.euid
         else:
             ret = self.m("euid")
+
+        if type(ret) == obj.CType:
+            ret = ret.v()
 
         return ret
 
