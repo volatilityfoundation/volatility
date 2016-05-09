@@ -5,6 +5,7 @@ symbols and then read the DWARF symbols from it.
 #include <linux/module.h>
 #include <linux/version.h>
 
+#include <linux/ioport.h>
 #include <linux/fs_struct.h>
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
@@ -574,4 +575,6 @@ struct proc_dir_entry {
     char name[];
 };
 #endif
+
+struct resource resource;
 
