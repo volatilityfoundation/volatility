@@ -820,7 +820,24 @@ class net_device(obj.CType):
         return self.flags & 0x100 == 0x100 # IFF_PROMISC
 
 class module_struct(obj.CType):
+    @property   
+    def module_core(self):
+        if hasattr(self, "core_layout"):
+            ret = self.m("core_layout").m("size")
+        else:
+            ret = self.m("module_core")
+
+        return ret
+
+    @property
+    def module_init(self):
+        if hasattr(self, "init_layout"):
+            ret = self.m("init_layout").m("size")
+        else:
+            ret = self.m("module_init")
     
+        return ret
+
     @property
     def init_size(self):
         if hasattr(self, "init_layout"):
