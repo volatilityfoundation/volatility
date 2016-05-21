@@ -18,6 +18,7 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import volatility.plugins.common as common
 import volatility.plugins.gui.messagehooks as messagehooks
 
 class WinTree(messagehooks.MessageHooks):
@@ -42,8 +43,21 @@ class WinTree(messagehooks.MessageHooks):
 
 class Windows(messagehooks.MessageHooks):
     """Print Desktop Windows (verbose details)"""
+    
+    def __init__(self, config, *args, **kwargs):
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
+
+        # Filter specific processes
+        config.add_option('PID', short_option='p', default=None,
+                          help='Operate on these Process IDs (comma-separated)',
+                          action='store', type='str')
 
     def render_text(self, outfd, data):
+    
+        if self._config.PID:
+            wanted_pids = [int(pid) for pid in self._config.PID.split(',')]
+        else:
+            wanted_pids = None
 
         for winsta, atom_tables in data:
             for desktop in winsta.desktops():
@@ -51,6 +65,11 @@ class Windows(messagehooks.MessageHooks):
                 outfd.write("Window context: {0}\\{1}\\{2}\n\n".format(
                     winsta.dwSessionId, winsta.Name, desktop.Name))
                 for wnd, _level in desktop.windows(desktop.DeskInfo.spwnd):
+                
+                    # Is this a process we want?
+                    if wanted_pids and not wnd.Process.UniqueProcessId in wanted_pids:
+                        continue
+
                     outfd.write("Window Handle: #{0:x} at {1:#x}, Name: {2}\n".format(
                         wnd.head.h, wnd.obj_offset, str(wnd.strName or '')
                     ))
