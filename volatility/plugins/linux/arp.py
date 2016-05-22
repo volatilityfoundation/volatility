@@ -71,6 +71,9 @@ class linux_arp(linux_common.AbstractLinuxCommand):
             hash_size = (1 << ntable.nht.hash_shift)
             hash_table = ntable.nht.hash_buckets
 
+        if not self.addr_space.is_valid_address(hash_table):
+            return []
+
         buckets = obj.Object(theType = 'Array', offset = hash_table, vm = self.addr_space, targetType = 'Pointer', count = hash_size)
 
         for i in range(hash_size):
