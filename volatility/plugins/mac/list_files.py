@@ -127,10 +127,12 @@ class mac_list_files(common.AbstractMacCommand):
             if not vnode.is_dir():
                 continue
   
+            name = str(name)
+            
             if parent in parent_vnodes:
                 full_path = joiner(parent_vnodes[parent], name)
             else:
-                paths = [str(name)]
+                paths = [name]
                 while parent:
                     entry = vnodes.get(parent)
                 
