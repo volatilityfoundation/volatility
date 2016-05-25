@@ -111,7 +111,7 @@ class mac_list_files(common.AbstractMacCommand):
                 else: 
                     par_offset = None
         
-                entry = [name, par_offset, parent]
+                entry = [str(name), par_offset, parent]
                 vnodes[parent.obj_offset] = entry
                 
                 parent = next_parent  
@@ -158,7 +158,9 @@ class mac_list_files(common.AbstractMacCommand):
             
             if not name:
                 continue
-            
+           
+            name = str(name)
+ 
             entry = parent_vnodes.get(parent) 
             if not entry:
                 yield vnode, name
