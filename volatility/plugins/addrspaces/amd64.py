@@ -254,16 +254,31 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
         are accessible.
         '''
 
+        # read the full pml4
+        pml4 = self.base.read(self.dtb & 0xffffffffff000, 0x200 * 8)
+        if pml4 is None:
+            return
+
+        # unpack all entries
+        pml4_entries = struct.unpack('<512Q', pml4)
         for pml4e in range(0, 0x200):
             vaddr = pml4e << 39
-            pml4e_value = self.get_pml4e(vaddr)
+            pml4e_value = pml4_entries[pml4e]
             if not self.entry_present(pml4e_value):
                 continue
+
+            pdpt_base = (pml4e_value & 0xffffffffff000)
+            pdpt = self.base.read(pdpt_base, 0x200 * 8)
+            if pdpt is None:
+                continue
+
+            pdpt_entries = struct.unpack('<512Q', pdpt)
             for pdpte in range(0, 0x200):
                 vaddr = (pml4e << 39) | (pdpte << 30)
-                pdpte_value = self.get_pdpi(vaddr, pml4e_value)
+                pdpte_value = pdpt_entries[pdpte]
                 if not self.entry_present(pdpte_value):
                     continue
+
                 if self.page_size_flag(pdpte_value):
                     if with_pte: 
                         yield (pdpte_value, vaddr, 0x40000000)
@@ -271,26 +286,34 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
                         yield (vaddr, 0x40000000)
                     continue
 
-                pgd_curr = self.pdba_base(pdpte_value)
-                for j in range(0, ptrs_per_pae_pgd):
-                    soffset = vaddr + (j * ptrs_per_pae_pgd * ptrs_per_pae_pte * 8)
-                    entry = self.read_long_long_phys(pgd_curr)
-                    pgd_curr = pgd_curr + 8
+                pd_base = self.pdba_base(pdpte_value)
+                pd = self.base.read(pd_base, 0x200 * 8)
+                if pd is None:
+                    continue
+
+                pd_entries = struct.unpack('<512Q', pd)
+                for j in range(0, 0x200):
+                    soffset = (j * 0x200 * 0x200 * 8)
+                    entry = pd_entries[j]
                     if self.entry_present(entry) and self.page_size_flag(entry):
                         if with_pte: 
-                            yield (entry, soffset, 0x200000)
+                            yield (entry, vaddr + soffset, 0x200000)
                         else:
-                            yield (soffset, 0x200000)
+                            yield (vaddr + soffset, 0x200000)
+
                     elif self.entry_present(entry):
-                        pte_curr = entry & 0xFFFFFFFFFF000
-                        for k in range(0, ptrs_per_pae_pte):
-                            pte_entry = self.read_long_long_phys(pte_curr)
-                            pte_curr = pte_curr + 8
-                            if self.entry_present(pte_entry):
+                        pt_base = entry & 0xFFFFFFFFFF000
+                        pt = self.base.read(pt_base, 0x200 * 8)
+                        if pt is None:
+                            continue
+                        pt_entries = struct.unpack('<512Q', pt)
+                        for k in range(0, 0x200):
+                            pt_entry = pt_entries[k]
+                            if self.entry_present(pt_entry):
                                 if with_pte:
-                                    yield (pte_entry, soffset + k * 0x1000, 0x1000)
+                                    yield (pt_entry, vaddr + soffset + k * 0x1000, 0x1000)
                                 else:
-                                    yield (soffset + k * 0x1000, 0x1000)
+                                    yield (vaddr + soffset + k * 0x1000, 0x1000)
 
     @classmethod
     def address_mask(cls, addr):
