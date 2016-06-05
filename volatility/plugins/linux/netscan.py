@@ -41,8 +41,11 @@ class linux_netscan(linux_common.AbstractLinuxCommand):
     """Carves for network connection structures"""
 
     def check_socket_back_pointer(self, i):
-        return i.sk == i.sk.sk_socket.sk or i.sk.sk_socket.v() == 0x0
-                
+        scomp = self.addr_space.address_compare(i.sk.v(), i.sk.sk_socket.sk.v()) == 0
+        zcomp = i.sk.sk_socket.v() == 0x0
+           
+        return scomp or zcomp
+     
     def check_pointers(self, i):
         ret = self.addr_space.profile.get_symbol_by_address("kernel", i.sk.sk_backlog_rcv.v()) != None
 
@@ -69,7 +72,7 @@ class linux_netscan(linux_common.AbstractLinuxCommand):
             pack_size    = 4
             pack_fmt     = "<I"
         else:
-            kernel_start = 0xffffffff80000000
+            kernel_start = 0xffff880000000000
             pack_size    = 8
             pack_fmt     = "<Q"
         
@@ -80,27 +83,18 @@ class linux_netscan(linux_common.AbstractLinuxCommand):
         # sk_destruct pointer value of sock
         func_addr = self.addr_space.profile.get_symbol("inet_sock_destruct")
 
-        vals = []
+        vals = struct.pack(pack_fmt, func_addr)
 
-        # convert address into a yara hex rule
-        for bit in range(pack_size):
-            idx  = (pack_size - bit - 1) * 8
-            mask = 0xff << idx        
-            val  = ((func_addr & mask) >> idx) & 0xff
-
-            vals.insert(0, val)
-
-        s = "{" + " ".join(["%.02x" % v for v in vals]) + " }"
+        s = "{ " + " ".join(["%.02x" % ord(v) for v in vals]) + " }"
 
         rules = yara.compile(sources = { 'n' : 'rule r1 {strings: $a = ' + s + ' condition: $a}' })
-
+        
         scanner = malfind.DiscontigYaraScanner(rules = rules, address_space = self.addr_space) 
         for _, address in scanner.scan(start_offset = kernel_start):
-            base_address = address - destruct_offset 
-
+            base_address = address - destruct_offset
+    
             i = obj.Object("inet_sock", offset = base_address, vm = self.addr_space)
 
-                
             valid = True
             for check in checks:
                 if check(i) == False:
@@ -116,11 +110,14 @@ class linux_netscan(linux_common.AbstractLinuxCommand):
                 saddr = i.src_addr
                 daddr = i.dst_addr
 
-                yield (i, i.protocol, saddr, sport, daddr, dport, state)
+                if str(saddr) == "0.0.0.0" and str(daddr) == "0.0.0.0" and sport == 6 and dport == 0:
+                    continue
 
+                yield (i, i.protocol, saddr, sport, daddr, dport, state)
+    
     def render_text(self, outfd, data):
-        for (_, proto, saddr, sport, daddr, dport, state) in data:
-            outfd.write("{0:8s} {1:<16}:{2:>5} {3:<16}:{4:>5} {5:<15s}\n".format(proto, saddr, sport, daddr, dport, state))
+        for (isock, proto, saddr, sport, daddr, dport, state) in data:
+            outfd.write("{6:x} {0:8s} {1:<16}:{2:>5} {3:<16}:{4:>5} {5:<15s}\n".format(proto, saddr, sport, daddr, dport, state, isock.v()))
 
    
 

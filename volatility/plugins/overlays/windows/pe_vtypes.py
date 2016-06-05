@@ -127,6 +127,40 @@ pe_vtypes = {
       'FileSubType': [0x28, ['unsigned long']],
       'FileDate': [0x2C, ['WinTimeStamp']],
     } ],
+    
+  '_IMAGE_OPTIONAL_HEADER32' : [ 0xe0, {
+    'Magic' : [ 0x0, ['unsigned short']],
+    'MajorLinkerVersion' : [ 0x2, ['unsigned char']],
+    'MinorLinkerVersion' : [ 0x3, ['unsigned char']],
+    'SizeOfCode' : [ 0x4, ['unsigned long']],
+    'SizeOfInitializedData' : [ 0x8, ['unsigned long']],
+    'SizeOfUninitializedData' : [ 0xc, ['unsigned long']],
+    'AddressOfEntryPoint' : [ 0x10, ['unsigned long']],
+    'BaseOfCode' : [ 0x14, ['unsigned long']],
+    'BaseOfData' : [ 0x18, ['unsigned long']],
+    'ImageBase' : [ 0x1c, ['unsigned long']],
+    'SectionAlignment' : [ 0x20, ['unsigned long']],
+    'FileAlignment' : [ 0x24, ['unsigned long']],
+    'MajorOperatingSystemVersion' : [ 0x28, ['unsigned short']],
+    'MinorOperatingSystemVersion' : [ 0x2a, ['unsigned short']],
+    'MajorImageVersion' : [ 0x2c, ['unsigned short']],
+    'MinorImageVersion' : [ 0x2e, ['unsigned short']],
+    'MajorSubsystemVersion' : [ 0x30, ['unsigned short']],
+    'MinorSubsystemVersion' : [ 0x32, ['unsigned short']],
+    'Win32VersionValue' : [ 0x34, ['unsigned long']],
+    'SizeOfImage' : [ 0x38, ['unsigned long']],
+    'SizeOfHeaders' : [ 0x3c, ['unsigned long']],
+    'CheckSum' : [ 0x40, ['unsigned long']],
+    'Subsystem' : [ 0x44, ['unsigned short']],
+    'DllCharacteristics' : [ 0x46, ['unsigned short']],
+    'SizeOfStackReserve' : [ 0x48, ['unsigned long']],
+    'SizeOfStackCommit' : [ 0x4c, ['unsigned long']],
+    'SizeOfHeapReserve' : [ 0x50, ['unsigned long']],
+    'SizeOfHeapCommit' : [ 0x54, ['unsigned long']],
+    'LoaderFlags' : [ 0x58, ['unsigned long']],
+    'NumberOfRvaAndSizes' : [ 0x5c, ['unsigned long']],
+    'DataDirectory' : [ 0x60, ['array', 16, ['_IMAGE_DATA_DIRECTORY']]],
+    } ],
 }
 
 pe_vtypes_64 = {
@@ -162,6 +196,9 @@ resource_types = {
      'RT_ANIICON'      : 22,
      'RT_HTML'         : 23,
 }
+
+IMAGE_NT_OPTIONAL_HDR32_MAGIC = 0x10b
+IMAGE_NT_OPTIONAL_HDR64_MAGIC = 0x20b
 
 class _IMAGE_EXPORT_DIRECTORY(obj.CType):
     """Class for PE export directory"""
@@ -652,8 +689,14 @@ class _IMAGE_DOS_HEADER(obj.CType):
         provided base address
         """        
 
-        imb_offs = nt_header.OptionalHeader.ImageBase.obj_offset - self.obj_offset      
-        imb = nt_header.OptionalHeader.ImageBase
+        opthdr = nt_header.OptionalHeader
+        
+        if opthdr.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC:
+            if opthdr.obj_vm.profile.metadata.get("memory_model") == "64bit":
+                opthdr = opthdr.cast("_IMAGE_OPTIONAL_HEADER32")
+        
+        imb_offs = opthdr.ImageBase.obj_offset - self.obj_offset      
+        imb = opthdr.ImageBase
         newval = struct.pack(imb.format_string, int(self.obj_offset))
         return header[:imb_offs] + newval + header[imb_offs+imb.size():]
 
@@ -683,6 +726,10 @@ class _IMAGE_DOS_HEADER(obj.CType):
         start_addr = nt_header.FileHeader.SizeOfOptionalHeader + (nt_header.OptionalHeader.obj_offset - self.obj_offset)
         for sect in nt_header.get_sections(unsafe):
             sectheader = self.obj_vm.read(sect.obj_offset, shs)
+            
+            if not sectheader:
+                break
+            
             # Change the PointerToRawData
             sectheader = self.replace_header_field(sect, sectheader, sect.PointerToRawData, sect.VirtualAddress)
             sectheader = self.replace_header_field(sect, sectheader, sect.SizeOfRawData, sect_sizes[counter])
@@ -710,6 +757,11 @@ class _IMAGE_NT_HEADERS(obj.CType):
             s_addr = start_addr + (i * sect_size)
             sect = obj.Object("_IMAGE_SECTION_HEADER", offset = s_addr, vm = self.obj_vm,
                               parent = self, native_vm = self.obj_native_vm)
+                              
+            ## deal with swapped sections...
+            if not sect:
+                continue
+                              
             if not unsafe:
                 sect.sanity_check_section()
             yield sect

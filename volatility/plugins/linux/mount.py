@@ -39,7 +39,6 @@ class linux_mount(linux_common.AbstractLinuxCommand):
             return ret
 
         dev_name = mnt.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
-       
         if not dev_name.is_valid():
             return ret
 
@@ -48,8 +47,9 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         if not fstype.is_valid():
             return ret
 
-        if str(fstype) not in fs_types:
-            return ret
+        #print fs_types
+        #if str(fstype) not in fs_types:
+        #    return ret
 
         path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
 
@@ -79,16 +79,34 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         fs_types = self._get_filesystem_types()
 
         hash_mnts = {}
+        seen_outer = {}
         for (idx, outerlist) in enumerate(mnt_list):
+            if outerlist == None or outerlist.next == None:
+                continue
+
+            if outerlist.next.v() in seen_outer:
+                continue
+
+            seen_outer[outerlist.next.v()] = 1
+
             if outerlist == outerlist.next or not outerlist.m("next").is_valid():
                 continue
 
+            seen = {}
             for mnt in outerlist.list_of_type(mnttype, "mnt_hash"):
+                if mnt.v() in seen:
+                    break
+
+                seen[mnt.v()] = 1
+
+                if len(seen.keys()) > 1024:
+                    break
+
                 if mnt.is_valid():
                     hash_mnts[mnt]            = 1
                 else:
-                    break   
- 
+                    break
+
                 if mnt.mnt_parent.is_valid():
                     hash_mnts[mnt.mnt_parent] = 1
     
@@ -97,11 +115,17 @@ class linux_mount(linux_common.AbstractLinuxCommand):
 
         child_mnts = {}
         for mnt in hash_mnts:
+            cseen = {}
             for child_mnt in mnt.mnt_child.list_of_type(mnttype, "mnt_child"):
                 if not child_mnt.is_valid():
                     break
-  
+                
                 child_mnts[child_mnt]            = 1
+  
+                if child_mnt.v() in cseen:
+                    break
+
+                cseen[child_mnt.v()] = 1
   
                 if child_mnt.mnt_parent.is_valid():
                     child_mnts[child_mnt.mnt_parent] = 1
@@ -109,7 +133,15 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                 if child_mnt.mnt_parent.mnt_parent.is_valid():
                     child_mnts[child_mnt.mnt_parent.mnt_parent] = 1
 
-        all_mnts = list(set(hash_mnts.keys() + child_mnts.keys()))
+        tmp_mnts = list(set(hash_mnts.keys() + child_mnts.keys()))
+        all_mnts = []
+
+        for t in tmp_mnts:
+            tt = t.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
+            if tt:
+                tmp = str(tt)
+                if len(str(tmp)) > 2 and (str(tmp)[0] == '/' or tmp in ['devtmpfs', 'proc', 'sysfs', 'nfsd', 'tmpfs', 'sunrpc', 'devpts', 'none']):
+                    all_mnts.append(t)
 
         list_mnts    = {} 
         seen_m       = {}

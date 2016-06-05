@@ -38,31 +38,11 @@ class mac_bash_env(mac_tasks.mac_tasks):
     """Recover bash's environment variables"""
 
     def unified_output(self, data):
-        return TreeGrid([("Pid", int),
-                        ("Name", str),
-                        ("Vars", str),
-                        ], self.generator(data))
+        debug.error("This plugin is deprecated. Please use mac_psenv.")
 
     def generator(self, data):
-        for task in data:
-            varstr = ""
-
-            for (key, val) in task.bash_environment():
-                varstr = varstr + "%s=%s " % (key, val)
-
-            yield(0, [
-                  int(task.p_pid),
-                  str(task.p_comm),
-                  str(varstr),
-                  ])
+        debug.error("This plugin is deprecated. Please use mac_psenv.")
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Pid", "8"), 
-                                  ("Name", "20"),
-                                  ("Vars", "")])
-                                    
-        for task in data:
-            varstr = ""
-            for (key, val) in task.bash_environment():
-                varstr = varstr + "%s=%s " % (key, val)
-            self.table_row(outfd, task.p_pid, task.p_comm, varstr)
+        debug.error("This plugin is deprecated. Please use mac_psenv.")
+

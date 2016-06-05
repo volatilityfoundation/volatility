@@ -44,7 +44,9 @@ class Strings(common.AbstractWindowsCommand):
                           action = 'store', type = 'int')
         config.add_option('PID', short_option = 'p', default = None,
                           help = 'Operate on these Process IDs (comma-separated)',
-                          action = 'store', type = 'str')      
+                          action = 'store', type = 'str')
+        config.add_option('LOOKUP-PID', short_option = 'L', default = False,
+                          action = 'store_true', help = 'Lookup the ImageFileName of PIDs')
   
     def get_processes(self, addr_space):
         """Enumerate processes based on user options.
@@ -158,7 +160,17 @@ class Strings(common.AbstractWindowsCommand):
 
             pids = ["FREE MEMORY:-1"]
             if reverse_map.has_key(offset & 0xFFFFFFFFFFFFF000):
-                pids = ["{0}:{1:08x}".format(pid[0], pid[1] | (offset & 0xFFF)) for pid in reverse_map[offset & 0xFFFFFFFFFFFFF000][1:]]
+                if self._config.LOOKUP_PID:
+                    pids = ["{0}{2}:{1:08x}".format(
+                        pid[0],
+                        pid[2] | (offset & 0xFFF),
+                        '' if not pid[1] else '={}'.format(pid[1])
+                    ) for pid in reverse_map[offset & 0xFFFFFFFFFFFFF000][1:]]
+                else:
+                    pids = ["{0}:{1:08x}".format(
+                        pid[0],
+                        pid[2] | (offset & 0xFFF)
+                    ) for pid in reverse_map[offset & 0xFFFFFFFFFFFFF000][1:]]
 
             yield offset, pids, "{0}".format(string.strip())
 
@@ -223,7 +235,7 @@ class Strings(common.AbstractWindowsCommand):
                     hint = cls.get_module_name(module)
                 else:
                     hint = 'kernel'
-                pagelist.append((hint, vpage + i))
+                pagelist.append((hint, None, vpage + i))  # None is placeholder (used by tasks)
 
         debug.debug("Calculating task mappings...\n")
         for task in tasks:
@@ -242,7 +254,7 @@ class Strings(common.AbstractWindowsCommand):
                             pagelist = [False]
                             reverse_map[physpage + i] = pagelist
                         if not pagelist[0]:
-                            pagelist.append((process_id, vpage + i))
+                            pagelist.append((process_id, task.ImageFileName, vpage + i))
 
             except (AttributeError, ValueError, TypeError):
                 # Handle most errors, but not all of them

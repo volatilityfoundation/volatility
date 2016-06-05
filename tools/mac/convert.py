@@ -11,6 +11,7 @@ class DWARFParser(object):
 
     sz2tp = {8: 'long long', 4: 'long', 2: 'short', 1: 'char'}
     tp2vol = {
+        'sizetype' : 'long long',
         'bool' : 'int',
         '_Bool': 'unsigned char',
         'char': 'char',
@@ -147,13 +148,11 @@ class DWARFParser(object):
         except IndexError:
             parent_kind, parent_name = (None, None)
 
+        # TAG_compile_unit's have cross-dependencies in El Capitain
+        # so it doesn't make sense to finalize or clear with unmet dependencies anymore.
         if kind == 'TAG_compile_unit':
-            self.finalize()
-            self.vtypes = {}
-            self.vars = {}
             self.all_local_vars += self.local_vars
             self.local_vars = []
-            self.id_to_name = {}
 
         elif kind == 'TAG_structure_type':
             name = data.get('AT_name', "__unnamed_%s" % statement_id)
@@ -212,7 +211,7 @@ class DWARFParser(object):
                     sz = 0
                 self.enums[name] = [sz, {}]
 
-        elif kind == 'TAG_pointer_type':
+        elif kind == 'TAG_pointer_type' or kind == "TAG_ptr_to_member_type":
             self.id_to_name[statement_id] = ['pointer', data.get('AT_type', ['void'])]
 
         elif kind == 'TAG_base_type':

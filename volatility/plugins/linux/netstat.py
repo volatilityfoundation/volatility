@@ -51,7 +51,7 @@ class linux_netstat(linux_pslist.linux_pslist):
                     (_, proto, saddr, sport, daddr, dport, state) = ents[1]
                     outfd.write("{0:8s} {1:<16}:{2:>5} {3:<16}:{4:>5} {5:<15s} {6:>17s}/{7:<5d}\n".format(proto, saddr, sport, daddr, dport, state, task.comm, task.pid))
 
-                elif ents[0] == socket.AF_UNIX and not self._config.IGNORE_UNIX:
+                elif ents[0] == 1 and not self._config.IGNORE_UNIX:
                     (name, inum) = ents[1]
                     outfd.write("UNIX {0:<8d} {1:>17s}/{2:<5d} {3:s}\n".format(inum, task.comm, task.pid, name))
         

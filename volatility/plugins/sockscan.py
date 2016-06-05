@@ -49,7 +49,7 @@ class PoolScanSocket(poolscan.PoolScanner):
                    ('CheckPoolType', dict(non_paged = True, free = True)),
                    ## Valid sockets have time > 0
                    #('CheckSocketCreateTime', dict(condition = lambda x: x > 0)),
-                   ('CheckPoolIndex', dict(value = 0))
+                   ('CheckPoolIndex', dict(value = lambda x : x < 5))
                    ]
 
 class SockScan(common.AbstractScanCommand):

@@ -32,7 +32,6 @@ class mac_tasks(pslist.mac_pslist):
     def __init__(self, config, *args, **kwargs):
         pslist.mac_pslist.__init__(self, config, *args, **kwargs)
 
-
     def allprocs(self):
         common.set_plugin_members(self)
         tasksaddr = self.addr_space.profile.get_symbol("_tasks")
@@ -46,23 +45,4 @@ class mac_tasks(pslist.mac_pslist):
                 yield proc
             
             seen.append(task.obj_offset)
-
-    def calculate(self):
-        common.set_plugin_members(self)
-        
-        pidlist = None
-        try:
-            if self._config.PID:
-                pidlist = [int(p) for p in self._config.PID.split(',')]
-        except:
-            pass
-
-        for proc in self.allprocs():        
-            if not pidlist or proc.p_pid in pidlist:
-                yield proc 
-
-
-
-
-
 

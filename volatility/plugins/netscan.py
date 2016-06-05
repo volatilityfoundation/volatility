@@ -55,7 +55,7 @@ class PoolScanUdpEndpoint(poolscan.PoolScanner):
 
         self.checks = [('CheckPoolSize', dict(condition = lambda x: x >= 0xa8)),
                    ('CheckPoolType', dict(non_paged = True, free = True)),
-                   ('CheckPoolIndex', dict(value = 0)),
+                   ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                    ]
 
 class PoolScanTcpListener(poolscan.PoolScanner):
@@ -69,7 +69,7 @@ class PoolScanTcpListener(poolscan.PoolScanner):
 
         self.checks = [('CheckPoolSize', dict(condition = lambda x: x >= 0xa8)),
                    ('CheckPoolType', dict(non_paged = True, free = True)),
-                   ('CheckPoolIndex', dict(value = 0)),
+                   ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                    ]
 
 class PoolScanTcpEndpoint(poolscan.PoolScanner):
@@ -83,7 +83,7 @@ class PoolScanTcpEndpoint(poolscan.PoolScanner):
 
         self.checks = [('CheckPoolSize', dict(condition = lambda x: x >= 0x1f0)),
                    ('CheckPoolType', dict(non_paged = True, free = True)),
-                   ('CheckPoolIndex', dict(value = 0)),
+                   ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                    ]
 
 #--------------------------------------------------------------------------------

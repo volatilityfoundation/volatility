@@ -5,6 +5,7 @@ symbols and then read the DWARF symbols from it.
 #include <linux/module.h>
 #include <linux/version.h>
 
+#include <linux/ioport.h>
 #include <linux/fs_struct.h>
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
@@ -175,7 +176,7 @@ struct rt_hash_bucket {
   struct rtable __rcu     *chain;
 } rt_hash_bucket;
 
-#ifndef RADIX_TREE_MAX_TAGS
+#ifndef RADIX_TREE_MAP_SHIFT
 #define RADIX_TREE_MAP_SHIFT    (CONFIG_BASE_SMALL ? 4 : 6)
 #define RADIX_TREE_MAP_SIZE     (1UL << RADIX_TREE_MAP_SHIFT)
 #define RADIX_TREE_MAP_MASK     (RADIX_TREE_MAP_SIZE-1)
@@ -574,4 +575,6 @@ struct proc_dir_entry {
     char name[];
 };
 #endif
+
+struct resource resource;
 

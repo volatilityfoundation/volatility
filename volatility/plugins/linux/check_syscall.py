@@ -202,8 +202,11 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                     if index[0] == "(":
                         index = self._find_index(index_names, index)
                     else:
-                        index = int(index)
-        
+                        try:
+                            index = int(index)
+                        except ValueError:
+                            index = 999999  #well beyond any valid table index
+
                     index_names[index] = name
         else:
             index_names = None

@@ -43,9 +43,16 @@ class linux_arp(linux_common.AbstractLinuxCommand):
     def calculate(self):
         linux_common.set_plugin_members(self)
 
-        ntables_ptr = obj.Object("Pointer", offset = self.addr_space.profile.get_symbol("neigh_tables"), vm = self.addr_space)
+        neigh_tables_addr = self.addr_space.profile.get_symbol("neigh_tables")
 
-        for ntable in linux_common.walk_internal_list("neigh_table", "next", ntables_ptr):
+        if hasattr("neigh_table", "next"):
+            ntables_ptr = obj.Object("Pointer", offset = neigh_tables_addr, vm = self.addr_space)
+            tables = linux_common.walk_internal_list("neigh_table", "next", ntables_ptr)
+        else:
+            tables_arr = obj.Object(theType="Array", targetType="Pointer", offset = neigh_tables_addr, vm = self.addr_space, count = 4)
+            tables = [t.dereference_as("neigh_table") for t in tables_arr]
+
+        for ntable in tables:
             for aent in self.handle_table(ntable):
                 yield aent
 
@@ -63,6 +70,9 @@ class linux_arp(linux_common.AbstractLinuxCommand):
         else:
             hash_size = (1 << ntable.nht.hash_shift)
             hash_table = ntable.nht.hash_buckets
+
+        if not self.addr_space.is_valid_address(hash_table):
+            return []
 
         buckets = obj.Object(theType = 'Array', offset = hash_table, vm = self.addr_space, targetType = 'Pointer', count = hash_size)
 
@@ -91,10 +101,11 @@ class linux_arp(linux_common.AbstractLinuxCommand):
             else:
                 ip = '?'
 
-            mac = ":".join(["{0:02x}".format(x) for x in n.ha][:n.dev.addr_len])
-            devname = n.dev.name
+            if n.dev.is_valid():
+                mac = ":".join(["{0:02x}".format(x) for x in n.ha][:n.dev.addr_len])
+                devname = n.dev.name
 
-            ret.append(a_ent(ip, mac, devname))
+                ret.append(a_ent(ip, mac, devname))
 
         return ret
 

@@ -45,7 +45,7 @@ class PoolScanConn(poolscan.PoolScanner):
 
         self.checks = [ ('CheckPoolSize', dict(condition = lambda x: x >= 0x198)),
                    ('CheckPoolType', dict(non_paged = True, free = True)),
-                   ('CheckPoolIndex', dict(value = 0)),
+                   ('CheckPoolIndex', dict(value = lambda x : x < 5)),
                    ]
 
 class ConnScan(common.AbstractScanCommand):
