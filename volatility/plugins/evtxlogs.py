@@ -17,22 +17,39 @@
 # You should have received a copy of the GNU General Public License
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
+#
+# License and Attribution included below from python-evtx and EVTXtract since
+# this plugin includes code from those two projects.
+#
+#
+# Copyright 2012, 2013 Willi Ballenthin <william.ballenthin@mandiant.com>
+#               while at Mandiant <http://www.mandiant.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Version v.0.3.0
 
 """
-@author:       Jared Smith, Matthew Veca
+@author:       Jared Smith, Matthew Veca, Willi Ballenthin
 @license:      GNU General Public License 2.0
-@contact:      jared@jaredsmith.io, mattveca@gmail.com
+@contact:      jared@jaredsmith.io, mattveca@gmail.com,
+               william.ballenthin@mandiant.com
 @organization: Volatility Foundation
 """
 
 
-import volatility
-import volatility.conf as conf
-import volatility.plugins.common as common
-import volatility.utils as utils
-import os, subprocess, ntpath
-import string
 import sys
+import os
 import re
 import binascii
 import mmap
@@ -43,10 +60,13 @@ import hashlib
 import json
 import logging
 import traceback
-from lxml import etree
 from functools import wraps, partial
 from datetime import datetime
 from xml.sax.saxutils import escape as xml_sax_escape
+from lxml import etree
+
+import volatility.conf as conf
+import volatility.plugins.common as common
 
 logger = logging.getLogger("default")
 
@@ -64,7 +84,8 @@ def to_lxml(record_xml):
     """
     if "<?xml" not in record_xml:
         return etree.fromstring(
-            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\" ?>%s" %
+            "<?xml version=\"1.0\"" +
+            "encoding=\"utf-8\" standalone=\"yes\" ?>%s" %
             record_xml)
     else:
         return etree.fromstring(record_xml)
@@ -130,6 +151,7 @@ def exists(fn, iterable):
 CURRENT_VERSION = 1
 GENERATOR = "recover-evtx"
 
+
 def touch(path):
     open(path, 'a').close()
 
@@ -141,6 +163,7 @@ class IncompatibleVersionException(Exception):
 
     def __str__(self):
         return "IncompatibleVersionException(%s)" % self._msg
+
 
 class IncompatibleInputFileException(Exception):
     def __init__(self, msg):
@@ -169,9 +192,11 @@ class State(object):
         with open(self._filename, "rb") as f:
             self._state = json.loads(f.read() or "{}")
 
-        if self._get_version() != CURRENT_VERSION and self._get_version() != "":
-            raise IncompatibleVersionException("Version %d expected, got %d" %
-                                               (CURRENT_VERSION, self._get_version()))
+        if self._get_version() != CURRENT_VERSION \
+                and self._get_version() != "":
+            raise IncompatibleVersionException(
+                "Version %d expected, got %d" %
+                (CURRENT_VERSION, self._get_version()))
 
         self.test_input_file(self._filename)
 
@@ -232,8 +257,10 @@ class State(object):
 
     def test_input_file(self, input_path):
         """
-        Raises IncompatibleInputFileException if the file metadata for the input file
-          is not consistent with metadata stored from past runs in the state file.
+        Raises IncompatibleInputFileException if the file
+        metadata for the input file
+        is not consistent with metadata stored from past
+        runs in the state file.
 
         @raises IncompatibleInputFileException
         @type input_path: str
@@ -247,10 +274,12 @@ class State(object):
         hash_ = m.hexdigest()
 
         if self._get_size() != 0 and self._get_size != size:
-            raise IncompatibleInputFileException("File size: %d, expected %d" % (size, self._get_size()))
+            raise IncompatibleInputFileException("File size: %d, expected %d"
+                                                 % (size, self._get_size()))
 
         if self._get_hash() != "" and self._get_hash() != hash_:
-            raise IncompatibleInputFileException("File hash: %s, expected %s" % (hash_, self._get_hash()))
+            raise IncompatibleInputFileException("File hash: %s, expected %s"
+                                                 % (hash_, self._get_hash()))
 
         return True
 
@@ -398,7 +427,8 @@ class TemplateNotFoundError(Exception):
 
 
 class Template(object):
-    substitition_re = re.compile("\[(Conditional|Normal) Substitution\(index=(\d+), type=(\d+)\)\]")
+    substitition_re = re.compile(
+        "\[(Conditional|Normal) Substitution\(index=(\d+), type=(\d+)\)\]")
 
     def __init__(self, eid, xml):
         self._eid = eid
@@ -478,10 +508,12 @@ class Template(object):
                          len(substitutions))
             return False
 
-        # it seems that some templates request different values than what are subsequently put in them
-        #   specifically, a Hex64 might be put into a SizeType field (EID 4624)
-        # this maps from the type described in a template, to possible additional types that a
-        #   record can provide for a particular substitution
+        # it seems that some templates request different values than
+        # what are subsequently put in them
+        # specifically, a Hex64 might be put into a SizeType field (EID 4624)
+        # this maps from the type described in a template, to possible
+        # additional types that a record can provide for a particular
+        # substitution
         overrides = {
             16: set([21])
         }
@@ -3415,16 +3447,16 @@ class FileHeader(Block):
         return None
 
 
-class Template(object):
+# Not really sure if we need this, as there is already a template class above
+# on line 459
+"""class Template(object):
     def __init__(self, template_node):
         self._template_node = template_node
         self._xml = None
 
     def _load_xml(self):
-        """
         TODO(wb): One day, nodes should generate format strings
-          instead of the XML format made-up abomination.
-        """
+        instead of the XML format made-up abomination.
         if self._xml is not None:
             return
         matcher = "\[(?:Normal|Conditional) Substitution\(index=(\d+), type=\d+\)\]"
@@ -3432,15 +3464,14 @@ class Template(object):
                            self._template_node.template_format().replace("{", "{{").replace("}", "}}"))
 
     def make_substitutions(self, substitutions):
-        """
 
         @type substitutions: list of VariantTypeNode
-        """
         self._load_xml()
         return self._xml.format(*map(lambda n: n.xml(), substitutions))
 
     def node(self):
         return self._template_node
+"""
 
 
 class ChunkHeader(Block):
@@ -3637,10 +3668,11 @@ class Record(Block):
         return self._buf[self.offset():self.offset() + self.size()]
 
 
-
 config = conf.config
-_replacement_patterns = {i: re.compile("\[(Normal|Conditional) Substitution\(index=%d, type=\d+\)\]" % i) for i in
-                         xrange(35)}
+_replacement_patterns = {i: re.compile(
+    "\[(Normal|Conditional) Substitution\(index=%d, type=\d+\)\]" % i) for i in
+    xrange(35)}
+
 
 class EvtxLogs(common.AbstractWindowsCommand):
 
@@ -3801,7 +3833,6 @@ class EvtxLogs(common.AbstractWindowsCommand):
 
         chunk = ChunkHeader(buf, offset)
 
-        xml = []
         cache = {}
         for record in chunk.records():
             try:
@@ -3811,7 +3842,7 @@ class EvtxLogs(common.AbstractWindowsCommand):
 
                 state.add_valid_record(offset, eid, record_xml)
 
-                template = get_template(record, record_xml)
+                template = self.get_template(record, record_xml)
                 templates.add_template(template)
             except UnicodeEncodeError:
                 continue
@@ -3819,7 +3850,7 @@ class EvtxLogs(common.AbstractWindowsCommand):
                 continue
             except InvalidRecordException:
                 continue
-            except Exception as e:
+            except Exception:
                 continue
 
 
