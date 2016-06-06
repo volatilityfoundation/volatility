@@ -120,9 +120,12 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
         elif inode_addr and inode_addr > 0 and outfile and len(outfile) > 0:
             inode = obj.Object("inode", offset = inode_addr, vm = self.addr_space)
-            
-            f = open(outfile, "wb")
-            
+           
+            try: 
+                f = open(outfile, "wb")
+            except IOError, e:
+                debug.error("Unable to open output file (%s): %s" % (outfile, str(e)))
+
             for page in self.get_file_contents(inode):        
                 f.write(page)
 
@@ -167,8 +170,17 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             return page
 
         node = self.radix_tree_indirect_to_ptr(node)
-        height = node.height
-        shift = (height - 1) * self.RADIX_TREE_MAP_SHIFT
+       
+        if hasattr(node, "height"):
+            height = node.height
+        else:
+            height = node.path
+            
+        if hasattr(node, "shift"):
+            shift = node.shift
+        else:
+            shift = (height - 1) * self.RADIX_TREE_MAP_SHIFT
+
         slot = -1
 
         while 1:
