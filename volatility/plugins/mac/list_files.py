@@ -46,7 +46,6 @@ class mac_list_files(common.AbstractMacCommand):
     
         plugin = mac_mount.mac_mount(config)
         mounts = plugin.calculate()
-        joiner = os.path.join
         vnodes = {}
         parent_vnodes = {}
 
@@ -130,7 +129,7 @@ class mac_list_files(common.AbstractMacCommand):
             name = str(name)
             
             if parent in parent_vnodes:
-                full_path = joiner(parent_vnodes[parent], name)
+                full_path = parent_vnodes[parent] + "/" + name
             else:
                 paths = [name]
                 while parent:
@@ -165,7 +164,7 @@ class mac_list_files(common.AbstractMacCommand):
             if not entry:
                 yield vnode, name
             else:
-                full_path = joiner(entry, name)
+                full_path = entry + "/" + name
                 
                 ## add a leading slash if one doesn't exist
                 if full_path[0] != "/":
