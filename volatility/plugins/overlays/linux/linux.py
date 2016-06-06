@@ -1218,7 +1218,7 @@ class task_struct(obj.CType):
         else:
             ret = self.m("uid")
 
-        if type(ret) == obj.CType:
+        if type(ret) in [obj.CType, obj.NativeType]:
             ret = ret.v()
 
         return ret
@@ -2061,6 +2061,10 @@ class task_struct(obj.CType):
     # based on 2.6.35 getboottime
     def get_boot_time(self):
         (wall, timeo) = self.get_time_vars()
+
+        if wall == None or timeo == None:
+            return -1
+
         secs = wall.tv_sec + timeo.tv_sec
         nsecs = wall.tv_nsec + timeo.tv_nsec
 
@@ -2080,7 +2084,6 @@ class task_struct(obj.CType):
         return boot_time
         
     def get_task_start_time(self):
-
         if hasattr(self, "real_start_time"):
             start_time = self.real_start_time
         else:
@@ -2091,18 +2094,23 @@ class task_struct(obj.CType):
 
         start_secs = start_time.tv_sec + (start_time.tv_nsec / linux_common.nsecs_per / 100)
 
-        sec = self.get_boot_time() + start_secs
-               
-        # convert the integer as little endian 
-        try:
-            data = struct.pack("<I", sec)
-        except struct.error, e:
-            # in case we exceed 0 <= number <= 4294967295
-            return 0
+        boot_time =  self.get_boot_time()
+       
+        if boot_time != -1:
+            sec = boot_time + start_secs
 
-        bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = data)
-        dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)
+            # convert the integer as little endian 
+            try:
+                data = struct.pack("<I", sec)
+            except struct.error, e:
+                # in case we exceed 0 <= number <= 4294967295
+                return 0
 
+            bufferas = addrspace.BufferAddressSpace(self.obj_vm.get_config(), data = data)
+            dt = obj.Object("UnixTimeStamp", offset = 0, vm = bufferas, is_utc = True)
+        else:
+            dt = None
+        
         return dt
 
     def get_environment(self):
