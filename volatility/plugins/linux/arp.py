@@ -45,7 +45,13 @@ class linux_arp(linux_common.AbstractLinuxCommand):
 
         neigh_tables_addr = self.addr_space.profile.get_symbol("neigh_tables")
 
-        if hasattr("neigh_table", "next"):
+        hasnext = True
+        try:
+            self.addr_space.profile.get_obj_offset("neigh_table", "next")
+        except KeyError:
+            hasnext = False
+
+        if hasnext == True:
             ntables_ptr = obj.Object("Pointer", offset = neigh_tables_addr, vm = self.addr_space)
             tables = linux_common.walk_internal_list("neigh_table", "next", ntables_ptr)
         else:
