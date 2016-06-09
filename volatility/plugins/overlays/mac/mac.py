@@ -2070,6 +2070,20 @@ for path in set(plugins.__path__):
             if zipfile.is_zipfile(os.path.join(path, fn)):
                 new_classes.append(MacProfileFactory(zipfile.ZipFile(os.path.join(path, fn))))
 
+kext_overlay = {
+    'kmod_info_class': [None, {
+        'name'  : [ None , ['String', dict(length = 64)]],
+        }],
+}
+
+class KextOverlay(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'mac'}
+    before = ['BasicObjectClasses']
+
+    def modification(self, profile):
+        if 'kmod_info_class' in profile.vtypes:
+            profile.merge_overlay(kext_overlay)
+
 class MacOverlay(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'mac'}
     before = ['BasicObjectClasses']
