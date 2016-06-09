@@ -1075,7 +1075,8 @@ class proc(obj.CType):
 
         for vma in self.get_proc_maps():
             if vma.get_perms() != "rw-" or vma.get_path() != "":
-                continue
+                if vma.get_special_path() != "[heap]":
+                    continue
 
             offset = vma.links.start
             out_of_range = vma.links.start + (vma.links.end - vma.links.start)
