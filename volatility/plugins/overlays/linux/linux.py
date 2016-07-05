@@ -842,10 +842,8 @@ class module_struct(obj.CType):
     def init_size(self):
         if hasattr(self, "init_layout"):
             ret = self.m("init_layout").m("size")
-        elif hasattr(self, "init_size"):
-            ret = self.m("init_size")
         else:
-            ret = 0
+            ret = self.m("init_size")
 
         return ret
  
@@ -853,10 +851,8 @@ class module_struct(obj.CType):
     def core_size(self):
         if hasattr(self, "core_layout"):
             ret = self.m("core_layout").m("size")
-        elif hasattr(self, "core_size"):
-            ret = self.m("core_size")
         else:
-            ret = 0
+            ret = self.m("core_size")
 
         return ret
         
