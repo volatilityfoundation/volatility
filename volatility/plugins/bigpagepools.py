@@ -80,7 +80,7 @@ class BigPageTableMagic(obj.ProfileModification):
                 if m.get('build', 0) == 9601:
                     distance = [[-5192, -5200], [-5224, -5232]]
                 else:
-                    distance = [[-5200, -5176]]
+                    distance = [[-5200, -5176], [-5224, -5232]]
 
         profile.merge_overlay({
             'VOLATILITY_MAGIC': [ None, {
