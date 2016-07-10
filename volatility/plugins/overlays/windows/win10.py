@@ -335,6 +335,15 @@ class Win10x64(obj.Profile):
     _md_build = 9841
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_vtypes'
 
+class Win10x64_1AC738FB(obj.Profile):
+    """ A Profile for Windows 10 x64 from PDB 1AC738FB"""
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 10240
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_1AC738FB_vtypes'
+
 class Win10x86(obj.Profile):
     """ A Profile for Windows 10 x86 """
     _md_memory_model = '32bit'
@@ -343,3 +352,12 @@ class Win10x86(obj.Profile):
     _md_minor = 4
     _md_build = 9841
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_vtypes'
+
+class Win10x86_44B89EEA(obj.Profile):
+    """ A Profile for Windows 10 x86 from PDB 44B89EEA"""
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 10240
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_44B89EEA_vtypes'
