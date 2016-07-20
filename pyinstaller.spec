@@ -1,4 +1,6 @@
 # -*- mode: python -*-
+import sys
+
 projpath = os.path.dirname(os.path.abspath(SPEC))
 
 def get_plugins(list):
