@@ -356,7 +356,7 @@ class TimeLiner(common.AbstractWindowsCommand):
                     yield self.getoutput(line2, mod.get_debug_directory().TimeDateStamp, body = body)
                 if hasattr(mod, "LoadTime") and "LoadTime" in self._config.TYPE:
                     temp = line.replace("[{0}PE HEADER ".format(self._config.MACHINE), "[{0}DLL LOADTIME ".format(self._config.MACHINE))
-                    yield self.getoutput(temp, mod.TimeDateStamp, end = mod.LoadTime, body = body)
+                    yield self.getoutput(temp, mod.LoadTime, body = body)
 
         # Get Sockets and Evtlogs XP/2k3 only
         if version[0] == 5:
