@@ -221,6 +221,9 @@ class VolatilityKDBG(obj.VolatilityMagic):
             current_offset = max(range_start, current_offset)
             range_end = range_start + range_size
 
+            if current_offset < 0xf80000000000:
+                continue
+
             while (current_offset < range_end):
                 # Figure out how much data to read
                 l = min(constants.SCAN_BLOCKSIZE + overlap, range_end - current_offset)
