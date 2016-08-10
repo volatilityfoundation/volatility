@@ -317,6 +317,63 @@ class _OBJECT_HEADER_10(win8._OBJECT_HEADER):
         54: 'DxgkSharedSwapChainObject',
         }
 
+class _OBJECT_HEADER_10_1AC738FB(_OBJECT_HEADER_10):
+
+    type_map = {
+        2: 'Type',
+        3: 'Directory',
+        4: 'SymbolicLink',
+        5: 'Token',
+        6: 'Job',
+        7: 'Process',
+        8: 'Thread',
+        9: 'UserApcReserve',
+        10: 'IoCompletionReserve',
+        11: 'DebugObject',
+        12: 'Event',
+        13: 'Mutant',
+        14: 'Callback',
+        15: 'Semaphore',
+        16: 'Timer',
+        17: 'IRTimer',
+        18: 'Profile',
+        19: 'KeyedEvent',
+        20: 'WindowStation',
+        21: 'Desktop',
+        22: 'Composition',
+        23: 'RawInputManager',
+        24: 'TpWorkerFactory',
+        25: 'Adapter',
+        26: 'Controller',
+        27: 'Device',
+        28: 'Driver',
+        29: 'IoCompletion',
+        30: 'WaitCompletionPacket',
+        31: 'File',
+        32: 'TmTm',
+        33: 'TmTx',
+        34: 'TmRm',
+        35: 'TmEn',
+        36: 'Section',
+        37: 'Session',
+        38: 'Partition',
+        39: 'Key',
+        40: 'ALPC Port',
+        41: 'PowerRequest',
+        42: 'WmiGuid',
+        43: 'EtwRegistration',
+        44: 'EtwConsumer',
+        45: 'DmaAdapter',
+        46: 'DmaDomain',
+        47: 'PcwObject',
+        48: 'FilterConnectionPort',
+        49: 'FilterCommunicationPort',
+        50: 'NetworkNamespace',
+        51: 'DxgkSharedResource',
+        52: 'DxgkSharedSyncObject',
+        53: 'DxgkSharedSwapChainObject',
+        }
+
 class Win10ObjectHeader(obj.ProfileModification):
     before = ["Win8ObjectClasses"]
     conditions = {'os': lambda x: x == 'windows',
@@ -324,7 +381,54 @@ class Win10ObjectHeader(obj.ProfileModification):
                   'minor': lambda x: x == 4}
 
     def modification(self, profile):
-        profile.object_classes.update({"_OBJECT_HEADER": _OBJECT_HEADER_10})
+
+        metadata = profile.metadata
+        build = metadata.get("build", 0)
+
+        if build == 10240:
+            header = _OBJECT_HEADER_10_1AC738FB
+        else:
+            header = _OBJECT_HEADER_10
+
+        profile.object_classes.update({"_OBJECT_HEADER": header})
+
+class Win10PoolHeader(obj.ProfileModification):
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 4,
+                  'build': lambda x: x == 10240}
+
+    def modification(self, profile):
+
+        meta = profile.metadata
+        memory_model = meta.get("memory_model", "32bit")
+
+        if memory_model == "32bit":
+            pool_types = {'_POOL_HEADER' : [ 0x8, {
+                'PreviousSize' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 9, native_type='unsigned short')]],
+                'PoolIndex' : [ 0x0, ['BitField', dict(start_bit = 9, end_bit = 16, native_type='unsigned short')]],
+                'BlockSize' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 9, native_type='unsigned short')]],
+                'PoolType' : [ 0x2, ['BitField', dict(start_bit = 9, end_bit = 16, native_type='unsigned short')]],
+                'Ulong1' : [ 0x0, ['unsigned long']],
+                'PoolTag' : [ 0x4, ['unsigned long']],
+                'AllocatorBackTraceIndex' : [ 0x4, ['unsigned short']],
+                'PoolTagHash' : [ 0x6, ['unsigned short']],
+                }]}
+        else:
+            pool_types = {'_POOL_HEADER' : [ 0x10, {
+                 'PreviousSize' : [ 0x0, ['BitField', dict(start_bit = 0, end_bit = 8, native_type='unsigned short')]],
+                 'PoolIndex' : [ 0x0, ['BitField', dict(start_bit = 8, end_bit = 16, native_type='unsigned short')]],
+                 'BlockSize' : [ 0x2, ['BitField', dict(start_bit = 0, end_bit = 8, native_type='unsigned short')]],
+                 'PoolType' : [ 0x2, ['BitField', dict(start_bit = 8, end_bit = 16, native_type='unsigned short')]],
+                 'Ulong1' : [ 0x0, ['unsigned long']],
+                 'PoolTag' : [ 0x4, ['unsigned long']],
+                 'ProcessBilled' : [ 0x8, ['pointer64', ['_EPROCESS']]],
+                 'AllocatorBackTraceIndex' : [ 0x8, ['unsigned short']],
+                 'PoolTagHash' : [ 0xa, ['unsigned short']],
+                 }]}
+
+        profile.vtypes.update(pool_types)
 
 class Win10x64(obj.Profile):
     """ A Profile for Windows 10 x64 """
