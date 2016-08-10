@@ -67,23 +67,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     _longlong_struct = struct.Struct("<Q")
 
     def entry_present(self, entry):
-        if entry:
-            if (entry & 1):
-                return True
-
-            arch = self.profile.metadata.get('os', 'Unknown').lower()
-
-            # The page is in transition and not a prototype.
-            # Thus, we will treat it as present.
-            if arch == "windows" and ((entry & (1 << 11)) and not (entry & (1 << 10))):
-                return True
-
-            # Linux pages that have had mprotect(...PROT_NONE) called on them
-            # have the present bit cleared and global bit set
-            if arch == "linux" and (entry & (1 << 8)):
-                return True
-
-        return False
+        return entry and (entry & 1)
 
     def page_size_flag(self, entry):
         if (entry & (1 << 7)) == (1 << 7):
@@ -318,3 +302,51 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     @classmethod
     def address_mask(cls, addr):
         return addr & 0xffffffffffff
+
+class WindowsAMD64PagedMemory(AMD64PagedMemory):
+    """Windows-specific AMD 64-bit address space.
+
+    This class is a specialized version of AMD64PagedMemory that leverages
+    Windows-specific paging logic.
+    """
+    order = 55
+
+    def is_valid_profile(self, profile):
+        '''
+        This method checks to make sure the address space is being
+        used with a Windows profile.
+        '''
+
+        valid = AMD64PagedMemory.is_valid_profile(self, profile)
+        return valid and profile.metadata.get('os', 'Unknown').lower() == 'windows'
+
+    def entry_present(self, entry):
+        present = AMD64PagedMemory.entry_present(self, entry)
+
+        # The page is in transition and not a prototype.
+        # Thus, we will treat it as present.
+        return present or ((entry & (1 << 11)) and not (entry & (1 << 10)))
+
+class LinuxAMD64PagedMemory(AMD64PagedMemory):
+    """Linux-specific AMD 64-bit address space.
+
+    This class is a specialized version of AMD64PagedMemory that leverages
+    Linux-specific paging logic.
+    """
+    order = 55
+
+    def is_valid_profile(self, profile):
+        '''
+        This method checks to make sure the address space is being
+        used with a Linux profile.
+        '''
+
+        valid = AMD64PagedMemory.is_valid_profile(self, profile)
+        return valid and profile.metadata.get('os', 'Unknown').lower() == 'linux'
+
+    def entry_present(self, entry):
+        present = AMD64PagedMemory.entry_present(self, entry)
+
+        # Linux pages that have had mprotect(...PROT_NONE) called on them
+        # have the present bit cleared and global bit set
+        return present or (entry & (1 << 8))
