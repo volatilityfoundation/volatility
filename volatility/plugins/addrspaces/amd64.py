@@ -65,6 +65,7 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     minimum_size = 0x1000
     alignment_gcd = 0x1000
     _longlong_struct = struct.Struct("<Q")
+    skip_duplicate_entries = False
 
     def entry_present(self, entry):
         return entry and (entry & 1)
@@ -276,9 +277,15 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
                     continue
 
                 pd_entries = struct.unpack('<512Q', pd)
+                prev_pd_entry = None
                 for j in range(0, 0x200):
                     soffset = (j * 0x200 * 0x200 * 8)
+
                     entry = pd_entries[j]
+                    if self.skip_duplicate_entries and entry == prev_pd_entry:
+                        continue
+                    prev_pd_entry = entry
+
                     if self.entry_present(entry) and self.page_size_flag(entry):
                         if with_pte: 
                             yield (entry, vaddr + soffset, 0x200000)
@@ -291,8 +298,13 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
                         if pt is None:
                             continue
                         pt_entries = struct.unpack('<512Q', pt)
+                        prev_pt_entry = None
                         for k in range(0, 0x200):
                             pt_entry = pt_entries[k]
+                            if self.skip_duplicate_entries and pt_entry == prev_pt_entry:
+                                continue
+                            prev_pt_entry = pt_entry
+
                             if self.entry_present(pt_entry):
                                 if with_pte:
                                     yield (pt_entry, vaddr + soffset + k * 0x1000, 0x1000)
@@ -326,6 +338,26 @@ class WindowsAMD64PagedMemory(AMD64PagedMemory):
         # The page is in transition and not a prototype.
         # Thus, we will treat it as present.
         return present or ((entry & (1 << 11)) and not (entry & (1 << 10)))
+
+class Win10AMD64PagedMemory(WindowsAMD64PagedMemory):
+    """Windows 10-specific AMD 64-bit address space.
+
+    This class is used to filter out large sections of kernel mappings that are
+    duplicates in recent versions of Windows 10.
+    """
+    order = 53
+    skip_duplicate_entries = True
+
+    def is_valid_profile(self, profile):
+        '''
+        This address space should only be used with recent Windows 10 profiles
+        '''
+
+        valid = WindowsAMD64PagedMemory.is_valid_profile(self, profile)
+        major = profile.metadata.get('major', 0)
+        minor = profile.metadata.get('minor', 0)
+        return valid and major >= 6 and minor >= 4
+
 
 class LinuxAMD64PagedMemory(AMD64PagedMemory):
     """Linux-specific AMD 64-bit address space.
