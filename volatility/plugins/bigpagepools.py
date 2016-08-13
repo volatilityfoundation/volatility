@@ -68,7 +68,7 @@ class BigPageTableMagic(obj.ProfileModification):
             (6, 2, '32bit') : [[92, 88]],
             (6, 2, '64bit') : [[-5200, -5224]], 
             (6, 3, '32bit') : [[116, 120]],
-            (6, 4, '64bit') : [[208, 184], [168, 192]],
+            (6, 4, '64bit') : [[208, 184], [168, 192], [176, 168]],
             (6, 4, '32bit') : [[-168, -164]],
         }
 
@@ -80,7 +80,7 @@ class BigPageTableMagic(obj.ProfileModification):
                 if m.get('build', 0) == 9601:
                     distance = [[-5192, -5200], [-5224, -5232]]
                 else:
-                    distance = [[-5200, -5176], [-5224, -5232]]
+                    distance = [[-5200, -5176], [-5224, -5232], [-5192, -5200]]
 
         profile.merge_overlay({
             'VOLATILITY_MAGIC': [ None, {
