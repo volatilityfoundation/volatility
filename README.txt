@@ -135,63 +135,69 @@ Quick Start
 $ python vol.py --info
 Volatility Foundation Volatility Framework 2.5
 
-Profiles
---------
-VistaSP0x64                - A Profile for Windows Vista SP0 x64
-VistaSP0x86                - A Profile for Windows Vista SP0 x86
-VistaSP1x64                - A Profile for Windows Vista SP1 x64
-VistaSP1x86                - A Profile for Windows Vista SP1 x86
-VistaSP2x64                - A Profile for Windows Vista SP2 x64
-VistaSP2x86                - A Profile for Windows Vista SP2 x86
-Win10x64                   - A Profile for Windows 10 x64
-Win10x86                   - A Profile for Windows 10 x86
-Win2003SP0x86              - A Profile for Windows 2003 SP0 x86
-Win2003SP1x64              - A Profile for Windows 2003 SP1 x64
-Win2003SP1x86              - A Profile for Windows 2003 SP1 x86
-Win2003SP2x64              - A Profile for Windows 2003 SP2 x64
-Win2003SP2x86              - A Profile for Windows 2003 SP2 x86
-Win2008R2SP0x64            - A Profile for Windows 2008 R2 SP0 x64
-Win2008R2SP1x64            - A Profile for Windows 2008 R2 SP1 x64
-Win2008SP1x64              - A Profile for Windows 2008 SP1 x64
-Win2008SP1x86              - A Profile for Windows 2008 SP1 x86
-Win2008SP2x64              - A Profile for Windows 2008 SP2 x64
-Win2008SP2x86              - A Profile for Windows 2008 SP2 x86
-Win2012R2x64               - A Profile for Windows Server 2012 R2 x64
-Win2012x64                 - A Profile for Windows Server 2012 x64
-Win7SP0x64                 - A Profile for Windows 7 SP0 x64
-Win7SP0x86                 - A Profile for Windows 7 SP0 x86
-Win7SP1x64                 - A Profile for Windows 7 SP1 x64
-Win7SP1x86                 - A Profile for Windows 7 SP1 x86
-Win81U1x64                 - A Profile for Windows 8.1 Update 1 x64
-Win81U1x86                 - A Profile for Windows 8.1 Update 1 x86
-Win8SP0x64                 - A Profile for Windows 8 x64
-Win8SP0x86                 - A Profile for Windows 8 x86
-Win8SP1x64                 - A Profile for Windows 8.1 x64
-Win8SP1x86                 - A Profile for Windows 8.1 x86
-WinXPSP1x64                - A Profile for Windows XP SP1 x64
-WinXPSP2x64                - A Profile for Windows XP SP2 x64
-WinXPSP2x86                - A Profile for Windows XP SP2 x86
-WinXPSP3x86                - A Profile for Windows XP SP3 x86
-
 Address Spaces
 --------------
 AMD64PagedMemory              - Standard AMD 64-bit address space.
-ArmAddressSpace               - Address space for ARM processors       
+ArmAddressSpace               - Address space for ARM processors
 FileAddressSpace              - This is a direct file AS.
 HPAKAddressSpace              - This AS supports the HPAK format
 IA32PagedMemory               - Standard IA-32 paging address space.
 IA32PagedMemoryPae            - This class implements the IA-32 PAE paging address space. It is responsible
 LimeAddressSpace              - Address space for Lime
-MachOAddressSpace             - Address space for Mach-O files to support atc-ny memory reader
+LinuxAMD64PagedMemory         - Linux-specific AMD 64-bit address space.
+MachOAddressSpace             - Address space for mach-o files to support atc-ny memory reader
 OSXPmemELF                    - This AS supports VirtualBox ELF64 coredump format
 QemuCoreDumpElf               - This AS supports Qemu ELF32 and ELF64 coredump format
 VMWareAddressSpace            - This AS supports VMware snapshot (VMSS) and saved state (VMSS) files
 VMWareMetaAddressSpace        - This AS supports the VMEM format with VMSN/VMSS metadata
 VirtualBoxCoreDumpElf64       - This AS supports VirtualBox ELF64 coredump format
-WindowsCrashDumpSpace32       - This AS supports Windows Crash Dump format
-WindowsCrashDumpSpace64       - This AS supports Windows Crash Dump format
+Win10AMD64PagedMemory         - Windows 10-specific AMD 64-bit address space.
+WindowsAMD64PagedMemory       - Windows-specific AMD 64-bit address space.
+WindowsCrashDumpSpace32       - This AS supports windows Crash Dump format
+WindowsCrashDumpSpace64       - This AS supports windows Crash Dump format
 WindowsCrashDumpSpace64BitMap - This AS supports Windows BitMap Crash Dump format
-WindowsHiberFileSpace32       - This is a hibernate address space for Windows hibernation files.
+WindowsHiberFileSpace32       - This is a hibernate address space for windows hibernation files.
+
+Profiles
+--------
+LinuxRedHat62x64  - A Profile for Linux RedHat62 x64
+VistaSP0x64       - A Profile for Windows Vista SP0 x64
+VistaSP0x86       - A Profile for Windows Vista SP0 x86
+VistaSP1x64       - A Profile for Windows Vista SP1 x64
+VistaSP1x86       - A Profile for Windows Vista SP1 x86
+VistaSP2x64       - A Profile for Windows Vista SP2 x64
+VistaSP2x86       - A Profile for Windows Vista SP2 x86
+Win10x64          - A Profile for Windows 10 x64
+Win10x64_1AC738FB - A Profile for Windows 10 x64 from PDB 1AC738FB
+Win10x86          - A Profile for Windows 10 x86
+Win10x86_44B89EEA - A Profile for Windows 10 x86 from PDB 44B89EEA
+Win2003SP0x86     - A Profile for Windows 2003 SP0 x86
+Win2003SP1x64     - A Profile for Windows 2003 SP1 x64
+Win2003SP1x86     - A Profile for Windows 2003 SP1 x86
+Win2003SP2x64     - A Profile for Windows 2003 SP2 x64
+Win2003SP2x86     - A Profile for Windows 2003 SP2 x86
+Win2008R2SP0x64   - A Profile for Windows 2008 R2 SP0 x64
+Win2008R2SP1x64   - A Profile for Windows 2008 R2 SP1 x64
+Win2008SP1x64     - A Profile for Windows 2008 SP1 x64
+Win2008SP1x86     - A Profile for Windows 2008 SP1 x86
+Win2008SP2x64     - A Profile for Windows 2008 SP2 x64
+Win2008SP2x86     - A Profile for Windows 2008 SP2 x86
+Win2012R2x64      - A Profile for Windows Server 2012 R2 x64
+Win2012x64        - A Profile for Windows Server 2012 x64
+Win7SP0x64        - A Profile for Windows 7 SP0 x64
+Win7SP0x86        - A Profile for Windows 7 SP0 x86
+Win7SP1x64        - A Profile for Windows 7 SP1 x64
+Win7SP1x86        - A Profile for Windows 7 SP1 x86
+Win81U1x64        - A Profile for Windows 8.1 Update 1 x64
+Win81U1x86        - A Profile for Windows 8.1 Update 1 x86
+Win8SP0x64        - A Profile for Windows 8 x64
+Win8SP0x86        - A Profile for Windows 8 x86
+Win8SP1x64        - A Profile for Windows 8.1 x64
+Win8SP1x86        - A Profile for Windows 8.1 x86
+WinXPSP1x64       - A Profile for Windows XP SP1 x64
+WinXPSP2x64       - A Profile for Windows XP SP2 x64
+WinXPSP2x86       - A Profile for Windows XP SP2 x86
+WinXPSP3x86       - A Profile for Windows XP SP3 x86
 
 Plugins
 -------
@@ -221,6 +227,7 @@ driverscan                 - Pool scanner for driver objects
 dumpcerts                  - Dump RSA private and public SSL keys
 dumpfiles                  - Extract memory mapped and cached files
 dumpregistry               - Dumps registry files out to disk
+editbox                    - Displays information about Edit controls. (Listbox experimental.)
 envars                     - Display process environment variables
 eventhooks                 - Print details on windows event hooks
 evtlogs                    - Extract Windows Event Logs (XP/2003 only)
@@ -304,6 +311,7 @@ linux_psaux                - Gathers processes along with full command line and 
 linux_psenv                - Gathers processes along with their static environment variables
 linux_pslist               - Gather active tasks by walking the task_struct->task list
 linux_pslist_cache         - Gather tasks from the kmem_cache
+linux_psscan               - Scan physical memory for processes
 linux_pstree               - Shows the parent/child relationship between processes
 linux_psxview              - Find hidden processes with various process listings
 linux_recover_filesystem   - Recovers the entire cached file system from memory
@@ -326,6 +334,7 @@ mac_bash                   - Recover bash history from bash process memory
 mac_bash_env               - Recover bash's environment variables
 mac_bash_hash              - Recover bash hash table from bash process memory
 mac_calendar               - Gets calendar events from Calendar.app
+mac_check_fop              - Validate File Operation Pointers
 mac_check_mig_table        - Lists entires in the kernel's MIG table
 mac_check_syscall_shadow   - Looks for shadow system call tables
 mac_check_syscalls         - Checks to see if system call table entries are hooked
@@ -336,14 +345,18 @@ mac_contacts               - Gets contact names from Contacts.app
 mac_dead_procs             - Prints terminated/de-allocated processes
 mac_dead_sockets           - Prints terminated/de-allocated network sockets
 mac_dead_vnodes            - Lists freed vnode structures
+mac_devfs                  - Lists files in the file cache
 mac_dmesg                  - Prints the kernel debug buffer
 mac_dump_file              - Dumps a specified file
 mac_dump_maps              - Dumps memory ranges of process(es), optionally including pages in compressed swap
 mac_dyld_maps              - Gets memory maps of processes from dyld data structures
 mac_find_aslr_shift        - Find the ASLR shift value for 10.8+ images
-mac_get_profile            - Automatically detect Mac profiles       
+mac_get_profile            - Automatically detect Mac profiles
 mac_ifconfig               - Lists network interface information for all devices
+mac_interest_handlers      - Lists IOKit Interest Handlers
 mac_ip_filters             - Reports any hooked IP filters
+mac_kernel_classes         - Lists loaded c++ classes in the kernel
+mac_kevents                - Show parent/child relationship of processes
 mac_keychaindump           - Recovers possbile keychain keys. Use chainbreaker to open related keychain files
 mac_ldrmodules             - Compares the output of proc maps with the list of libraries from libdl
 mac_librarydump            - Dumps the executable of a process
@@ -384,8 +397,10 @@ mac_strings                - Match physical offsets to virtual addresses (may ta
 mac_tasks                  - List Active Tasks
 mac_threads                - List Process Threads
 mac_threads_simple         - Lists threads along with their start time and priority
+mac_timers                 - Reports timers set by kernel drivers
 mac_trustedbsd             - Lists malicious trustedbsd policies
 mac_version                - Prints the Mac version
+mac_vfsevents              - Lists processes filtering file system events
 mac_volshell               - Shell in the memory image
 mac_yarascan               - Scan memory for yara signatures
 machoinfo                  - Dump Mach-O file format information
