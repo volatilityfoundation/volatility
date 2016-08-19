@@ -183,6 +183,24 @@ auditpol_type_win7 = {
     } ],
 }
 
+auditpol_type_win8 = {
+    'AuditPolData8' : [ None, {
+        'Logon': [22, ['Enumeration', dict(target = 'unsigned short', choices = {0x00: "Not Logged", 0x01: "S", 0x02: "F", 0x03: "S/F"})]],
+        'Logoff': [24, ['Enumeration', dict(target = 'unsigned short', choices = {0x00: "Not Logged", 0x01: "S", 0x02: "F", 0x03: "S/F"})]],
+        'Sensitive': [70, ['Enumeration', dict(target = 'unsigned short', choices = {0x00: "Not Logged", 0x01: "S", 0x02: "F", 0x03: "S/F"})]],
+        'ProcessCreation': [76, ['Enumeration', dict(target = 'unsigned short', choices = {0x00: "Not Logged", 0x01: "S", 0x02: "F", 0x03: "S/F"})]],
+ }],
+}
+
+auditpol_type_win10 = {
+    'AuditPolData10' : [ None, {
+        'Logon': [0x16, ['Enumeration', dict(target = 'unsigned short', choices = {0x00: "Not Logged", 0x01: "S", 0x02: "F", 0x03: "S/F"})]],
+        'Logoff': [0x18, ['Enumeration', dict(target = 'unsigned short', choices = {0x00: "Not Logged", 0x01: "S", 0x02: "F", 0x03: "S/F"})]],
+        'Sensitive': [0x48, ['Enumeration', dict(target = 'unsigned short', choices = {0x00: "Not Logged", 0x01: "S", 0x02: "F", 0x03: "S/F"})]],
+        'ProcessCreation': [0x4e, ['Enumeration', dict(target = 'unsigned short', choices = {0x00: "Not Logged", 0x01: "S", 0x02: "F", 0x03: "S/F"})]],
+ }],
+}
+
 # this are not used, but left here since they are more descriptive
 class AuditPolDataXP(obj.CType):
     def __str__(self):
@@ -239,6 +257,19 @@ class AuditPolDataVista(obj.CType):
 
         return msg
 
+class AuditPolData8(obj.CType):
+    def __str__(self):
+        msg = "\nLogon: {0}\n\tLogoff: {1}\n\tSensitive Privilegs: {2}\n\tProcess Creation: {3}\n\t".format(
+                    self.Logon, self.Logoff, self.Sensitive, self.ProcessCreation)
+  
+        return msg
+
+class AuditPolData10(obj.CType):
+    def __str__(self):
+        msg = "\nLogon: {0}\n\tLogoff: {1}\n\tSensitive Privilegs: {2}\n\tProcess Creation: {3}\n\t".format(
+                    self.Logon, self.Logoff, self.Sensitive, self.ProcessCreation)
+  
+        return msg
 
 class AuditPolData7(obj.CType):
     def __str__(self):
@@ -317,6 +348,28 @@ class AudipolWin7(obj.ProfileModification):
         })
         profile.vtypes.update(auditpol_type_win7)
 
+class AudipolWin8(obj.ProfileModification):
+    before = ['WindowsObjectClasses']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 2 or x == 3 }
+    def modification(self, profile):
+        profile.object_classes.update({
+            'AuditPolData8': AuditPolData8,
+        })
+        profile.vtypes.update(auditpol_type_win8)
+
+class AudipolWin10(obj.ProfileModification):
+    before = ['WindowsObjectClasses']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x >= 4}
+    def modification(self, profile):
+        profile.object_classes.update({
+            'AuditPolData10': AuditPolData10,
+        })
+        profile.vtypes.update(auditpol_type_win10)
+
 
 class Auditpol(common.AbstractWindowsCommand):
     """Prints out the Audit Policies from HKLM\\SECURITY\\Policy\\PolAdtEv"""
@@ -343,14 +396,20 @@ class Auditpol(common.AbstractWindowsCommand):
 
         version = (addr_space.profile.metadata.get('major', 0),
                    addr_space.profile.metadata.get('minor', 0))
+
         for value, data_raw in regapi.reg_yield_values('security', 'Policy\\PolAdtEv', thetype = 'REG_NONE'):
             bufferas = addrspace.BufferAddressSpace(self._config, data = data_raw)
             if version <= (5, 1):
                 ap = obj.Object("AuditPolDataXP", offset = 0, vm = bufferas)
             elif version <= (6, 0):
                 ap = obj.Object("AuditPolDataVista", offset = 0, vm = bufferas)
-            else:
+            elif version == (6, 1):
                 ap = obj.Object("AuditPolData7", offset = 0, vm = bufferas)
+            elif version == (6, 2) or version == (6, 3):     
+                ap = obj.Object("AuditPolData8", offset = 0, vm = bufferas)
+            else:
+                ap = obj.Object("AuditPolData10", offset = 0, vm = bufferas)
+                
             if ap == None:
                 debug.error("No AuditPol data found")
 
