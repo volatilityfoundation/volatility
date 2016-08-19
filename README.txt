@@ -160,7 +160,6 @@ WindowsHiberFileSpace32       - This is a hibernate address space for windows hi
 
 Profiles
 --------
-LinuxRedHat62x64  - A Profile for Linux RedHat62 x64
 VistaSP0x64       - A Profile for Windows Vista SP0 x64
 VistaSP0x86       - A Profile for Windows Vista SP0 x86
 VistaSP1x64       - A Profile for Windows Vista SP1 x64
