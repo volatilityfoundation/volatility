@@ -168,7 +168,6 @@ VistaSP2x64       - A Profile for Windows Vista SP2 x64
 VistaSP2x86       - A Profile for Windows Vista SP2 x86
 Win10x64          - A Profile for Windows 10 x64
 Win10x64_1AC738FB - A Profile for Windows 10 x64 from PDB 1AC738FB
-Win10x64_DDA2B209 - A Profile for Windows 10 x64 from PDB DDA2B209
 Win10x86          - A Profile for Windows 10 x86
 Win10x86_44B89EEA - A Profile for Windows 10 x86 from PDB 44B89EEA
 Win2003SP0x86     - A Profile for Windows 2003 SP0 x86
