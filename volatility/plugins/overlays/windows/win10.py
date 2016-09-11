@@ -86,6 +86,17 @@ class Win10x86DTB(obj.ProfileModification):
             'DTBSignature' : [ None, ['VolatilityMagic', dict(value = "\x03\x00\x2A\x00")]],
             }]})
 
+class Win10KDBG(windows.AbstractKDBGMod):
+    """The Windows 10 KDBG signatures"""
+
+    before = ['Win8KDBG']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 4,
+                  'build': lambda x: x >= 14393}
+
+    kdbgsize = 0x368
+
 class ObHeaderCookieStore(object):
     """A class for finding and storing the nt!ObHeaderCookie value"""
 
