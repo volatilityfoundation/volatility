@@ -385,6 +385,69 @@ class _OBJECT_HEADER_10_1AC738FB(_OBJECT_HEADER_10):
         53: 'DxgkSharedSwapChainObject',
         }
 
+class _OBJECT_HEADER_10_DD08DD42(_OBJECT_HEADER_10):
+
+    type_map = {
+        2: 'Type',
+        3: 'Directory',
+        4: 'SymbolicLink',
+        5: 'Token',
+        6: 'Job',
+        7: 'Process',
+        8: 'Thread',
+        9: 'UserApcReserve',
+        10: 'IoCompletionReserve',
+        11: 'PsSiloContextPaged',
+        12: 'PsSiloContextNonPaged',
+        13: 'DebugObject',
+        14: 'Event',
+        15: 'Mutant',
+        16: 'Callback',
+        17: 'Semaphore',
+        18: 'Timer',
+        19: 'IRTimer',
+        20: 'Profile',
+        21: 'KeyedEvent',
+        22: 'WindowStation',
+        23: 'Desktop',
+        24: 'Composition',
+        25: 'RawInputManager',
+        26: 'CoreMessaging',
+        27: 'TpWorkerFactory',
+        28: 'Adapter',
+        29: 'Controller',
+        30: 'Device',
+        31: 'Driver',
+        32: 'IoCompletion',
+        33: 'WaitCompletionPacket',
+        34: 'File',
+        35: 'TmTm',
+        36: 'TmTx',
+        37: 'TmRm',
+        38: 'TmEn',
+        39: 'Section',
+        40: 'Session',
+        41: 'Partition',
+        42: 'Key',
+        43: 'RegistryTransaction',
+        44: 'ALPC',
+        45: 'PowerRequest',
+        46: 'WmiGuid',
+        47: 'EtwRegistration',
+        48: 'EtwConsumer',
+        49: 'DmaAdapter',
+        50: 'DmaDomain',
+        51: 'PcwObject',
+        52: 'FilterConnectionPort',
+        53: 'FilterCommunicationPort',
+        54: 'NdisCmState',
+        55: 'DxgkSharedResource',
+        56: 'DxgkSharedSyncObject',
+        57: 'DxgkSharedSwapChainObject',
+        58: 'VRegConfigurationContext',
+        59: 'VirtualKey',
+        }
+
 class Win10ObjectHeader(obj.ProfileModification):
     before = ["Win8ObjectClasses"]
     conditions = {'os': lambda x: x == 'windows',
@@ -396,7 +459,9 @@ class Win10ObjectHeader(obj.ProfileModification):
         metadata = profile.metadata
         build = metadata.get("build", 0)
 
-        if build >= 10240:
+        if build >= 14393:
+            header = _OBJECT_HEADER_10_DD08DD42
+        elif build >= 10240:
             header = _OBJECT_HEADER_10_1AC738FB
         else:
             header = _OBJECT_HEADER_10
