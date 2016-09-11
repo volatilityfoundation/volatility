@@ -474,3 +474,12 @@ class Win10x86_44B89EEA(obj.Profile):
     _md_minor = 4
     _md_build = 10240
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_44B89EEA_vtypes'
+
+class Win10x86_9619274A(obj.Profile):
+    """ A Profile for Windows 10 x86 from PDB 9619274A"""
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 14393
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_9619274A_vtypes'
