@@ -139,7 +139,20 @@ class ObHeaderCookieStore(object):
             return False 
 
         kdbg = tasks.get_kdbg(kernel_space)
-        nt_mod = list(kdbg.modules())[0]
+        
+        if not kdbg:
+            debug.warning("Cannot find KDBG")
+            return False
+        
+        nt_mod = None 
+        
+        for mod in kdbg.modules():
+            nt_mod = mod 
+            break 
+            
+        if nt_mod == None:
+            debug.warning("Cannot find NT module")
+            return False
 
         addr = nt_mod.getprocaddress("ObGetObjectType")
         if addr == None:
