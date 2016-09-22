@@ -18,13 +18,14 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import struct
+import struct, copy
 import volatility.obj as obj
 import volatility.addrspace as addrspace
 import volatility.constants as constants
 import volatility.utils as utils
 import volatility.plugins.overlays.windows.win8 as win8
 import volatility.plugins.patchguard as patchguard
+import volatility.registry as registry
 
 try:
     import distorm3
@@ -64,8 +65,9 @@ class VolatilityKDBG(obj.VolatilityMagic):
         the Windows kernel file."""
 
         block_encoded, kdbg_block, wait_never, wait_always = vals
-        header = obj.VolMagic(self.obj_vm).KDBGHeader.v()
-        kdbg_size = struct.unpack("<H", header[-2:])[0]
+        # just take the maximum. if we decode a tiny bit of 
+        # extra data in some cases, its totally fine.
+        kdbg_size = max(self.unique_sizes())
         buffer = ""
 
         entries = obj.Object("Array", 
@@ -82,16 +84,35 @@ class VolatilityKDBG(obj.VolatilityMagic):
 
         return buffer
 
+    def unique_sizes(self):
+    
+        items = registry.get_plugin_classes(obj.Profile).items()
+        sizes = set()
+        
+        for name, cls in items:
+            if (cls._md_os != "windows" or cls._md_memory_model != "64bit"):
+                continue
+                
+            if (cls._md_major, cls._md_minor) < (6, 2):
+                continue 
+                
+            conf = copy.deepcopy(self.obj_vm.get_config())
+            conf.PROFILE = name 
+            buff = addrspace.BufferAddressSpace(config = conf)
+            header = obj.VolMagic(buff).KDBGHeader.v()
+            
+            # this unpacks the kdbgsize from the signature 
+            size = struct.unpack("<H", header[-2:])[0]
+            sizes.add(size)
+            
+        return sizes
+
     def copy_data_block(self, full_addr):
         """This function emulates nt!KdCopyDataBlock on a live 
         machine by finding the encoded KDBG structure and using
         the required entropy values to decode it."""
 
-        # this unpacks the kdbgsize from the signature 
-        header = obj.VolMagic(self.obj_vm).KDBGHeader.v()
-        kdbg_size = struct.unpack("<H", header[-2:])[0]
-
-        size_str = struct.pack("I", kdbg_size)
+        sizes = self.unique_sizes()
         alignment = 8 
         addr_space = self.obj_vm
         bits = distorm3.Decode64Bits
@@ -105,13 +126,29 @@ class VolatilityKDBG(obj.VolatilityMagic):
         if code == None:
             return obj.NoneObject("Crossed a code boundary")
 
-        if code.find(struct.pack("I", kdbg_size / alignment)) == -1:
+        found_size = False 
+        
+        for size in sizes:
+            val = struct.pack("I", size / alignment)
+            if code.find(val) != -1:
+                found_size = True
+                break
+        
+        if not found_size:
             return obj.NoneObject("Cannot find KDBG size signature")
 
         version = (addr_space.profile.metadata.get('major', 0), addr_space.profile.metadata.get('minor', 0))
         if version < (6, 4):
             # we don't perform this check for Windows 10.x
-            if code.find(size_str) == -1:
+            found_str = False 
+            
+            for size in sizes:
+                val = struct.pack("I", size)
+                if code.find(val) != -1:
+                    found_str = True
+                    break
+                
+            if not found_str:
                 return obj.NoneObject("Cannot find KDBG size signature")  
 
         ops = list(distorm3.Decompose(full_addr, code, bits))
