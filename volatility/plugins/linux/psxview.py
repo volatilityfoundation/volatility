@@ -89,7 +89,7 @@ class linux_psxview(linux_common.AbstractLinuxCommand):
 
             for offset in tasks:
 
-                if offset not in seen_offsets:
+                if offset and offset not in seen_offsets:
                     seen_offsets.append(offset)
                     yield offset, obj.Object("task_struct", offset = offset, vm = phys_addr_space), ps_sources
 

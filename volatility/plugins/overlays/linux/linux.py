@@ -2049,8 +2049,11 @@ class task_struct(obj.CType):
  
             tv64 = (oreal.tv64 & 0xffffffff) - (oboot.tv64 & 0xffffffff)
 
-            tv64 = (tv64 / 100000000) * -1
-            timeo = linux_common.vol_timespec(tv64, 0) 
+            if tv64:
+                tv64 = (tv64 / 100000000) * -1
+                timeo = linux_common.vol_timespec(tv64, 0) 
+            else:
+                timeo = None
 
         return (wall, timeo)
 
