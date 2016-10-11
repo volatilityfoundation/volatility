@@ -527,6 +527,7 @@ class Win10x64(obj.Profile):
     _md_minor = 4
     _md_build = 9841
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win10x64_1AC738FB(obj.Profile):
     """ A Profile for Windows 10 x64 from PDB 1AC738FB"""
@@ -536,6 +537,7 @@ class Win10x64_1AC738FB(obj.Profile):
     _md_minor = 4
     _md_build = 10240
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_1AC738FB_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win10x64_DD08DD42(obj.Profile):
     """ A Profile for Windows 10 x64 from PDB DD08DD42"""
@@ -545,6 +547,7 @@ class Win10x64_DD08DD42(obj.Profile):
     _md_minor = 4
     _md_build = 14393
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_DD08DD42_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win10x86(obj.Profile):
     """ A Profile for Windows 10 x86 """
@@ -554,6 +557,7 @@ class Win10x86(obj.Profile):
     _md_minor = 4
     _md_build = 9841
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win10x86_44B89EEA(obj.Profile):
     """ A Profile for Windows 10 x86 from PDB 44B89EEA"""
@@ -563,6 +567,7 @@ class Win10x86_44B89EEA(obj.Profile):
     _md_minor = 4
     _md_build = 10240
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_44B89EEA_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win10x86_9619274A(obj.Profile):
     """ A Profile for Windows 10 x86 from PDB 9619274A"""
@@ -572,3 +577,4 @@ class Win10x86_9619274A(obj.Profile):
     _md_minor = 4
     _md_build = 14393
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_9619274A_vtypes'
+    _md_product = ["NtProductWinNt"]

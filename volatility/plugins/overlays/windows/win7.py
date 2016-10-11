@@ -197,6 +197,7 @@ class Win7SP0x86(obj.Profile):
     _md_minor = 1
     _md_build = 7600
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp0_x86_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win7SP1x86(obj.Profile):
     """ A Profile for Windows 7 SP1 x86 """
@@ -206,6 +207,7 @@ class Win7SP1x86(obj.Profile):
     _md_minor = 1
     _md_build = 7601
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x86_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win7SP1x86_BBA98F40(obj.Profile):
     """ A Profile for Windows 7 SP1 x86 from PDB BBA98F40"""
@@ -215,6 +217,7 @@ class Win7SP1x86_BBA98F40(obj.Profile):
     _md_minor = 1
     _md_build = 7601
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x86_BBA98F40_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win7SP0x64(obj.Profile):
     """ A Profile for Windows 7 SP0 x64 """
@@ -224,6 +227,7 @@ class Win7SP0x64(obj.Profile):
     _md_minor = 1
     _md_build = 7600
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp0_x64_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win7SP1x64(obj.Profile):
     """ A Profile for Windows 7 SP1 x64 """
@@ -233,6 +237,7 @@ class Win7SP1x64(obj.Profile):
     _md_minor = 1
     _md_build = 7601
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x64_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win7SP1x64_632B36E0(obj.Profile):
     """ A Profile for Windows 7 SP1 x64 from PDB 632B36E0"""
@@ -242,12 +247,16 @@ class Win7SP1x64_632B36E0(obj.Profile):
     _md_minor = 1
     _md_build = 7601
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x64_632B36E0_vtypes'
+    _md_product = ["NtProductWinNt"]
 
 class Win2008R2SP0x64(Win7SP0x64):
     """ A Profile for Windows 2008 R2 SP0 x64 """
+    _md_product = ["NtProductLanManNt", "NtProductServer"]
 
 class Win2008R2SP1x64(Win7SP1x64):
     """ A Profile for Windows 2008 R2 SP1 x64 """
+    _md_product = ["NtProductLanManNt", "NtProductServer"]
 
 class Win2008R2SP1x64_632B36E0(Win7SP1x64_632B36E0):
     """ A Profile for Windows 2008 R2 SP1 x64 from PDB 632B36E0"""
+    _md_product = ["NtProductLanManNt", "NtProductServer"]
