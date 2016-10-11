@@ -87,6 +87,10 @@ class _DEST_RECORD(obj.CType):
                         title = title + t
 
         return url, title
+        
+    @property
+    def Url(self):
+        return self.url_and_title()[0]
 
 class IEHistoryVTypes(obj.ProfileModification):
     """Apply structures for IE history parsing"""
