@@ -347,16 +347,6 @@ class _MMVAD_SHORT_WIN8(_MM_AVL_NODE):
     def RightChild(self):
         return self.VadNode.RightChild
 
-class _MMVAD_SHORT_WIN8_64(_MMVAD_SHORT_WIN8):
-    
-    @property
-    def Start(self):
-        return (self.StartingVpn << 12) | (self.StartingVpnHigh << 44)
-
-    @property
-    def End(self):
-        return (((self.EndingVpn + 1) << 12) | (self.EndingVpnHigh << 44)) - 1
-
 class _MMVAD_WIN8(_MM_AVL_NODE):
 
     @property
@@ -408,14 +398,9 @@ class Win8Vad(obj.ProfileModification):
 
     def modification(self, profile):
     
-        if profile.metadata.get("memory_model") == "32bit":
-            short_vad = _MMVAD_SHORT_WIN8
-        else:
-            short_vad = _MMVAD_SHORT_WIN8_64
-    
         profile.object_classes.update({
             '_MMVAD': _MMVAD_WIN8,
-            '_MMVAD_SHORT': short_vad,
+            '_MMVAD_SHORT': _MMVAD_SHORT_WIN8,
             '_MM_AVL_TABLE': _MM_AVL_TABLE_WIN8,
             '_MM_AVL_NODE': _MM_AVL_NODE,
             })
