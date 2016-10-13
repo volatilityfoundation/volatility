@@ -126,7 +126,7 @@ class VirtualBoxCoreDumpElf64(addrspace.AbstractRunBasedMemory):
     def validate(self):
         self.as_assert(self.header, 'ELF error: did not find any PT_NOTE segment with VBCORE')
         self.as_assert(self.header.u32Magic == DBGFCORE_MAGIC, 'Could not find VBox core magic signature')
-        self.as_assert(self.header.u32FmtVersion == DBGFCORE_FMT_VERSION, 'Unknown VBox core format version')
+        self.as_assert(self.header.u32FmtVersion & 0xFFFFFFF0 == DBGFCORE_FMT_VERSION, 'Unknown VBox core format version')
         self.as_assert(self.runs, 'ELF error: did not find any LOAD segment with main RAM')
 
 class QemuCoreDumpElf(VirtualBoxCoreDumpElf64):
