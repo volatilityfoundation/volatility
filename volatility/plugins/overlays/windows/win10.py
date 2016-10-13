@@ -460,6 +460,17 @@ class _OBJECT_HEADER_10_DD08DD42(_OBJECT_HEADER_10):
         58: 'VRegConfigurationContext',
         59: 'VirtualKey',
         }
+        
+class _HANDLE_TABLE_10_DD08DD42(win8._HANDLE_TABLE_81R264):
+    
+    def decode_pointer(self, value):
+        
+        value = value & 0xFFFFFFFFFFFFFFF8
+        value = value >> self.DECODE_MAGIC
+        if (value & (1 << 47)):
+            value = value | 0xFFFF000000000000
+    
+        return value
 
 class Win10ObjectHeader(obj.ProfileModification):
     before = ["Win8ObjectClasses"]
@@ -474,6 +485,12 @@ class Win10ObjectHeader(obj.ProfileModification):
 
         if build >= 14393:
             header = _OBJECT_HEADER_10_DD08DD42
+            
+            ## update the handle table here as well
+            if metadata.get("memory_model") == "64bit":
+                profile.object_classes.update({
+                    "_HANDLE_TABLE": _HANDLE_TABLE_10_DD08DD42})
+            
         elif build >= 10240:
             header = _OBJECT_HEADER_10_1AC738FB
         else:
