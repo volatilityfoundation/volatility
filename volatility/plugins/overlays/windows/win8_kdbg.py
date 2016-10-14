@@ -93,8 +93,8 @@ class VolatilityKDBG(obj.VolatilityMagic):
             if (cls._md_os != "windows" or cls._md_memory_model != "64bit"):
                 continue
                 
-            if (cls._md_major, cls._md_minor) < (6, 2):
-                continue 
+            #if (cls._md_major, cls._md_minor) < (6, 2):
+            #    continue 
                 
             conf = copy.deepcopy(self.obj_vm.get_config())
             conf.PROFILE = name 
