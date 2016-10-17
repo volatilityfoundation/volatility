@@ -1010,6 +1010,24 @@ class module_struct(obj.CType):
                 break
 
         return ret       
+   
+    @property
+    def symtab(self):
+        if hasattr(self, "kallsyms"):
+            ret = self.kallsyms.symtab
+        else:
+            ret = self.m("symtab")
+
+        return ret 
+ 
+    @property
+    def num_symtab(self):
+        if hasattr(self, "kallsyms"):
+            ret = self.kallsyms.num_symtab.v()
+        else:
+            ret = self.m("num_symtab").v()
+
+        return ret   
 
     def is_valid(self):
         valid = False
