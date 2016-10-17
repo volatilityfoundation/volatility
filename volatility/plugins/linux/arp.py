@@ -82,6 +82,9 @@ class linux_arp(linux_common.AbstractLinuxCommand):
 
         buckets = obj.Object(theType = 'Array', offset = hash_table, vm = self.addr_space, targetType = 'Pointer', count = hash_size)
 
+        if not buckets or hash_size > 50000:
+            return []
+
         for i in range(hash_size):
             if buckets[i]:
                 neighbor = obj.Object("neighbour", offset = buckets[i], vm = self.addr_space)
