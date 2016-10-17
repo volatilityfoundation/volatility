@@ -37,6 +37,7 @@ import volatility.exceptions as exceptions
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.dwarf as dwarf
+import volatility.scan as scan
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.flags as linux_flags
 import volatility.addrspace as addrspace
@@ -211,11 +212,13 @@ def LinuxProfileFactory(profpkg):
             # change the name to catch any code referencing the old hash table
             self.sys_map = {}
             self.sym_addr_cache = {}
+            self.shift_address = 0
             obj.Profile.__init__(self, *args, **kwargs)
 
         def clear(self):
             """Clear out the system map, and everything else"""
             self.sys_map = {}
+            self.shift_address = 0
             obj.Profile.clear(self)
 
         def reset(self):
@@ -281,7 +284,11 @@ def LinuxProfileFactory(profpkg):
                 mod = symtable[module]
 
                 for (name, addrs) in mod.items():
-                    ret.append(addrs)
+                    addr = addrs[0][0]
+                    if self.shift_address and addr:
+                        addr = addr + self.shift_address
+
+                    ret.append((name, addr))
             else:
                 debug.info("All symbols requested for non-existent module %s" % module)
 
@@ -292,14 +299,12 @@ def LinuxProfileFactory(profpkg):
 
             # returns a hash table for quick looks
             # the main use of this function is to see if an address is known
+            symbols = self.get_all_symbols(module)
+            
             ret = {}
 
-            symbols = self.get_all_symbols(module)
-
-            for sym in symbols:
-
-                for (addr, addrtype) in sym:
-                    ret[addr] = 1
+            for _name, addr in symbols:
+                ret[addr] = 1
 
             return ret
 
@@ -312,7 +317,7 @@ def LinuxProfileFactory(profpkg):
             for (name, addrs) in mod.items():
 
                 for (addr, addr_type) in addrs:
-                    if sym_address == addr:
+                    if sym_address == addr + self.shift_address:
                         ret = name
                         break
 
@@ -412,6 +417,9 @@ def LinuxProfileFactory(profpkg):
                     debug.debug("Requested symbol {0:s} not found in module {1:s}\n".format(sym_name, module))
             else:
                 debug.info("Requested module {0:s} not found in symbol table\n".format(module))
+
+            if ret:
+                ret = ret + self.shift_address
 
             return ret
 
@@ -940,7 +948,6 @@ class module_struct(obj.CType):
                     val = 'Y'
 
         else:
-            print "Unknown get_fn: {0:#x}".format(getfn)
             return None
 
         return val
@@ -1808,7 +1815,6 @@ class task_struct(obj.CType):
             ehdr = obj.Object("elf_hdr", offset = vma.vm_start, vm = proc_as)
 
             if not ehdr or not ehdr.is_valid():
-                #print "could not get header for  %d | %s" % (self.pid, self.comm)
                 continue
 
             for phdr in ehdr.program_headers():
@@ -2260,6 +2266,19 @@ class dentry(obj.CType):
             ret = self.m("d_count")
         return ret
 
+class swapperScan(scan.BaseScanner):
+    """ Scanner for swapper string for Mountain Lion """
+    checks = []
+
+    def __init__(self, needles = None):
+        self.needles = needles
+        self.checks = [ ("MultiStringFinderCheck", {'needles':needles}) ]
+        scan.BaseScanner.__init__(self) 
+
+    def scan(self, address_space, offset = 0, maxlen = None):
+        for offset in scan.BaseScanner.scan(self, address_space, offset, maxlen):
+            yield offset
+
 class VolatilityDTB(obj.VolatilityMagic):
     """A scanner for DTB values."""
 
@@ -2273,18 +2292,28 @@ class VolatilityDTB(obj.VolatilityMagic):
         else:
             sym   = "init_level4_pgt"
             shifts = [0xffffffff80000000, 0xffffffff80000000 - 0x1000000, 0xffffffff7fe00000]       
+        
+        config         = self.obj_vm.get_config()
+        tbl = self.obj_vm.profile.sys_map["kernel"]
+        
+        if config.SHIFT:
+            shift_address = config.SHIFT
+        else:
+            shift_address = self.obj_vm.profile.shift_address
 
         good_dtb = -1
- 
+            
+        init_task_addr = tbl["init_task"][0][0] + shift_address
+        dtb_sym_addr   = tbl[sym][0][0] + shift_address
+        
+        comm_offset    = profile.get_obj_offset("task_struct", "comm")
+        pid_offset     = self.obj_vm.profile.get_obj_offset("task_struct", "pid")
+        pas            = self.obj_vm
+        
         for shift in shifts:
-            sym_addr = profile.get_symbol(sym) - shift
-
-            pas = self.obj_vm
-
-            init_task_addr = profile.get_symbol("init_task") 
-            offset         = profile.get_obj_offset("task_struct", "comm")
+            sym_addr = dtb_sym_addr - shift
        
-            read_addr = init_task_addr - shift + offset
+            read_addr = init_task_addr - shift + comm_offset
 
             buf = pas.read(read_addr, 12)        
           
@@ -2293,6 +2322,28 @@ class VolatilityDTB(obj.VolatilityMagic):
                 if idx == 0:
                     good_dtb = sym_addr
                     break
+
+        # check for relocated kernel
+        if good_dtb == -1 and shift_address == 0:
+            scanner = swapperScan(needles = ["swapper/0"])
+            for swapper_offset in scanner.scan(self.obj_vm):
+                swapper_address = swapper_offset - comm_offset
+
+                if pas.read(swapper_address + pid_offset, 4) != "\x00\x00\x00\x00":
+                    continue
+
+                tmp_shift_address = swapper_address - (init_task_addr - shifts[0])
+
+                if tmp_shift_address & 0xfff != 0x000:
+                    continue
+                
+                shift_address = tmp_shift_address
+                good_dtb = dtb_sym_addr - shifts[0] + shift_address
+ 
+                break
+        
+        if shift_address != 0:   
+            self.obj_vm.profile.shift_address = shift_address
 
         yield good_dtb
 
@@ -2314,6 +2365,7 @@ class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
         for shift in shifts:
             phys  = self.obj_vm.vtop(init_task_addr)
             check = init_task_addr - shift
+           
             if phys == check:
                 ret = True
                 break
