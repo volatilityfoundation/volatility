@@ -744,7 +744,7 @@ class inet_sock(obj.CType):
         elif hasattr(self, "inet_dport"):
             return socket.htons(self.inet_dport)
         elif hasattr(self, "sk") and hasattr(self.sk, "__sk_common") and hasattr(self.sk.__sk_common, "skc_dport"):
-            return self.sk.__sk_common.skc_num #pylint: disable-msg=W0212
+            return socket.htons(self.sk.__sk_common.skc_dport) #pylint: disable-msg=W0212
         else:
             return None
 
