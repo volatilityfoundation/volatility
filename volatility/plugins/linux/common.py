@@ -67,6 +67,7 @@ class AbstractLinuxCommand(commands.Command):
         return profile.metadata.get('os', 'Unknown').lower() == 'linux'
 
     def is_known_address(self, addr, modules):
+        addr = int(addr)
 
         text = self.profile.get_symbol("_text")
         etext = self.profile.get_symbol("_etext")
@@ -84,7 +85,7 @@ class AbstractLinuxCommand(commands.Command):
     def verify_ops(self, ops, op_members, modules):
 
         for check in op_members:
-            addr = ops.m(check)
+            addr = int(ops.m(check))
 
             if addr and addr != 0:
 
