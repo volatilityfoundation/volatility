@@ -63,9 +63,7 @@ class linux_hidden_modules(linux_common.AbstractLinuxCommand):
         check_bufs = []
         replace_bufs = []
         
-        check_nums = [3000, 2800, 2700, 2500, 2300, 2100, 2000, 1500, 1300, 1200, 1024, 512, 256, 128, 96, 64, 48, 32, 24, 16, 12, 9]
-        if minus_size == 4:
-            check_nums = check_nums + [8, 6, 5]
+        check_nums = [3000, 2800, 2700, 2500, 2300, 2100, 2000, 1500, 1300, 1200, 1024, 512, 256, 128, 96, 64, 48, 32, 24]
 
         for num in check_nums:
             check_bufs.append("\x00" * num)        
