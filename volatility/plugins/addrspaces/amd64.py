@@ -67,6 +67,9 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     _longlong_struct = struct.Struct("<Q")
     skip_duplicate_entries = False
 
+    def __init__(self, base, config, dtb=0, skip_as_check=False, *args, **kwargs):
+        super(AMD64PagedMemory, self).__init__(base, config, dtb, skip_as_check, *args, **kwargs)
+
     def entry_present(self, entry):
         return entry and (entry & 1)
 
