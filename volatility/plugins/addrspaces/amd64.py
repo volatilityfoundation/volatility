@@ -25,6 +25,9 @@ import volatility.obj as obj
 import struct
 
 
+from volatility.plugins.addrspaces import standard
+
+
 ptrs_page = 2048
 entry_size = 8
 pde_shift = 21
@@ -69,6 +72,15 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
 
     def __init__(self, base, config, dtb=0, skip_as_check=False, *args, **kwargs):
         super(AMD64PagedMemory, self).__init__(base, config, dtb, skip_as_check, *args, **kwargs)
+        # if the base address space comes from disk, we have to optimize a few functions
+        # this code is very similar to physical_layer()
+        base2 = base
+        b = base2.base
+        while b:
+            base2 = b
+            b = base2.b
+        if type(base2) == standard.FileAddressSpace:
+            self.read_long_long_phys = self._read_long_long_phys_cached
 
     def entry_present(self, entry):
         return entry and (entry & 1)
@@ -230,6 +242,32 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
             return obj.NoneObject("Unable to read_long_long_phys at " + hex(addr))
         longlongval, = self._longlong_struct.unpack(string)
         return longlongval
+
+    def _read_long_long_phys_cached(self, addr, cache={}):
+        """
+        This is an optimized version of read_long_long_phys that memoizes the
+        return values in the cache dictionary.
+
+        When working on memory dumps on disk, this helps speed things up for a
+        few read-intensive plugins (mac_compressed_swap for example).
+
+        cache IS NOT a parameter. It's a local object that persists across calls
+        and the appropriate return values are stored there for fast retrieval.
+        """
+        try:
+            return cache[addr]
+        except KeyError:
+            try:
+                string = self.base.read(addr, 8)
+            except IOError:
+                string = None
+            if not string:
+                val = obj.NoneObject("Unable to read_long_long_phys at " + hex(addr))
+                cache[addr] = val
+                return val
+            longlongval, = self._longlong_struct.unpack(string)
+            cache[addr] = longlongval
+            return longlongval
 
     def get_available_pages(self, with_pte = False):
         '''
