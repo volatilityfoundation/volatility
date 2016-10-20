@@ -1061,10 +1061,16 @@ class Profile(object):
         # If we've been called without an overlay, 
         # the end result should be a complete copy of the type_member
         if not overlay:
-            return copy.deepcopy(type_member)
+            try:
+                return pickle.loads(pickle.dumps(type_member))
+            except TypeError:
+                return copy.deepcopy(type_member)
 
         if isinstance(type_member, dict):
-            result = copy.deepcopy(type_member)
+            try:
+                result = pickle.loads(pickle.dumps(type_member))
+            except TypeError:
+                result = copy.deepcopy(type_member)
             for k, v in overlay.items():
                 if k not in type_member:
                     result[k] = v
@@ -1074,7 +1080,10 @@ class Profile(object):
         elif isinstance(overlay, list):
             # If we're changing the underlying type, skip looking any further
             if len(overlay) != len(type_member):
-                return copy.deepcopy(overlay)
+                try:
+                    return pickle.loads(pickle.dumps(overlay))
+                except TypeError:
+                    return copy.deepcopy(overlay)
 
             result = []
             # Otherwise go through every item
@@ -1084,7 +1093,10 @@ class Profile(object):
                 else:
                     result.append(self._apply_overlay(type_member[i], overlay[i]))
         else:
-            return copy.deepcopy(overlay)
+            try:
+                return pickle.loads(pickle.dumps(overlay))
+            except TypeError:
+                return copy.deepcopy(overlay)
 
         return result
 

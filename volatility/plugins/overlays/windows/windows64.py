@@ -18,7 +18,7 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import copy
+import copy, cPickle
 import volatility.obj as obj
 import volatility.plugins.overlays.windows.windows as windows
 
@@ -31,7 +31,10 @@ class Pointer64Decorator(object):
 
     def __call__(self, name, typeList, typeDict = None):
         if len(typeList) and typeList[0] == 'pointer64':
-            typeList = copy.deepcopy(typeList)
+            try:
+                typeList = cPickle.loads(cPickle.dumps(typeList))
+            except TypeError:
+                typeList = copy.deepcopy(typeList)
             typeList[0] = 'pointer'
         return self.f(name, typeList, typeDict)
 

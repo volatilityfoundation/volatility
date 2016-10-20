@@ -18,7 +18,7 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import struct, copy
+import struct, copy, cPickle
 import volatility.obj as obj
 import volatility.addrspace as addrspace
 import volatility.constants as constants
@@ -95,8 +95,8 @@ class VolatilityKDBG(obj.VolatilityMagic):
                 
             if (cls._md_major, cls._md_minor) < (6, 2):
                 continue 
-                
-            conf = copy.deepcopy(self.obj_vm.get_config())
+
+            conf = cPickle.loads(cPickle.dumps(self.obj_vm.get_config()))
             conf.PROFILE = name 
             buff = addrspace.BufferAddressSpace(config = conf)
             header = obj.VolMagic(buff).KDBGHeader.v()
