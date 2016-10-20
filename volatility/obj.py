@@ -970,12 +970,16 @@ class Profile(object):
     @property
     def metadata(self):
         """ Returns a read-only dictionary copy of the metadata associated with a profile """
-        prefix = '_md_'
-        result = {}
-        for i in dir(self):
-            if i.startswith(prefix):
-                result[i[len(prefix):]] = getattr(self, i)
-        return result
+        return {i[4:]: getattr(self, i) for i in dir(self) if i[:4] == "_md_"}
+
+        # this dict comprehension replaces the old code:
+
+        # prefix = '_md_'
+        # result = {}
+        # for i in dir(self):
+        #     if i.startswith(prefix):
+        #         result[i[len(prefix):]] = getattr(self, i)
+        # return result
 
     def _get_subclasses(self, cls):
         """Returns a list of all subclasses"""
