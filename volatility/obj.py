@@ -203,25 +203,49 @@ class BaseObject(object):
     def obj_type(self):
         return self._vol_theType
 
+    @obj_type.setter
+    def obj_type(self, value):
+        pass
+
     @property
     def obj_vm(self):
         return self._vol_vm
+
+    @obj_vm.setter
+    def obj_vm(self, value):
+        pass
 
     @property
     def obj_offset(self):
         return self._vol_offset
 
+    @obj_offset.setter
+    def obj_offset(self, value):
+        pass
+
     @property
     def obj_parent(self):
         return self._vol_parent
+
+    @obj_parent.setter
+    def obj_parent(self, value):
+        pass
 
     @property
     def obj_name(self):
         return self._vol_name
 
+    @obj_name.setter
+    def obj_name(self, value):
+        pass
+
     @property
     def obj_native_vm(self):
         return self._vol_native_vm or self._vol_vm
+
+    @obj_native_vm.setter
+    def obj_native_vm(self, value):
+        pass
 
     def set_native_vm(self, native_vm):
         """Sets the native_vm """
@@ -254,11 +278,13 @@ class BaseObject(object):
 
         return getattr(proxied, attr)
 
-    def __setattr__(self, attr, value):
-        try:
-            object.__setattr__(self, attr, value)
-        except AttributeError:
-            pass
+    # as far as i can tell, this is no longer necessary since the setters are in place
+    #   - bconstanzo
+    # def __setattr__(self, attr, value):
+    #     try:
+    #         object.__setattr__(self, attr, value)
+    #     except AttributeError:
+    #         pass
 
     def __nonzero__(self):
         """ This method is called when we test the truth value of an
