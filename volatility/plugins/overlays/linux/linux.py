@@ -2343,9 +2343,12 @@ class VolatilityDTB(obj.VolatilityMagic):
 
         # check for relocated kernel
         if good_dtb == -1 and shift_address == 0:
-            scanner = swapperScan(needles = ["swapper/0"])
+            scanner = swapperScan(needles = ["swapper/0\x00\x00\x00\x00\x00\x00"])
             for swapper_offset in scanner.scan(self.obj_vm):
                 swapper_address = swapper_offset - comm_offset
+
+                if pas.read(swapper_address, 4) != "\x00\x00\x00\x00":
+                    continue
 
                 if pas.read(swapper_address + pid_offset, 4) != "\x00\x00\x00\x00":
                     continue
@@ -2357,9 +2360,8 @@ class VolatilityDTB(obj.VolatilityMagic):
                 
                 shift_address = tmp_shift_address
                 good_dtb = dtb_sym_addr - shifts[0] + shift_address
- 
                 break
-        
+
         if shift_address != 0:   
             self.obj_vm.profile.shift_address = shift_address
 
