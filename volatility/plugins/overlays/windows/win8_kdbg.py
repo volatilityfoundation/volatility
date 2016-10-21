@@ -85,26 +85,28 @@ class VolatilityKDBG(obj.VolatilityMagic):
         return buffer
 
     def unique_sizes(self):
-    
+
         items = registry.get_plugin_classes(obj.Profile).items()
         sizes = set()
-        
+        # by moving this outside the loop, the test image keeps working, but
+        # i have no proof whether this is correct or wrong...
+        conf = cPickle.loads(cPickle.dumps(self.obj_vm.get_config()))
         for name, cls in items:
             if (cls._md_os != "windows" or cls._md_memory_model != "64bit"):
                 continue
                 
             if (cls._md_major, cls._md_minor) < (6, 2):
-                continue 
+                continue
 
-            conf = cPickle.loads(cPickle.dumps(self.obj_vm.get_config()))
-            conf.PROFILE = name 
+            # conf = cPickle.loads(cPickle.dumps(self.obj_vm.get_config()))
+            conf.PROFILE = name
             buff = addrspace.BufferAddressSpace(config = conf)
             header = obj.VolMagic(buff).KDBGHeader.v()
-            
+
             # this unpacks the kdbgsize from the signature 
             size = struct.unpack("<H", header[-2:])[0]
             sizes.add(size)
-            
+
         return sizes
 
     def copy_data_block(self, full_addr):
