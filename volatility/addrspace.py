@@ -368,7 +368,11 @@ class AbstractVirtualAddressSpace(AbstractDiscreteAllocMemory):
         raise NotImplementedError("This is an abstract method and should not be referenced directly")
 
     def translate(self, vaddr):
+        self.translate = self.vtop
         return self.vtop(vaddr)
+        # while this may seem ugly (it is), having a wrapper that does nothing but redirect to
+        # another function is expensive, since it adds a function call in the stack for nothing
+        # - bconstanzo
 
 ## This is a specialised AS for use internally - Its used to provide
 ## transparent support for a string buffer so types can be
