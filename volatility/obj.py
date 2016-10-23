@@ -779,9 +779,9 @@ class CType(BaseObject):
     def __setattr__(self, attr, value):
         """Change underlying members"""
         # Special magic to allow initialization
-        if not self.__dict__.has_key('_CType__initialized'):  # this test allows attributes to be set in the __init__ method
+        if not('_CType__initialized' in self.__dict__):  # this test allows attributes to be set in the __init__ method
             return BaseObject.__setattr__(self, attr, value)
-        elif self.__dict__.has_key(attr):       # any normal attributes are handled normally
+        elif attr in self.__dict__:       # any normal attributes are handled normally
             return BaseObject.__setattr__(self, attr, value)
         else:
             obj = self.m(attr)
