@@ -35,6 +35,7 @@ ptrs_per_pde = 512
 page_shift = 12
 ptrs_per_pae_pgd = 512
 ptrs_per_pae_pte = 512
+PAGE_SIZE_FLAG = 0x80
 
 class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
     """ Standard AMD 64-bit address space.
@@ -186,7 +187,8 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
         return pde & 0xFFFFFFFFFF000
 
     def get_pte(self, vaddr, pgd):
-        pgd_val = self.ptba_base(pgd) + self.pte_index(vaddr) * entry_size
+        # pgd_val = self.ptba_base(pgd) + self.pte_index(vaddr) * entry_size
+        pgd_val = (pgd & 0xFFFFFFFFFF000) + (((vaddr >> page_shift) & (ptrs_per_pde - 1)) * entry_size)
         return self.read_long_long_phys(pgd_val)
 
     def pte_pfn(self, pte):
@@ -212,12 +214,14 @@ class AMD64PagedMemory(paged.AbstractWritablePagedMemory):
         if not self.entry_present(pdpe):
             return retVal
 
-        if self.page_size_flag(pdpe):
+        # if self.page_size_flag(pdpe):
+        if (pdpe & PAGE_SIZE_FLAG) == PAGE_SIZE_FLAG:
             return self.get_1GB_paddr(vaddr, pdpe)
 
         pgd = self.get_pgd(vaddr, pdpe)
         if self.entry_present(pgd):
-            if self.page_size_flag(pgd):
+            # if self.page_size_flag(pgd):
+            if (pgd & PAGE_SIZE_FLAG) == PAGE_SIZE_FLAG:
                 retVal = self.get_2MB_paddr(vaddr, pgd)
             else:
                 pte = self.get_pte(vaddr, pgd)
