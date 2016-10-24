@@ -378,7 +378,8 @@ class WindowsAMD64PagedMemory(AMD64PagedMemory):
         return valid and profile.metadata.get('os', 'Unknown').lower() == 'windows'
 
     def entry_present(self, entry):
-        present = AMD64PagedMemory.entry_present(self, entry)
+        # present = AMD64PagedMemory.entry_present(self, entry)
+        present = entry and (entry & 1)
 
         # The page is in transition and not a prototype.
         # Thus, we will treat it as present.
@@ -422,7 +423,8 @@ class LinuxAMD64PagedMemory(AMD64PagedMemory):
         return valid and profile.metadata.get('os', 'Unknown').lower() == 'linux'
 
     def entry_present(self, entry):
-        present = AMD64PagedMemory.entry_present(self, entry)
+        # present = AMD64PagedMemory.entry_present(self, entry)
+        present = entry and (entry & 1)
 
         # Linux pages that have had mprotect(...PROT_NONE) called on them
         # have the present bit cleared and global bit set
