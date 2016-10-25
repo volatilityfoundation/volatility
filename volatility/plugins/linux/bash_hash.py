@@ -102,10 +102,10 @@ class _bash_hash_table(obj.CType):
             for bucket_ptr in bucket_array:
                 bucket = bucket_ptr.dereference_as("bucket_contents")
                 while bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
-                    #pdata = bucket.data 
+                    pdata = bucket.data 
 
-                    #if pdata.path.is_valid() and (0 <= pdata.flags <= 2):
-                    yield bucket
+                    if pdata.path.is_valid() and (0 <= pdata.flags <= 2):
+                        yield bucket
 
                     bucket = bucket.next
  
@@ -142,6 +142,8 @@ class linux_bash_hash(linux_pslist.linux_pslist):
             # Do we scan everything or just /bin/bash instances?
             if not (self._config.SCAN_ALL or str(task.comm) == "bash"):
                 continue
+
+            print "Scanning %d" % task.pid
 
             for ent in task.bash_hash_entries():
                 yield task, ent
