@@ -74,7 +74,11 @@ class linux_arp(linux_common.AbstractLinuxCommand):
             hash_size = ntable.nht.hash_mask
             hash_table = ntable.nht.hash_buckets
         else:
-            hash_size = (1 << ntable.nht.hash_shift)
+            try:
+                hash_size = (1 << ntable.nht.hash_shift)
+            except OverflowError:
+                return []        
+    
             hash_table = ntable.nht.hash_buckets
 
         if not self.addr_space.is_valid_address(hash_table):
