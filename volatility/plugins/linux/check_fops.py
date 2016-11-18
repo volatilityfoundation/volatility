@@ -57,9 +57,8 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
                 for (hooked_member, hook_address) in self.verify_ops(filp.f_op, f_op_members, modules):
                     name = "{0:s} {1:d} {2:s}".format(task.comm, i, linux_common.get_path(task, filp))
                     yield (name, hooked_member, hook_address)
-
+                    
     def check_proc_fop(self, f_op_members, modules):
-
         proc_mnt_addr = self.addr_space.profile.get_symbol("proc_mnt")
         if not proc_mnt_addr:
             return
@@ -74,22 +73,23 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
 
         # only check the root directory
         for dentry in root.d_subdirs.list_of_type("dentry", "d_u"):
-
             name = dentry.d_name.name.dereference_as("String", length = 255)
             
             for (hooked_member, hook_address) in self.verify_ops(dentry.d_inode.i_fop, f_op_members, modules): 
                 yield("proc_mnt: {0}".format(name), hooked_member, hook_address)
     
     def walk_proc(self, cur, f_op_members, modules, parent = ""):
- 
+        last_cur = None
         while cur:
-
             if cur.obj_offset in self.seen_proc:
+                if cur.obj_offset == last_cur:
+                    break
+
                 cur = cur.next
                 continue
 
             self.seen_proc[cur.obj_offset] = 1
-
+            
             name = cur.name.dereference_as("String", length = 255)
 
             fops = cur.proc_fops
@@ -104,6 +104,7 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
                     yield (name, hooked_member, hook_address)
                 subdir = subdir.next
 
+            last_cur = cur.obj_offset
             cur = cur.next
 
     def check_proc_root_fops(self, f_op_members, modules):   
@@ -138,7 +139,6 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
             funcs = [self.check_open_files_fop, self.check_proc_fop, self.check_proc_root_fops, self.check_file_cache]
 
             for func in funcs:
-
                 for (name, member, address) in func(f_op_members, modules):
                     yield (name, member, address)
 
