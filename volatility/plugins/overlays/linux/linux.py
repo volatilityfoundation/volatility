@@ -831,7 +831,7 @@ class module_struct(obj.CType):
     @property   
     def module_core(self):
         if hasattr(self, "core_layout"):
-            ret = self.m("core_layout").m("size")
+            ret = self.m("core_layout").m("base")
         else:
             ret = self.m("module_core")
 
@@ -840,7 +840,7 @@ class module_struct(obj.CType):
     @property
     def module_init(self):
         if hasattr(self, "init_layout"):
-            ret = self.m("init_layout").m("size")
+            ret = self.m("init_layout").m("base")
         else:
             ret = self.m("module_init")
     
