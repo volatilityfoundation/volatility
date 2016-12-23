@@ -36,7 +36,13 @@ Windows:
 * 64-bit Windows 7 Service Pack 0 and 1
 * 64-bit Windows 8, 8.1, and 8.1 Update 1
 * 64-bit Windows Server 2012 and 2012 R2 
-* 64-bit Windows 10 (initial support)
+* 64-bit Windows 10 (including at least 10.0.14393)
+* 64-bit Windows Server 2016 (including at least 10.0.14393.0)
+
+Note: Please see the guidelines at the following link for notes on 
+compatibility with recently patched Windows 7 (or later) memory samples:
+
+    https://github.com/volatilityfoundation/volatility/wiki/2.6-Win-Profiles
 
 Linux: 
 * 32-bit Linux kernels 2.6.11 to 4.2.3
@@ -70,7 +76,7 @@ ability to convert between these formats:
   - VirtualBox ELF64 core dump
   - VMware saved state and snapshot files
   - EWF format (E01) 
-  - LiME (Linux Memory Extractor) format
+  - LiME format
   - Mach-O file format
   - QEMU virtual machine dumps
   - Firewire 
@@ -133,7 +139,7 @@ Quick Start
    Example:
 
 $ python vol.py --info
-Volatility Foundation Volatility Framework 2.5
+Volatility Foundation Volatility Framework 2.6
 
 Address Spaces
 --------------
@@ -160,50 +166,51 @@ WindowsHiberFileSpace32       - This is a hibernate address space for windows hi
 
 Profiles
 --------
-VistaSP0x64              - A Profile for Windows Vista SP0 x64
-VistaSP0x86              - A Profile for Windows Vista SP0 x86
-VistaSP1x64              - A Profile for Windows Vista SP1 x64
-VistaSP1x86              - A Profile for Windows Vista SP1 x86
-VistaSP2x64              - A Profile for Windows Vista SP2 x64
-VistaSP2x86              - A Profile for Windows Vista SP2 x86
-Win10x64                 - A Profile for Windows 10 x64
-Win10x64_1AC738FB        - A Profile for Windows 10 x64 from PDB 1AC738FB
-Win10x64_DD08DD42        - A Profile for Windows 10 x64 from PDB DD08DD42
-Win10x86                 - A Profile for Windows 10 x86
-Win10x86_44B89EEA        - A Profile for Windows 10 x86 from PDB 44B89EEA
-Win10x86_9619274A        - A Profile for Windows 10 x86 from PDB 9619274A
-Win2003SP0x86            - A Profile for Windows 2003 SP0 x86
-Win2003SP1x64            - A Profile for Windows 2003 SP1 x64
-Win2003SP1x86            - A Profile for Windows 2003 SP1 x86
-Win2003SP2x64            - A Profile for Windows 2003 SP2 x64
-Win2003SP2x86            - A Profile for Windows 2003 SP2 x86
-Win2008R2SP0x64          - A Profile for Windows 2008 R2 SP0 x64
-Win2008R2SP1x64          - A Profile for Windows 2008 R2 SP1 x64
-Win2008R2SP1x64_632B36E0 - A Profile for Windows 2008 R2 SP1 x64 from PDB 632B36E0
-Win2008SP1x64            - A Profile for Windows 2008 SP1 x64
-Win2008SP1x86            - A Profile for Windows 2008 SP1 x86
-Win2008SP2x64            - A Profile for Windows 2008 SP2 x64
-Win2008SP2x86            - A Profile for Windows 2008 SP2 x86
-Win2012R2x64             - A Profile for Windows Server 2012 R2 x64
-Win2012R2x64_54B5A1C6    - A Profile for Windows Server 2012 R2 x64 from PDB 54B5A1C6
-Win2012x64               - A Profile for Windows Server 2012 x64
-Win7SP0x64               - A Profile for Windows 7 SP0 x64
-Win7SP0x86               - A Profile for Windows 7 SP0 x86
-Win7SP1x64               - A Profile for Windows 7 SP1 x64
-Win7SP1x64_632B36E0      - A Profile for Windows 7 SP1 x64 from PDB 632B36E0
-Win7SP1x86               - A Profile for Windows 7 SP1 x86
-Win7SP1x86_BBA98F40      - A Profile for Windows 7 SP1 x86 from PDB BBA98F40
-Win81U1x64               - A Profile for Windows 8.1 Update 1 x64
-Win81U1x86               - A Profile for Windows 8.1 Update 1 x86
-Win8SP0x64               - A Profile for Windows 8 x64
-Win8SP0x86               - A Profile for Windows 8 x86
-Win8SP1x64               - A Profile for Windows 8.1 x64
-Win8SP1x64_54B5A1C6      - A Profile for Windows 8.1 x64 from PDB 54B5A1C6
-Win8SP1x86               - A Profile for Windows 8.1 x86
-WinXPSP1x64              - A Profile for Windows XP SP1 x64
-WinXPSP2x64              - A Profile for Windows XP SP2 x64
-WinXPSP2x86              - A Profile for Windows XP SP2 x86
-WinXPSP3x86              - A Profile for Windows XP SP3 x86
+VistaSP0x64           - A Profile for Windows Vista SP0 x64
+VistaSP0x86           - A Profile for Windows Vista SP0 x86
+VistaSP1x64           - A Profile for Windows Vista SP1 x64
+VistaSP1x86           - A Profile for Windows Vista SP1 x86
+VistaSP2x64           - A Profile for Windows Vista SP2 x64
+VistaSP2x86           - A Profile for Windows Vista SP2 x86
+Win10x64              - A Profile for Windows 10 x64
+Win10x64_10586        - A Profile for Windows 10 x64 (10.0.10586.306 / 2016-04-23)
+Win10x64_14393        - A Profile for Windows 10 x64 (10.0.14393.0 / 2016-07-16)
+Win10x86              - A Profile for Windows 10 x86
+Win10x86_10586        - A Profile for Windows 10 x86 (10.0.10586.420 / 2016-05-28)
+Win10x86_14393        - A Profile for Windows 10 x86 (10.0.14393.0 / 2016-07-16)
+Win2003SP0x86         - A Profile for Windows 2003 SP0 x86
+Win2003SP1x64         - A Profile for Windows 2003 SP1 x64
+Win2003SP1x86         - A Profile for Windows 2003 SP1 x86
+Win2003SP2x64         - A Profile for Windows 2003 SP2 x64
+Win2003SP2x86         - A Profile for Windows 2003 SP2 x86
+Win2008R2SP0x64       - A Profile for Windows 2008 R2 SP0 x64
+Win2008R2SP1x64       - A Profile for Windows 2008 R2 SP1 x64
+Win2008R2SP1x64_23418 - A Profile for Windows 2008 R2 SP1 x64 (6.1.7601.23418 / 2016-04-09)
+Win2008SP1x64         - A Profile for Windows 2008 SP1 x64
+Win2008SP1x86         - A Profile for Windows 2008 SP1 x86
+Win2008SP2x64         - A Profile for Windows 2008 SP2 x64
+Win2008SP2x86         - A Profile for Windows 2008 SP2 x86
+Win2012R2x64          - A Profile for Windows Server 2012 R2 x64
+Win2012R2x64_18340    - A Profile for Windows Server 2012 R2 x64 (6.3.9600.18340 / 2016-05-13)
+Win2012x64            - A Profile for Windows Server 2012 x64
+Win2016x64_14393      - A Profile for Windows Server 2016 x64 (10.0.14393.0 / 2016-07-16)
+Win7SP0x64            - A Profile for Windows 7 SP0 x64
+Win7SP0x86            - A Profile for Windows 7 SP0 x86
+Win7SP1x64            - A Profile for Windows 7 SP1 x64
+Win7SP1x64_23418      - A Profile for Windows 7 SP1 x64 (6.1.7601.23418 / 2016-04-09)
+Win7SP1x86            - A Profile for Windows 7 SP1 x86
+Win7SP1x86_23418      - A Profile for Windows 7 SP1 x86 (6.1.7601.23418 / 2016-04-09)
+Win81U1x64            - A Profile for Windows 8.1 Update 1 x64
+Win81U1x86            - A Profile for Windows 8.1 Update 1 x86
+Win8SP0x64            - A Profile for Windows 8 x64
+Win8SP0x86            - A Profile for Windows 8 x86
+Win8SP1x64            - A Profile for Windows 8.1 x64
+Win8SP1x64_18340      - A Profile for Windows 8.1 x64 (6.3.9600.18340 / 2016-05-13)
+Win8SP1x86            - A Profile for Windows 8.1 x86
+WinXPSP1x64           - A Profile for Windows XP SP1 x64
+WinXPSP2x64           - A Profile for Windows XP SP2 x64
+WinXPSP2x86           - A Profile for Windows XP SP2 x86
+WinXPSP3x86           - A Profile for Windows XP SP3 x86
 
 Plugins
 -------
@@ -263,6 +270,7 @@ ldrmodules                 - Detect unlinked DLLs
 limeinfo                   - Dump Lime file format information
 linux_apihooks             - Checks for userland apihooks
 linux_arp                  - Print the ARP table
+linux_aslr_shift           - Automatically detect the Linux ASLR shift
 linux_banner               - Prints the Linux banner information
 linux_bash                 - Recover bash history from bash process memory
 linux_bash_env             - Recover a process' dynamic environment variables
@@ -478,7 +486,7 @@ yarascan                   - Scan process or kernel memory with Yara signatures
    Example:
    
     $ python vol.py imageinfo -f WIN-II7VOJTUNGL-20120324-193051.raw 
-    Volatility Foundation Volatility Framework 2.5
+    Volatility Foundation Volatility Framework 2.6
     Determining profile based on KDBG search...
     
               Suggested Profile(s) : Win2008R2SP0x64, Win7SP1x64, Win7SP0x64, Win2008R2SP1x64 (Instantiated with Win7SP0x64)
@@ -494,6 +502,11 @@ yarascan                   - Scan process or kernel memory with Yara signatures
                Image date and time : 2012-03-24 19:30:53 UTC+0000
          Image local date and time : 2012-03-25 03:30:53 +0800
 
+   If multiple profiles are suggested by imageinfo or kdbgscan, or if you're having trouble analyzing 
+   Windows 7 or later memory samples, please see the guidelines here:
+
+        https://github.com/volatilityfoundation/volatility/wiki/2.6-Win-Profiles
+
 4. Run some other plugins. -f is a required option for all plugins. Some
    also require/accept other options. Run "python vol.py <plugin> -h" for
    more information on a particular command.  A Command Reference wiki
@@ -508,7 +521,7 @@ yarascan                   - Scan process or kernel memory with Yara signatures
 Licensing and Copyright
 =======================
 
-Copyright (C) 2007-2015 Volatility Foundation
+Copyright (C) 2007-2016 Volatility Foundation
 
 All Rights Reserved
 

@@ -424,8 +424,8 @@ class Win8SP1x64(obj.Profile):
     _md_vtype_module = 'volatility.plugins.overlays.windows.win8_sp1_x64_vtypes'
     _md_product = ["NtProductWinNt"]
 
-class Win8SP1x64_54B5A1C6(obj.Profile):
-    """ A Profile for Windows 8.1 x64 from PDB 54B5A1C6"""
+class Win8SP1x64_18340(obj.Profile):
+    """ A Profile for Windows 8.1 x64 (6.3.9600.18340 / 2016-05-13) """
     _md_memory_model = '64bit'
     _md_os = 'windows'
     _md_major = 6
@@ -444,8 +444,8 @@ class Win2012R2x64(Win8SP1x64):
     _md_build = 9601 ##FIXME: fake build number to indicate server 2012 R2 vs windows 8.1
     _md_product = ["NtProductLanManNt", "NtProductServer"]
 
-class Win2012R2x64_54B5A1C6(Win8SP1x64_54B5A1C6):
-    """ A Profile for Windows Server 2012 R2 x64 from PDB 54B5A1C6"""
+class Win2012R2x64_18340(Win8SP1x64_18340):
+    """ A Profile for Windows Server 2012 R2 x64 (6.3.9600.18340 / 2016-05-13) """
     _md_build = 9601 ##FIXME: fake build number to indicate server 2012 R2 vs windows 8.1
     _md_product = ["NtProductLanManNt", "NtProductServer"]
 

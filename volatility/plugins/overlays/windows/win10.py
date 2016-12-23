@@ -546,8 +546,8 @@ class Win10x64(obj.Profile):
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_vtypes'
     _md_product = ["NtProductWinNt"]
 
-class Win10x64_1AC738FB(obj.Profile):
-    """ A Profile for Windows 10 x64 from PDB 1AC738FB"""
+class Win10x64_10586(obj.Profile):
+    """ A Profile for Windows 10 x64 (10.0.10586.306 / 2016-04-23) """
     _md_memory_model = '64bit'
     _md_os = 'windows'
     _md_major = 6
@@ -556,8 +556,8 @@ class Win10x64_1AC738FB(obj.Profile):
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_1AC738FB_vtypes'
     _md_product = ["NtProductWinNt"]
 
-class Win10x64_DD08DD42(obj.Profile):
-    """ A Profile for Windows 10 x64 from PDB DD08DD42"""
+class Win10x64_14393(obj.Profile):
+    """ A Profile for Windows 10 x64 (10.0.14393.0 / 2016-07-16) """
     _md_memory_model = '64bit'
     _md_os = 'windows'
     _md_major = 6
@@ -576,8 +576,8 @@ class Win10x86(obj.Profile):
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_vtypes'
     _md_product = ["NtProductWinNt"]
 
-class Win10x86_44B89EEA(obj.Profile):
-    """ A Profile for Windows 10 x86 from PDB 44B89EEA"""
+class Win10x86_10586(obj.Profile):
+    """ A Profile for Windows 10 x86 (10.0.10586.420 / 2016-05-28) """
     _md_memory_model = '32bit'
     _md_os = 'windows'
     _md_major = 6
@@ -586,8 +586,8 @@ class Win10x86_44B89EEA(obj.Profile):
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_44B89EEA_vtypes'
     _md_product = ["NtProductWinNt"]
 
-class Win10x86_9619274A(obj.Profile):
-    """ A Profile for Windows 10 x86 from PDB 9619274A"""
+class Win10x86_14393(obj.Profile):
+    """ A Profile for Windows 10 x86 (10.0.14393.0 / 2016-07-16) """
     _md_memory_model = '32bit'
     _md_os = 'windows'
     _md_major = 6
@@ -595,3 +595,13 @@ class Win10x86_9619274A(obj.Profile):
     _md_build = 14393
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_9619274A_vtypes'
     _md_product = ["NtProductWinNt"]
+    
+class Win2016x64_14393(Win10x64_14393):
+    """ A Profile for Windows Server 2016 x64 (10.0.14393.0 / 2016-07-16) """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 14393
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_DD08DD42_vtypes'
+    _md_product = ["NtProductLanManNt", "NtProductServer"]
