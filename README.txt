@@ -59,6 +59,7 @@ Mac OSX:
 * 64-bit 10.9.x Mavericks (there is no 32-bit version)
 * 64-bit 10.10.x Yosemite (there is no 32-bit version)
 * 64-bit 10.11.x El Capitan (there is no 32-bit version)
+* 64-bit 10.12.x Sierra (there is no 32-bit version)
 
 Volatility does not provide memory sample acquisition
 capabilities. For acquisition, there are both free and commercial
