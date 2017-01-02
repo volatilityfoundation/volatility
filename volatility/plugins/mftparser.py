@@ -74,6 +74,7 @@ ATTRIBUTE_TYPE_ID = {
     0xe0:"EA",
     0xf0:"PROPERTY_SET",
     0x100:"LOGGED_UTILITY_STREAM",
+    #0xFFFFFFFF:"END_OF_ATTRIBUTES" # Not a real attribute, just marker found in MFT after last attribute -YK
 }
 
 VERBOSE_STANDARD_INFO_FLAGS = {
@@ -139,19 +140,33 @@ class MFT_FILE_RECORD(obj.CType):
     def remove_unprintable(self, str):
         return str.encode("utf8", "ignore")
 
+    def get_base_filename(self):
+        if self.FileRefBaseRecord != 0: # This is a continuation of another entry
+            record = MFT_PATHS_FULL.get(long(self.FileRefBaseRecord), None)
+            if record != None:
+                base_file = record["filename"]
+                return base_file
+        return None
+    
+    # Changed logic so it processes correct Record+Seq, this means output will reflect current status, 
+    # For deleted files, this does not match but thats better than showing active files with incorrect paths.
+    # Also added workaround for handling recently deleted files in get_full_path() function below. -YK
     def add_path(self, fileinfo):
         # it doesn't really make sense to add regular files to parent directory,
         # since they wouldn't actually be in the middle of a file path, but at the end
         # therefore, we'll return for regular files
-        if not self.is_directory():
-            return
+        # # Removing this optimization because we need the files for continuing MFT records 
+        #   which reference baseRecord. - YK
+        #if not self.is_directory(): 
+        #    return
         # otherwise keep a record of the directory that we've found
-        cur = MFT_PATHS_FULL.get(int(self.RecordNumber), None)
+        ref = long(self.RecordNumber | (self.SequenceValue << 48))
+        cur = MFT_PATHS_FULL.get(ref, None) # 6 bytes of record, 2 bytes of seq, makes 8 bytes of reference
         if (cur == None or fileinfo.Namespace != 2) and fileinfo.is_valid():
             temp = {}
-            temp["ParentDirectory"] = fileinfo.ParentDirectory
+            temp["ParentDirectory"] = long(fileinfo.ParentDirectory)
             temp["filename"] = self.remove_unprintable(fileinfo.get_name())
-            MFT_PATHS_FULL[int(self.RecordNumber)] = temp
+            MFT_PATHS_FULL[ref] = temp
 
     def get_full_path(self, fileinfo):
         if self.obj_vm._config.DEBUGOUT:
@@ -159,19 +174,29 @@ class MFT_FILE_RECORD(obj.CType):
         parent = ""
         path = self.remove_unprintable(fileinfo.get_name()) or "(Null)"
         try:
-            parent_id = fileinfo.ParentDirectory & 0xffffff
+            parent_id = long(fileinfo.ParentDirectory) # & 0xffffffffffff # Bug fixed but not needed now
         except struct.error:
             return path
-        if int(self.RecordNumber) == 5 or int(self.RecordNumber) == 0:
+        if long(self.RecordNumber) == 5 or long(self.RecordNumber) == 0:
             return path
         seen = set()
+        processing_deleted = False
         while parent != {}:
-            seen.add(parent_id)
-            parent = MFT_PATHS_FULL.get(int(parent_id), {})
-            if parent == {} or parent["filename"] == "" or int(parent_id) == 0 or int(parent_id) == 5:
+            if processing_deleted == False : seen.add(parent_id)
+            parent = MFT_PATHS_FULL.get(parent_id, {})
+            if parent == {} and processing_deleted == False:
+                # Perhaps its parent folder is deleted and the parent folder's sequence number has advanced by one
+                rec = parent_id & 0xffffffffffff
+                seq = ( (parent_id >> 48) + 1 ) << 48 # incrementing seq by 1
+                parent_id = rec | seq
+                processing_deleted = True 
+                parent = ""
+                continue
+            elif parent == {} or parent["filename"] == "" or parent_id & 0xffffffffffff == 0 or parent_id & 0xffffffffffff == 5:
                 return path
             path = "{0}\\{1}".format(parent["filename"], path)
-            parent_id = parent["ParentDirectory"] & 0xffffff
+            parent_id = parent["ParentDirectory"] # & 0xffffffffffff # Bug fixed but not needed now
+            processing_deleted = False
             if parent_id in seen:
                 return path
         return path
@@ -185,8 +210,9 @@ class MFT_FILE_RECORD(obj.CType):
     def is_inuse(self):
         return int(self.Flags) & 0x1 == 0x1
 
+    # Added explicit 'Deleted' notification for deleted records, previously it would just not print 'in use'.
     def get_mft_type(self):
-        return "{0}{1}".format("In Use & " if self.is_inuse() else "",
+        return "{0}{1}".format("In Use & " if self.is_inuse() else ("Deleted & " if int(self.SequenceValue) != 0 else "Unused & "),
                "Directory" if self.is_directory() else "File")
 
     def parse_attributes(self, mft_buff, check = True, entrysize = 1024):
@@ -195,129 +221,126 @@ class MFT_FILE_RECORD(obj.CType):
         if end == -1:
             end = entrysize
         attributes = []
-        dataseen = False
-        while next_attr != None and next_attr.obj_offset <= end:
+        #dataseen = False
+        next_off = curr_off = self.FirstAttributeOffset
+        
+        # Refactored this function to change the logic a bit (using Header.Length instead of ContentSize works much better), 
+        # and corrected a few things. Removed assumptions about attribute order, as there is no order. No longer stops at 
+        # the first unknown (unhandled) attribute, so this will now move on the the next known one and parse it.- YK
+        while next_attr != None and next_attr.obj_offset <= end and next_off < entrysize: 
+            attr = next_attr
+            curr_off = next_off
             try:
-                attr = ATTRIBUTE_TYPE_ID.get(int(next_attr.Header.Type), None)
+                attr_type = ATTRIBUTE_TYPE_ID.get(int(attr.Header.Type), None)
+                next_off = attr.obj_offset + attr.Header.Length # Calculate next_off and next_attr 
+                if curr_off == next_off: 
+                    next_attr = None
+                    continue
+                next_attr = self.advance_one(next_off, mft_buff, end, None)
             except struct.error:
                 next_attr = None
-                attr = None
                 continue
-            if attr == None:
+            if attr_type == None: #or attr_type == "END_OF_ATTRIBUTES":
                 next_attr = None
-            elif attr == "STANDARD_INFORMATION":
+            elif attr_type == "STANDARD_INFORMATION":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $SI"
-                if not check or next_attr.STDInfo.is_valid():
-                    attributes.append((attr, next_attr.STDInfo))
-                next_off = next_attr.STDInfo.obj_offset + next_attr.ContentSize
-                if next_off == next_attr.STDInfo.obj_offset:
-                    next_attr = None
-                    continue
-                next_attr = self.advance_one(next_off, mft_buff, end)
-            elif attr == 'FILE_NAME':
+                if not check or attr.STDInfo.is_valid():
+                    attributes.append((attr_type, attr.STDInfo))
+            elif attr_type == 'FILE_NAME':
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $FN"
-                self.add_path(next_attr.FileName)
-                if not check or next_attr.FileName.is_valid():
-                    attributes.append((attr, next_attr.FileName))
-                next_off = next_attr.FileName.obj_offset + next_attr.ContentSize
-                if next_off == next_attr.FileName.obj_offset:
-                    next_attr = None
-                    continue
-                next_attr = self.advance_one(next_off, mft_buff, end)
-            elif attr == "OBJECT_ID":
+                self.add_path(attr.FileName)
+                if not check or attr.FileName.is_valid():
+                    attributes.append((attr_type, attr.FileName))
+            elif attr_type == "OBJECT_ID":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $ObjectId"
-                if next_attr.Header.NonResidentFlag == 1:
-                    attributes.append((attr, "Non-Resident"))
-                    next_attr = None
-                    continue
+                if attr.Header.NonResidentFlag == 1:
+                    attributes.append((attr_type, "Non-Resident OBJECT_ID"))
+                    #next_attr = None # There are valid attributes after this too!
+                    #continue
                 else:
-                    attributes.append((attr, next_attr.ObjectID))
-                next_off = next_attr.ObjectID.obj_offset + next_attr.ContentSize
-                if next_off == next_attr.ObjectID.obj_offset:
-                    next_attr = None
-                    continue
-                next_attr = self.advance_one(next_off, mft_buff, end)
-            elif attr == "DATA":
+                    attributes.append((attr_type, attr.ObjectID))
+            elif attr_type == "DATA":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $DATA"
                 try:
-                    if next_attr.Header and next_attr.Header.NameOffset > 0 and next_attr.Header.NameLength > 0:
+                    if attr.Header and attr.Header.NameOffset > 0 and attr.Header.NameLength > 0:
                         adsname = ""
-                        if next_attr != None and next_attr.Header != None and next_attr.Header.NameOffset and next_attr.Header.NameLength:
-                            nameloc = next_attr.obj_offset + next_attr.Header.NameOffset
-                            adsname = obj.Object("UnicodeString", vm = self.obj_vm, offset = nameloc, length = next_attr.Header.NameLength * 2)
-                            if adsname != None and adsname.strip() != "" and dataseen:
-                                attr += " ADS Name: {0}".format(adsname.strip())
-                    dataseen = True
+                        if attr != None and attr.Header != None and attr.Header.NameOffset and attr.Header.NameLength:
+                            nameloc = attr.obj_offset + attr.Header.NameOffset
+                            adsname = obj.Object("UnicodeString", vm = self.obj_vm, offset = nameloc, length = attr.Header.NameLength * 2)
+                            if adsname != None and adsname.strip() != "": # and dataseen:
+                                attr_type += " ADS Name: {0}".format(adsname.strip())
+                    #dataseen = True
                 except struct.error:
                     next_attr = None
                     continue
-                try:
-                    if next_attr.ContentSize == 0:
-                        next_off = next_attr.obj_offset + self.obj_vm.profile.get_obj_size("RESIDENT_ATTRIBUTE")
-                        next_attr = self.advance_one(next_off, mft_buff, end)
-                        attributes.append((attr, ""))
-                        continue
-                    start = next_attr.obj_offset + next_attr.ContentOffset
-                    theend = min(start + next_attr.ContentSize, end)
-                except struct.error:
-                    next_attr = None
-                    continue
-                if next_attr.Header.NonResidentFlag == 1:
-                    thedata = ""
+                data = DATA(0)
+
+                start = 0
+                theend = 0
+                if attr.Header.NonResidentFlag == 1: # NON_RESIDENT_ATTRIBUTE
+                    data.non_resident = 1
+                    non_resident_attr = obj.Object('NON_RESIDENT_ATTRIBUTE', vm = self.obj_vm, offset = curr_off)
+                    data.allocatedSize = non_resident_attr.AllocatedAttributeSize
+                    data.logicalSize = non_resident_attr.ActualAttributeSize
+                    data.initializedSize = non_resident_attr.InitializedAttributeSize
                 else:
+                    try:
+                        if attr.ContentSize == 0:
+                            attributes.append((attr_type, data))
+                            continue
+                    except struct.error:
+                        next_attr = None
+                        continue
+                    data.logicalSize = attr.ContentSize
+                    start = attr.obj_offset + attr.ContentOffset
+                    theend = min(start + attr.ContentSize, end)
                     try:
                         contents = mft_buff[start:theend]
                     except TypeError:
                         next_attr = None
                         continue
-                    thedata = contents
-                attributes.append((attr, thedata))
-                next_off = theend
-                if next_off == start:
-                    next_attr = None
-                    continue
-                next_attr = self.advance_one(next_off, mft_buff, end)
-            elif attr == "ATTRIBUTE_LIST":
+                    data.data = contents
+                attributes.append((attr_type, data))
+
+            elif attr_type == "ATTRIBUTE_LIST":
                 if self.obj_vm._config.DEBUGOUT:
                     print "Found $AttributeList"
-                if next_attr.Header.NonResidentFlag == 1:
-                    attributes.append((attr, "Non-Resident"))
-                    next_attr = None
-                    continue
-                next_attr.process_attr_list(self.obj_vm, self, attributes, check)
-                next_attr = None
-            else:
-                next_attr = None
+                if attr.Header.NonResidentFlag == 1:
+                    attributes.append((attr_type, "Non-Resident ATTRIBUTE_LIST"))
+                else:
+                    attr.process_attr_list(self.obj_vm, self, attributes, check)
 
         return attributes
 
-    def advance_one(self, next_off, mft_buff, end):
+    # No longer needs to guess position, its accurate now because we use exact size
+    def advance_one(self, next_off, mft_buff, end, retval_for_end=None):
         item = None
-        attr = None
-        cursor = 0
 
         if next_off == None:
             return None
 
-        while attr == None and cursor <= end:
-            try:
-                val = struct.unpack("<I", mft_buff[next_off + cursor: next_off + cursor + 4])[0]
-                attr = ATTRIBUTE_TYPE_ID.get(val, None)
-                item = obj.Object('RESIDENT_ATTRIBUTE', vm = self.obj_vm,
-                            offset = next_off + cursor)
-            except struct.error:
-                return None
-            cursor += 1
+        try:
+            val = struct.unpack("<I", mft_buff[next_off : next_off + 4])[0]
+            if val == 0xFFFFFFFF:
+                if retval_for_end != None:
+                    item = retval_for_end
+            elif None == ATTRIBUTE_TYPE_ID.get(val, None): # Check for invalid attribute types
+                pass
+            else:
+                item = obj.Object('RESIDENT_ATTRIBUTE', vm = self.obj_vm, offset = next_off)
+        except struct.error:
+            return None
+
         return item
 
 class RESIDENT_ATTRIBUTE(obj.CType):
     def process_attr_list(self, bufferas, mft_entry, attributes = [], check = True):
         start = 0
-        end = self.obj_offset + self.ContentSize
+        end = self.ContentSize #self.obj_offset + self.ContentSize # BUG FIXED !
         while start < end:
             item = obj.Object("ATTRIBUTE_LIST", vm = bufferas,
                                 offset = self.AttributeList.obj_offset + start)
@@ -327,13 +350,22 @@ class RESIDENT_ATTRIBUTE(obj.CType):
                 thetype = ATTRIBUTE_TYPE_ID.get(int(item.Type), None)
                 if thetype == None:
                     return
-                elif item.Length > 0x20 and thetype in ["STANDARD_INFORMATION", "FILE_NAME"]:
-                    theitem = obj.Object(thetype, vm = bufferas, offset = item.AttributeID.obj_offset)
-                    if thetype == "STANDARD_INFORMATION" and (not check or theitem.is_valid()):
-                        attributes.append(("STANDARD_INFORMATION (AL)", theitem))
-                    elif thetype == "FILE_NAME" and (not check or theitem.is_valid()):
-                        mft_entry.add_path(theitem)
-                        attributes.append(("FILE_NAME (AL)", theitem))
+                # -- The below commented code seems to be a misunderstanding of how ATTRIBUTE_LISTs work, they 
+                #    only tell you where your attribute is located via FileReferenceLocation. The actual
+                #    attributes are never stored here --- YK
+                # elif item.Length > 0x20 and thetype in ["STANDARD_INFORMATION", "FILE_NAME"]:
+                #     theitem = obj.Object(thetype, vm = bufferas, offset = item.AttributeID.obj_offset)
+                #     if thetype == "STANDARD_INFORMATION" and (not check or theitem.is_valid()):
+                #         attributes.append(("STANDARD_INFORMATION (AL)", theitem))
+                #     elif thetype == "FILE_NAME" and (not check or theitem.is_valid()):
+                #         mft_entry.add_path(theitem)
+                #         attributes.append(("FILE_NAME (AL)", theitem))
+                else:
+                    if item.NameLength > 0:
+                        attributes.append(("ATTRIBUTE_LIST", thetype + " " + item.Name))
+                    else:
+                        attributes.append(("ATTRIBUTE_LIST", thetype))
+
             except struct.error:
                 return
             if item.Length <= 0:
@@ -380,8 +412,8 @@ class STANDARD_INFORMATION(obj.CType):
 
     def get_type(self):
         try:
-            if self.Flags == None:
-                return "Unknown Type"
+            if self.Flags == None or int(self.Flags) == 0: # Sometimes there are no flags! -YK
+                return ""
         except struct.error:
             return "Unknown Type"
 
@@ -469,6 +501,7 @@ class STANDARD_INFORMATION(obj.CType):
             self.obj_vm._config.MACHINE)
 
 class FILE_NAME(STANDARD_INFORMATION):
+    
     def remove_unprintable(self, str):
         return str.encode("utf8", "ignore")
 
@@ -589,6 +622,31 @@ class FILE_NAME(STANDARD_INFORMATION):
             creation,
             self.obj_vm._config.MACHINE)
 
+
+# Added new class to store and print values of non-resident $DATA attributes
+# File size is also available in $FN but it is not accurate as changes to file
+# size are not updated in $FN. This is accurate for file size.
+class DATA(object):
+    def __str__(self):
+        string = "DATA is " 
+        if self.non_resident == 1: 
+            string += "non-resident\n"
+            string += "Logical     Size : " + str(self.logicalSize) + "\n"
+            string += "Allocated   Size : " + str(self.allocatedSize) + "\n"
+            string += "Initialized Size : " + str(self.initializedSize) + "\n"
+        else:
+            string += "resident\n"
+            string += "Logical     Size : " + str(self.logicalSize) + "\n"
+        return string
+        
+    def __init__(self, non_resident = 0):
+        self.non_resident = non_resident # Non-Resident flag, 1=non-resident
+        self.allocatedSize = 0
+        self.initializedSize = 0
+        self.logicalSize = 0
+        self.data = "" # buffer stores resident data
+        self.name = "" # stream name, default data stream has no name, this is for ADS
+
 class OBJECT_ID(obj.CType):
     # Modified from analyzeMFT.py:
     def FmtObjectID(self, item):
@@ -641,6 +699,7 @@ MFT_types = {
         'Header': [0x0, ['ATTRIBUTE_HEADER']],
         'ContentSize': [0x10, ['unsigned int']], #relative to the beginning of the attribute
         'ContentOffset': [0x14, ['unsigned short']],
+        #'IndexedFlag': [0x16, ['unsigned short']],
         'STDInfo': lambda x : obj.Object("STANDARD_INFORMATION", offset = x.obj_offset + x.ContentOffset, vm = x.obj_vm),
         'FileName': lambda x : obj.Object("FILE_NAME", offset = x.obj_offset + x.ContentOffset, vm = x.obj_vm),
         'ObjectID': lambda x : obj.Object("OBJECT_ID", offset = x.obj_offset + x.ContentOffset, vm = x.obj_vm),
@@ -706,23 +765,24 @@ MFT_types = {
         'Name': [0x42, ['UnicodeString', dict(length = lambda x: x.NameLength * 2)]],
     }],
 
-    'ATTRIBUTE_LIST': [0x19, {
+    'ATTRIBUTE_LIST': [0x20, { # 0x20 is min. length observed - YK
         'Type': [0x0, ['unsigned int']],
         'Length': [0x4, ['unsigned short']],
         'NameLength': [0x6, ['unsigned char']],
         'NameOffset': [0x7, ['unsigned char']],
         'StartingVCN': [0x8, ['unigned long long']],
         'FileReferenceLocation': [0x10, ['unsigned long long']],
-        'AttributeID': [0x18, ['unsigned char']],
+        'AttributeID': [0x18, ['unsigned short']],
+        'Name': [0x1A, ['UnicodeString', dict(length = lambda x: x.NameLength * 2)]]
     }],
 
-    'OBJECT_ID': [0x40, {
+    'OBJECT_ID': [0x40, { # This is mostly just 0x10 in size, only the objectID is present, not the other fields
         'ObjectID': [0x0, ['array', 0x10, ['char']]],
         'BirthVolumeID': [0x10, ['array', 0x10, ['char']]],
         'BirthObjectID': [0x20, ['array', 0x10, ['char']]],
         'BirthDomainID': [0x30, ['array', 0x10, ['char']]],
     }],
-
+    
     'REPARSE_POINT': [0x10, {
         'TypeFlags': [0x0, ['unsigned int']],
         'DataSize': [0x4, ['unsigned short']],
@@ -851,11 +911,15 @@ class MFTParser(common.AbstractWindowsCommand):
                 try:
                     mft_entry = obj.Object('MFT_FILE_RECORD', vm = bufferas,
                                offset = 0)
-                    temp = mft_entry.advance_one(mft_entry.ResidentAttributes.STDInfo.obj_offset + mft_entry.ResidentAttributes.ContentSize, mft_buff, self._config.ENTRYSIZE)
-                    if temp == None:
+
+                    temp = mft_entry.advance_one(mft_entry.ResidentAttributes.obj_offset + mft_entry.ResidentAttributes.Header.Length, mft_buff, self._config.ENTRYSIZE, "END_OF_ATTRIBUTES") 
+                    if temp == None:  # Probably a bad MFT entry or false positive
                         continue
-                    mft_entry.add_path(temp.FileName)
-                    name = temp.FileName.get_name()
+                    elif temp == "END_OF_ATTRIBUTES": # There was only a single attribute!
+                        pass
+                    else:
+                        mft_entry.add_path(temp.FileName) # This is a hack assuming FN is the 2nd attribute, not always the case!
+                        name = temp.FileName.get_name()
                 except struct.error:
                     if self._config.DEBUGOUT:
                         print "Problem entry at offset:", hex(offset)
@@ -877,6 +941,7 @@ class MFTParser(common.AbstractWindowsCommand):
         if self._config.DUMP_DIR != None and not os.path.isdir(self._config.DUMP_DIR):
             debug.error(self._config.DUMP_DIR + " is not a directory")
         # Some notes: every base MFT entry should have one $SI and at lease one $FN
+        # --> YK - Sometimes there is only $DATA, this happens when the data runs for a file exceed space available in that file's mft record, a new mft record is used then holding just $DATA
         # Usually $SI occurs before $FN
         # We'll make an effort to get the filename from $FN for $SI
         # If there is only one $SI with no $FN we dump whatever information it has
@@ -911,8 +976,9 @@ class MFTParser(common.AbstractWindowsCommand):
                             outfd.write("0|{0}\n".format(si.body(full, mft_entry.RecordNumber, size, offset)))
                             si = None
                 elif a.startswith("DATA"):
+                    i = i.data
                     if len(str(i)) > 0:
-                        file_string = ".".join(["file", "0x{0:x}".format(offset), "data{0}".format(datanum), "dmp"])
+                        file_string = ".".join(["file", "0x{0:X}".format(offset), "data{0}".format(datanum), "dmp"])
                         datanum += 1
                         if self._config.DUMP_DIR != None:
                             of_path = os.path.join(self._config.DUMP_DIR, file_string)
@@ -1007,9 +1073,9 @@ class MFTParser(common.AbstractWindowsCommand):
             if len(attributes) == 0:
                 continue
             outfd.write("{0}\n".format(border))
-            outfd.write("MFT entry found at offset 0x{0:x}\n".format(offset))
+            outfd.write("MFT entry found at offset 0x{0:X}\n".format(offset))
             outfd.write("Attribute: {0}\n".format(mft_entry.get_mft_type()))
-            outfd.write("Record Number: {0}\n".format(mft_entry.RecordNumber))
+            outfd.write("Record Number: 0x{0:X}\n".format(mft_entry.RecordNumber)) # changed to hex
             outfd.write("Link count: {0}\n".format(mft_entry.LinkCount))
             outfd.write("\n")
             # there can be more than one resident $DATA attribute
@@ -1036,11 +1102,17 @@ class MFTParser(common.AbstractWindowsCommand):
                     else:
                         outfd.write("{0}\n".format(str(i)))
                 elif a.startswith("DATA"):
-                    outfd.write("\n${0}\n".format(a))
+                    outfd.write("\n${0}".format(a))
+                    if mft_entry.FileRefBaseRecord != 0:
+                        base_file = mft_entry.get_base_filename()
+                        outfd.write(" (Base Record: 0x{0:X}".format(mft_entry.FileRefBaseRecord) + "" if base_file == None else " Base Filename: {0})".format(base_file))
+                    outfd.write("\n")
+                    outfd.write(str(i))
+                    i = i.data
                     contents = "\n".join(["{0:010x}: {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in utils.Hexdump(i)])
                     outfd.write("{0}\n".format(str(contents)))
                     if len(str(i)) > 0:
-                        file_string = ".".join(["file", "0x{0:x}".format(offset), "data{0}".format(datanum), "dmp"])
+                        file_string = ".".join(["file", "0x{0:X}".format(offset), "data{0}".format(datanum), "dmp"])
                         datanum += 1
                         if self._config.DUMP_DIR != None:
                             of_path = os.path.join(self._config.DUMP_DIR, file_string)
@@ -1050,4 +1122,6 @@ class MFTParser(common.AbstractWindowsCommand):
                 elif a == "OBJECT_ID":
                     outfd.write("\n$OBJECT_ID\n")
                     outfd.write(str(i))
+                elif a == "ATTRIBUTE_LIST":
+                    outfd.write("\n$ATTRIBUTE_LIST " + str(i))
             outfd.write("\n{0}\n".format(border))
