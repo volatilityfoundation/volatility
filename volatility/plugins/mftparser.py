@@ -166,6 +166,8 @@ class MFT_FILE_RECORD(obj.CType):
             temp = {}
             temp["ParentDirectory"] = long(fileinfo.ParentDirectory)
             temp["filename"] = self.remove_unprintable(fileinfo.get_name())
+            temp["deleted"] = not self.is_inuse()  # needed for validating a folder in case deleted
+            temp["directory"] = self.is_directory() 
             MFT_PATHS_FULL[ref] = temp
 
     def get_full_path(self, fileinfo):
@@ -192,7 +194,8 @@ class MFT_FILE_RECORD(obj.CType):
                 processing_deleted = True 
                 parent = ""
                 continue
-            elif parent == {} or parent["filename"] == "" or parent_id & 0xffffffffffff == 0 or parent_id & 0xffffffffffff == 5:
+            elif (parent == {} or parent["filename"] == "" or parent_id & 0xffffffffffff == 0 or parent_id & 0xffffffffffff == 5 
+                    or parent["directory"] == False or (processing_deleted and parent["deleted"] == False) ):
                 return path
             path = "{0}\\{1}".format(parent["filename"], path)
             parent_id = parent["ParentDirectory"] # & 0xffffffffffff # Bug fixed but not needed now
