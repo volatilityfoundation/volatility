@@ -1009,11 +1009,13 @@ class _CM_KEY_BODY(obj.CType):
     def full_key_name(self):
         output = []
         kcb = self.KeyControlBlock
-        while kcb.ParentKcb:
+        seen = []
+        while kcb.ParentKcb and kcb.ParentKcb.obj_offset not in seen:
             if kcb.NameBlock.Name == None:
                 break
             output.append(str(kcb.NameBlock.Name))
             kcb = kcb.ParentKcb
+            seen.append(kcb.obj_offset)
         return "\\".join(reversed(output))
 
 class _CMHIVE(obj.CType):
