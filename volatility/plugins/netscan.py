@@ -40,6 +40,9 @@ AF_INET6 = 0x17
 inaddr_any = utils.inet_ntop(socket.AF_INET, '\0' * 4)
 inaddr6_any = utils.inet_ntop(socket.AF_INET6, '\0' * 16)
 
+profile_major = 0
+profile_minor = 0
+
 #--------------------------------------------------------------------------------
 # pool scanners 
 #--------------------------------------------------------------------------------
@@ -169,6 +172,31 @@ class _TCP_ENDPOINT(_TCP_LISTENER):
 class _UDP_ENDPOINT(_TCP_LISTENER):
     """Class for objects found in UdpA pools"""
 
+    def dual_stack_sockets(self):
+        """Handle Windows dual-stack sockets"""
+
+        # If this pointer is valid, the socket is bound to
+        # a specific IP address. Otherwise, the socket is
+        # listening on all IP addresses of the address family.
+
+        # For windows 10
+        if profile_major == 6 and profile_minor ==4:
+            local_addr = self.LocalAddr.dereference()
+        # For before windows 10
+        else:
+            local_addr = self.LocalAddr.dereference().dereference()
+
+        if local_addr != None:
+            inaddr = local_addr.pData.dereference()
+            if self.AddressFamily == AF_INET:
+                yield "v4", inaddr.addr4, inaddr_any
+            else:
+                yield "v6", inaddr.addr6, inaddr6_any
+        else:
+            yield "v4", inaddr_any, inaddr_any
+            if self.AddressFamily == AF_INET6:
+                yield "v6", inaddr6_any, inaddr6_any
+
 #--------------------------------------------------------------------------------
 # profile modifications 
 #--------------------------------------------------------------------------------
@@ -198,8 +226,13 @@ class Netscan(common.AbstractScanCommand):
 
     scanners = [PoolScanUdpEndpoint, PoolScanTcpListener, PoolScanTcpEndpoint]
 
+
     @staticmethod
     def is_valid_profile(profile):
+        global profile_major
+        global profile_minor
+        profile_major = profile.metadata.get('major', 0)
+        profile_minor = profile.metadata.get('minor', 0)
         return (profile.metadata.get('os', 'unknown') == 'windows' and
                 profile.metadata.get('major', 0) == 6)
 
