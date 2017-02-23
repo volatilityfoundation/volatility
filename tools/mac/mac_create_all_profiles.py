@@ -182,8 +182,8 @@ def main():
 
     # Now look in the local Apple developer Library for installed KDKs. Pre 10.10
     # KDKs don't have the .pkg installer, so we start at 10.10.
-    kdk_root_dir = "/Library/Developer/KDKs"
-    for kit in os.listdir("/Library/Developer/KDKs/"):
+    kdk_root_dir = "/Library/Developer/KDKs/"
+    for kit in os.listdir(kdk_root_dir):
         try:
             full_path = os.path.join(
                 kdk_root_dir, kit, "System/Library/Kernels/")
