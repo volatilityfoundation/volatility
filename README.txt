@@ -567,7 +567,7 @@ For Windows:
 For Linux:
 * The suspected kernel version of the memory image
 
-Other options for communicaton can be found at:
+Other options for communication can be found at:
     https://github.com/volatilityfoundation/volatility/wiki
 
 Missing or Truncated Information
