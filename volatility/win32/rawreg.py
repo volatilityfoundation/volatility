@@ -105,6 +105,12 @@ def read_sklist(sk):
                 continue
 
             ssk = obj.Object("_CM_KEY_INDEX", ssk_off, sk.obj_vm)
+            
+            # this protects against a cycle seen in win10x86_14393 where
+            # one of a key's subkey entries pointed back at itself
+            if ssk == sk:
+                break
+                
             for i in read_sklist(ssk):
                 yield i
 
