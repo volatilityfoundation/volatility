@@ -213,12 +213,14 @@ def LinuxProfileFactory(profpkg):
             self.sys_map = {}
             self.sym_addr_cache = {}
             self.shift_address = 0
+            self.phys_shift = 0
             obj.Profile.__init__(self, *args, **kwargs)
 
         def clear(self):
             """Clear out the system map, and everything else"""
             self.sys_map = {}
             self.shift_address = 0
+            self.phys_shift = 0
             obj.Profile.clear(self)
 
         def reset(self):
@@ -2319,10 +2321,16 @@ class VolatilityDTB(obj.VolatilityMagic):
         else:
             shift_address = self.obj_vm.profile.shift_address
 
+        if config.PHYSICALSHIFT:
+            phys_shift = config.PHYSICALSHIFT
+            self.obj_vm.profile.phys_shift = phys_shift
+        else:
+            phys_shift = self.obj_vm.profile.phys_shift
+
         good_dtb = -1
             
-        init_task_addr = tbl["init_task"][0][0] + shift_address
-        dtb_sym_addr   = tbl[sym][0][0] + shift_address
+        init_task_addr = tbl["init_task"][0][0] + shift_address + phys_shift
+        dtb_sym_addr   = tbl[sym][0][0] + shift_address + phys_shift
         
         comm_offset    = profile.get_obj_offset("task_struct", "comm")
         pid_offset     = self.obj_vm.profile.get_obj_offset("task_struct", "pid")
@@ -2372,6 +2380,14 @@ class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
     """An object to check that an address space is a valid Arm Paged space"""
 
     def generate_suggestions(self):
+        config         = self.obj_vm.get_config()
+        # Set shift address and physical shift if their values
+        # and the DTB have been passed on the command line.
+        # If DTB has not been passed on the command line these
+        # values will be set by VolatilityDTB
+        if config.DTB and config.PHYSICALSHIFT and config.SHIFT:
+            self.obj_vm.profile.phys_shift = config.PHYSICALSHIFT
+            self.obj_vm.profile.shift_address = config.SHIFT
 
         init_task_addr = self.obj_vm.profile.get_symbol("init_task")
 
@@ -2384,7 +2400,7 @@ class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
 
         for shift in shifts:
             phys  = self.obj_vm.vtop(init_task_addr)
-            check = init_task_addr - shift
+            check = init_task_addr - shift + self.obj_vm.profile.phys_shift
            
             if phys == check:
                 ret = True
