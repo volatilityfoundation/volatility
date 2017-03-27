@@ -206,10 +206,10 @@ class Notepad(taskmods.DllList):
                         continue
 
                     text = obj.Object("String",
-                                      offset=entry.obj_offset + entry_size,
-                                      vm=task.get_process_address_space(),
-                                      length=entry.Size * entry_size,
-                                      encoding="utf16")
+                                      offset = entry.obj_offset + entry_size,
+                                      vm = task.get_process_address_space(),
+                                      length = entry.Size * entry_size,
+                                      encoding = "utf16")
 
                     if not text or len(text) == 0:
                         continue
@@ -237,10 +237,10 @@ class Notepad(taskmods.DllList):
                         continue 
 
                     text = obj.Object("String", 
-                                      offset=entry.obj_offset + entry_size,
-                                      vm=task.get_process_address_space(),
-                                      length=entry.Size * entry_size,
-                                      encoding="utf16")
+                                      offset = entry.obj_offset + entry_size,
+                                      vm = task.get_process_address_space(),
+                                      length = entry.Size * entry_size,
+                                      encoding = "utf16")
 
                     if not text or len(text) == 0:
                         continue 
