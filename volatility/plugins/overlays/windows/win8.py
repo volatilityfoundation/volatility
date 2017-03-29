@@ -148,7 +148,7 @@ class _LDR_DATA_TABLE_ENTRY(pe_vtypes._LDR_DATA_TABLE_ENTRY):
         LoadCount member, so we fake it.
         """
 
-        return 0
+        return self.ObsoleteLoadCount
 
 class _OBJECT_HEADER(win7._OBJECT_HEADER):
     """A class for object headers on Win 8 / Server 2012"""

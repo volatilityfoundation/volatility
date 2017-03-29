@@ -441,6 +441,12 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
     FIXME: If these classes are found by modscan, ensure we can
     dereference properly with obj_native_vm. 
     """
+    
+    def load_time(self):
+        if hasattr(self, "LoadTime"):
+            return str(self.LoadTime)
+        else:
+            return ""
 
     def _nt_header(self):
         """Return the _IMAGE_NT_HEADERS object"""
