@@ -99,7 +99,7 @@ class ImageInfo(kdbgscan.KDBGScan):
             yield ('DTB', Address, Address(addr_space.dtb))
 
         volmagic = obj.VolMagic(addr_space)
-        if hasattr(addr_space, "dtb"):
+        if hasattr(addr_space, "dtb") and hasattr(volmagic, "KDBG"):
             kdbg = volmagic.KDBG.v()
             if type(kdbg) == int:
                 kdbg = obj.Object("_KDDEBUGGER_DATA64", offset = kdbg, vm = addr_space)
