@@ -169,6 +169,31 @@ class _TCP_ENDPOINT(_TCP_LISTENER):
 class _UDP_ENDPOINT(_TCP_LISTENER):
     """Class for objects found in UdpA pools"""
 
+
+class _UDP_ENDPOINT_WIN10x64(_UDP_ENDPOINT):
+    """Class for objects found in UdpA pools"""
+
+    def dual_stack_sockets(self):
+        """Handle Windows dual-stack sockets"""
+
+        # If this pointer is valid, the socket is bound to
+        # a specific IP address. Otherwise, the socket is
+        # listening on all IP addresses of the address family.
+
+        # For windows 10
+        local_addr = self.LocalAddr.dereference()
+
+        if local_addr != None:
+            inaddr = local_addr.pData.dereference()
+            if self.AddressFamily == AF_INET:
+                yield "v4", inaddr.addr4, inaddr_any
+            else:
+                yield "v6", inaddr.addr6, inaddr6_any
+        else:
+            yield "v4", inaddr_any, inaddr_any
+            if self.AddressFamily == AF_INET6:
+                yield "v6", inaddr6_any, inaddr6_any
+
 #--------------------------------------------------------------------------------
 # profile modifications 
 #--------------------------------------------------------------------------------
@@ -186,8 +211,16 @@ class NetscanObjectClasses(obj.ProfileModification):
         profile.object_classes.update({
             '_TCP_LISTENER': _TCP_LISTENER,
             '_TCP_ENDPOINT': _TCP_ENDPOINT,
-            '_UDP_ENDPOINT': _UDP_ENDPOINT,
             })
+        if profile.metadata.get('major', 0) == 6 and  profile.metadata.get('minor', 0) == 4:
+            profile.object_classes.update({
+                '_UDP_ENDPOINT': _UDP_ENDPOINT_WIN10x64,
+                })
+        else:
+            profile.object_classes.update({
+                '_UDP_ENDPOINT': _UDP_ENDPOINT,
+                })
+
 
 #--------------------------------------------------------------------------------
 # netscan plugin 
@@ -197,6 +230,7 @@ class Netscan(common.AbstractScanCommand):
     """Scan a Vista (or later) image for connections and sockets"""
 
     scanners = [PoolScanUdpEndpoint, PoolScanTcpListener, PoolScanTcpEndpoint]
+
 
     @staticmethod
     def is_valid_profile(profile):
