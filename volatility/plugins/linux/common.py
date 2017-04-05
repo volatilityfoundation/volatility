@@ -64,6 +64,9 @@ class AbstractLinuxCommand(commands.Command):
         commands.Command.execute(self, *args, **kwargs)
 
     @staticmethod
+    def register_options(config):
+        config.add_option("PHYSICALSHIFT", type = 'int', default = 0, help = "Linux KASLR physical shift address")
+
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'linux'
 
