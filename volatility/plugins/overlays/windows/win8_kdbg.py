@@ -18,12 +18,13 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import struct, copy
+import struct
 import volatility.obj as obj
 import volatility.addrspace as addrspace
 import volatility.constants as constants
 import volatility.utils as utils
 import volatility.plugins.overlays.windows.win8 as win8
+import volatility.plugins.overlays.windows.windows as windows_main
 import volatility.plugins.patchguard as patchguard
 import volatility.registry as registry
 
@@ -85,26 +86,25 @@ class VolatilityKDBG(obj.VolatilityMagic):
         return buffer
 
     def unique_sizes(self):
+    	"""Determine the possible KDBG sizes to scan for, across all 
+    	profiles Win8 x64 and above. We do this by reflecting back on 
+    	the profile modifications to see which ones would trigger and
+    	then grabbing the KDBG size."""
     
-        items = registry.get_plugin_classes(obj.Profile).items()
+        items = registry.get_plugin_classes(windows_main.AbstractKDBGMod).items()
         sizes = set()
         
         for name, cls in items:
-            if (cls._md_os != "windows" or cls._md_memory_model != "64bit"):
+            try:
+                if (not cls.conditions["os"]("windows") or 
+                        not cls.conditions["major"](6) or 
+                        not cls.conditions["minor"](4)):
+                    continue
+
+                sizes.add(cls.kdbgsize)
+            except:
                 continue
-                
-            #if (cls._md_major, cls._md_minor) < (6, 2):
-            #    continue 
-                
-            conf = copy.deepcopy(self.obj_vm.get_config())
-            conf.PROFILE = name 
-            buff = addrspace.BufferAddressSpace(config = conf)
-            header = obj.VolMagic(buff).KDBGHeader.v()
-            
-            # this unpacks the kdbgsize from the signature 
-            size = struct.unpack("<H", header[-2:])[0]
-            sizes.add(size)
-            
+
         return sizes
 
     def copy_data_block(self, full_addr):
