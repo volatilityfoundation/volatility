@@ -30,7 +30,8 @@ import volatility.plugins.overlays.linux.linux as linux_overlay
 import re
 import volatility.debug as debug
 from operator import attrgetter
-
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address, Hex
 
 def find_key(d, value):
     """Searches for a leaf in a nested dictionary and returns the path taken"""
@@ -44,7 +45,6 @@ def find_key(d, value):
 
 # Monkey patch generate_suggestions for VolatilityLinuxIntelValidAS,
 # since the default method will yield False in case of KASLR
-
 
 def generate_suggestions_valid_as(self):
     yield True
@@ -179,14 +179,15 @@ class linux_kaslr_shift(linux_common.AbstractLinuxIntelCommand):
                     candidate = int(candidate, 2)
                     yield [dtb, candidate, dtb_candidates[dtb] - candidate]
 
-    def render_text(self, outfd, data):
-        self.table_header(outfd, [("DTB", "[addrpad]"),
-                                  ("Virtual Shift", "[addrpad]"),
-                                  ("Physical Shift", "[addrpad]")])
+    def unified_output(self, data):
+        return TreeGrid([("DTB", Address),
+                         ("VirtualShift", Address),
+                         ("Physical Shift", Address)],
+                        self.generator(data))
 
-        for shift_combination in data:
-            self.table_row(outfd, shift_combination[0],
-                           shift_combination[1], shift_combination[2])
+    def generator(self, data):
+        for dtb, virtualshift, physicalshift in data:
+            yield(0, [Address(dtb), Address(virtualshift), Address(physicalshift)])
 
     def format_index_binary(self, num):
         # For each level of address translation 9 bits are used to
