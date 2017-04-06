@@ -30,6 +30,8 @@ import volatility.utils as utils
 import volatility.addrspace as addrspace
 import volatility.registry as registry
 import volatility.plugins.mac.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 profiles = [
 ["MacYosemite_10_10_14A389x64", 18446743523963612480, 18446743523964534784, 1],
@@ -166,6 +168,18 @@ class mac_get_profile(common.AbstractMacCommand):
             yield result
         else:
             debug.error("Unable to find an OS X profile for the given memory sample.")
+
+    def unified_output(self, data):
+        return TreeGrid([("Profile", str),
+                          ("Shift Address", Address)
+                          ], self.generator(data))
+
+    def generator(self, data):
+        for (profile, shift) in data:
+            yield(0, [
+                str(profile),
+                Address(shift),
+                ])
                     
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Profile", "50"), ("Shift Address", "[addrpad]")])
