@@ -402,6 +402,9 @@ class Win8Tcpip(obj.ProfileModification):
             'RemotePort' : [ 0x3E, ['unsigned be short']],
             'Owner' : [ 0x174, ['pointer', ['_EPROCESS']]],
             }],
+        '_ADDRINFO' : [ None, {
+            'Remote' : [ 0xC, ['pointer', ['_IN_ADDR']]],
+            }],
         })
 
 class Win81Tcpip(obj.ProfileModification):
