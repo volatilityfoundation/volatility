@@ -161,10 +161,24 @@ class VolatilityKDBG(obj.VolatilityMagic):
         wait_always = None
         # nt!KdpDataBlockEncoded
         block_encoded = None
-        # only for KdCopyDataBlock detection
-        bswap = None
-
+        
+        # collect instructions up to the first RET
+        before_ret = []
+        # we need a bswap instruction to be valid
+        found_bswap = False
+        
         for op in ops:
+        	if op.mnemonic == "BSWAP":
+        		found_bswap = True
+        	elif op.mnemonic == "RET":
+        		break
+        	else:
+        		before_ret.append(op)
+        		
+        if not found_bswap:
+        	return obj.NoneObject("No bswap instruction found")
+
+        for op in before_ret:
             # cmp cs:KdpDataBlockEncoded, 0
             if (not block_encoded and op.mnemonic == "CMP" and 
                         op.operands[0].type == "AbsoluteMemory" and 
@@ -204,18 +218,12 @@ class VolatilityKDBG(obj.VolatilityMagic):
                                         offset = offset,
                                         vm = addr_space)
                 break
-            # bswap reg
-            elif (not bswap and op.mnemonic == 'BSWAP'):
-                bswap = True
-            elif op.mnemonic == "RET":
-                break
 
         # check if we've found all the required offsets 
         if (block_encoded != None 
                     and kdbg_block != None 
                     and wait_never != None
-                    and wait_always != None
-                    and bswap != None):
+                    and wait_always != None):
             
             # some acquisition tools decode the KDBG block but leave 
             # nt!KdpDataBlockEncoded set, so we handle it here. 
