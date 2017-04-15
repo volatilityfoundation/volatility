@@ -97,8 +97,7 @@ class VolatilityKDBG(obj.VolatilityMagic):
         for name, cls in items:
             try:
                 if (not cls.conditions["os"]("windows") or 
-                        not cls.conditions["major"](6) or 
-                        not cls.conditions["minor"](4)):
+                        not cls.conditions["major"](6)):
                     continue
 
                 sizes.add(cls.kdbgsize)
@@ -251,9 +250,10 @@ class VolatilityKDBG(obj.VolatilityMagic):
             kdbg.newattr('wait_never', wait_never)
             kdbg.newattr('wait_always', wait_always)                    
 
-            return kdbg
-        else:
-            return obj.NoneObject("Cannot find decoding entropy values")
+            if kdbg.Header.OwnerTag == 0x4742444b:
+                return kdbg
+                
+        return obj.NoneObject("Cannot find decoding entropy values")
 
     def generate_suggestions(self):
         """Generates a list of possible KDBG structure locations"""
