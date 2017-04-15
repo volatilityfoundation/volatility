@@ -148,6 +148,47 @@ class MigTypes(obj.ProfileModification):
         else:
             profile.vtypes.update(mig_vtypes_64)
 
+# this change was introduced in 10.12 (Sierra), which only has 64 bit versions
+cnode_vtypes = {
+    'cat_attr': [ 0x78, {
+        'ca_fileid': [0x0, ['unsigned int']],
+        'ca_mode': [0x4, ['unsigned short']],
+        'ca_recflags': [0x6, ['unsigned short']],
+        'ca_linkcount': [0x8, ['unsigned int']],
+        'ca_uid': [0xc, ['unsigned int']],
+        'ca_gid': [0x10, ['unsigned int']],
+        'ca_atime': [0x18, ['long']],
+        'ca_atimeondisk': [0x20, ['long']],
+        'ca_mtime': [0x28, ['long']],
+        'ca_ctime': [0x30, ['long']],
+        'ca_itime': [0x38, ['long']],
+        'ca_btime': [0x40, ['long']],
+        'ca_flags': [0x48, ['unsigned int']],
+    }],
+
+    'cnode': [ 0x148, {
+        'c_flag': [0x40, ['unsigned int']],
+        'c_hflag': [0x44, ['unsigned int']],
+        'c_vp': [0x48, ['pointer', ['vnode']]],
+        'c_rsrc_vp': [0x50, ['pointer', ['vnode']]],
+        'c_childhint': [0x68, ['unsigned int']],
+        'c_dirthreadhint': [0x6c, ['unsigned int']],
+        'c_attr': [0x88, ['cat_attr']],
+        'c_dirhinttag': [0x120, ['short']],
+        'c_dirchangecnt': [0x124, ['unsigned int']],
+        'c_touch_acctime': [0x138, ['unsigned char']],
+        'c_touch_chgtime': [0x139, ['unsigned char']],
+        'c_touch_modtime': [0x13a, ['unsigned char']],
+        'c_update_txn': [0x13c, ['unsigned int']],
+    }],
+}
+
+class CNodeTypes(obj.ProfileModification):
+    conditions = {"os" : lambda x : x in ["mac"]}
+
+    def modification(self, profile):
+        if not profile.vtypes.get("cnode"):
+            profile.vtypes.update(cnode_vtypes)
 
 class catfishScan(scan.BaseScanner):
     """ Scanner for Catfish string for Mountain Lion """

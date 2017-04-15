@@ -97,8 +97,7 @@ class VolatilityKDBG(obj.VolatilityMagic):
         for name, cls in items:
             try:
                 if (not cls.conditions["os"]("windows") or 
-                        not cls.conditions["major"](6) or 
-                        not cls.conditions["minor"](4)):
+                        not cls.conditions["major"](6)):
                     continue
 
                 sizes.add(cls.kdbgsize)
@@ -161,8 +160,24 @@ class VolatilityKDBG(obj.VolatilityMagic):
         wait_always = None
         # nt!KdpDataBlockEncoded
         block_encoded = None
-
+        
+        # collect instructions up to the first RET
+        before_ret = []
+        # we need a bswap instruction to be valid
+        found_bswap = False
+        
         for op in ops:
+        	if op.mnemonic == "BSWAP":
+        		found_bswap = True
+        	elif op.mnemonic == "RET":
+        		break
+        	else:
+        		before_ret.append(op)
+        		
+        if not found_bswap:
+        	return obj.NoneObject("No bswap instruction found")
+
+        for op in before_ret:
             # cmp cs:KdpDataBlockEncoded, 0
             if (not block_encoded and op.mnemonic == "CMP" and 
                         op.operands[0].type == "AbsoluteMemory" and 
@@ -202,13 +217,11 @@ class VolatilityKDBG(obj.VolatilityMagic):
                                         offset = offset,
                                         vm = addr_space)
                 break
-            elif op.mnemonic == "RET":
-                break
 
         # check if we've found all the required offsets 
         if (block_encoded != None 
                     and kdbg_block != None 
-                    and wait_never != None 
+                    and wait_never != None
                     and wait_always != None):
             
             # some acquisition tools decode the KDBG block but leave 
@@ -237,9 +250,10 @@ class VolatilityKDBG(obj.VolatilityMagic):
             kdbg.newattr('wait_never', wait_never)
             kdbg.newattr('wait_always', wait_always)                    
 
-            return kdbg
-        else:
-            return obj.NoneObject("Cannot find decoding entropy values")
+            if kdbg.Header.OwnerTag == 0x4742444b:
+                return kdbg
+                
+        return obj.NoneObject("Cannot find decoding entropy values")
 
     def generate_suggestions(self):
         """Generates a list of possible KDBG structure locations"""
