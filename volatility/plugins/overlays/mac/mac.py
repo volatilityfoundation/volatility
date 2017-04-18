@@ -329,14 +329,45 @@ class vnode(obj.CType):
 
         return ret
 
-    def get_contents(self):
-        moc  = self.v_un.vu_ubcinfo.ui_control.moc_object
-        memq = moc.memq 
+    '''
+    static inline uintptr_t vm_page_unpack_ptr(uintptr_t p)
+    {
+            if (!p) 
+                    return ((uintptr_t)0);
 
-        cur = memq.m("next").dereference_as("vm_page")
+            if (p & VM_PACKED_FROM_VM_PAGES_ARRAY)
+                    return ((uintptr_t)(&vm_pages[(uint32_t)(p & ~VM_PACKED_FROM_VM_PAGES_ARRAY)]));
+            return (((p << VM_PACKED_POINTER_SHIFT) + (uintptr_t) VM_MIN_KERNEL_AND_KEXT_ADDRESS));
+    }
+    '''
+    def _get_next_page(self, memq):
+        # packed pointer, in 10.12+
+        p = memq.m("next")
+
+        if p == 0 or p == None:
+            ret = None
+        
+        elif self.obj_vm.profile.metadata.get('memory_model', 0) == "64bit" and p.size() == 4:  
+            
+            if p & 0x80000000 != 0:
+                vm_pages_ptr = self.obj_vm.profile.get_symbol("_vm_pages")
+                vm_pages_addr = obj.Object("unsigned long long", offset = vm_pages_ptr, vm = self.obj_vm)
+                ret_addr = vm_pages_addr + ((p & ~0x80000000) * 8)
+            else:
+                ret_addr = (p << 6) + 0xffffff7f80000000  
+
+            ret = obj.Object("vm_page", offset = ret_addr, vm = self.obj_vm)
+        else:
+            ret = p.dereference_as("vm_page")
+
+        return ret
+
+    def get_contents(self):
+        memq = self.v_un.vu_ubcinfo.ui_control.moc_object.memq
+        cur = self._get_next_page(memq)
 
         file_size = self.v_un.vu_ubcinfo.ui_size
-        phys_as = utils.load_as(self.obj_vm.get_config(), astype = 'physical')
+        phys_as   = self.obj_vm.base
 
         idx = 0
         written = 0
@@ -345,13 +376,13 @@ class vnode(obj.CType):
             # the last element of the queue seems to track the size of the queue
             if cur.offset != 0 and cur.offset == idx:
                 break
-                
+            
             if cur.phys_page != 0 and cur.offset >= 0:
                 sz = 4096
 
                 if file_size - written < 4096:
                     sz = file_size - written
-
+                
                 buf = phys_as.zread(cur.phys_page * 4096, sz)
 
                 yield (cur.offset.v(), buf)
@@ -359,7 +390,7 @@ class vnode(obj.CType):
             idx     = idx + 1
             written = written + 4096
 
-            cur = cur.listq.next.dereference_as("vm_page")
+            cur = self._get_next_page(cur.listq)
 
 class fileglob(obj.CType):
     
