@@ -31,6 +31,9 @@ import itertools
 def load_as(config, astype = 'virtual', **kwargs):
     """Loads an address space by stacking valid ASes on top of each other (priority order first)"""
 
+    if config.readonly.get("as_%s" % astype):
+        return config.readonly.get("as_%s" % astype)
+
     base_as = None
     error = exceptions.AddrSpaceError()
 
@@ -64,6 +67,7 @@ def load_as(config, astype = 'virtual', **kwargs):
     if base_as is None:
         raise error
 
+    config.update("as_%s" % astype, base_as)
     return base_as
 
 def Hexdump(data, width = 16):
