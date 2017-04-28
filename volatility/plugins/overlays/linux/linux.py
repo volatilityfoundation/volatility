@@ -2028,62 +2028,9 @@ class task_struct(obj.CType):
 
         return self.SH_DIV(1000000 * 1000, self.ACTHZ(CLOCK_TICK_RATE, HZ), 8)
 
-    def get_time_vars(self):
-        '''
-        Sometime in 3.[3-5], Linux switched to a global timekeeper structure
-        This just figures out which is in use and returns the correct variables
-        '''
-
-        wall_addr       = self.obj_vm.profile.get_symbol("wall_to_monotonic")
-        sleep_addr      = self.obj_vm.profile.get_symbol("total_sleep_time")
-        timekeeper_addr = self.obj_vm.profile.get_symbol("timekeeper")
-        tkcore_addr     = self.obj_vm.profile.get_symbol("tk_core") 
-
-        # old way
-        if wall_addr and sleep_addr:
-            wall = obj.Object("timespec", offset = wall_addr, vm = self.obj_vm)
-            timeo = obj.Object("timespec", offset = sleep_addr, vm = self.obj_vm)
-
-        elif wall_addr:
-            wall  = obj.Object("timespec", offset = wall_addr, vm = self.obj_vm)
-            timeo = linux_common.vol_timespec(0, 0)
-    
-        # timekeeper way
-        elif timekeeper_addr:
-            timekeeper = obj.Object("timekeeper", offset = timekeeper_addr, vm = self.obj_vm)
-            wall = timekeeper.wall_to_monotonic
-            timeo = timekeeper.total_sleep_time
-
-        # 3.17(ish) - 3.19(ish) way
-        elif tkcore_addr and hasattr("timekeeper", "total_sleep_time"):
-            # skip seqcount
-            timekeeper = obj.Object("timekeeper", offset = tkcore_addr + 4, vm = self.obj_vm)
-            wall = timekeeper.wall_to_monotonic
-            timeo = timekeeper.total_sleep_time
-
-        # 3.19(ish)+
-        # getboottime from 3.19.x
-        elif tkcore_addr:
-            # skip seqcount
-            timekeeper = obj.Object("timekeeper", offset = tkcore_addr + 8, vm = self.obj_vm)
-            wall = timekeeper.wall_to_monotonic
-
-            oreal = timekeeper.offs_real
-            oboot = timekeeper.offs_boot
- 
-            tv64 = (oreal.tv64 & 0xffffffff) - (oboot.tv64 & 0xffffffff)
-
-            if tv64:
-                tv64 = (tv64 / 100000000) * -1
-                timeo = linux_common.vol_timespec(tv64, 0) 
-            else:
-                timeo = None
-
-        return (wall, timeo)
-
     # based on 2.6.35 getboottime
     def get_boot_time(self):
-        (wall, timeo) = self.get_time_vars()
+        (wall, timeo) = linux_common.get_time_vars(self.obj_vm)
 
         if wall == None or timeo == None:
             return -1
