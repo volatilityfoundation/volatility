@@ -1219,6 +1219,9 @@ class proc(obj.CType):
         if nfiles > num_fds:
             num_fds = nfiles
 
+        if num_fds > 4096:
+            num_fds = 1024
+
         fds = obj.Object('Array', offset = self.p_fd.fd_ofiles, vm = self.obj_vm, targetType = 'Pointer', count = num_fds)
 
         for i, fd in enumerate(fds):
