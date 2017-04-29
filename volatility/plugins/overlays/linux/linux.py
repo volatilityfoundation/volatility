@@ -1583,33 +1583,6 @@ class task_struct(obj.CType):
         for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
             yield hist              
 
-    def psenv(self):
-        env = ""
-
-        if self.mm:
-            # set the as with our new dtb so we can read from userland
-            proc_as = self.get_process_address_space()
-            if proc_as == None:
-                env = ""
-            else:
-                # read argv from userland
-                start = self.mm.env_start.v()
-
-                env = proc_as.read(start, self.mm.env_end - self.mm.env_start + 10)
-                
-        if env:
-            ents = env.split("\x00")
-            for varstr in ents:
-                eqidx = varstr.find("=")
-
-                if eqidx == -1:
-                    continue
-
-                key = varstr[:eqidx]
-                val = varstr[eqidx+1:]
-
-                yield (key, val) 
-
     def _dynamic_env(self, proc_as, pack_format, addr_sz):
         for vma in self.get_proc_maps():
             if not (vma.vm_file and str(vma.vm_flags) == "rw-"):
@@ -2084,26 +2057,26 @@ class task_struct(obj.CType):
         return dt
 
     def get_environment(self):
+        env = ""
+        
         if self.mm:
             # set the as with our new dtb so we can read from userland
             proc_as = self.get_process_address_space()
             if proc_as == None:
                 return ""
 
-            # read argv from userland
             start = self.mm.env_start.v()
 
-            argv = proc_as.read(start, self.mm.env_end - self.mm.env_start + 10)
-            
-            if argv:
-                # split the \x00 buffer into args
-                env = " ".join(argv.split("\x00"))
+            size_to_read = self.mm.env_end.v() - start + 10 
 
-            else:
-                env = ""
-        else:
-            # kernel thread
-            env = ""
+            if 4 < size_to_read < 4096:
+                args = proc_as.read(start, size_to_read)
+                if args:
+                    for vals in args.split("\x00"): 
+                        ents = vals.split("=")
+
+                        if len(ents) == 2:
+                            env = env + "%s=%s " % (ents[0], ents[1])
 
         if len(env) > 1 and env[-1] == " ":
             env = env[:-1]
