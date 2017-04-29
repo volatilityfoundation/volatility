@@ -1193,6 +1193,9 @@ class proc(obj.CType):
         argc = self.p_argc + 1
         args = []
 
+        if argc > 1024:
+            return ""
+
         while argc > 0:
             arg = obj.Object("String", offset = argsstart, vm = proc_as, length = 256)
                 
