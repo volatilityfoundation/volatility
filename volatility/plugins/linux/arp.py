@@ -99,10 +99,18 @@ class linux_arp(linux_common.AbstractLinuxCommand):
         return sum(ret, [])
 
     def walk_neighbor(self, neighbor):
-
-        ret = []
+        seen = []
+        ret  = []
+        ctr  = 0
 
         for n in linux_common.walk_internal_list("neighbour", "next", neighbor):
+            if n.obj_offset in seen:
+                break
+            seen.append(n.obj_offset)
+
+            if ctr > 1024:
+                break
+            ctr = ctr + 1
 
             # get the family from each neighbour in order to work with ipv4 and 6
             family = n.tbl.family
