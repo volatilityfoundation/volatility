@@ -2120,13 +2120,18 @@ class task_struct(obj.CType):
             # read argv from userland
             start = self.mm.arg_start.v()
 
-            argv = proc_as.read(start, self.mm.arg_end - self.mm.arg_start)
+            size_to_read = self.mm.arg_end - self.mm.arg_start
 
-            if argv:
-                # split the \x00 buffer into args
-                name = " ".join(argv.split("\x00"))
-            else:
+            if size_to_read < 1 or size_to_read > 4096:
                 name = ""
+            else:
+                argv = proc_as.read(start, size_to_read)
+
+                if argv:
+                    # split the \x00 buffer into args
+                    name = " ".join(argv.split("\x00"))
+                else:
+                    name = ""
         else:
             # kernel thread
             name = "[" + self.comm + "]"
