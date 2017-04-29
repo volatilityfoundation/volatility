@@ -72,7 +72,12 @@ class mac_check_syscalls(common.AbstractMacCommand):
         table_addr = self.addr_space.profile.get_symbol("_sysent")
 
         nsysent = obj.Object("int", offset = self.addr_space.profile.get_symbol("_nsysent"), vm = self.addr_space)
+        if nsysent == None or nsysent == 0:
+            return
+
         sysents = obj.Object(theType = "Array", offset = table_addr, vm = self.addr_space, count = nsysent, targetType = "sysent")
+        if sysents == None:
+            return
 
         for (i, sysent) in enumerate(sysents):
             ent_addr = sysent.sy_call.v()
