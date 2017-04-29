@@ -42,11 +42,27 @@ class mac_lsmod(common.AbstractMacCommand):
 
         p = self.addr_space.profile.get_symbol("_kmod")
         kmodaddr = obj.Object("Pointer", offset = p, vm = self.addr_space)
+        if kmodaddr == None:
+            return
+
         kmod = kmodaddr.dereference_as("kmod_info") 
 
+        seen = []
+        ctr  = 0
+
         while kmod.is_valid():
+            # key on .v() instead of .obj_offset due 'next' being at offset 0
+            if kmod.v() in seen:
+                break
+            seen.append(kmod.v())
+
+            if ctr > 1024:
+                break
+            ctr = ctr + 1
+
             if not self._config.ADDR or (kmod.address <= self._config.ADDR <= (kmod.address + kmod.m("size"))):
                 yield kmod
+
             kmod = kmod.next
 
     def unified_output(self, data):
