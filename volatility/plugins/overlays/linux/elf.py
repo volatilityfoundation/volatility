@@ -307,6 +307,9 @@ class elf_hdr(elf):
 
         tname = "elf_phdr"
         
+        if self.e_phoff < 0 or self.e_phoff > 1000000:
+            return
+
         # the buffer of headers
         arr_start = self.obj_offset + self.e_phoff
 
@@ -560,6 +563,9 @@ class elf_phdr(elf):
 
     def __init__(self, theType, offset, vm, name = None, **kwargs):
         elf.__init__(self, 0, "elf32_phdr", "elf64_phdr", theType, offset, vm, name, **kwargs)    
+
+    def is_valid(self):
+        return self.p_vaddr > 0x1000 and self.p_filesz > 0 and self.p_memsz > 0
 
     @property
     def p_vaddr(self):

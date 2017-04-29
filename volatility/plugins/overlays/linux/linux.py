@@ -1212,6 +1212,9 @@ class task_struct(obj.CType):
 
             real_size = end - start
 
+            if real_size < 0 or real_size > 100000000:
+                continue
+
             sects[start] = real_size
  
         last_end = -1
