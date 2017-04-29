@@ -1009,7 +1009,10 @@ class proc(obj.CType):
         for seg in m.segments():
             if str(seg.segname) == "__PAGEZERO":
                 continue
-                
+ 
+            if seg.vmsize == 0 or seg.vmsize > 100000000:
+                continue
+               
             # this is related to the shared cache map 
             # contact Andrew for full details
             if str(seg.segname) == "__LINKEDIT" and seg.vmsize > 20000000:
@@ -1017,7 +1020,6 @@ class proc(obj.CType):
 
             cur = seg.vmaddr
             end = seg.vmaddr + seg.vmsize
-        
             while cur < end:
                 buffer = buffer + proc_as.zread(cur, 4096) 
                 cur = cur + 4096
