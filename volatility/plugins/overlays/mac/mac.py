@@ -1058,10 +1058,14 @@ class proc(obj.CType):
 
         info_addr = struct.unpack(self.pack_fmt, info_buf)[0] 
 
-        img_infos = obj.Object(theType = "Array", targetType = itype, offset = info_addr, count = infos.infoArrayCount, vm = proc_as)
+        cnt = infos.infoArrayCount
+        if cnt > 4096:
+            cnt = 1024 
+
+        img_infos = obj.Object(theType = "Array", targetType = itype, offset = info_addr, count = cnt, vm = proc_as)
         
         for info_addr in img_infos:
-            if info_addr:
+            if info_addr and info_addr.is_valid():
                 yield info_addr
 
     def get_proc_maps(self):
@@ -1725,6 +1729,9 @@ class sockaddr(obj.CType):
         return ip
 
 class dyld32_image_info(obj.CType):
+    def is_valid(self):
+        return len(self.imageFilePath) > 1 and self.imageLoadAddress > 0x1000
+
     def _read_ptr(self, addr):
         addr = self.obj_vm.read(addr, 4)
         if not addr:
@@ -1757,6 +1764,9 @@ class dyld32_image_info(obj.CType):
         return addr
 
 class dyld64_image_info(obj.CType):
+    def is_valid(self):
+        return len(self.imageFilePath) > 1 and self.imageLoadAddress > 0x1000
+
     def _read_ptr(self, addr):
         addr = self.obj_vm.read(addr, 8)
         if addr == None:
