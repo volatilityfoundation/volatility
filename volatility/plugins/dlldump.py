@@ -135,7 +135,7 @@ class DLLDump(procdump.ProcDump):
                 result = "Error: DllBase is paged"
             else:
                 process_offset = ps_ad.vtop(proc.obj_offset)
-                dump_file = "module.{0}.{1:x}.{2:x}.dll".format(proc.UniqueProcessId, process_offset, mod_base)
+                dump_file = "module.{0}.{1:x}.{2:09x}.{3}".format(proc.UniqueProcessId, process_offset, mod_base, str(mod_name or ''))
                 result = self.dump_pe(ps_ad, mod_base, dump_file)
             self.table_row(outfd,
                     proc.obj_offset,
