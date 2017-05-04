@@ -42,6 +42,9 @@ class vol_timespec:
         self.tv_nsec = nsecs
 
 def set_plugin_members(obj_ref):
+    if obj_ref._config.SHIFT:
+        debug.error("Linux uses --virtual_shift and --physical_shift. Please run linux_aslr_shift to obtain the values.")
+
     obj_ref.addr_space = utils.load_as(obj_ref._config)
 
     if not obj_ref.is_valid_profile(obj_ref.addr_space.profile):
@@ -66,6 +69,11 @@ class AbstractLinuxCommand(commands.Command):
     @staticmethod
     def is_valid_profile(profile):
         return profile.metadata.get('os', 'Unknown').lower() == 'linux'
+
+    @staticmethod
+    def register_options(config):
+        config.add_option("PHYSICAL_SHIFT", type = 'int', default = 0, help = "Linux kernel physical shift address")
+        config.add_option("VIRTUAL_SHIFT", type = 'int', default = 0, help = "Linux kernel virtual shift address")
 
     def is_known_address(self, addr, modules):
         addr = int(addr)

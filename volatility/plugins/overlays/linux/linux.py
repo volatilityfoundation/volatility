@@ -212,13 +212,15 @@ def LinuxProfileFactory(profpkg):
             # change the name to catch any code referencing the old hash table
             self.sys_map = {}
             self.sym_addr_cache = {}
-            self.shift_address = 0
+            self.physical_shift = 0
+            self.virtual_shift = 0
             obj.Profile.__init__(self, *args, **kwargs)
 
         def clear(self):
             """Clear out the system map, and everything else"""
             self.sys_map = {}
-            self.shift_address = 0
+            self.virutal_shift = 0
+            self.physical_shift = 0
             obj.Profile.clear(self)
 
         def reset(self):
@@ -285,8 +287,8 @@ def LinuxProfileFactory(profpkg):
 
                 for (name, addrs) in mod.items():
                     addr = addrs[0][0]
-                    if self.shift_address and addr:
-                        addr = addr + self.shift_address
+                    if self.virtual_shift and addr:
+                        addr = addr + self.virtual_shift
 
                     ret.append((name, addr))
             else:
@@ -317,7 +319,7 @@ def LinuxProfileFactory(profpkg):
             for (name, addrs) in mod.items():
 
                 for (addr, addr_type) in addrs:
-                    if sym_address == addr + self.shift_address:
+                    if sym_address == addr + self.virtual_shift:
                         ret = name
                         break
 
@@ -419,7 +421,7 @@ def LinuxProfileFactory(profpkg):
                 debug.info("Requested module {0:s} not found in symbol table\n".format(module))
 
             if ret:
-                ret = ret + self.shift_address
+                ret = ret + self.virtual_shift
 
             return ret
 
@@ -2233,45 +2235,64 @@ class VolatilityDTB(obj.VolatilityMagic):
         profile = self.obj_vm.profile
         
         if profile.metadata.get('memory_model', '32bit') == "32bit":
-            sym   = "swapper_pg_dir"
-            shifts = [0xc0000000]
+            sym     = "swapper_pg_dir"
+            shifts  = [0xc0000000]
+            read_sz = 4
+            fmt     = "<I"
         else:
-            sym   = "init_level4_pgt"
-            shifts = [0xffffffff80000000, 0xffffffff80000000 - 0x1000000, 0xffffffff7fe00000]       
+            sym     = "init_level4_pgt"
+            shifts  = [0xffffffff80000000, 0xffffffff80000000 - 0x1000000, 0xffffffff7fe00000]       
+            read_sz = 8
+            fmt     = "<Q"
+
+        config = self.obj_vm.get_config()
+        tbl    = self.obj_vm.profile.sys_map["kernel"]
         
-        config         = self.obj_vm.get_config()
-        tbl = self.obj_vm.profile.sys_map["kernel"]
-        
-        if config.SHIFT:
-            shift_address = config.SHIFT
+        if config.PHYSICAL_SHIFT and not config.VIRTUAL_SHIFT:
+            debug.error("You must specifiy both the virtual and physical shift.") 
+        elif not config.PHYSICAL_SHIFT and config.VIRTUAL_SHIFT:
+            debug.error("You must specifiy both the virtual and physical shift.") 
+        elif config.PHYSICAL_SHIFT and config.VIRTUAL_SHIFT:
+            physical_shift_address = config.PHYSICAL_SHIFT
+            virtual_shift_address = config.VIRTUAL_SHIFT
         else:
-            shift_address = self.obj_vm.profile.shift_address
+            physical_shift_address = self.obj_vm.profile.physical_shift
+            virtual_shift_address  = self.obj_vm.profile.virtual_shift    
 
         good_dtb = -1
             
-        init_task_addr = tbl["init_task"][0][0] + shift_address
-        dtb_sym_addr   = tbl[sym][0][0] + shift_address
-        
-        comm_offset    = profile.get_obj_offset("task_struct", "comm")
-        pid_offset     = self.obj_vm.profile.get_obj_offset("task_struct", "pid")
-        pas            = self.obj_vm
-        
-        for shift in shifts:
-            sym_addr = dtb_sym_addr - shift
+        init_task_addr = tbl["init_task"][0][0] + physical_shift_address
+        dtb_sym_addr   = tbl[sym][0][0] + physical_shift_address
+        files_sym_addr = tbl["init_files"][0][0] + physical_shift_address
        
-            read_addr = init_task_addr - shift + comm_offset
+        comm_offset   = profile.get_obj_offset("task_struct", "comm")
+        pid_offset    = profile.get_obj_offset("task_struct", "pid")
+        files_offset  = profile.get_obj_offset("task_struct", "files") 
+        mm_offset     = profile.get_obj_offset("task_struct", "active_mm")
+        pas           = self.obj_vm
+        
+        if physical_shift_address != 0 and virtual_shift_address != 0:
+            good_dtb  = dtb_sym_addr - shifts[0]
+            self.obj_vm.profile.physical_shift = physical_shift_address 
+            self.obj_vm.profile.virtual_shift  = virtual_shift_address
 
-            buf = pas.read(read_addr, 12)        
-          
-            if buf:
-                idx = buf.find("swapper")
-                if idx == 0:
-                    good_dtb = sym_addr
-                    break
+        if good_dtb == -1:
+            for shift in shifts:
+                sym_addr = dtb_sym_addr - shift
+           
+                read_addr = init_task_addr - shift + comm_offset
 
-        # check for relocated kernel
-        if good_dtb == -1 and shift_address == 0:
+                buf = pas.read(read_addr, 12)        
+                if buf:
+                    idx = buf.find("swapper")
+                    if idx == 0:
+                        good_dtb = sym_addr
+                        break
+
+        # check for relocated or physical aslr kernel
+        if good_dtb == -1:
             scanner = swapperScan(needles = ["swapper/0\x00\x00\x00\x00\x00\x00"])
+            ctr = 0
             for swapper_offset in scanner.scan(self.obj_vm):
                 swapper_address = swapper_offset - comm_offset
 
@@ -2281,18 +2302,27 @@ class VolatilityDTB(obj.VolatilityMagic):
                 if pas.read(swapper_address + pid_offset, 4) != "\x00\x00\x00\x00":
                     continue
 
-                tmp_shift_address = swapper_address - (init_task_addr - shifts[0])
+                mm_buf = pas.read(swapper_address + mm_offset, read_sz)
+                mm_addr = struct.unpack(fmt, mm_buf)[0]
+                if mm_addr == 0:
+                    continue
 
+                tmp_shift_address = swapper_address - (init_task_addr - shifts[0])
                 if tmp_shift_address & 0xfff != 0x000:
                     continue
+
+                physical_shift_address = tmp_shift_address
                 
-                shift_address = tmp_shift_address
-                good_dtb = dtb_sym_addr - shifts[0] + shift_address
+                self.obj_vm.profile.physical_shift = physical_shift_address
+                good_dtb = dtb_sym_addr - shifts[0] + physical_shift_address
+                
+                files_buf  = pas.read(swapper_address + files_offset, read_sz)
+                files_addr = struct.unpack(fmt, files_buf)[0]
+
+                # will be 0 for kernels that don't randomize the physical load address
+                self.obj_vm.profile.virtual_shift = files_addr - files_sym_addr
                 break
-
-        if shift_address != 0:   
-            self.obj_vm.profile.shift_address = shift_address
-
+        
         yield good_dtb
 
 # the intel check, simply checks for the static paging of init_task
@@ -2302,18 +2332,19 @@ class VolatilityLinuxIntelValidAS(obj.VolatilityMagic):
     def generate_suggestions(self):
 
         init_task_addr = self.obj_vm.profile.get_symbol("init_task")
-
         if self.obj_vm.profile.metadata.get('memory_model', '32bit') == "32bit":
             shifts = [0xc0000000]
         else:
             shifts = [0xffffffff80000000, 0xffffffff80000000 - 0x1000000, 0xffffffff7fe00000]       
 
         ret = False
+           
+        phys  = self.obj_vm.vtop(init_task_addr)
+        if phys == None:
+            return
 
         for shift in shifts:
-            phys  = self.obj_vm.vtop(init_task_addr)
-            check = init_task_addr - shift
-           
+            check = init_task_addr - shift + self.obj_vm.profile.physical_shift - self.obj_vm.profile.virtual_shift
             if phys == check:
                 ret = True
                 break
