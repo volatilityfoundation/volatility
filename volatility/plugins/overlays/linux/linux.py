@@ -2061,14 +2061,12 @@ class task_struct(obj.CType):
         
         return dt
 
-    def get_environment(self):
-        env = ""
-        
+    def psenv(self): 
         if self.mm:
             # set the as with our new dtb so we can read from userland
             proc_as = self.get_process_address_space()
             if proc_as == None:
-                return ""
+                return
 
             start = self.mm.env_start.v()
 
@@ -2081,7 +2079,13 @@ class task_struct(obj.CType):
                         ents = vals.split("=")
 
                         if len(ents) == 2:
-                            env = env + "%s=%s " % (ents[0], ents[1])
+                            yield ents[0], ents[1]        
+
+    def get_environment(self):
+        env = ""
+
+        for key, value in self.psenv():
+            env = env + "%s=%s " % (key, value)
 
         if len(env) > 1 and env[-1] == " ":
             env = env[:-1]
