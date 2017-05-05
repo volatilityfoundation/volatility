@@ -201,7 +201,8 @@ class DWARFParser(object):
             name = data.get('DW_AT_name', "__unnamed_%s" % statement_id).strip('"')
             self.name_stack[-1][1] = name
             self.id_to_name[statement_id] = [name]
-            self.vtypes[name] = [ int(data['DW_AT_byte_size'], self.base), {} ]
+            if 'DW_AT_declaration' not in data:
+                self.vtypes[name] = [ int(data['DW_AT_byte_size'], self.base), {} ]
 
         elif kind == 'DW_TAG_array_type':
             self.name_stack[-1][1] = statement_id
