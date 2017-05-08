@@ -71,7 +71,10 @@ class linux_threads(linux_pslist.linux_pslist):
         """
         addr_space = thread.get_process_address_space()
         offset = thread.obj_offset + addrvar_offset
-        return addr_space.read_long_phys(offset)
+        if addr_space.__class__ == "LinuxAMD64PagedMemory":
+            return addr_space.read_long_long_phys(offset)
+        else:
+            return addr_space.read_long_phys(offset)
 
     def render_text(self, outfd, data):
         for task in data:
