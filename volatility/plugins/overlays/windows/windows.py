@@ -650,6 +650,7 @@ class _TOKEN(obj.CType):
         if self.UserAndGroupCount < 0xFFFF:
             for sa in self.UserAndGroups.dereference():
                 sid = sa.Sid.dereference_as('_SID')
+                id_auth = ""
                 for i in sid.IdentifierAuthority.Value:
                     id_auth = i
                 yield "S-" + "-".join(str(i) for i in (sid.Revision, id_auth) +
