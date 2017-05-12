@@ -2306,10 +2306,10 @@ class VolatilityDTB(obj.VolatilityMagic):
                 if pas.read(swapper_address + pid_offset, 4) != "\x00\x00\x00\x00":
                     continue
 
-                mm_buf = pas.read(swapper_address + mm_offset, read_sz)
-                mm_addr = struct.unpack(fmt, mm_buf)[0]
-                if mm_addr == 0:
-                    continue
+                #mm_buf = pas.read(swapper_address + mm_offset, read_sz)
+                #mm_addr = struct.unpack(fmt, mm_buf)[0]
+                #if mm_addr == 0:
+                #    continue
 
                 tmp_shift_address = swapper_address - (init_task_addr - shifts[0])
                 if tmp_shift_address & 0xfff != 0x000:
