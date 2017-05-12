@@ -219,7 +219,7 @@ def LinuxProfileFactory(profpkg):
         def clear(self):
             """Clear out the system map, and everything else"""
             self.sys_map = {}
-            self.virutal_shift = 0
+            self.virtual_shift = 0
             self.physical_shift = 0
             obj.Profile.clear(self)
 
@@ -2265,9 +2265,9 @@ class VolatilityDTB(obj.VolatilityMagic):
 
         good_dtb = -1
             
-        init_task_addr = tbl["init_task"][0][0] + physical_shift_address
-        dtb_sym_addr   = tbl[sym][0][0] + physical_shift_address
-        files_sym_addr = tbl["init_files"][0][0] + physical_shift_address
+        init_task_addr = tbl["init_task"][0][0] + virtual_shift_address
+        dtb_sym_addr   = tbl[sym][0][0] + virtual_shift_address
+        files_sym_addr = tbl["init_files"][0][0] + virtual_shift_address
        
         comm_offset   = profile.get_obj_offset("task_struct", "comm")
         pid_offset    = profile.get_obj_offset("task_struct", "pid")
@@ -2276,7 +2276,7 @@ class VolatilityDTB(obj.VolatilityMagic):
         pas           = self.obj_vm
         
         if physical_shift_address != 0 and virtual_shift_address != 0:
-            good_dtb  = dtb_sym_addr - shifts[0]
+            good_dtb  = dtb_sym_addr - shifts[0] + physical_shift_address - virtual_shift_address
             self.obj_vm.profile.physical_shift = physical_shift_address 
             self.obj_vm.profile.virtual_shift  = virtual_shift_address
 
@@ -2306,10 +2306,10 @@ class VolatilityDTB(obj.VolatilityMagic):
                 if pas.read(swapper_address + pid_offset, 4) != "\x00\x00\x00\x00":
                     continue
 
-                mm_buf = pas.read(swapper_address + mm_offset, read_sz)
-                mm_addr = struct.unpack(fmt, mm_buf)[0]
-                if mm_addr == 0:
-                    continue
+                #mm_buf = pas.read(swapper_address + mm_offset, read_sz)
+                #mm_addr = struct.unpack(fmt, mm_buf)[0]
+                #if mm_addr == 0:
+                #    continue
 
                 tmp_shift_address = swapper_address - (init_task_addr - shifts[0])
                 if tmp_shift_address & 0xfff != 0x000:
