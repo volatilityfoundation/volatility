@@ -88,7 +88,10 @@ class linux_lsmod(linux_common.AbstractLinuxCommand):
 
                 fd.write("}")
 
-            outfd.write("{2:x} {0:s} {1:d}\n".format(module.name, module.init_size + module.core_size, module.obj_offset))
+            if module.core_layout:
+                outfd.write("{2:x} {0:s} {1:d}\n".format(module.name, module.core_layout.m('size'), module.core_layout.obj_offset))
+            else:
+                outfd.write("{2:x} {0:s} {1:d}\n".format(module.name, module.init_size + module.core_size, module.obj_offset))
 
             # will be empty list if not set on command line
             for sect in sections:
