@@ -286,8 +286,11 @@ def get_time_vars(obj_vm):
         oreal = timekeeper.offs_real
         oboot = timekeeper.offs_boot
 
-        tv64 = (oreal.tv64 & 0xffffffff) - (oboot.tv64 & 0xffffffff)
-
+        if hasattr(oreal,"tv64"):
+            tv64 = (oreal.tv64 & 0xffffffff) - (oboot.tv64 & 0xffffffff)
+        else:
+            tv64 = (oreal & 0xffffffff) - (oboot & 0xffffffff)
+            
         if tv64:
             tv64 = (tv64 / 100000000) * -1
             timeo = vol_timespec(tv64, 0) 
