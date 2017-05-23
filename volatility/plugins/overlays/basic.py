@@ -211,22 +211,30 @@ class VolatilityDTB(obj.VolatilityMagic):
 
     def generate_suggestions(self):
         offset = 0
-        data = self.obj_vm.zread(offset, constants.SCAN_BLOCKSIZE)
-        last_range_start, last_range_size = sorted(self.obj_vm.get_available_addresses())[-1]
-        max_offset = last_range_start + last_range_size
-        while data:
-            found = data.find(str(self.obj_parent.DTBSignature), 0)
-            while found >= 0:
-                proc = obj.Object("_EPROCESS", offset = offset + found,
-                                  vm = self.obj_vm)
-                if 'Idle' in proc.ImageFileName.v():
-                    yield proc.Pcb.DirectoryTableBase.v()
-                found = data.find(str(self.obj_parent.DTBSignature), found + 1)
+        addresslist = sorted(self.obj_vm.get_available_addresses())
+        for range in addresslist:
+            (range_start, range_size) = range
+            offset = range_start
+            range_end = range_start + range_size
+            read_size = min(constants.SCAN_BLOCKSIZE, range_size)
 
-            offset += len(data)
-            if offset >= max_offset:
-                break 
-            data = self.obj_vm.zread(offset, constants.SCAN_BLOCKSIZE)
+            data = self.obj_vm.zread(offset, read_size)
+
+            while 1:
+                found = data.find(str(self.obj_parent.DTBSignature), 0)
+                while found >= 0:
+                    proc = obj.Object("_EPROCESS", offset = offset + found,
+                                      vm = self.obj_vm)
+                    if 'Idle' in proc.ImageFileName.v():
+                        yield proc.Pcb.DirectoryTableBase.v()
+                    found = data.find(str(self.obj_parent.DTBSignature), found + 1)
+
+
+                offset += len(data)
+                if offset >= range_end:
+                    break
+                read_size = min(constants.SCAN_BLOCKSIZE, range_end - offset)
+                data = self.obj_vm.zread(offset, read_size)
 
 class UnixTimeStamp(obj.NativeType):
     """Class for handling Unix Time Stamps"""
