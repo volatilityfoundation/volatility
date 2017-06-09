@@ -261,7 +261,7 @@ def get_time_vars(obj_vm):
 
     elif wall_addr:
         wall  = obj.Object("timespec", offset = wall_addr, vm = obj_vm)
-        timeo = linux_common.vol_timespec(0, 0)
+        timeo = vol_timespec(0, 0)
 
     # timekeeper way
     elif timekeeper_addr:
