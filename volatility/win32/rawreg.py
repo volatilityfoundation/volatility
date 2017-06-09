@@ -145,9 +145,12 @@ def value_data(val):
     inline = val.DataLength & 0x80000000
 
     if inline:
-        if val.DataLength == 0x80000000:
-            return ("REG_DWORD", val.Type.v())
-        valdata = val.obj_vm.read(val.Data.obj_offset, val.DataLength & 0x7FFFFFFF)
+        inline_len = val.DataLength & 0x7FFFFFFF
+        if inline_len == 0 or inline_len > 4:
+            valdata = None
+        else:
+            valdata = val.obj_vm.read(val.Data.obj_offset, inline_len)
+
     elif val.obj_vm.hive.Version == 5 and val.DataLength > 0x4000:
         # Value is a BIG_DATA block, stored in chunked format
         datalen = val.DataLength
