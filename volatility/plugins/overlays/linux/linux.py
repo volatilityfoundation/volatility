@@ -219,8 +219,9 @@ def LinuxProfileFactory(profpkg):
         def clear(self):
             """Clear out the system map, and everything else"""
             self.sys_map = {}
-            self.virutal_shift = 0
+            self.sym_addr_cache = {}
             self.physical_shift = 0
+            self.virtual_shift = 0
             obj.Profile.clear(self)
 
         def reset(self):
