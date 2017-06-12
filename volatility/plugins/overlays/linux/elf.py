@@ -314,9 +314,9 @@ class elf_hdr(elf):
         arr_start = self.obj_offset + self.e_phoff
 
         if self.e_phnum > 128:
-            phnum = self.e_phnum
-        else:
             phnum = 128
+        else:
+            phnum = self.e_phnum
 
         for i in range(phnum):
             # use the real size
