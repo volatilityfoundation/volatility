@@ -926,14 +926,14 @@ class module_struct(obj.CType):
                 val = val + str(mret or '')
 
         elif getfn == self.obj_vm.profile.get_symbol("param_get_string"):
-            val = param.str.dereference_as("String", length = param.str.maxlen)
+            val = str(param.str.dereference_as("String", length = param.str.maxlen))
 
         elif getfn == self.obj_vm.profile.get_symbol("param_get_charp"):
             addr = obj.Object("Pointer", offset = param.arg, vm = self.obj_vm)
             if addr == 0:
                 val = "(null)"
             else:
-                val = addr.dereference_as("String", length = 256)
+                val = str(addr.dereference_as("String", length = 256))
 
         elif getfn.v() in ints:
             val = obj.Object(ints[getfn.v()], offset = param.arg, vm = self.obj_vm)
@@ -944,11 +944,13 @@ class module_struct(obj.CType):
                 else:
                     val = 'N'
 
-            if getfn == self.obj_vm.profile.get_symbol("param_get_invbool"):
+            elif getfn == self.obj_vm.profile.get_symbol("param_get_invbool"):
                 if val:
                     val = 'N'
                 else:
                     val = 'Y'
+            else:
+                val = int(val)
 
         else:
             return None
