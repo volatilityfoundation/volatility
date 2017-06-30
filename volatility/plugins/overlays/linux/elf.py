@@ -565,7 +565,7 @@ class elf_phdr(elf):
         elf.__init__(self, 0, "elf32_phdr", "elf64_phdr", theType, offset, vm, name, **kwargs)    
 
     def is_valid(self):
-        return self.p_vaddr > 0x1000 and self.p_filesz > 0 and self.p_memsz > 0
+        return self.p_filesz > 0 and self.p_memsz > 0
 
     @property
     def p_vaddr(self):
