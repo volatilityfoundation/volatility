@@ -48,6 +48,9 @@ class SqliteRenderer(Renderer):
             debug.error("Please specify a valid output file using --output-file")
 
         self._db = sqlite3.connect(self._config.OUTPUT_FILE, isolation_level = None)
+        # Change text factory from unicode to bytestring to allow insertion of non-ASCII characters
+        # Sometimes process remainders in memory cause funky names et.al. to be retrieved
+        self._db.text_factory = str
         create = "CREATE TABLE IF NOT EXISTS " + self._plugin_name + "( id INTEGER, " + \
                  ", ".join(['"' + self._sanitize_name(i.name) + '" ' + self._column_type(i.type) for i in grid.columns]) + ")"
         self._db.execute(create)
