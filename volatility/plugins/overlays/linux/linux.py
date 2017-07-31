@@ -858,6 +858,24 @@ class module_struct(obj.CType):
 
         return ret
  
+    @property
+    def init_text_size(self):
+        if hasattr(self, "init_layout"):
+            ret = self.m("init_layout").m("text_size")
+        else:
+            ret = self.m("init_text_size")
+
+        return ret
+ 
+    @property 
+    def core_text_size(self):
+        if hasattr(self, "core_layout"):
+            ret = self.m("core_layout").m("text_size")
+        else:
+            ret = self.m("core_text_size")
+
+        return ret
+    
     @property 
     def core_size(self):
         if hasattr(self, "core_layout"):
@@ -866,7 +884,8 @@ class module_struct(obj.CType):
             ret = self.m("core_size")
 
         return ret
-        
+   
+
     def _get_sect_count(self, grp):
         arr = obj.Object(theType = 'Array', offset = grp.attrs, vm = self.obj_vm, targetType = 'Pointer', count = 25)
 

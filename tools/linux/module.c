@@ -225,6 +225,18 @@ struct module_sections module_sect_attrs;
 
 struct module_kobject module_kobject;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,2,0)
+// we can't get the defintion of mod_tree_root directly
+// because it is declared in module.c as a static struct
+// the latch_tree_root struct has the variables we want 
+// immediately after it though
+
+#include <linux/rbtree_latch.h>
+
+struct latch_tree_root ltr;
+
+#endif
+
 #ifdef CONFIG_SLAB
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)
