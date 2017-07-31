@@ -1159,6 +1159,16 @@ class vm_area_struct(obj.CType):
 
         return fname, major, minor, ino, pgoff 
 
+class kobject(obj.CType):
+    def reference_count(self):
+        refcnt = self.kref.refcount
+        if hasattr(refcnt, "counter"):
+            ret = refcnt.counter
+        else:
+            ret = refcnt.refs.counter
+
+        return ret
+
 class task_struct(obj.CType):
     def is_valid_task(self):
 
@@ -2396,6 +2406,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'hlist_node': hlist_node,
             'files_struct': files_struct,
             'task_struct': task_struct,
+            'kobject'    : kobject,
             'vm_area_struct': vm_area_struct,
             'module' : module_struct,
             'hlist_bl_node' : hlist_bl_node,
