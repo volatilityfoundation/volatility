@@ -2250,6 +2250,8 @@ class VolatilityDTB(obj.VolatilityMagic):
     def generate_suggestions(self):
         """Tries to locate the DTB."""
         profile = self.obj_vm.profile
+        config = self.obj_vm.get_config()
+        tbl    = self.obj_vm.profile.sys_map["kernel"]
         
         if profile.metadata.get('memory_model', '32bit') == "32bit":
             sym     = "swapper_pg_dir"
@@ -2258,13 +2260,14 @@ class VolatilityDTB(obj.VolatilityMagic):
             fmt     = "<I"
         else:
             sym     = "init_level4_pgt"
+            # >= 4.13 
+            if not sym in tbl:
+                sym = "init_top_pgt"
+                
             shifts  = [0xffffffff80000000, 0xffffffff80000000 - 0x1000000, 0xffffffff7fe00000]       
             read_sz = 8
             fmt     = "<Q"
-
-        config = self.obj_vm.get_config()
-        tbl    = self.obj_vm.profile.sys_map["kernel"]
-        
+       
         if config.PHYSICAL_SHIFT and not config.VIRTUAL_SHIFT:
             debug.error("You must specifiy both the virtual and physical shift.") 
         elif not config.PHYSICAL_SHIFT and config.VIRTUAL_SHIFT:
