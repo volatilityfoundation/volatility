@@ -55,11 +55,6 @@ class linux_keyboard_notifiers(linux_common.AbstractLinuxCommand):
                 if not sym_name:
                     sym_name = "HOOKED"
                     
-                    module = obj.Object("module", offset = 0xffffffffa03a15d0, vm = self.addr_space)
-                    sym = module.get_symbol_for_address(call_addr)
-     
-                    sym_name = "%s: %s/%s" % (sym_name, module.name, sym)
-
                 hooked = 1            
         
             symbol_cache[call_addr] = sym_name
