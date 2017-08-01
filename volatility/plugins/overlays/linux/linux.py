@@ -2484,14 +2484,18 @@ class page(obj.CType):
             mem_map_ptr = obj.Object("Pointer", offset = mem_map_addr, vm = self.obj_vm, parent = self.obj_parent)
 
         elif mem_section_addr:
-            # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
-            mem_map_ptr = 0xffffea0000000000
-
+            mem_map_ptr_addr = self.obj_vm.profile.get_symbol("vmemmap_base")
+            if mem_map_ptr_addr:
+                # (later) ASLR kernels
+                mem_map_ptr = obj.Object("unsigned long", offset = mem_map_ptr_addr, vm = self.obj_vm)
+            else:
+                # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
+                mem_map_ptr = 0xffffea0000000000
         else:
             debug.error("phys_addr_of_page: Unable to determine physical address of page. NUMA is not supported at this time.\n")
-
+        
         phys_offset = (self.obj_offset - mem_map_ptr) / self.obj_vm.profile.get_obj_size("page")
-
+        
         phys_offset = phys_offset << 12
 
         return phys_offset
