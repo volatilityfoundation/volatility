@@ -60,7 +60,9 @@ struct xt_table xt_table;
 #include <asm/termbits.h>
 
 #include <linux/notifier.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
 struct atomic_notifier_head atomic_notifier_head;
+#endif
 
 #include <linux/tty_driver.h>
 struct tty_driver tty_driver;
@@ -86,9 +88,11 @@ struct unix_sock unix_sock;
 struct pid pid;
 struct radix_tree_root radix_tree_root;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,12)
 #ifdef CONFIG_NET_SCHED
 #include <net/sch_generic.h>
 struct Qdisc qdisc;
+#endif
 #endif
 
 struct inet_protosw inet_protosw;
@@ -177,7 +181,12 @@ struct rt_hash_bucket {
 } rt_hash_bucket;
 
 #ifndef RADIX_TREE_MAP_SHIFT
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
+#define RADIX_TREE_MAP_SHIFT    6
+#else
 #define RADIX_TREE_MAP_SHIFT    (CONFIG_BASE_SMALL ? 4 : 6)
+#endif
 #define RADIX_TREE_MAP_SIZE     (1UL << RADIX_TREE_MAP_SHIFT)
 #define RADIX_TREE_MAP_MASK     (RADIX_TREE_MAP_SIZE-1)
 #define RADIX_TREE_TAG_LONGS    ((RADIX_TREE_MAP_SIZE + BITS_PER_LONG - 1) / BITS_PER_LONG)
