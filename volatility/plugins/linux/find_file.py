@@ -62,16 +62,22 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
             if not dentry.d_name.name.is_valid():
                 continue
-
+            
+            inode = dentry.d_inode
+            
+            ivalid = False
+            if inode and inode.is_valid():
+                if inode.i_ino == 0 or inode.i_ino > 100000000000:
+                    continue
+                ivalid = True
+            
             # do not use os.path.join
             # this allows us to have consistent paths from the user
             name  = dentry.d_name.name.dereference_as("String", length = 255)
             new_file = parent + "/" + name
             ret.append((new_file, dentry))
  
-            inode = dentry.d_inode
-
-            if inode and inode.is_valid() and inode.is_dir():
+            if ivalid and inode.is_dir():
                 ret = ret + self._walk_sb(dentry, new_file)
 
         return ret
