@@ -957,6 +957,10 @@ class _IMAGE_RESOURCE_DIRECTORY(obj.CType):
 
     def get_entries(self):
         """Gets a tree of the entries from the top level IRD"""
+
+        if self.NamedEntriesCount + self.IdEntriesCount > 4096:
+            return
+ 
         for irde in self.Entries:
             if irde != None:
                 if irde.Name & 0x80000000:
