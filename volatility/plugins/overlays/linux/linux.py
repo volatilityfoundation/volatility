@@ -2300,9 +2300,9 @@ class VolatilityDTB(obj.VolatilityMagic):
 
         good_dtb = -1
             
-        init_task_addr = tbl["init_task"][0][0] + physical_shift_address
-        dtb_sym_addr   = tbl[sym][0][0] + physical_shift_address
-        files_sym_addr = tbl["init_files"][0][0] + physical_shift_address
+        init_task_addr = tbl["init_task"][0][0] + virtual_shift_address
+        dtb_sym_addr   = tbl[sym][0][0] + virtual_shift_address
+        files_sym_addr = tbl["init_files"][0][0] + virtual_shift_address
        
         comm_offset   = profile.get_obj_offset("task_struct", "comm")
         pid_offset    = profile.get_obj_offset("task_struct", "pid")
@@ -2311,7 +2311,7 @@ class VolatilityDTB(obj.VolatilityMagic):
         pas           = self.obj_vm
         
         if physical_shift_address != 0 and virtual_shift_address != 0:
-            good_dtb  = dtb_sym_addr - shifts[0]
+            good_dtb = (dtb_sym_addr - shifts[0] - virtual_shift_address) + physical_shift_address
             self.obj_vm.profile.physical_shift = physical_shift_address 
             self.obj_vm.profile.virtual_shift  = virtual_shift_address
 
@@ -2341,21 +2341,23 @@ class VolatilityDTB(obj.VolatilityMagic):
                 if pas.read(swapper_address + pid_offset, 4) != "\x00\x00\x00\x00":
                     continue
 
-                tmp_shift_address = swapper_address - (init_task_addr - shifts[0])
-                if tmp_shift_address & 0xfff != 0x000:
+                tmp_physical_shift = swapper_address - (init_task_addr - shifts[0]) 
+                if tmp_physical_shift & 0xfff != 0x000:
                     continue
 
-                physical_shift_address = tmp_shift_address
-                
-                self.obj_vm.profile.physical_shift = physical_shift_address
-                good_dtb = dtb_sym_addr - shifts[0] + physical_shift_address
-                
+                good_dtb = (dtb_sym_addr - shifts[0] + 0) + tmp_physical_shift 
+
+                if pas.zread(good_dtb, 8) != "\x00\x00\x00\x00\x00\x00\x00\x00":
+                    continue
+
                 files_buf  = pas.read(swapper_address + files_offset, read_sz)
                 files_addr = struct.unpack(fmt, files_buf)[0]
 
-                # will be 0 for kernels that don't randomize the physical load address
-                self.obj_vm.profile.virtual_shift = files_addr - files_sym_addr
+                tmp_virtual_shift = files_addr - files_sym_addr
 
+                self.obj_vm.profile.physical_shift = tmp_physical_shift
+                self.obj_vm.profile.virtual_shift  = tmp_virtual_shift
+ 
                 break
         
         yield good_dtb
