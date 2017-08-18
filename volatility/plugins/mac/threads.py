@@ -216,7 +216,7 @@ class mac_threads(mac_tasks.mac_tasks):
 
         for map in proc.get_proc_maps():
             vm_map_start = map.links.start
-            map_type = str(dict_alias.get(int(map.alias), "UNKNOWN"))
+            map_type = str(dict_alias.get(int(map.range_alias()), "UNKNOWN"))
             map_path = map.get_path()
 
             # see if map is a STACK (not a STACK_GUARD), if so which thread it belongs to
@@ -242,13 +242,13 @@ class mac_threads(mac_tasks.mac_tasks):
                 # Based on the vmmap command:
                  # current map is a stack marked as thread, then mark previous map with thread id if stack
                     prev_proc, prev_map, prev_map_path = maps.pop()
-                    if str(dict_alias.get(int(prev_map.alias), "UNKNOWN")) == "VM_MEMORY_STACK" and prev_map.get_perms() != "---" and "thread" not in prev_map_path:
+                    if str(dict_alias.get(int(prev_map.range_alias()), "UNKNOWN")) == "VM_MEMORY_STACK" and prev_map.get_perms() != "---" and "thread" not in prev_map_path:
                         prev_map_path = "thread id {0}".format(stack_thread_id)
                     maps.append((prev_proc, prev_map, prev_map_path))
                 else:
                  # if previous map is a stack marked as thread, then mark current map with thread id
                     prev_proc, prev_map, prev_map_path = maps.pop()
-                    if str(dict_alias.get(int(prev_map.alias), "UNKNOWN")) == "VM_MEMORY_STACK" and prev_map.get_perms() != "---" and "thread" in prev_map_path:
+                    if str(dict_alias.get(int(prev_map.range_alias()), "UNKNOWN")) == "VM_MEMORY_STACK" and prev_map.get_perms() != "---" and "thread" in prev_map_path:
                         map_path = "thread id {0}".format(stack_thread_id)
                     maps.append((prev_proc, prev_map, prev_map_path))
 

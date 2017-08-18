@@ -1458,13 +1458,18 @@ class vm_map_entry(obj.CType):
                 perms = perms + "-"
 
         return perms
+    
+    def range_alias(self):
+        if hasattr(self, "alias"):
+            ret = self.alias.v()
+        else:
+            ret = self.vme_offset.v() & 0xfff
+
+        return ret
 
     # used to find heap, stack, etc.
     def get_special_path(self):
-        if hasattr(self, "alias"):
-            check = self.alias.v()
-        else:
-            check = self.vme_offset.v() & 0xfff
+        check = self.range_alias()
 
         if 0 < check < 10:
             ret = "[heap]"
