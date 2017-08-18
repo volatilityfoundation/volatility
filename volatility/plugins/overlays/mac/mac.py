@@ -352,7 +352,7 @@ class vnode(obj.CType):
             if p & 0x80000000 != 0:
                 vm_pages_ptr = self.obj_vm.profile.get_symbol("_vm_pages")
                 vm_pages_addr = obj.Object("unsigned long long", offset = vm_pages_ptr, vm = self.obj_vm)
-                ret_addr = vm_pages_addr + ((p & ~0x80000000) * 8)
+                ret_addr = vm_pages_addr + ((p & ~0x80000000) * self.obj_vm.profile.get_obj_size("vm_page"))
             else:
                 ret_addr = (p << 6) + 0xffffff7f80000000  
 
