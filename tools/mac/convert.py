@@ -46,12 +46,13 @@ class DWARFParser(object):
         self.all_local_vars = []
         self.local_vars = []
         self.anons = 0
+        self.typedefs = {}
 
     def resolve(self, memb):
         """Lookup anonymouse member and replace it with a well known one."""
         # Reference to another type
+        
         if isinstance(memb, str) and memb.startswith('<'):
-
             try:
                 resolved = self.id_to_name[memb[1:]]
             except:
@@ -66,6 +67,22 @@ class DWARFParser(object):
             ret = memb
 
         return ret
+
+    def fix_typedefs(self):
+        tmp_types = self.vtypes.copy()
+        
+        for vname,vdata in tmp_types.items():
+            if vname.startswith("__unnamed_"):
+                statement_id = vname.split("_")[3]
+                
+                if statement_id in self.typedefs:
+                    tmp_types[self.typedefs[statement_id]] = vdata
+                else:
+                    tmp_types[vname] = vdata
+            else:
+                tmp_types[vname] = vdata
+
+        return tmp_types
 
     def resolve_refs(self):
         """Replace references with types."""
@@ -228,6 +245,7 @@ class DWARFParser(object):
         elif kind == 'TAG_typedef':
             try:
                 self.id_to_name[statement_id] = data['AT_type']
+                self.typedefs[data['AT_type'].replace("<","").replace(">","")] = data['AT_name']
             except:
                 self.id_to_name[statement_id] = ['void']
 
@@ -333,6 +351,7 @@ class DWARFParser(object):
     def finalize(self):
         """Finalize the output."""
         if self.vtypes:
+            self.vtypes = self.fix_typedefs()
             self.vtypes = self.resolve_refs()
             self.all_vtypes.update(self.vtypes)
         if self.vars:

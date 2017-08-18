@@ -35,18 +35,26 @@ class mac_check_mig_table(common.AbstractMacCommand):
     def calculate(self):
         common.set_plugin_members(self)
        
-        # we can't use an array as the size of mig_hash_entry
-        # depends on if MAC_COUNTERS is set, which changes between kernels
-        # mig_table_max_displ is declared directly after mig_buckets
-        # which allows us to calculate the size of each entry dynamically
- 
-        di_addr = self.addr_space.profile.get_symbol("_mig_table_max_displ")
+        n = 1024
         mig_buckets_addr = self.addr_space.profile.get_symbol("_mig_buckets")
 
-        ele_size = (di_addr - mig_buckets_addr) / 1024 
+        if self.addr_space.profile.has_type("mig_hash_t"):
+            ele_size = self.addr_space.profile.get_obj_size("mig_hash_t")
+            
+            ele_type = "mig_hash_t"
+       
+        else:
+            # we can't use an array as the size of mig_hash_entry
+            # depends on if MAC_COUNTERS is set, which changes between kernels
+            # mig_table_max_displ is declared directly after mig_buckets
+            # which allows us to calculate the size of each entry dynamically
+            di_addr  = self.addr_space.profile.get_symbol("_mig_table_max_displ")
+            ele_size = (di_addr - mig_buckets_addr) / n
+            
+            ele_type = "mig_hash_entry"
 
-        for i in range(1024):
-            entry = obj.Object("mig_hash_entry", offset = mig_buckets_addr + (i * ele_size), vm = self.addr_space)
+        for i in range(n):
+            entry = obj.Object(ele_type, offset = mig_buckets_addr + (i * ele_size), vm = self.addr_space)
 
             if entry.routine == 0:
                 continue
