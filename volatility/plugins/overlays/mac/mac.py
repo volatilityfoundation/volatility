@@ -132,12 +132,13 @@ mig_vtypes_32 = {
 
 mig_vtypes_64 = {
     'mig_hash_entry' : [24, {
-         'num'       : [0, ['long long']],
+         'num'       : [0, ['int']],
          'routine'   : [8, ['pointer', ['void']]],
          'size'      : [16, ['int']],  
          'callcount' : [20, ['unsigned int']],  
          }],
 }
+
 
 class MigTypes(obj.ProfileModification):
     conditions = {"os" : lambda x : x in ["mac"]}
@@ -1322,6 +1323,9 @@ class queue_entry(obj.CType):
             p = p.tasks.prev.dereference_as("task")
 
 class zone(obj.CType):
+    def is_valid(self):
+        return self.elem_size > 0
+    
     def _get_from_active_zones(self):
         ret = []
         first_elem = self.active_zones
