@@ -222,6 +222,8 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                 yield (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked)
 
     def get_unistd_paths(self):
+        linux_common.set_plugin_members(self)
+        
         if self.profile.metadata.get('memory_model', '32bit') == "32bit":
             is_32 = True
             paths32 = ["/usr/include/i386-linux-gnu/asm/unistd_32.h", "/usr/include/asm/unistd_32.h"]
@@ -233,7 +235,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
         return is_32, paths32, paths64
 
-    def _parse_index_file(self, index_lines):
+    def parse_index_file(self, index_lines):
         index_names = {}
 
         for line in index_lines.split("\n"): 
@@ -286,7 +288,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
             if len(buf) < 1024:
                 continue
 
-            index_tables[table] = self._parse_index_file(buf) 
+            index_tables[table] = self.parse_index_file(buf) 
 
         return index_tables
 
