@@ -45,11 +45,6 @@ except ImportError:
 class linux_check_syscall(linux_common.AbstractLinuxCommand):
     """ Checks if the system call table has been altered """
 
-
-    def __init__(self, config, *args, **kwargs):
-        linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
-        self._config.add_option('syscall-indexes', short_option = 'I', default = None, help = 'Path to unistd_{32,64}.h from the target machine', action = 'store', type = 'str')
-
     def _get_table_size(self, table_addr, table_name):
         """
         Returns the size of the table based on the next symbol
@@ -129,7 +124,6 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
         return [table_addr, table_size]
 
-
     def _compute_hook_sym_name(self, visible_mods, hidden_mods, call_addr):
         mod_found = 0
         for (module, _, __) in visible_mods:
@@ -151,8 +145,12 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
         return sym_name
 
-    def _index_name(self, index_names, i):
-        if i in index_names:
+    def _index_name(self, table_name, index_info, i):   
+        index_names = index_info[table_name]
+
+        if len(index_names.keys()) == 0:
+            ret = ""
+        elif i in index_names:
             ret = index_names[i]
         else:
             ret = "<INDEX NOT FOUND %d>" % i
@@ -176,40 +174,21 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
         return ret
 
-    def get_syscalls(self, index_lines = None, get_hidden = False):
+    def get_syscalls(self, index_info = None, get_hidden = False, compute_name = True):
         linux_common.set_plugin_members(self)
 
         if get_hidden:
             hidden_mods = list(linux_hidden_modules.linux_hidden_modules(self._config).calculate())
         else:
             hidden_mods = []    
-    
-        visible_mods = linux_lsmod.linux_lsmod(self._config).calculate()
-
-        if not index_lines:
-            index_lines = self._find_and_parse_index_file()
-
-        if index_lines:
-            index_names = {}
-            for line in index_lines.split("\n"): 
-                ents = line.split()
-
-                if len(ents) == 3 and ents[0] == "#define":
-                    name  = ents[1].replace("__NR_", "")
-
-                    # "(__NR_timer_create+1)"
-                    index = ents[2] 
-                    if index[0] == "(":
-                        index = self._find_index(index_names, index)
-                    else:
-                        try:
-                            index = int(index)
-                        except ValueError:
-                            index = 999999  #well beyond any valid table index
-
-                    index_names[index] = name
+   
+        if compute_name:
+            visible_mods = linux_lsmod.linux_lsmod(self._config).calculate()
         else:
-            index_names = None
+            visible_mods = []
+
+        if not index_info:
+            index_info = self._find_and_parse_index_file()
 
         table_name = self.addr_space.profile.metadata.get('memory_model', '32bit')
         sym_addrs = self.profile.get_all_addresses()
@@ -229,51 +208,87 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                 if not call_addr:
                     continue
 
-                if index_names:
-                    idx_name = self._index_name(index_names, i)
-                else:
-                    idx_name = ""
+                idx_name = self._index_name(table_name, index_info, i)
 
                 call_addr = int(call_addr)
 
                 if not call_addr in sym_addrs:
                     hooked = 1
-
                     sym_name = self._compute_hook_sym_name(visible_mods, hidden_mods, call_addr)
                 else:
                     hooked = 0 
                     sym_name = self.profile.get_symbol_by_address("kernel", call_addr)
 
                 yield (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked)
- 
-    def _find_and_parse_index_file(self):
-        memory_model = self.addr_space.profile.metadata.get('memory_model', '32bit')
 
-        if memory_model == '32bit':
-            header_path = "unistd_32.h"
+    def get_unistd_paths(self):
+        if self.profile.metadata.get('memory_model', '32bit') == "32bit":
+            is_32 = True
+            paths32 = ["/usr/include/i386-linux-gnu/asm/unistd_32.h", "/usr/include/asm/unistd_32.h"]
+            paths64 = []
         else:
-            header_path = "unistd_64.h"
+            is_32 = False
+            paths32 = ["/usr/include/x86_64-linux-gnu/asm/unistd_32.h", "/usr/include/asm/unistd_32.h"]
+            paths64 = ["/usr/include/x86_64-linux-gnu/asm/unistd_64.h", "/usr/include/asm/unistd_64.h"]
+
+        return is_32, paths32, paths64
+
+    def _parse_index_file(self, index_lines):
+        index_names = {}
+
+        for line in index_lines.split("\n"): 
+            ents = line.split()
+
+            if len(ents) == 3 and ents[0] == "#define":
+                name  = ents[1].replace("__NR_", "")
+
+                index = ents[2] 
+                if index[0] == "(":
+                    index = self._find_index(index_names, index)
+                else:
+                    try:
+                        index = int(index)
+                    except ValueError:
+                        index = 999999  #well beyond any valid table index
+
+                index_names[index] = name
+    
+        return index_names
+
+    def _find_and_parse_index_file(self): 
+        is_32, paths32, paths64 = self.get_unistd_paths()
+
+        index_tables = {"32bit" : {}, "64bit" : {}}
 
         find_file = linux_find_file.linux_find_file(self._config)
-
-        inodes = []
         for (_, _, file_path, file_dentry) in find_file.walk_sbs():
-            ents = file_path.split("/") 
-            if len(ents) > 1 and ents[-1] == header_path:
-                inode = file_dentry.d_inode
-                inodes.append(inode)
+            # stop enumerating files (slow) once we find our wanted information 
+            if (is_32 and len(index_tables["32bit"].keys()) > 0) or \
+                (len(index_tables["32bit"].keys()) > 0 and len(index_tables["64bit"].keys()) > 0):
+                break
 
-        ret = None
-        for inode in inodes:
+            elif file_path in paths32:
+                table = "32bit"
+                paths32.remove(file_path)
+
+            elif file_path in paths64:
+                table = "64bit"
+                paths64.remove(file_path)
+
+            else:
+                continue
+
             buf = ""
+            inode = file_dentry.d_inode
             for page in find_file.get_file_contents(inode):
                 buf = buf + page
             
-            if len(buf) > 4096:
-                ret = buf
-                break
+            if len(buf) < 1024:
+                continue
 
-        return ret
+            index_tables[table] = self._parse_index_file(buf) 
+
+        return index_tables
 
     def calculate(self):
         """ 
@@ -285,15 +300,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         if not has_distorm:
             debug.warning("distorm not installed. The best method to calculate the system call table size will not be used.")
                         
-        if self._config.SYSCALL_INDEXES:
-            if not os.path.exists(self._config.SYSCALL_INDEXES):
-                debug.error("Given syscall indexes file does not exist!")
-
-            index_lines = open(self._config.SYSCALL_INDEXES, "r").read()
-        else:
-            index_lines = None
-
-        for (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked) in self.get_syscalls(index_lines, True): 
+        for (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked) in self.get_syscalls(None, True, True): 
             yield (tableaddr, table_name, i, idx_name, call_addr, sym_name, hooked)
  
     def unified_output(self, data):
