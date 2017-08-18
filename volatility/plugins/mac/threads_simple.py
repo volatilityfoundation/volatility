@@ -63,7 +63,7 @@ class mac_threads_simple(pstasks.mac_tasks):
                     int(proc.p_pid),
                     str(proc.p_comm),
                     str(th.start_time()),
-                    int(th.priority),
+                    int(th.sched_pri),
                     Address(func_addr),
                     str(handler),
                     ])
@@ -93,6 +93,6 @@ class mac_threads_simple(pstasks.mac_tasks):
                 
                 self.table_row(outfd, proc.p_pid, proc.p_comm, 
                     th.start_time(), 
-                    th.priority, 
+                    th.sched_pri, 
                     func_addr, handler)
    
