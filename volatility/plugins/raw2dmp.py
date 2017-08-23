@@ -57,10 +57,14 @@ class Raw2dmp(imagecopy.ImageCopy):
                           offset = obj.VolMagic(vspace).KUSER_SHARED_DATA.v(),
                           vm = vspace)
         kdbg = obj.VolMagic(vspace).KDBG.v()
+        if not kdbg:
+            raise RuntimeError("Couldn't find KDBG block. Wrong profile?")
 
         # Scanning the memory region near KDDEBUGGER_DATA64 for 
         # DBGKD_GET_VERSION64
         dbgkd = kdbg.dbgkd_version64()
+        if not dbgkd:
+            raise RuntimeError("Couldn't find _DBGKD_GET_VERSION64.")
 
         # Set the correct file magic
         for i in range(len("PAGE")):

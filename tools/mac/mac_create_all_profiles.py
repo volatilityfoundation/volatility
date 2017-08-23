@@ -135,7 +135,7 @@ def main():
         elif version.startswith("10.10"):
             osx_name = "Yosemite"
             profile_runs.append((full_path, "x86_64", osx_name, version, build))
-        elif version.startwith("10.11"):
+        elif version.startswith("10.11"):
             osx_name = "ElCapitan"
             profile_runs.append((full_path, "x86_64", osx_name, version, build))
 

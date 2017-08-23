@@ -650,6 +650,8 @@ class TrueCryptMaster(common.AbstractWindowsCommand):
     def render_text(self, outfd, data):
         for device in data:
             ext = device.DeviceExtension.dereference_as("EXTENSION")
+            if not ext.is_valid():
+                continue
             outfd.write("Container: {0}\n".format(ext.wszVolume))
             outfd.write("Hidden Volume: {0}\n".format("Yes" if ext.cryptoInfo.hiddenVolume == 1 else "No"))
             outfd.write("Removable: {0}\n".format("Yes" if ext.bRemovable == 1 else "No"))

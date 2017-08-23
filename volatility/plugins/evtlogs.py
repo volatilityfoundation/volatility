@@ -123,6 +123,7 @@ class EvtLogs(common.AbstractWindowsCommand):
         sid_name = ""
         bufferas = addrspace.BufferAddressSpace(self._config, data = data)
         sid = obj.Object("_SID", offset = 0, vm = bufferas)
+        id_auth = ""
         for i in sid.IdentifierAuthority.Value:
             id_auth = i 
         sid_string = "S-" + "-".join(str(i) for i in (sid.Revision, id_auth) + tuple(sid.SubAuthority))

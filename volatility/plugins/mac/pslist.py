@@ -36,6 +36,7 @@ class mac_pslist(common.AbstractMacCommand):
     def __init__(self, config, *args, **kwargs):
         common.AbstractMacCommand.__init__(self, config, *args, **kwargs)
         self._config.add_option('PID', short_option = 'p', default = None, help = 'Operate on these Process IDs (comma-separated)', action = 'store', type = 'str')
+        self._config.add_option('TASK', short_option = 'T', default = None, help = 'Operate on this process (virtual address from mac_psxview)', action = 'store', type = 'str')
 
     @staticmethod
     def virtual_process_from_physical_offset(addr_space, offset):
@@ -45,17 +46,7 @@ class mac_pslist(common.AbstractMacCommand):
         
         return task.bsd_info.dereference_as("proc")
 
-    def calculate(self):
-        common.set_plugin_members(self)
-
-        pidlist = None
-
-        try:
-            if self._config.PID:
-                pidlist = [int(p) for p in self._config.PID.split(',')]
-        except:
-            pass
-        
+    def allprocs(self):
         p = self.addr_space.profile.get_symbol("_allproc")
 
         procsaddr = obj.Object("proclist", offset = p, vm = self.addr_space)
@@ -70,10 +61,33 @@ class mac_pslist(common.AbstractMacCommand):
             else:
                 seen.append(proc.obj_offset)
 
-            if not pidlist or proc.p_pid in pidlist:
-                yield proc 
+            yield proc 
 
             proc = proc.p_list.le_next.dereference()
+
+    def calculate(self):
+        common.set_plugin_members(self)
+
+        if self._config.TASK:
+            task_addr = self._config.TASK
+        
+            try:
+                task_addr = int(task_addr, 16)
+            except TypeError:
+                debug.error("Invalid task address given. Must be address in hex.")
+
+            yield obj.Object("proc", offset = task_addr, vm = self.addr_space)  
+        else:
+            pidlist = None
+            try:
+                if self._config.PID:
+                    pidlist = [int(p) for p in self._config.PID.split(',')]
+            except:
+                pass
+            
+            for proc in self.allprocs():
+                if not pidlist or proc.p_pid in pidlist:
+                    yield proc 
 
     def unified_output(self, data):
         return TreeGrid([("Offset (V)", Address),

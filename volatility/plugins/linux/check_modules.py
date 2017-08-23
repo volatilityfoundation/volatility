@@ -50,7 +50,7 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
             mod = mod_kobj.mod
 
             name = kobj.name.dereference_as("String", length = 32)
-            if name.is_valid() and kobj.kref.refcount.counter > 2:
+            if name.is_valid() and kobj.reference_count() > 2:
                 ret[str(name)] = mod
     
         return ret
@@ -75,6 +75,6 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
             yield (0, [Address(mod), str(mod.name)])
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Module Address", "[address]"), ("Module Name", "24")])
+        self.table_header(outfd, [("Module Address", "[address]"), ("Core Address", "[address]"), ("Init Address", "[addreess]"), ("Module Name", "24")])
         for mod in data:
-            self.table_row(outfd, mod, str(mod.name))
+            self.table_row(outfd, mod, mod.module_core, mod.module_init, str(mod.name))

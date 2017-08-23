@@ -241,6 +241,51 @@ tcpip_vtypes_vista_64 = {
     }],
 }
 
+# Structures for netscan on x64 Windows 10
+tcpip_vtypes_win_10_x64 = {
+    '_IN_ADDR' : [ None, {
+    'addr4' : [ 0x0, ['IpAddress']],
+    'addr6' : [ 0x0, ['Ipv6Address']],
+    }],
+    '_INETAF' : [ None, {
+    'AddressFamily' : [ 0x18, ['unsigned short']],
+    }],
+    '_LOCAL_ADDRESS_WIN10_UDP' : [ None, {
+    'pData' : [ 0x0, ['pointer', ['_IN_ADDR']]],
+    }],
+    '_LOCAL_ADDRESS' : [ None, {
+    'pData' : [ 0x10, ['pointer', ['pointer', ['_IN_ADDR']]]],
+    }],
+    '_ADDRINFO' : [ None, {
+    'Local' : [ 0x0, ['pointer', ['_LOCAL_ADDRESS']]],
+    'Remote' : [ 0x10, ['pointer', ['_IN_ADDR']]],
+    }],
+    '_TCP_LISTENER': [ None, { # TcpL
+    'Owner' : [ 0x30, ['pointer', ['_EPROCESS']]],
+    'CreateTime' : [ 0x40, ['WinTimeStamp', dict(is_utc = True)]],
+    'LocalAddr' : [ 0x60, ['pointer', ['_LOCAL_ADDRESS']]],
+    'InetAF' : [ 0x28, ['pointer', ['_INETAF']]],
+    'Port' : [ 0x72, ['unsigned be short']],
+    }],
+    '_TCP_ENDPOINT': [ None, { # TcpE
+    'InetAF' : [ 0x10, ['pointer', ['_INETAF']]],
+    'AddrInfo' : [ 0x18, ['pointer', ['_ADDRINFO']]],
+    'State' : [ 0x6C, ['Enumeration', dict(target = 'long', choices = TCP_STATE_ENUM)]],
+    'LocalPort' : [ 0x70, ['unsigned be short']],
+    'RemotePort' : [ 0x72, ['unsigned be short']],
+    'Owner' : [ 0x258, ['pointer', ['_EPROCESS']]],
+    'CreateTime' : [ 0x268, ['WinTimeStamp', dict(is_utc = True)]],
+    }],
+    '_UDP_ENDPOINT': [ None, { # UdpA
+    'Owner' : [ 0x28, ['pointer', ['_EPROCESS']]],
+    'CreateTime' : [ 0x58, ['WinTimeStamp', dict(is_utc = True)]],
+    'LocalAddr' : [ 0x80, ['pointer', ['_LOCAL_ADDRESS_WIN10_UDP']]],
+    'InetAF' : [ 0x20, ['pointer', ['_INETAF']]],
+    'Port' : [ 0x78, ['unsigned be short']],
+    }],
+}
+
+
 class _ADDRESS_OBJECT(obj.CType):
 
     def is_valid(self):
@@ -357,6 +402,9 @@ class Win8Tcpip(obj.ProfileModification):
             'RemotePort' : [ 0x3E, ['unsigned be short']],
             'Owner' : [ 0x174, ['pointer', ['_EPROCESS']]],
             }],
+        '_ADDRINFO' : [ None, {
+            'Remote' : [ 0xC, ['pointer', ['_IN_ADDR']]],
+            }],
         })
 
 class Win81Tcpip(obj.ProfileModification):
@@ -371,6 +419,35 @@ class Win81Tcpip(obj.ProfileModification):
             'Owner' : [ 0x1a8, ['pointer', ['_EPROCESS']]],
             }],
         })
+
+class Win10Tcpip(obj.ProfileModification):
+    before = ['Win8Tcpip']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x >= 4}
+    def modification(self, profile):
+        profile.merge_overlay({
+        '_ADDRINFO' : [ None, {
+            'Local' : [ 0x0, ['pointer', ['_LOCAL_ADDRESS']]],
+            'Remote' : [ 0xC, ['pointer', ['_IN_ADDR']]],
+        }],
+        '_TCP_ENDPOINT': [ None, {
+            'InetAF' : [ 0x8, ['pointer', ['_INETAF']]],
+            'AddrInfo' : [ 0xC, ['pointer', ['_ADDRINFO']]],
+            'State' : [ 0x38, ['Enumeration', dict(target = 'long', choices = TCP_STATE_ENUM)]],
+            'LocalPort' : [ 0x3C, ['unsigned be short']],
+            'RemotePort' : [ 0x3E, ['unsigned be short']],
+            'Owner' : [ 0x1b0, ['pointer', ['_EPROCESS']]],
+            }],
+        })
+
+        if profile.metadata.get("build") >= 14393:
+            profile.merge_overlay({
+                '_TCP_ENDPOINT': [ None, {
+                'Owner' : [ 0x1b4, ['pointer', ['_EPROCESS']]],
+                }],
+            })
 
 class Win8x64Tcpip(obj.ProfileModification):
     before = ['Win7Vista2008x64Tcpip']
@@ -405,3 +482,12 @@ class Win81x64Tcpip(obj.ProfileModification):
                 'Owner' : [ 0x258, ['pointer', ['_EPROCESS']]],
                 }],
             })
+
+class Win10x64Tcpip(obj.ProfileModification):
+    before = ['Win81x64Tcpip']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4}
+    def modification(self, profile):
+        profile.vtypes.update(tcpip_vtypes_win_10_x64)

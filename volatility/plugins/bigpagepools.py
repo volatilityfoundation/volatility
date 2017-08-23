@@ -68,7 +68,7 @@ class BigPageTableMagic(obj.ProfileModification):
             (6, 2, '32bit') : [[92, 88]],
             (6, 2, '64bit') : [[-5200, -5224]], 
             (6, 3, '32bit') : [[116, 120]],
-            (6, 4, '64bit') : [[208, 184], [168, 192]],
+            (6, 4, '64bit') : [[208, 184], [168, 192], [176, 168], [48, 40], [32, 24], [24, 48], [56, 32]],
             (6, 4, '32bit') : [[-168, -164]],
         }
 
@@ -78,9 +78,9 @@ class BigPageTableMagic(obj.ProfileModification):
         if distance == None:
             if version == (6, 3, '64bit'):
                 if m.get('build', 0) == 9601:
-                    distance = [[-5192, -5200], [-5224, -5232]]
+                    distance = [[-5192, -5200], [-5224, -5232], [-5192, -5216]]
                 else:
-                    distance = [[-5200, -5176]]
+                    distance = [[-5200, -5176], [-5224, -5232], [-5192, -5200]]
 
         profile.merge_overlay({
             'VOLATILITY_MAGIC': [ None, {
@@ -116,8 +116,10 @@ class BigPageTable(obj.VolatilityMagic):
             table_size = obj.Object("address", 
                 offset = track_table - pair[1], 
                 vm = self.obj_vm)
-
-            if table_size != 0 and self.obj_vm.is_valid_address(table_base):
+                
+            if (table_base % 0x1000 == 0 and
+                    self.obj_vm.is_valid_address(table_base) and
+                    table_size != 0 and table_size % 0x1000 == 0):
                 break
 
         debug.debug("Distance Map: {0}".format(repr(self.distance)))

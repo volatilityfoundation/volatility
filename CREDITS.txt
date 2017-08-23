@@ -12,6 +12,20 @@ If you believe you've been left off, it is not
 intentional. Please bring it to our attention!
 ===============================================
 
+Volatility 2.6:
+
+jie-lin for fixing a pyinstaller NameError issue 
+gcmoreira for fixing a recursive property issue in Linux plugins
+Adam Bridge for updating the EditBox plugin 
+jie-lin for preventing a backtrace in the MBR parser plugin
+haco20292 for fixing a bug in linux_dmesg 
+williamshowalter for updating mac_get_profile and convert.py for El Capitan support 
+robbyFux for fixing a bug in the svcscan plugin 
+f-s-p for adding unified output to the threads plugin 
+Binary_Raider for adding the powershell empire plugins
+ozylol for updating create_all_profiles.py for Mac 10.11 
+JamesHabben for adjusting sqlite inserts to allow for more columns to exist in table
+
 Volatility 2.5: 
 
 Adam Bridge for adding a --count option (humanly readable byte stats) to imagecopy/raw2dmp

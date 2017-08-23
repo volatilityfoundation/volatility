@@ -5,6 +5,7 @@ symbols and then read the DWARF symbols from it.
 #include <linux/module.h>
 #include <linux/version.h>
 
+#include <linux/ioport.h>
 #include <linux/fs_struct.h>
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
@@ -59,7 +60,9 @@ struct xt_table xt_table;
 #include <asm/termbits.h>
 
 #include <linux/notifier.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
 struct atomic_notifier_head atomic_notifier_head;
+#endif
 
 #include <linux/tty_driver.h>
 struct tty_driver tty_driver;
@@ -85,9 +88,11 @@ struct unix_sock unix_sock;
 struct pid pid;
 struct radix_tree_root radix_tree_root;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,12)
 #ifdef CONFIG_NET_SCHED
 #include <net/sch_generic.h>
 struct Qdisc qdisc;
+#endif
 #endif
 
 struct inet_protosw inet_protosw;
@@ -176,7 +181,12 @@ struct rt_hash_bucket {
 } rt_hash_bucket;
 
 #ifndef RADIX_TREE_MAP_SHIFT
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
+#define RADIX_TREE_MAP_SHIFT    6
+#else
 #define RADIX_TREE_MAP_SHIFT    (CONFIG_BASE_SMALL ? 4 : 6)
+#endif
 #define RADIX_TREE_MAP_SIZE     (1UL << RADIX_TREE_MAP_SHIFT)
 #define RADIX_TREE_MAP_MASK     (RADIX_TREE_MAP_SIZE-1)
 #define RADIX_TREE_TAG_LONGS    ((RADIX_TREE_MAP_SIZE + BITS_PER_LONG - 1) / BITS_PER_LONG)
@@ -223,6 +233,18 @@ struct module_sections module_sect_attrs;
 #endif
 
 struct module_kobject module_kobject;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,2,0)
+// we can't get the defintion of mod_tree_root directly
+// because it is declared in module.c as a static struct
+// the latch_tree_root struct has the variables we want 
+// immediately after it though
+
+#include <linux/rbtree_latch.h>
+
+struct latch_tree_root ltr;
+
+#endif
 
 #ifdef CONFIG_SLAB
 
@@ -553,25 +575,52 @@ struct mount {
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0)
-struct proc_dir_entry {
-    unsigned int low_ino;
-    umode_t mode;
-    nlink_t nlink;
-    kuid_t uid;
-    kgid_t gid;
-    loff_t size;
-    const struct inode_operations *proc_iops;
-    const struct file_operations *proc_fops;
-    struct proc_dir_entry *next, *parent, *subdir;
-    void *data;
-    atomic_t count;         /* use count */
-    atomic_t in_use;        /* number of callers into module in progress; */
-                          /* negative -> it's going away RSN */
-    struct completion *pde_unload_completion;
-    struct list_head pde_openers;   /* who did ->open, but not ->release */
-    spinlock_t pde_unload_lock; /* proc_fops checks and pde_users bumps */
-    u8 namelen;
-    char name[];
-};
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+    struct proc_dir_entry {
+        unsigned int low_ino;
+        umode_t mode;
+        nlink_t nlink;
+        kuid_t uid;
+        kgid_t gid;
+        loff_t size;
+        const struct inode_operations *proc_iops;
+        const struct file_operations *proc_fops;
+        struct proc_dir_entry *next, *parent, *subdir;
+        void *data;
+        atomic_t count;         /* use count */
+        atomic_t in_use;        /* number of callers into module in progress; */
+                              /* negative -> it's going away RSN */
+        struct completion *pde_unload_completion;
+        struct list_head pde_openers;   /* who did ->open, but not ->release */
+        spinlock_t pde_unload_lock; /* proc_fops checks and pde_users bumps */
+        u8 namelen;
+        char name[];
+    };
+#else
+   struct proc_dir_entry {
+        unsigned int low_ino;
+        umode_t mode;
+        nlink_t nlink;
+        kuid_t uid;
+        kgid_t gid;
+        loff_t size;
+        const struct inode_operations *proc_iops;
+        const struct file_operations *proc_fops;
+        struct proc_dir_entry *parent;
+        struct rb_root subdir;
+        struct rb_node subdir_node;
+        void *data;
+        atomic_t count;     /* use count */
+        atomic_t in_use;    /* number of callers into module in progress; */
+                /* negative -> it's going away RSN */
+        struct completion *pde_unload_completion;
+        struct list_head pde_openers;   /* who did ->open, but not ->release */
+        spinlock_t pde_unload_lock; /* proc_fops checks and pde_users bumps */
+        u8 namelen;
+        char name[];
+   };
 #endif
+#endif
+
+struct resource resource;
 

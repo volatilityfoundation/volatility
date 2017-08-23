@@ -110,6 +110,9 @@ class linux_netscan(linux_common.AbstractLinuxCommand):
                 saddr = i.src_addr
                 daddr = i.dst_addr
 
+                if str(saddr) == "0.0.0.0" and str(daddr) == "0.0.0.0" and sport == 6 and dport == 0:
+                    continue
+
                 yield (i, i.protocol, saddr, sport, daddr, dport, state)
     
     def render_text(self, outfd, data):

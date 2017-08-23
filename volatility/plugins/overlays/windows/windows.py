@@ -650,6 +650,7 @@ class _TOKEN(obj.CType):
         if self.UserAndGroupCount < 0xFFFF:
             for sa in self.UserAndGroups.dereference():
                 sid = sa.Sid.dereference_as('_SID')
+                id_auth = ""
                 for i in sid.IdentifierAuthority.Value:
                     id_auth = i
                 yield "S-" + "-".join(str(i) for i in (sid.Revision, id_auth) +
@@ -1009,11 +1010,13 @@ class _CM_KEY_BODY(obj.CType):
     def full_key_name(self):
         output = []
         kcb = self.KeyControlBlock
-        while kcb.ParentKcb:
+        seen = []
+        while kcb.ParentKcb and kcb.ParentKcb.obj_offset not in seen:
             if kcb.NameBlock.Name == None:
                 break
             output.append(str(kcb.NameBlock.Name))
             kcb = kcb.ParentKcb
+            seen.append(kcb.obj_offset)
         return "\\".join(reversed(output))
 
 class _CMHIVE(obj.CType):

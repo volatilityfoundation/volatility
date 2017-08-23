@@ -97,18 +97,25 @@ class _bash_hash_table(obj.CType):
        
     def __iter__(self):
         if self.is_valid():
+            seen = {}
+
             bucket_array = obj.Object(theType="Array", targetType="Pointer", offset = self.bucket_array, vm = self.nbuckets.obj_vm, count = 64)
    
             for bucket_ptr in bucket_array:
                 bucket = bucket_ptr.dereference_as("bucket_contents")
                 while bucket.times_found > 0 and bucket.data.is_valid() and bucket.key.is_valid():  
-                    #pdata = bucket.data 
+                    if bucket.v() in seen:
+                        break
 
-                    #if pdata.path.is_valid() and (0 <= pdata.flags <= 2):
-                    yield bucket
+                    seen[bucket.v()] = 1
+
+                    pdata = bucket.data 
+
+                    if pdata.path.is_valid() and (0 <= pdata.flags <= 2):
+                        yield bucket
 
                     bucket = bucket.next
- 
+                     
 class BashHashTypes(obj.ProfileModification):
     conditions = {"os" : lambda x : x in ["linux"]}
 

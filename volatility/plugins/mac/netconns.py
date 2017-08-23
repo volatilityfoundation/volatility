@@ -37,7 +37,7 @@ class mac_network_conns(common.AbstractMacCommand):
         pcb_hash = obj.Object("Array", offset = proto_pcbinfo.hashbase, vm = self.addr_space, targetType = "Pointer", count = proto_pcbinfo.hashmask + 1)
 
         for pcb_ent in pcb_hash:
-            head = pcb_ent.dereference_as("inpcbhead")
+            head = pcb_ent.cast("inpcbhead")
 
             if not head:
                 continue

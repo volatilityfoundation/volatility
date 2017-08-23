@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this plugin. If not, see <http://www.gnu.org/licenses/>.
 #
-# This work heavily inspired by  GDI Utilities from Dr Brendan Dolan-Gavitt PhD.
+# This work heavily inspired by GDI Utilities from Dr Brendan Dolan-Gavitt PhD.
 # <http://www.cc.gatech.edu/~brendan/volatility/>
 #
 # The iteration of the Windows objects is borrowed from the Windows plugin.
@@ -31,32 +31,35 @@
 """
 
 import os
-import struct
-import hashlib
 
-import volatility
 import volatility.debug as debug
 import volatility.obj as obj
+import volatility.utils as utils
+
 import volatility.plugins.common as common
 import volatility.plugins.gui.messagehooks as messagehooks
-import volatility.utils as utils
 import volatility.win32 as win32
 
-# Add a structure to the x86 GDI types.
-gdi_types_x86 = {
-    '_EDIT_x86': [ 0xF6, {
-        'hBuf': [ 0x00, ['pointer', ['pointer', ['unsigned long']]]],
-        'hWnd': [ 0x38, ['unsigned long']],
-        'parenthWnd': [ 0x58, ['unsigned long']],
+supported_controls = {
+    'edit'   : 'COMCTL_EDIT',
+    'listbox': 'COMCTL_LISTBOX',
+}
+
+editbox_vtypes_xp_x86 = {
+    'COMCTL_EDIT': [0xEE, {
+        'hBuf': [0x00, ['unsigned long']],
+        'hWnd': [0x38, ['unsigned long']],
+        'parenthWnd': [0x58, ['unsigned long']],
         'nChars': [0x0C, ['unsigned long']],
         'selStart': [0x14, ['unsigned long']],
         'selEnd': [0x18, ['unsigned long']],
         'pwdChar': [0x30, ['unsigned short']],
-        'bEncKeyXP': [0xEC, ['unsigned char']], # XP
-        'bEncKey': [0xF4, ['unsigned char']] # Win7/2008R2
-        # TODO: bEncKey is hacky. Should have diff types for each.
+        'undoBuf': [0x80, ['unsigned long']],
+        'undoPos': [0x84, ['long']],
+        'undoLen': [0x88, ['long']],
+        'bEncKey': [0xEC, ['unsigned char']],
     }],
-    '_LISTBOX_x86': [ 0x40, {
+    'COMCTL_LISTBOX': [0x40, {
         'hWnd': [0x00, ['unsigned long']],
         'parenthWnd': [0x04, ['unsigned long']],
         'atomHandle': [0x08, ['unsigned long']],
@@ -67,407 +70,395 @@ gdi_types_x86 = {
         'stringsStart': [0x2C, ['unsigned long']],
         'stringsLength': [0x34, ['unsigned long']]
     }],
-    '_COMBOBOX_x86': [0x28, {
-        'hWnd': [0x00, ['unsigned long']],
-        'parenthWnd': [0x04, ['unsigned long']],
-        # 'atomHandle': [0x08, ['unsigned long']],
-        # 'edithWnd': [0x4C, ['unsigned long']],
-        'combolboxhWnd': [0x50, ['unsigned long']]
-    }]
 }
 
-# Add a structure to the x64 GDI types.
-gdi_types_x64 = {
-    '_EDIT_x64': [ 0x142, {
-        'hBuf': [0x00, ['pointer', ['pointer', ['unsigned long']]]],
+editbox_vtypes_xp_x64 = {
+    'COMCTL_EDIT': [ 0x142, {
+        'hBuf': [0x00, ['unsigned long']],
         'hWnd': [0x40, ['unsigned long']],
         'parenthWnd': [0x60, ['unsigned long']],
         'nChars': [0x10, ['unsigned long']],
         'selStart': [0x18, ['unsigned long']],
         'selEnd': [0x20, ['unsigned long']],
         'pwdChar': [0x34, ['unsigned short']],
+        'undoBuf': [0xA8, ['address']],
+        'undoPos': [0xB0, ['long']],
+        'undoLen': [0xB4, ['long']],
         'bEncKey': [0x140, ['unsigned char']]
-    } ],
-    '_LISTBOX_x64': [ 0x100, {
+    }],
+    'COMCTL_LISTBOX': [ 0x100, {
         'hWnd': [0x00, ['unsigned long']],
         'parenthWnd': [0x08, ['unsigned long']],
         'firstVisibleRow': [0x20, ['unsigned long']],
         'caretPos': [0x28, ['unsigned long']],
         'rowsVisible': [0x2C, ['unsigned long']],
         'itemCount': [0x30, ['unsigned long']],
-        'stringsStart': [0x40, ['unsigned long']],
+        'stringsStart': [0x40, ['address']],
         'stringsLength': [0x4C, ['unsigned long']]
-    } ],
-    '_COMBOBOX_x64': [0x68, {
-        'hWnd': [0x00, ['unsigned long']],
-        'parenthWnd': [0x08, ['unsigned long']],
-        'combolboxhWnd': [0x60, ['unsigned long']]
-    }]
+    }],
 }
 
-# Define the _EDIT_BOX_x86 structure.
-class _EDIT_x86(obj.CType):
+editbox_vtypes_vista7810_x86 = {
+    'COMCTL_EDIT': [0xF6, {
+        'hBuf': [0x00, ['unsigned long']],
+        'hWnd': [0x38, ['unsigned long']],
+        'parenthWnd': [0x58, ['unsigned long']],
+        'nChars': [0x0C, ['unsigned long']],
+        'selStart': [0x14, ['unsigned long']],
+        'selEnd': [0x18, ['unsigned long']],
+        'pwdChar': [0x30, ['unsigned short']],
+        'undoBuf': [0x88, ['unsigned long']],
+        'undoPos': [0x8C, ['long']],
+        'undoLen': [0x90, ['long']],
+        'bEncKey': [0xF4, ['unsigned char']],
+    }],
+    'COMCTL_LISTBOX': [0x40, {
+        'hWnd': [0x00, ['unsigned long']],
+        'parenthWnd': [0x04, ['unsigned long']],
+        'atomHandle': [0x08, ['unsigned long']],
+        'firstVisibleRow': [0x10, ['unsigned long']],
+        'caretPos': [0x14, ['long']],
+        'rowsVisible': [0x1C, ['unsigned long']],
+        'itemCount': [0x20, ['unsigned long']],
+        'stringsStart': [0x2C, ['unsigned long']],
+        'stringsLength': [0x34, ['unsigned long']]
+    }],
+}
 
-    def get_hBuf(self):
-        # Double dereference
-        ptr = (struct.unpack('<l', self.obj_vm.read(self.hBuf.obj_offset, 4)))[0]
-        if not self.obj_vm.is_valid_address(ptr): return None
-        ptr = (struct.unpack('<l', self.obj_vm.read(ptr, 4)))[0]
-        if not self.obj_vm.is_valid_address(ptr): return None
-        return ptr
+editbox_vtypes_vista7810_x64 = {
+    'COMCTL_EDIT': [0x142, {
+        'hBuf': [0x00, ['unsigned long']],
+        'hWnd': [0x40, ['unsigned long']],
+        'parenthWnd': [0x60, ['unsigned long']],
+        'nChars': [0x10, ['unsigned long']],
+        'selStart': [0x18, ['unsigned long']],
+        'selEnd': [0x20, ['unsigned long']],
+        'pwdChar': [0x34, ['unsigned short']],
+        'undoBuf': [0xA8, ['address']],
+        'undoPos': [0xB0, ['long']],
+        'undoLen': [0xB4, ['long']],
+        'bEncKey': [0x140, ['unsigned char']],
+    }],
+    'COMCTL_LISTBOX': [0x54, {
+        'hWnd': [0x00, ['unsigned long']],
+        'parenthWnd': [0x08, ['unsigned long']],
+        'firstVisibleRow': [0x20, ['unsigned long']],
+        'caretPos': [0x28, ['unsigned long']],
+        'rowsVisible': [0x2C, ['unsigned long']],
+        'itemCount': [0x30, ['unsigned long']],
+        'stringsStart': [0x40, ['address']],
+        'stringsLength': [0x4C, ['unsigned long']]
+    }],
+}
 
-    def get_text(self):
-        key = self.bEncKeyXP if True else self.bEncKey
-        s = self.obj_vm.read(self.get_hBuf(), self.nChars * 2)
-        if not self.pwdChar == 0x00:
-            s = EditBox.RtlRunDecodeUnicodeString(key, s)
-        return '' if not s else s
 
-# Define the _EDIT_BOX_x64 structure.
-class _EDIT_x64(obj.CType):
+class COMCTL_EDIT(obj.CType):
+    """Methods for the Edit structure"""
 
-    def get_hBuf(self):
-        # Double dereference
-        ptr = (struct.unpack('<l', self.obj_vm.read(self.hBuf.obj_offset, 4)))[0]
-        if not self.obj_vm.is_valid_address(ptr): return None
-        ptr = (struct.unpack('<l', self.obj_vm.read(ptr, 4)))[0]
-        if not self.obj_vm.is_valid_address(ptr): return None
-        return ptr
+    def __str__(self):
+        """String representation of the Edit"""
 
-    def get_text(self):
-        s = self.obj_vm.read(self.get_hBuf(), self.nChars * 2)
-        if not self.pwdChar == 0x00:
-            s = EditBox.RtlRunDecodeUnicodeString(self.bEncKey, s)
-        return '' if not s else s
+        _MAX_OUT = 50
 
-# Define the _LISTBOX_x86 structure.
-class _LISTBOX_x86(obj.CType):
+        text = self.get_text(no_crlf=True)
+        text = '{}...'.format(text[:_MAX_OUT - 3]) if len(text) > _MAX_OUT else text
 
-    def get_text(self):
-        string_array = self.obj_vm.read(self.stringsStart, self.stringsLength).split(b'\x00\x00')[:-1]
-        return ', '.join(string_array) if string_array else ''
+        undo = self.get_undo(no_crlf=True)
+        undo = '{}...'.format(undo[:_MAX_OUT - 3]) if len(undo) > _MAX_OUT else undo
 
-# Define the _LISTBOX_x64 structure.
-class _LISTBOX_x64(obj.CType):
+        return '<{0}(Text="{1}", Len={2}, Pwd={3}, Undo="{4}", UndoLen={5})>'.format(
+            self.__class__.__name__, text, self.nChars, self.is_pwd(), undo, self.undoLen)
 
-    def get_text(self):
-        string_array = self.obj_vm.read(self.stringsStart, self.stringsLength).split(b'\x00\x00')[:-1]
-        return ', '.join(string_array) if string_array else ''
+    def get_text(self, no_crlf=False):
+        """Get the text from the control
 
-# Define the _COMBOBOX_x86 structure.
-class _COMBOBOX_x86(obj.CType):
-    pass
+        :param no_crlf:
+        :return:
+        """
 
-# Define the _COMBOBOX_x64 structure.
-class _COMBOBOX_x64(obj.CType):
-    pass
+        if self.nChars < 1:
+            return ''
+        text_deref = obj.Object('unsigned long', offset=self.hBuf, vm=self.obj_vm)
+        raw = self.obj_vm.read(text_deref, self.nChars * 2)
+        if not self.pwdChar == 0x00:  # Is a password dialog
+            raw = COMCTL_EDIT.rtl_run_decode_unicode_string(self.bEncKey, raw)
+        if no_crlf:
+            return raw.decode('utf-16').replace('\r\n', '.')
+        else:
+            return raw.decode('utf-16')
 
-class EditBoxVTypes(obj.ProfileModification):
-    """This modification adds the gdi_types_x(86|64)."""
+    def get_undo(self, no_crlf=False):
+        """Get the contents of the undo buffer
 
-    def check(self, profile):
-        m = profile.metadata
-        return m.get('os', None) == 'windows'
+        :param no_crlf:
+        :return:
+        """
 
-    def modification(self, profile):
-        profile.vtypes.update(gdi_types_x86)
-        profile.vtypes.update(gdi_types_x64)
+        if self.undoLen < 1:
+            return ''
+        if no_crlf:
+            return self.obj_vm.read(self.undoBuf, self.undoLen * 2).decode('utf-16').replace('\r\n', '.')
+        else:
+            return self.obj_vm.read(self.undoBuf, self.undoLen * 2).decode('utf-16')
 
-class EditBoxObjectClasses(obj.ProfileModification):
-    """Add the new class definitions."""
+    def is_pwd(self):
+        """Is this a password control?
 
-    def modification(self, profile):
-        profile.object_classes.update({
-            '_EDIT_x86': _EDIT_x86,
-            '_EDIT_x64': _EDIT_x64,
-            '_LISTBOX_x86': _LISTBOX_x86,
-            '_LISTBOX_x64': _LISTBOX_x64,
-            '_COMBOBOX_x86': _COMBOBOX_x86,
-            '_COMBOBOX_x64': _COMBOBOX_x64
-        })
+        :return:
+        """
 
-class EditBox(messagehooks.MessageHooks):
-    """Dumps various data from ComCtl Edit controls (experimental: ListBox, ComboBox)"""
+        return self.pwdChar != 0x00
 
-    def __init__(self, config, *args, **kwargs):
-        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
-        # Plugin parameters
-        self._config.add_option('DUMP-DIR', short_option='D', default=None,
-                                help='Directory to which to dump found text',
-                                action='store', type='str')
-        self._config.add_option('NULLS', short_option='n', default=False,
-                                help='keep nulls when outputting to stdout', action='store_true')
-        self._config.add_option('PID', short_option='p', default=None,
-                                help='This Process ID', action='store', type='int')
-        self._config.add_option('MINIMAL', short_option='m', default=None,
-                                help='Process name and text only',
-                                action='store_true')
-        self._config.add_option('EXPERIMENTAL', short_option='e', default=None,
-                                help='Enable experimental options',
-                                action='store_true')
-        self._config.add_option('EXPERIMENTAL-ONLY', short_option='E', default=None,
-                                help='Only do experimental options',
-                                action='store_true')
-        # Object variables
-        self._addr_space = utils.load_as(self._config)
-        self._profile_is_32bit = (self._addr_space.profile.metadata['memory_model'] == '32bit')
-        self._tagWND_size = self._addr_space.profile.get_obj_size('tagWND')
+    def dump_meta(self, outfd):
+        """Dumps the meta data of the control
+        
+        @param  outfd: 
+        """
+        outfd.write('nChars            : {}\n'.format(self.nChars))
+        outfd.write('selStart          : {}\n'.format(self.selStart))
+        outfd.write('selEnd            : {}\n'.format(self.selEnd))
+        outfd.write('isPwdControl      : {}\n'.format(self.is_pwd()))
+        outfd.write('undoPos           : {}\n'.format(self.undoPos))
+        outfd.write('undoLen           : {}\n'.format(self.undoLen))
+        outfd.write('address-of undoBuf: {:#x}\n'.format(self.undoBuf))
+        outfd.write('undoBuf           : {}\n'.format(self.get_undo(no_crlf=True)))
+
+    def dump_data(self, outfd):
+        """Dumps the data of the control
+        
+        @param  outfd: 
+        """
+        outfd.write('{}\n'.format(self.get_text()))
 
     @staticmethod
-    def is_valid_profile(profile):
-        """Returns True if the plugin is valid for the current profile"""
-
-        return profile.metadata.get('os', 'unknown') == 'windows'
-
-    @staticmethod
-    def RtlRunDecodeUnicodeString(key, data):
-        s = ''.join([chr(ord(data[i-1]) ^ ord(data[i]) ^ key) for i in range(1,len(data))])
+    def rtl_run_decode_unicode_string(key, data):
+        s = ''.join([chr(ord(data[i - 1]) ^ ord(data[i]) ^ key) for i in range(1, len(data))])
         s = chr(ord(data[0]) ^ (key | 0x43)) + s
         return s
 
-    def dump_edit(self, dump_to_file, rm_nulls, atom_class_name, context, outfd, wnd, task):
-        """Process an Edit"""
 
-        task_space = task.get_process_address_space()
+class COMCTL_LISTBOX(obj.CType):
+    """Methods for the Listbox structure"""
 
-        addr_wndextra = wnd.v() + self._tagWND_size
-        val = wnd.obj_vm.read(addr_wndextra, wnd.cbwndExtra)
+    def __str__(self):
+        """String representation of the Listbox"""
 
-        # Build an _EDIT_BOX_x?? object from the WndExtra bytes
-        if self._profile_is_32bit or task.IsWow64:
-            edit_box_type = '_EDIT_x86'
-            wndextra = struct.unpack('<I', val)[0]
-        else:
-            edit_box_type = '_EDIT_x64'
-            wndextra = struct.unpack('<Q', val)[0]
+        _MAX_OUT = 50
+
+        text = self.get_text(joiner='|')
+        text = '{}...'.format(text[:_MAX_OUT - 3]) if len(text) > _MAX_OUT else text
+
+        return '<{0}(Text="{1}", Items={2}, Caret={3}>'.format(
+            self.__class__.__name__, text, self.itemCount, self.caretPos)
+    
+    def get_text(self, joiner='\n'):
+        """Get the text from the control
+
+        @param joiner:
+        @return:
+        """
+
+        if self.stringsLength < 1:
+            return ''
+        raw = self.obj_vm.read(self.stringsStart, self.stringsLength)
+        return joiner.join(split_null_strings(raw))
+
+    def dump_meta(self, outfd):
+        """Dumps the meta data of the control
+
+        @param  outfd:
+        """
+
+        outfd.write('firstVisibleRow   : {}\n'.format(self.firstVisibleRow))
+        outfd.write('caretPos          : {}\n'.format(self.caretPos))
+        outfd.write('rowsVisible       : {}\n'.format(self.rowsVisible))
+        outfd.write('itemCount         : {}\n'.format(self.itemCount))
+        outfd.write('stringsStart      : {:#x}\n'.format(self.stringsStart))
+        outfd.write('stringsLength     : {}\n'.format(self.stringsLength))
+
+    def dump_data(self, outfd):
+        """Dumps the data of the control
+
+        @param  outfd:
+        """
+
+        outfd.write('{}\n'.format(self.get_text()))
+
+
+def split_null_strings(data):
+    """Splits a concatenation of null-terminated utf-16 strings
+    
+    @param  data:
+    """
+    
+    strings = []
+    start = 0
+    for i in xrange(0, len(data), 2):
+        if data[i] == '\x00' and data[i+1] == '\x00':
+            strings.append(data[start:i])
+            start = i+2
+    return [s.decode('utf-16') for s in strings]
+
+def dump_to_file(ctrl, pid, proc_name, folder):
+    """Dumps the data of the control to a file
+
+    @param  ctrl:
+    @param  pid:
+    @param  proc_name:
+    @param  folder:
+    """
+    ctrl_safe_name = str(ctrl.__class__.__name__).split('_')[-1].lower()
+    file_name = '{0}_{1}_{2}_{3:#x}.txt'.format(pid, proc_name, ctrl_safe_name, ctrl.v())
+    with open(os.path.join(folder, file_name), 'wb') as out_file:
+        out_file.write(ctrl.get_text())
+
+
+class Editbox(common.AbstractWindowsCommand):
+    """Displays information about Edit controls. (Listbox experimental.)"""
+
+    # Add the classes for the structures
+    editbox_classes = {
+        'COMCTL_EDIT'   : COMCTL_EDIT,
+        'COMCTL_LISTBOX': COMCTL_LISTBOX,
+    }
+
+    def __init__(self, config, *args, **kwargs):
+        common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
+
+        # Filter specific processes
+        config.add_option('PID', short_option='p', default=None,
+                          help='Operate on these Process IDs (comma-separated)',
+                          action='store', type='str')
+        config.add_option('DUMP-DIR', short_option='D', default=None,
+                          help='Save the found text to files in this folder',
+                          action='store', type='str')
         
-        editbox = obj.Object(edit_box_type, offset=wndextra, vm=task_space)
-        valid_hbuf = not (editbox.get_hBuf() is None)
+        self.fake_32bit = False
 
-        # wndextra was 0 or some other invalid address
-        if editbox is None:
-            return
+    @staticmethod
+    def apply_types(addr_space, meta=None):
+        """Add the correct vtypes and classes for the profile
 
-        isPassword = not (editbox.pwdChar == 0x00)
+        @param  addr_space:        
+        @param  meta: 
+        """
+
+        if not meta:
+            meta = addr_space.profile.metadata
         
-        if valid_hbuf:
-            # Get the text from the control
-            the_text = editbox.get_text()
-            # Calc the MD5
-            md5 = hashlib.md5(the_text).hexdigest()
-
-        # Dump the info
-        if self._config.minimal:
-            outfd.write('{0}:{1}\n'.format(wnd.Process.UniqueProcessId, wnd.Process.ImageFileName))
-        else:
-            outfd.write('{0}\n'.format('*' * 55))
-
-            if not valid_hbuf:
-                outfd.write('{0} invalid hBuf - can\'t get text {0}\n'.format('*' * 12))
-                outfd.write('{0}\n'.format('*' * 55))
-
-            outfd.write('Wnd context          : {0}\n'.format(context))
-            outfd.write('pointer-to tagWND    : {0:#x} [{1:#x}]\n'.format(
-                wnd.obj_offset, task_space.vtop(wnd.obj_offset)))
-            outfd.write('pid                  : {0}\n'.format(wnd.Process.UniqueProcessId))
-            outfd.write('imageFileName        : {0}\n'.format(wnd.Process.ImageFileName))
-
-            if not self._profile_is_32bit:
-                outfd.write('wow64                : {0}\n'.format('Yes' if task.IsWow64 else 'No'))
-
-            outfd.write('atom_class           : {0}\n'.format(atom_class_name))
-            outfd.write('address-of cbwndExtra: {0:#x} [{1:#x}]\n'.format(
-                wnd.cbwndExtra.obj_offset, task_space.vtop(wnd.cbwndExtra.obj_offset)))
-            outfd.write('value-of cbwndExtra  : {0} ({0:#x})\n'.format(wnd.cbwndExtra))
-            outfd.write('address-of WndExtra  : {0:#x} [{1:#x}]\n'.format(
-                addr_wndextra, task_space.vtop(addr_wndextra)))
-            outfd.write('value-of WndExtra    : {0:#x} [{1:#x}]\n'.format(wndextra, task_space.vtop(wndextra)))
-
-            if valid_hbuf:
-                outfd.write('pointer-to hBuf      : {0:#x} [{1:#x}]\n'.format(
-                    editbox.get_hBuf(), task_space.vtop(editbox.get_hBuf())))
+        if meta['os'] == 'windows':
+            if meta['major'] == 5:
+                if meta['memory_model'] == '32bit':
+                    addr_space.profile.vtypes.update(editbox_vtypes_xp_x86)
+                elif meta['memory_model'] == '64bit':
+                    addr_space.profile.vtypes.update(editbox_vtypes_xp_x64)
+                else:
+                    debug.error("The selected address space is not supported")
+                addr_space.profile.compile()
+            elif meta['major'] == 6:
+                if meta['memory_model'] == '32bit':
+                    addr_space.profile.vtypes.update(editbox_vtypes_vista7810_x86)
+                elif meta['memory_model'] == '64bit':
+                    addr_space.profile.vtypes.update(editbox_vtypes_vista7810_x64)
+                else:
+                    debug.error("The selected address space is not supported")
+                addr_space.profile.compile()
             else:
-                outfd.write('pointer-to hBuf      : -invalid-\n')
-
-            outfd.write('hWnd                 : {0:#x}\n'.format(editbox.hWnd))
-            outfd.write('parenthWnd           : {0:#x}\n'.format(editbox.parenthWnd))
-            outfd.write('nChars               : {0} ({0:#x})\n'.format(editbox.nChars))
-            outfd.write('selStart             : {0} ({0:#x})\n'.format(editbox.selStart))
-            outfd.write('selEnd               : {0} ({0:#x})\n'.format(editbox.selEnd))
-
-            if valid_hbuf:
-                outfd.write('text_md5             : {0}\n'.format(md5))
-        
-            outfd.write('isPwdControl         : {0}\n'.format('Yes' if isPassword else 'No'))
-            if isPassword:
-                outfd.write('pwdChar              : {0:#x}\n'.format(editbox.pwdChar))
-        
-        if valid_hbuf:
-            if dump_to_file:  # Write to file, named as per the MD5
-                with open(os.path.join(self._config.dump_dir, md5 + '.txt'), 'wb') as f:
-                    f.write(the_text)
-            else:  # Write to the screen
-                if rm_nulls:
-                    the_text = the_text.replace('\x00', '')
-                outfd.write('{0}\n'.format(the_text))
-
-    def dump_listbox(self, dump_to_file, atom_class_name, context, outfd, wnd, task):
-        """Process a ListBox"""
-        task_space = task.get_process_address_space()
-
-        addr_wndextra = wnd.v() + self._tagWND_size
-        val = wnd.obj_vm.read(addr_wndextra, wnd.cbwndExtra)
-
-        # Build a _LISTBOX_x?? object from the WndExtra bytes
-        if self._profile_is_32bit:
-            listbox_type = '_LISTBOX_x86'
-            wndextra = struct.unpack('<I', val)[0]
-        elif task.IsWow64:
-            listbox_type = '_LISTBOX_x86'
-            wndextra = struct.unpack('<I', val)[0]
+                debug.error("The selected address space is not supported")
         else:
-            listbox_type = '_LISTBOX_x64'
-            wndextra = struct.unpack('<Q', val)[0]
-        listbox = obj.Object(listbox_type, offset=wndextra, vm=task_space)
+            debug.error("The selected address space is not supported")
 
-        outfd.write('{0}\n'.format('*' * 55))
-        outfd.write('*** Experimental {0}\n'.format('*' * 38))
-        outfd.write('{0}\n'.format('*' * 55))
-        outfd.write('Wnd context          : {0}\n'.format(context))
-        outfd.write('pointer-to tagWND    : {0:#x} [{1:#x}]\n'.format(wnd.obj_offset, task_space.vtop(wnd.obj_offset)))
-        outfd.write('pid                  : {0}\n'.format(wnd.Process.UniqueProcessId))
-        outfd.write('process              : {0}\n'.format(wnd.Process.ImageFileName))
-        if not self._profile_is_32bit:
-            outfd.write('wow64                : {0}\n'.format('Yes' if task.IsWow64 else 'No'))
-        outfd.write('atom_class           : {0}\n'.format(atom_class_name))
-        outfd.write('address-of cbwndExtra: {0:#x} [{1:#x}]\n'.format(
-            wnd.cbwndExtra.obj_offset, task_space.vtop(wnd.cbwndExtra.obj_offset)))
-        outfd.write('value-of cbwndExtra  : {0} ({0:#x})\n'.format(wnd.cbwndExtra))
-        outfd.write('address-of WndExtra  : {0:#x} [{1:#x}]\n'.format(addr_wndextra, task_space.vtop(addr_wndextra)))
-        outfd.write('value-of WndExtra    : {0:#x} [{1:#x}]\n'.format(wndextra, task_space.vtop(wndextra)))
-        outfd.write('firstVisibleRow      : {0} ({0:#x})\n'.format(listbox.firstVisibleRow))
-        outfd.write('caretPos             : {0} ({0:#x})\n'.format(listbox.caretPos))
-        outfd.write('rowsVisible          : {0} ({0:#x})\n'.format(listbox.rowsVisible))
-        outfd.write('itemCount            : {0} ({0:#x})\n'.format(listbox.itemCount))
-        outfd.write('stringsStart         : {0:#x} [{1:#x}]\n'.format(
-            listbox.stringsStart, task_space.vtop(listbox.stringsStart)))
-        outfd.write('stringsLength        : {0} ({0:#x})\n'.format(listbox.stringsLength))
-        outfd.write('strings              : {0}\n'.format(listbox.get_text()))
+    def calculate(self):
+        """Parse the control structures"""
 
-    def dump_combobox(self, dump_to_file, atom_class_name, context, outfd, wnd, task):
-        """Process a ComboBox"""
-        task_space = task.get_process_address_space()
-
-        addr_wndextra = wnd.v() + self._tagWND_size
-        val = wnd.obj_vm.read(addr_wndextra, wnd.cbwndExtra)
-
-        # Build a _COMBOBOX_x?? object from the WndExtra bytes
-        if self._profile_is_32bit:
-            combobox_type = '_COMBOBOX_x86'
-            wndextra = struct.unpack('<I', val)[0]
-        elif task.IsWow64:
-            combobox_type = '_COMBOBOX_x86'
-            wndextra = struct.unpack('<I', val)[0]
-        else:
-            combobox_type = '_COMBOBOX_x64'
-            wndextra = struct.unpack('<Q', val)[0]
-        combobox = obj.Object(combobox_type, offset = wndextra, vm = task_space)
-        
-        outfd.write('{0}\n'.format('*' * 55))
-        outfd.write('*** Experimental {0}\n'.format('*' * 38))
-        outfd.write('{0}\n'.format('*' * 55))
-        outfd.write('Wnd context          : {0}\n'.format(context))
-        outfd.write('pointer-to tagWND    : {0:#x} [{1:#x}]\n'.format(wnd.obj_offset, task_space.vtop(wnd.obj_offset)))
-        outfd.write('pid                  : {0}\n'.format(wnd.Process.UniqueProcessId))
-        outfd.write('process              : {0}\n'.format(wnd.Process.ImageFileName))
-        if not self._profile_is_32bit:
-            outfd.write('wow64                : {0}\n'.format('Yes' if task.IsWow64 else 'No'))
-        outfd.write('atom_class           : {0}\n'.format(atom_class_name))
-        outfd.write('address-of cbwndExtra: {0:#x} [{1:#x}]\n'.format(
-            wnd.cbwndExtra.obj_offset, task_space.vtop(wnd.cbwndExtra.obj_offset)))
-        outfd.write('value-of cbwndExtra  : {0} ({0:#x})\n'.format(wnd.cbwndExtra))
-        outfd.write('address-of WndExtra  : {0:#x} [{1:#x}]\n'.format(addr_wndextra, task_space.vtop(addr_wndextra)))
-        outfd.write('value-of WndExtra    : {0:#x} [{1:#x}]\n'.format(wndextra, task_space.vtop(wndextra)))
-        # if combobox.hWnd != combobox.edithWnd:
-        #     outfd.write('handle-of edit       : {0:#x}\n'.format(combobox.edithWnd))
-        outfd.write('handle-of combolbox  : {0:#x}\n'.format(combobox.combolboxhWnd))
-
-    def render_text(self, outfd, data):
-        """Output the data"""
-
-        # Are we dumping the text to files?
-        dump_to_file = self._config.dump_dir != None
-        if dump_to_file and not os.path.isdir(self._config.dump_dir):
+        # Check the output folder exists
+        if self._config.DUMP_DIR and not os.path.isdir(self._config.dump_dir):
             debug.error('{0} is not a directory'.format(self._config.dump_dir))
 
-        # Are we removing nulls?
-        rm_nulls = not self._config.nulls
+        # Apply the correct vtypes for the profile
+        addr_space = utils.load_as(self._config)
+        addr_space.profile.object_classes.update(Editbox.editbox_classes)
+        self.apply_types(addr_space)
 
-        tasks = win32.tasks.pslist(self._addr_space)
-
-        # Build a dict of the tasks, indexed by pid
-        the_tasks = {}
-        if self._config.pid is None:
-            for t in tasks:
-                the_tasks[int(t.UniqueProcessId)] = t
+        # Build a list of tasks
+        tasks = win32.tasks.pslist(addr_space)
+        if self._config.PID:
+            pids = [int(p) for p in self._config.PID.split(',')]
+            the_tasks = [t for t in tasks if t.UniqueProcessId in pids]
         else:
-            for t in tasks:
-                if self._config.pid == t.UniqueProcessId:
-                    the_tasks[int(t.UniqueProcessId)] = t
-                    break
-        outfd.write('{0} process{1} to check.\n'.format(len(the_tasks), '' if len(the_tasks) == 1 else 'es'))
+            the_tasks = [t for t in tasks]
 
-        # In case the PID's not found
+        # In case no PIDs found
         if len(the_tasks) < 1:
             return
 
-        counts = {}
-        for winsta, atom_tables in data:
+        # Iterate through all the window objects matching for supported controls
+        mh = messagehooks.MessageHooks(self._config)
+        for winsta, atom_tables in mh.calculate():
             for desktop in winsta.desktops():
                 for wnd, _level in desktop.windows(desktop.DeskInfo.spwnd):
+                    if wnd.Process in the_tasks:
 
-                    if self._config.pid is None or int(wnd.Process.UniqueProcessId) in the_tasks:
+                        atom_class = mh.translate_atom(winsta, atom_tables, wnd.ClassAtom)
+                        if atom_class:
+                            atom_class = str(atom_class)
+                            if '!' in atom_class:
+                                comctl_class = atom_class.split('!')[-1].lower()
+                                if comctl_class in supported_controls:
+                                    
+                                    # Do we need to fake being 32bit for Wow?
+                                    if wnd.Process.IsWow64 and not self.fake_32bit:
+                                        meta = addr_space.profile.metadata
+                                        meta['memory_model'] = '32bit'
+                                        self.apply_types(addr_space, meta)
+                                        self.fake_32bit = True
+                                    elif not wnd.Process.IsWow64 and self.fake_32bit:
+                                            self.apply_types(addr_space)
+                                            self.fake_32bit = False
+                                            
+                                    context = '{0}\\{1}\\{2}'.format(winsta.dwSessionId, winsta.Name, desktop.Name)
+                                    task_vm = wnd.Process.get_process_address_space()
+                                    wndextra_offset = wnd.v() + addr_space.profile.get_obj_size('tagWND')
+                                    wndextra = obj.Object('address', offset=wndextra_offset, vm=task_vm)
+                                    ctrl = obj.Object(supported_controls[comctl_class], offset=wndextra, vm=task_vm)
+                                    if self._config.DUMP_DIR:
+                                        dump_to_file(ctrl, wnd.Process.UniqueProcessId,
+                                                     wnd.Process.ImageFileName, self._config.DUMP_DIR)
+                                    yield context, atom_class, wnd.Process.UniqueProcessId, \
+                                        wnd.Process.ImageFileName, wnd.Process.IsWow64, ctrl
 
-                        atom_class = self.translate_atom(winsta, atom_tables, wnd.ClassAtom)
-
-                        if not isinstance(atom_class, volatility.obj.NoneObject) and \
-                            not isinstance(wnd.Process.ImageFileName, volatility.obj.NoneObject):
-
-                            atom_class_name = str(atom_class)
-                            context = '{0}\\{1}\\{2}'.format(winsta.dwSessionId, winsta.Name, desktop.Name)
-
-                            if not self._config.experimental_only:
-
-                                # Edit control
-                                if atom_class_name.endswith('!Edit'):  # or atom_class_name == 'Edit':
-                                    task = the_tasks[int(wnd.Process.UniqueProcessId)]
-                                    self.dump_edit(dump_to_file, rm_nulls, atom_class_name, context, outfd, wnd, task)
-                                    if 'Edit' in counts:
-                                        counts['Edit'] += 1
-                                    else:
-                                        counts['Edit'] = 1
-
-                            # Experimental options
-                            if self._config.experimental or self._config.experimental_only:
-                            
-                                # Listbox control
-                                if atom_class_name.endswith('!Listbox'):  # or atom_class_name.endswith('!ComboLBox')):
-                                    task = the_tasks[int(wnd.Process.UniqueProcessId)]
-                                    self.dump_listbox(dump_to_file, atom_class_name, context, outfd, wnd, task)
-                                    if 'ListBox' in counts:
-                                        counts['ListBox'] += 1
-                                    else:
-                                        counts['ListBox'] = 1
-
-                                # Combobox control
-                                elif atom_class_name.endswith('!Combobox'):
-                                    task = the_tasks[int(wnd.Process.UniqueProcessId)]
-                                    self.dump_combobox(dump_to_file, atom_class_name, context, outfd, wnd, task)
-                                    if 'ComboBox' in counts:
-                                        counts['ComboBox'] += 1
-                                    else:
-                                        counts['ComboBox'] = 1
+    def render_table(self, outfd, data):
+        """Output the results as a table
         
-        outfd.write('{0}\n'.format('*' * 55))
-        for k in counts.keys():
-            outfd.write('{0} {1} {2} found.\n'.format(counts[k], k, 'control' if counts[k] == 1 else 'controls'))
+        @param  outfd: <file>
+        @param  data: <generator>
+        """
+
+        self.table_header(outfd, [
+            ('PID', '6'),
+            ('Process', '14'),
+            ('Control', ""),
+        ])
+
+        for context, atom_class, pid, proc_name, is_wow64, ctrl in data:
+            # context, atom_class and is_wow64 are ignored
+            self.table_row(outfd, pid, proc_name, str(ctrl))
+
+    def render_text(self, outfd, data):
+        """Output the results as a text report
+        
+        @param  outfd: <file>
+        @param  data: <generator>
+        """
+
+        for context, atom_class, pid, proc_name, is_wow64, ctrl in data:
+            outfd.write('{}\n'.format('*' * 30))
+            outfd.write('Wnd Context       : {}\n'.format(context))
+            outfd.write('Process ID        : {}\n'.format(pid))
+            outfd.write('ImageFileName     : {}\n'.format(proc_name))
+            outfd.write('IsWow64           : {}\n'.format('Yes' if is_wow64 else 'No'))
+            outfd.write('atom_class        : {}\n'.format(atom_class))
+            outfd.write('value-of WndExtra : {:#x}\n'.format(ctrl.v()))
+            ctrl.dump_meta(outfd)
+            outfd.write('{}\n'.format('-' * 25))
+            ctrl.dump_data(outfd)

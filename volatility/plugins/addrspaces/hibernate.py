@@ -93,7 +93,9 @@ class WindowsHiberFileSpace32(addrspace.BaseAddressSpace):
         PROC_PAGE = volmag.HibrProcPage.v()
 
         # Check it's definitely a hibernation file
-        self.as_assert(self._get_first_table_page() is not None, "No xpress signature found")
+        pageno = self._get_first_table_page()
+        self.as_assert(pageno is not None, "No xpress signature found")
+        self.as_assert(pageno <= 10, "Bad profile for PO_MEMORY_RANGE")
 
         # Extract processor state
         self.ProcState = obj.Object("_KPROCESSOR_STATE", PROC_PAGE * 4096, base)

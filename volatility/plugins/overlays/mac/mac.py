@@ -148,6 +148,47 @@ class MigTypes(obj.ProfileModification):
         else:
             profile.vtypes.update(mig_vtypes_64)
 
+# this change was introduced in 10.12 (Sierra), which only has 64 bit versions
+cnode_vtypes = {
+    'cat_attr': [ 0x78, {
+        'ca_fileid': [0x0, ['unsigned int']],
+        'ca_mode': [0x4, ['unsigned short']],
+        'ca_recflags': [0x6, ['unsigned short']],
+        'ca_linkcount': [0x8, ['unsigned int']],
+        'ca_uid': [0xc, ['unsigned int']],
+        'ca_gid': [0x10, ['unsigned int']],
+        'ca_atime': [0x18, ['long']],
+        'ca_atimeondisk': [0x20, ['long']],
+        'ca_mtime': [0x28, ['long']],
+        'ca_ctime': [0x30, ['long']],
+        'ca_itime': [0x38, ['long']],
+        'ca_btime': [0x40, ['long']],
+        'ca_flags': [0x48, ['unsigned int']],
+    }],
+
+    'cnode': [ 0x148, {
+        'c_flag': [0x40, ['unsigned int']],
+        'c_hflag': [0x44, ['unsigned int']],
+        'c_vp': [0x48, ['pointer', ['vnode']]],
+        'c_rsrc_vp': [0x50, ['pointer', ['vnode']]],
+        'c_childhint': [0x68, ['unsigned int']],
+        'c_dirthreadhint': [0x6c, ['unsigned int']],
+        'c_attr': [0x88, ['cat_attr']],
+        'c_dirhinttag': [0x120, ['short']],
+        'c_dirchangecnt': [0x124, ['unsigned int']],
+        'c_touch_acctime': [0x138, ['unsigned char']],
+        'c_touch_chgtime': [0x139, ['unsigned char']],
+        'c_touch_modtime': [0x13a, ['unsigned char']],
+        'c_update_txn': [0x13c, ['unsigned int']],
+    }],
+}
+
+class CNodeTypes(obj.ProfileModification):
+    conditions = {"os" : lambda x : x in ["mac"]}
+
+    def modification(self, profile):
+        if not profile.vtypes.get("cnode"):
+            profile.vtypes.update(cnode_vtypes)
 
 class catfishScan(scan.BaseScanner):
     """ Scanner for Catfish string for Mountain Lion """
@@ -288,14 +329,45 @@ class vnode(obj.CType):
 
         return ret
 
-    def get_contents(self):
-        moc  = self.v_un.vu_ubcinfo.ui_control.moc_object
-        memq = moc.memq 
+    '''
+    static inline uintptr_t vm_page_unpack_ptr(uintptr_t p)
+    {
+            if (!p) 
+                    return ((uintptr_t)0);
 
-        cur = memq.m("next").dereference_as("vm_page")
+            if (p & VM_PACKED_FROM_VM_PAGES_ARRAY)
+                    return ((uintptr_t)(&vm_pages[(uint32_t)(p & ~VM_PACKED_FROM_VM_PAGES_ARRAY)]));
+            return (((p << VM_PACKED_POINTER_SHIFT) + (uintptr_t) VM_MIN_KERNEL_AND_KEXT_ADDRESS));
+    }
+    '''
+    def _get_next_page(self, memq):
+        # packed pointer, in 10.12+
+        p = memq.m("next")
+
+        if p == 0 or p == None:
+            ret = None
+        
+        elif self.obj_vm.profile.metadata.get('memory_model', 0) == "64bit" and p.size() == 4:  
+            
+            if p & 0x80000000 != 0:
+                vm_pages_ptr = self.obj_vm.profile.get_symbol("_vm_pages")
+                vm_pages_addr = obj.Object("unsigned long long", offset = vm_pages_ptr, vm = self.obj_vm)
+                ret_addr = vm_pages_addr + ((p & ~0x80000000) * 8)
+            else:
+                ret_addr = (p << 6) + 0xffffff7f80000000  
+
+            ret = obj.Object("vm_page", offset = ret_addr, vm = self.obj_vm)
+        else:
+            ret = p.dereference_as("vm_page")
+
+        return ret
+
+    def get_contents(self):
+        memq = self.v_un.vu_ubcinfo.ui_control.moc_object.memq
+        cur = self._get_next_page(memq)
 
         file_size = self.v_un.vu_ubcinfo.ui_size
-        phys_as = utils.load_as(self.obj_vm.get_config(), astype = 'physical')
+        phys_as   = self.obj_vm.base
 
         idx = 0
         written = 0
@@ -304,13 +376,13 @@ class vnode(obj.CType):
             # the last element of the queue seems to track the size of the queue
             if cur.offset != 0 and cur.offset == idx:
                 break
-                
+            
             if cur.phys_page != 0 and cur.offset >= 0:
                 sz = 4096
 
                 if file_size - written < 4096:
                     sz = file_size - written
-
+                
                 buf = phys_as.zread(cur.phys_page * 4096, sz)
 
                 yield (cur.offset.v(), buf)
@@ -318,7 +390,7 @@ class vnode(obj.CType):
             idx     = idx + 1
             written = written + 4096
 
-            cur = cur.listq.next.dereference_as("vm_page")
+            cur = self._get_next_page(cur.listq)
 
 class fileglob(obj.CType):
     
@@ -937,7 +1009,10 @@ class proc(obj.CType):
         for seg in m.segments():
             if str(seg.segname) == "__PAGEZERO":
                 continue
-                
+ 
+            if seg.vmsize == 0 or seg.vmsize > 100000000:
+                continue
+               
             # this is related to the shared cache map 
             # contact Andrew for full details
             if str(seg.segname) == "__LINKEDIT" and seg.vmsize > 20000000:
@@ -945,7 +1020,6 @@ class proc(obj.CType):
 
             cur = seg.vmaddr
             end = seg.vmaddr + seg.vmsize
-        
             while cur < end:
                 buffer = buffer + proc_as.zread(cur, 4096) 
                 cur = cur + 4096
@@ -986,10 +1060,14 @@ class proc(obj.CType):
 
         info_addr = struct.unpack(self.pack_fmt, info_buf)[0] 
 
-        img_infos = obj.Object(theType = "Array", targetType = itype, offset = info_addr, count = infos.infoArrayCount, vm = proc_as)
+        cnt = infos.infoArrayCount
+        if cnt > 4096:
+            cnt = 1024 
+
+        img_infos = obj.Object(theType = "Array", targetType = itype, offset = info_addr, count = cnt, vm = proc_as)
         
         for info_addr in img_infos:
-            if info_addr:
+            if info_addr and info_addr.is_valid():
                 yield info_addr
 
     def get_proc_maps(self):
@@ -1075,7 +1153,8 @@ class proc(obj.CType):
 
         for vma in self.get_proc_maps():
             if vma.get_perms() != "rw-" or vma.get_path() != "":
-                continue
+                if vma.get_special_path() != "[heap]":
+                    continue
 
             offset = vma.links.start
             out_of_range = vma.links.start + (vma.links.end - vma.links.start)
@@ -1116,6 +1195,9 @@ class proc(obj.CType):
         argc = self.p_argc + 1
         args = []
 
+        if argc > 1024:
+            return ""
+
         while argc > 0:
             arg = obj.Object("String", offset = argsstart, vm = proc_as, length = 256)
                 
@@ -1145,6 +1227,9 @@ class proc(obj.CType):
         nfiles  = self.p_fd.fd_nfiles
         if nfiles > num_fds:
             num_fds = nfiles
+
+        if num_fds > 4096:
+            num_fds = 1024
 
         fds = obj.Object('Array', offset = self.p_fd.fd_ofiles, vm = self.obj_vm, targetType = 'Pointer', count = num_fds)
 
@@ -1373,9 +1458,9 @@ class vm_map_entry(obj.CType):
     # used to find heap, stack, etc.
     def get_special_path(self):
         if hasattr(self, "alias"):
-            check = self.alias
+            check = self.alias.v()
         else:
-            check = self.object.v() & 0xfff
+            check = self.vme_offset.v() & 0xfff
 
         if 0 < check < 10:
             ret = "[heap]"
@@ -1433,6 +1518,26 @@ class vm_map_entry(obj.CType):
             ret = None
 
         return ret
+
+    def resident_count(self):
+        vmobj = self.object.object()
+
+        if not vmobj:
+            return 0
+
+        # based on OBJ_RESIDENT_COUNT
+        # all versions since OS X 10.6
+        if hasattr(vmobj, "all_reusable"):
+            if vmobj.all_reusable == 1:
+                count = vmobj.wired_page_count.v()
+            else:
+                count = vmobj.resident_page_count.v() - vmobj.reusable_page_count.v()
+
+        # really old systems - OS X 10.5 
+        else:
+           count = vmobj.resident_page_count.v()
+
+        return count
 
     def is_suspicious(self):
         ret = False        
@@ -1629,6 +1734,9 @@ class sockaddr(obj.CType):
         return ip
 
 class dyld32_image_info(obj.CType):
+    def is_valid(self):
+        return len(self.imageFilePath) > 1 and self.imageLoadAddress > 0x1000
+
     def _read_ptr(self, addr):
         addr = self.obj_vm.read(addr, 4)
         if not addr:
@@ -1661,6 +1769,9 @@ class dyld32_image_info(obj.CType):
         return addr
 
 class dyld64_image_info(obj.CType):
+    def is_valid(self):
+        return len(self.imageFilePath) > 1 and self.imageLoadAddress > 0x1000
+
     def _read_ptr(self, addr):
         addr = self.obj_vm.read(addr, 8)
         if addr == None:
@@ -2048,6 +2159,20 @@ for path in set(plugins.__path__):
         for fn in files:
             if zipfile.is_zipfile(os.path.join(path, fn)):
                 new_classes.append(MacProfileFactory(zipfile.ZipFile(os.path.join(path, fn))))
+
+kext_overlay = {
+    'kmod_info_class': [None, {
+        'name'  : [ None , ['String', dict(length = 64)]],
+        }],
+}
+
+class KextOverlay(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'mac'}
+    before = ['BasicObjectClasses']
+
+    def modification(self, profile):
+        if 'kmod_info_class' in profile.vtypes:
+            profile.merge_overlay(kext_overlay)
 
 class MacOverlay(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'mac'}

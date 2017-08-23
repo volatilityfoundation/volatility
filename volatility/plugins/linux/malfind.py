@@ -35,6 +35,13 @@ class linux_malfind(linux_pslist.linux_pslist):
     """Looks for suspicious process mappings"""
 
     def render_text(self, outfd, data):
+        linux_common.set_plugin_members(self)
+
+        if self.addr_space.profile.metadata.get('memory_model', '32bit') == '32bit':
+            bits = '32bit'
+        else:
+            bits = '64bit'
+
         for task in data:
             proc_as = task.get_process_address_space()
 
@@ -59,14 +66,14 @@ class linux_malfind(linux_pslist.linux_pslist):
                     outfd.write("\n")
 
                     outfd.write("{0}\n".format("\n".join(
-                        ["{0:#010x}  {1:<48}  {2}".format(vma.vm_start + o, h, ''.join(c))
+                        ["{0:#016x}  {1:<48}  {2}".format(vma.vm_start + o, h, ''.join(c))
                         for o, h, c in utils.Hexdump(content)
                         ])))
 
                     outfd.write("\n")
                     outfd.write("\n".join(
                         ["{0:#x} {1:<16} {2}".format(o, h, i)
-                        for o, i, h in malfind.Disassemble(content, vma.vm_start)
+                        for o, i, h in malfind.Disassemble(content, vma.vm_start, bits = bits)
                         ]))
                 
                     outfd.write("\n\n")

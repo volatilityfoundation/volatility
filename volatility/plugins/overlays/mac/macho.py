@@ -314,7 +314,10 @@ class macho_header(macho):
 
         # the load commands start after the header
         hdr_size = self.macho_obj.size()
-         
+        
+        if hdr_size == 0 or hdr_size > 100000000:
+            return
+
         arr_start = self.obj_offset + hdr_size
 
         offset = 0
@@ -354,8 +357,12 @@ class macho_header(macho):
         syms = []        
         tname = self._get_typename("nlist")
         obj_size = self.obj_vm.profile.get_obj_size(tname)  
+
+        cnt = self.cached_dysymtab.nindirectsyms 
+        if cnt > 100000:
+            cnt = 1024
  
-        symtab_idxs = obj.Object(theType="Array", targetType="unsigned int", count=self.cached_dysymtab.nindirectsyms, offset = self.obj_offset + self.cached_dysymtab.indirectsymoff, vm = self.obj_vm, parent = self)
+        symtab_idxs = obj.Object(theType="Array", targetType="unsigned int", count=cnt, offset = self.obj_offset + self.cached_dysymtab.indirectsymoff, vm = self.obj_vm, parent = self)
 
         for idx in symtab_idxs:
             sym_addr = self.cached_symtab + (idx * obj_size)
@@ -518,7 +525,11 @@ class macho_header(macho):
         seg_struct = self._get_typename("segment_command")
         seg_size   = self.obj_vm.profile.get_obj_size(seg_struct)
 
-        for i in range(segment.nsects):
+        cnt = segment.nsects 
+        if cnt > 1024:
+            cnt = 1024
+
+        for i in range(cnt):
             sect_addr = segment.obj_offset + seg_size + (i * sect_size)
             
             sect = obj.Object("macho_section", offset = sect_addr, vm = self.obj_vm, parent = self)

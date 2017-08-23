@@ -271,7 +271,8 @@ class MBRParser(commands.Command):
             PARTITION_TABLE = obj.Object('PARTITION_TABLE', vm = address_space,
                                offset = self._config.OFFSET)
             boot_code = address_space.read(self._config.OFFSET + diff, 440 - diff)
-            all_zeros = boot_code.count(chr(0)) == len(boot_code)
+            if boot_code:
+                all_zeros = boot_code.count(chr(0)) == len(boot_code)
             if not all_zeros:
                 yield self._config.OFFSET, PARTITION_TABLE, boot_code
             else:
@@ -282,7 +283,8 @@ class MBRParser(commands.Command):
                 PARTITION_TABLE = obj.Object('PARTITION_TABLE', vm = address_space,
                                offset = offset)
                 boot_code = address_space.read(offset + diff, 440 - diff)
-                all_zeros = boot_code.count(chr(0)) == len(boot_code)
+                if boot_code:
+                    all_zeros = boot_code.count(chr(0)) == len(boot_code)
                 if not all_zeros:
                     yield offset, PARTITION_TABLE, boot_code
 

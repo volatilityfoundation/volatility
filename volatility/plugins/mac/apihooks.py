@@ -173,8 +173,14 @@ class mac_apihooks(pstasks.mac_tasks):
                     if vma_mapping == None:
                         vma_mapping = self._find_mapping_proc_maps(proc, addr)
 
-                    (vma_path, vma_start, vma_end) = vma_mapping
-                        
+                    if vma_mapping:
+                        (vma_path, vma_start, vma_end) = vma_mapping
+                    else:
+                        # the address points to a bogus (non-mapped region)
+                        vma_path = "<UNKNOWN>"
+                        vma_start = addr
+                        vma_end = addr  
+
                     addr_mapping = vma_path
 
                     # non-resolved symbols

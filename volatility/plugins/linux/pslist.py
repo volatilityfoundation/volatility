@@ -82,41 +82,70 @@ class linux_pslist(linux_common.AbstractLinuxCommand):
                        ("StartTime", str)],
                         self.generator(data))
 
+    def _get_task_vals(self, task):
+        if task.parent.is_valid():
+            ppid       = str(task.parent.pid)
+        else:
+            ppid       = "-"
+
+        uid = task.uid
+        if uid == None or uid > 10000:
+            uid = "-"
+        
+        gid = task.gid
+        if gid == None or gid > 100000:
+            gid = "-"
+    
+        start_time = task.get_task_start_time()
+        if start_time == None:
+            start_time = "-"
+
+        if task.mm.pgd == None:
+            dtb = task.mm.pgd
+        else:
+            dtb = self.addr_space.vtop(task.mm.pgd) or task.mm.pgd
+
+        task_offset = None
+        if hasattr(self, "wants_physical") and task.obj_vm.base:
+            task_offset = self.addr_space.vtop(task.obj_offset)
+            
+        if task_offset == None:
+            task_offset = task.obj_offset
+
+        return task_offset, dtb, ppid, uid, gid, str(start_time)
+
     def generator(self, data):
         for task in data:
-            if task.mm.pgd == None:
-                dtb = task.mm.pgd
-            else:
-                dtb = self.addr_space.vtop(task.mm.pgd) or task.mm.pgd
-            yield (0, [Address(task.obj_offset),
+            task_offset, dtb, ppid, uid, gid, start_time = self._get_task_vals(task)
+
+            yield (0, [Address(task_offset),
                                   str(task.comm),
                                   int(task.pid),
-                                  str(task.uid) if task.uid else "-",
-                                  str(task.gid) if task.gid else "-",
+                                  str(uid),
+                                  str(gid), 
                                   Address(dtb),
-                                  str(task.get_task_start_time())])
+                                  start_time])
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Offset", "[addrpad]"),
                                   ("Name", "20"),
                                   ("Pid", "15"),
+                                  ("PPid", "15"),
                                   ("Uid", "15"),
                                   ("Gid", "6"),
                                   ("DTB", "[addrpad]"),
                                   ("Start Time", "")])
         for task in data:
-            if task.mm.pgd == None:
-                dtb = task.mm.pgd
-            else:
-                dtb = self.addr_space.vtop(task.mm.pgd) or task.mm.pgd
-            self.table_row(outfd, task.obj_offset,
+            task_offset, dtb, ppid, uid, gid, start_time = self._get_task_vals(task)
+
+            self.table_row(outfd, task_offset,
                                   task.comm,
                                   str(task.pid),
-                                  str(task.uid) if task.uid else "-",
-                                  str(task.gid) if task.gid else "-",
+                                  str(ppid),
+                                  str(uid),
+                                  str(gid),
                                   dtb,
-                                  task.get_task_start_time())
-
+                                  str(start_time))
 
 class linux_memmap(linux_pslist):
     """Dumps the memory map for linux tasks"""

@@ -4,6 +4,17 @@ This file identifies core Volatility authors.
 All lists are alphabetical. 
 ===============================================
 
+Volatility 2.6:
+------------
+
+Mike Auty
+Andrew Case
+Michael Hale Ligh
+Jamie Levy
+AAron Walters
+Nick L. Petroni, Jr.
+
+
 Volatility 2.4, 2.5:
 ------------
 

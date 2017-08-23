@@ -274,7 +274,6 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
             sort_idx = sorted_ents[address]
 
             if name == ".symtab":
-                print "FIXING"
                 str_section_data = self._fix_sym_table(module, sect_sa)
                 str_size = len(str_section_data)
                 size = str_size
@@ -282,11 +281,9 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
                 try:
                     next_addr = addrs[sort_idx+1]
                     size = next_addr - address
-                    #print "%x | %x | %8x | %d | %s" % (next_addr, address, size, sort_idx, name)
                 except IndexError:
                     # the last one
                     size = 0x4000 # guess?
-                    #print "one: size 0x4000 for %s" % name
 
             sect_sa.append((name, address, size))
 
@@ -296,21 +293,16 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
             try:
                 next_addr = addrs[sort_idx+1]
                 size = next_addr - address
-                #print "%x | %x | %8x | %d | %s" % (next_addr, address, size, sort_idx, name)
             except IndexError:
                 # the last one
                 size = 0x4000 # guess?
 
             if name == ".symtab":
-                print "FIXING 2"
                 size         = str_size
                 section_data = str_section_data
             else:  
                 section_data = module.obj_vm.zread(address, size)
-                #print "reading %d bytes from %x for section %s : got %d" % (size, address, name, len(section_data))
 
-            print "adding section %s | %d with size %d | %d" % (name, sect_bytes, size, len(section_data))
-            
             updated_sections.append((name, address, size, sect_bytes, section_data))
             
             sect_bytes = sect_bytes + size
@@ -431,8 +423,6 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
         return data
 
     def _make_sect_header_32(self, name, address, size, file_off, strtab_idx, symtab_idx):
-        #print "trying: %-30s | %.16x | %.8x | %d" % (name, address, size, file_off)
-
         int_sh_type = self._calc_sect_type(name)
 
         sh_name       = struct.pack("<I", self._calc_sect_name_idx(name))
@@ -474,7 +464,6 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
             (name, address, size) = sect
             
             if address <= sym_addr < address + size:
-                #print "found in sec: %s" % name
                 return name
 
         return ""
@@ -483,8 +472,6 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
         all_sym_data = ""
         
         first_name = False
-
-        print "walking %d syms to be fixed...." % module.num_symtab
 
         if self.addr_space.profile.metadata.get('memory_model', '32bit') == '64bit':
             sym_type     = "elf64_sym"
@@ -554,7 +541,6 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
             b = (bind << 4) & 0xf0
             t = stype & 0xf
             st_info = (b | t) & 0xff
-            #print "st_info: %x : %x | %x || %d | %x" % (sym.st_value, b, t, st_info, st_info)
             st_info = struct.pack("B", st_info)
             
             #### fix indexes ####
@@ -611,21 +597,16 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
 
         strtab_idx = len(updated_sections) 
 
-        print "******************"
-
         for (i, (name, address, size, file_off, sect_data)) in enumerate(updated_sections):
             section_headers = section_headers + _make_sect_header(name, address, size, file_off, strtab_idx, symtab_idx)
             
-            print "added section %30s with size %6d file offset %6d len(section_data): %6d"  % (name, size, file_off, len(section_data))
-
             section_data    = section_data + sect_data              
 
             last_file_off = file_off
             last_sec_sz   = len(sect_data)
 
             if len(sect_data) != size:
-                print "BROKEN SIZE"
-                exit()
+                return ""
 
         # we need this section, but its not in memory
         # we can manually create it though and add it to our file
@@ -640,6 +621,9 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
 
         return header + section_data + section_headers 
 
+    def get_module_data(self, module):
+        return self._get_module_data(module)
+
     def render_text(self, outfd, data):
         if not self._config.DUMP_DIR:
             debug.error("You must supply a --dump-dir output directory")
@@ -648,7 +632,7 @@ class linux_moddump(linux_common.AbstractLinuxCommand):
             ## TODO: pass module.name through a char sanitizer 
             file_name = "{0}.{1:#x}.lkm".format(module.name, module.obj_offset)
             mod_file = open(os.path.join(self._config.DUMP_DIR, file_name), 'wb')
-            mod_data = self._get_module_data(module)
+            mod_data = self.get_module_data(module)
             mod_file.write(mod_data)
             mod_file.close()
             outfd.write("Wrote {0} bytes to {1}\n".format(len(mod_data), file_name))

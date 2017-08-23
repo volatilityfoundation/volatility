@@ -114,7 +114,7 @@ class _TCP_LISTENER(obj.CType):
         # connects to the listener, a TCP_ENDPOINT is created
         # and that structure contains the remote address.
         if local_addr != None:
-            inaddr = local_addr.pData.dereference().dereference()
+            inaddr = local_addr.inaddr
             if self.AddressFamily == AF_INET:
                 yield "v4", inaddr.addr4, inaddr_any
             else:
@@ -169,6 +169,18 @@ class _TCP_ENDPOINT(_TCP_LISTENER):
 class _UDP_ENDPOINT(_TCP_LISTENER):
     """Class for objects found in UdpA pools"""
 
+class _LOCAL_ADDRESS(obj.CType):
+	
+	@property
+	def inaddr(self):
+		return self.pData.dereference().dereference()
+		
+class _LOCAL_ADDRESS_WIN10_UDP(obj.CType):
+
+	@property
+	def inaddr(self):
+		return self.pData.dereference()
+
 #--------------------------------------------------------------------------------
 # profile modifications 
 #--------------------------------------------------------------------------------
@@ -186,7 +198,9 @@ class NetscanObjectClasses(obj.ProfileModification):
         profile.object_classes.update({
             '_TCP_LISTENER': _TCP_LISTENER,
             '_TCP_ENDPOINT': _TCP_ENDPOINT,
+            '_LOCAL_ADDRESS': _LOCAL_ADDRESS,
             '_UDP_ENDPOINT': _UDP_ENDPOINT,
+            '_LOCAL_ADDRESS_WIN10_UDP': _LOCAL_ADDRESS_WIN10_UDP,
             })
 
 #--------------------------------------------------------------------------------

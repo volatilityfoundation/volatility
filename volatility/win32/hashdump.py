@@ -117,6 +117,8 @@ def find_control_set(sysaddr):
     for v in rawreg.values(csselect):
         if v.Name == "Current":
             return v.Data
+            
+    return 1
 
 def get_bootkey(sysaddr):
     cs = find_control_set(sysaddr)

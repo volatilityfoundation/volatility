@@ -56,6 +56,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
                        ("Base", Address),
                        ("Size", Hex),
                        ("LoadCount", Hex),
+                       ("LoadTime", str),
                        ("Path", str)],
                         self.generator(data))
 
@@ -65,9 +66,9 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
 
             if task.Peb:
                 for m in task.get_load_modules():
-                    yield (0, [int(pid), Address(m.DllBase), Hex(m.SizeOfImage), Hex(m.LoadCount), str(m.FullDllName or '')])
+                    yield (0, [int(pid), Address(m.DllBase), Hex(m.SizeOfImage), Hex(m.LoadCount), str(m.load_time()), str(m.FullDllName or '')])
             else:
-                yield (0, [int(pid), Address(0), Hex(0), Hex(0), "Error reading PEB for pid"])
+                yield (0, [int(pid), Address(0), Hex(0), Hex(0), "", "Error reading PEB for pid"])
 
     def render_text(self, outfd, data):
         for task in data:
@@ -87,10 +88,11 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
                                   [("Base", "[addrpad]"),
                                    ("Size", "[addr]"),
                                    ("LoadCount", "[addr]"),
+                                   ("LoadTime", "<30"),
                                    ("Path", ""),
                                    ])
                 for m in task.get_load_modules():
-                    self.table_row(outfd, m.DllBase, m.SizeOfImage, m.LoadCount, str(m.FullDllName or ''))
+                    self.table_row(outfd, m.DllBase, m.SizeOfImage, m.LoadCount, str(m.load_time()), str(m.FullDllName or ''))
             else:
                 outfd.write("Unable to read PEB for task.\n")
 

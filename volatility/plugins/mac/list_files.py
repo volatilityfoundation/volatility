@@ -46,7 +46,6 @@ class mac_list_files(common.AbstractMacCommand):
     
         plugin = mac_mount.mac_mount(config)
         mounts = plugin.calculate()
-        joiner = os.path.join
         vnodes = {}
         parent_vnodes = {}
 
@@ -111,7 +110,7 @@ class mac_list_files(common.AbstractMacCommand):
                 else: 
                     par_offset = None
         
-                entry = [name, par_offset, parent]
+                entry = [str(name), par_offset, parent]
                 vnodes[parent.obj_offset] = entry
                 
                 parent = next_parent  
@@ -127,10 +126,12 @@ class mac_list_files(common.AbstractMacCommand):
             if not vnode.is_dir():
                 continue
   
+            name = str(name)
+            
             if parent in parent_vnodes:
-                full_path = joiner(parent_vnodes[parent], name)
+                full_path = parent_vnodes[parent] + "/" + name
             else:
-                paths = [str(name)]
+                paths = [name]
                 while parent:
                     entry = vnodes.get(parent)
                 
@@ -156,12 +157,14 @@ class mac_list_files(common.AbstractMacCommand):
             
             if not name:
                 continue
-            
+           
+            name = str(name)
+ 
             entry = parent_vnodes.get(parent) 
             if not entry:
                 yield vnode, name
             else:
-                full_path = joiner(entry, name)
+                full_path = entry + "/" + name
                 
                 ## add a leading slash if one doesn't exist
                 if full_path[0] != "/":
