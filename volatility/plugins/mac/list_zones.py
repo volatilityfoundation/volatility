@@ -28,7 +28,6 @@ import volatility.obj as obj
 import volatility.plugins.mac.common as common
 from volatility.renderers import TreeGrid
 
-
 class mac_list_zones(common.AbstractMacCommand):
     """ Prints active zones """
 
@@ -36,14 +35,21 @@ class mac_list_zones(common.AbstractMacCommand):
         common.set_plugin_members(self)
 
         first_zone_addr = self.addr_space.profile.get_symbol("_first_zone")
+        if first_zone_addr:
+            zone_ptr = obj.Object("Pointer", offset = first_zone_addr, vm = self.addr_space)
+            zone = zone_ptr.dereference_as("zone")
 
-        zone_ptr = obj.Object("Pointer", offset = first_zone_addr, vm = self.addr_space)
-        zone = zone_ptr.dereference_as("zone")
+            while zone:
+                yield zone
+                zone = zone.next_zone       
+        else:
+            zone_ptr = self.addr_space.profile.get_symbol("_zone_array")
+            zone_arr = obj.Object(theType="Array", targetType="zone", vm = self.addr_space, count = 256, offset = zone_ptr)
 
-        while zone:
-            yield zone
-            zone = zone.next_zone       
- 
+            for zone in zone_arr:
+                if zone.is_valid():
+                    yield zone
+    
     def unified_output(self, data):
         return TreeGrid([("Name", str),
                          ("Active Count", int),
