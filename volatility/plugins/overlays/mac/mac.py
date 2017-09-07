@@ -229,20 +229,27 @@ class VolatilityDTB(obj.VolatilityMagic):
     def _get_dtb_m_lion(self):
         tbl = self.obj_vm.profile.sys_map["kernel"]
         config = self.obj_vm.get_config()
-
+        
         if config.SHIFT:
             shift_address = config.SHIFT
         else:
+            ver_addr = tbl["_version"][0][0] - 0xffffff8000000000
+
             scanner = catfishScan(needles = ["Catfish \x00\x00"])
             for catfish_offset in scanner.scan(self.obj_vm):
-                shift_address = catfish_offset - (tbl["_lowGlo"][0][0] % 0xFFFFFF80)
-                break
+                tmp_shift_address = catfish_offset - (tbl["_lowGlo"][0][0] % 0xFFFFFF80)
+                tmp_ver_addr  = ver_addr + tmp_shift_address 
+                
+                test_buf = self.obj_vm.zread(tmp_ver_addr, 16)
+                if test_buf and test_buf.startswith("Darwin"):
+                    shift_address = tmp_shift_address
+                    break
 
         self.obj_vm.profile.shift_address = shift_address
 
         bootpml4 = (tbl["_BootPML4"][0][0] % 0xFFFFFF80) + shift_address
         boot_pml4_dtb = amd64.AMD64PagedMemory(self.obj_vm, config, dtb = bootpml4)
-      
+     
         idlepml4_addr = (tbl['_IdlePML4'][0][0]) + shift_address
         idlepml4_ptr = obj.Object("unsigned int", offset = idlepml4_addr, vm = boot_pml4_dtb)
 
@@ -251,12 +258,12 @@ class VolatilityDTB(obj.VolatilityMagic):
     def generate_suggestions(self):
         profile = self.obj_vm.profile
         bootpml = profile.get_symbol("_BootPML4")
-        
-        if bootpml:        
+
+        if bootpml:
             ret = self._get_dtb_m_lion()
         else:
             ret = self._get_dtb_pre_m_lion()                  
-        
+
         yield ret
 
 class VolatilityMacIntelValidAS(obj.VolatilityMagic):
