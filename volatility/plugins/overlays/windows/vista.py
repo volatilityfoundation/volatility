@@ -113,7 +113,8 @@ class VistaObjectClasses(obj.ProfileModification):
     def modification(self, profile):
         profile.object_classes.update({'_ETHREAD'    : _ETHREAD, 
                                        '_POOL_HEADER': _POOL_HEADER, 
-                                        '_TOKEN': _TOKEN})
+                                       '_TOKEN': _TOKEN,
+                                       'wchar': windows._UNICODE_STRING})
 
 class VistaKDBG(windows.AbstractKDBGMod):
     before = ['WindowsOverlay']
