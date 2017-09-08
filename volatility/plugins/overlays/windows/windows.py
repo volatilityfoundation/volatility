@@ -210,15 +210,18 @@ class _UNICODE_STRING(obj.CType):
 
 class _LIST_ENTRY(obj.CType):
     """ Adds iterators for _LIST_ENTRY types """
+    def get_next_entry(self, member):
+        return self.m(member).dereference()
+    
     def list_of_type(self, type, member, forward = True, head_sentinel = True):
         if not self.is_valid():
             return
 
         ## Get the first element
         if forward:
-            nxt = self.Flink.dereference()
+            nxt = self.get_next_entry("Flink")
         else:
-            nxt = self.Blink.dereference()
+            nxt = self.get_next_entry("Blink")
 
         offset = self.obj_vm.profile.get_obj_offset(type, member)
 
@@ -240,9 +243,9 @@ class _LIST_ENTRY(obj.CType):
             yield item
 
             if forward:
-                nxt = item.m(member).Flink.dereference()
+                nxt =  item.m(member).get_next_entry("Flink")
             else:
-                nxt = item.m(member).Blink.dereference()
+                nxt = item.m(member).get_next_entry("Blink")
 
     def __nonzero__(self):
         ## List entries are valid when both Flinks and Blink are valid
@@ -250,6 +253,11 @@ class _LIST_ENTRY(obj.CType):
 
     def __iter__(self):
         return self.list_of_type(self.obj_parent.obj_name, self.obj_name)
+
+# for LIST_ENTRY32, the LDR member is an unsigned long not a Pointer as regular LIST_ENTRY
+class LIST_ENTRY32(_LIST_ENTRY):
+    def get_next_entry(self, member):
+        return obj.Object("LIST_ENTRY32", offset = self.m(member).v(), vm = self.obj_vm)
 
 class WinTimeStamp(obj.NativeType):
     """Class for handling Windows Time Stamps"""
@@ -395,6 +403,23 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
 
         return obj.NoneObject("Peb not found")
 
+    def Peb32(self):
+        """ Returns a _PEB object which is using the process address space.
+
+        The PEB structure is referencing back into the process address
+        space so we need to switch address spaces when we look at
+        it. This method ensure this happens automatically.
+        """
+        process_ad = self.get_process_address_space()
+        if process_ad:
+            offset = self.Wow64Process.v()
+            peb32 = obj.Object("_PEB32", offset = offset, vm = process_ad, name = "Peb32", parent = self)
+
+            if peb32.is_valid():
+                return peb32
+        
+        return obj.NoneObject("Peb32 not found")
+
     def get_process_address_space(self):
         """ Gets a process address space for a task given in _EPROCESS """
         directory_table_base = self.Pcb.DirectoryTableBase.v()
@@ -408,20 +433,29 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
 
         return process_as
 
-    def _get_modules(self, the_list, the_type):
+    def _get_modules(self, the_list, entry_type, link_member):
         """Generator for DLLs in one of the 3 PEB lists"""
+
         if self.UniqueProcessId and the_list:
-            for l in the_list.list_of_type("_LDR_DATA_TABLE_ENTRY", the_type):
+            for l in the_list.list_of_type(entry_type, link_member):
                 yield l
 
+    def _prep_get_modules(self, list_member, link_member):
+        for module in self._get_modules(self.Peb.Ldr.m(list_member), "_LDR_DATA_TABLE_ENTRY", link_member):
+            yield module
+
+        if self.IsWow64:
+            for module in self._get_modules(self.Peb32().Ldr.m(list_member), "_LDR32_DATA_TABLE_ENTRY", link_member):
+                yield module
+
     def get_init_modules(self):
-        return self._get_modules(self.Peb.Ldr.InInitializationOrderModuleList, "InInitializationOrderLinks")
+        return self._prep_get_modules("InInitializationOrderModuleList", "InInitializationOrderLinks")
 
     def get_mem_modules(self):
-        return self._get_modules(self.Peb.Ldr.InMemoryOrderModuleList, "InMemoryOrderLinks")
+        return self._prep_get_modules("InMemoryOrderModuleList", "InMemoryOrderLinks")
 
     def get_load_modules(self):
-        return self._get_modules(self.Peb.Ldr.InLoadOrderModuleList, "InLoadOrderLinks")
+        return self._prep_get_modules("InLoadOrderModuleList", "InLoadOrderLinks")
 
     def get_token(self):
         """Return the process's TOKEN object if its valid"""
@@ -1176,7 +1210,9 @@ class WindowsObjectClasses(obj.ProfileModification):
     def modification(self, profile):
         profile.object_classes.update({
             '_UNICODE_STRING': _UNICODE_STRING,
+            '_UNICODE32_STRING': _UNICODE_STRING,
             '_LIST_ENTRY': _LIST_ENTRY,
+            'LIST_ENTRY32': LIST_ENTRY32,
             'WinTimeStamp': WinTimeStamp,
             'DosDate':DosDate,
             '_EPROCESS': _EPROCESS,

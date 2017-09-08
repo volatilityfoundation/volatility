@@ -1007,3 +1007,67 @@ class WinPEObjectClasses(obj.ProfileModification):
             '_VS_VERSION_INFO': _VS_VERSION_INFO,
             'VerStruct': VerStruct,
             })
+
+peb32_vtypes = {
+   '_PEB32_LDR_DATA': [48, {
+        "Length": [0, ['unsigned long']],
+        "Initialized": [4, ['unsigned char']],
+        "SsHandle": [8, ['pointer32', ['void']]],
+        "InLoadOrderModuleList": [12, ['LIST_ENTRY32']],
+        "InMemoryOrderModuleList": [20, ['LIST_ENTRY32']],
+        "InInitializationOrderModuleList": [28, ['LIST_ENTRY32']],
+        "EntryInProgress": [36, ['pointer32', ['void']]],
+        "ShutdownInProgress": [40, ['unsigned char']],
+        "ShutdownThreadId": [44, ['pointer32', ['void']]],
+    }],
+    '_LDR32_DATA_TABLE_ENTRY': [76, {
+        "InLoadOrderLinks": [0, ['LIST_ENTRY32']],
+        "InMemoryOrderLinks": [8, ['LIST_ENTRY32']],
+        "InInitializationOrderLinks": [16, ['LIST_ENTRY32']],
+        "DllBase": [24, ['pointer32', ['void']]],
+        "EntryPoint": [28, ['pointer32', ['void']]],
+        "SizeOfImage": [32, ['unsigned long']],
+        "FullDllName": [36, ['_UNICODE32_STRING']],
+        "BaseDllName": [44, ['_UNICODE32_STRING']],
+        "Flags": [52, ['unsigned long']],
+        "LoadCount": [56, ['unsigned short']],
+        "TlsIndex": [58, ['unsigned short']],
+        "HashLinks": [60, ['LIST_ENTRY32']],
+        "TimeDateStamp": [68, ['unsigned long']],
+        "EntryPointActivationContext": [72, ['pointer32', ['void']]],
+    }],
+    '_UNICODE32_STRING' : [ 12, {
+        'Length' : [ 0x0, ['unsigned short']],
+        'MaximumLength' : [ 0x2, ['unsigned short']],
+        'Buffer' : [ 0x4, ['pointer32', ['unsigned short']]],
+    }],
+}
+
+peb32_overlay = {
+    '_PEB32' : [None, {
+        'Ldr' : [ None, ['pointer32', ['_PEB32_LDR_DATA']]],       
+    }],
+}
+
+ldr_loadtime_overlay = {
+   '_LDR32_DATA_TABLE_ENTRY' : [None, {
+        "LoadTime": [0x70, ['WinTimeStamp']],
+    }],
+}
+
+# apply to any 64bit version of Windows
+class WinPeb32(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit'}
+
+    def modification(self, profile):       
+        profile.vtypes.update(peb32_vtypes)
+        profile.merge_overlay(peb32_overlay)
+        profile.object_classes.update({"_LDR32_DATA_TABLE_ENTRY" : _LDR_DATA_TABLE_ENTRY})
+       
+        if 'LoadTime' in profile.vtypes['_LDR_DATA_TABLE_ENTRY'][1]:
+            profile.merge_overlay(ldr_loadtime_overlay)
+        
+
+
+
