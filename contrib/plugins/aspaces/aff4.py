@@ -27,19 +27,20 @@
 import struct
 import volatility.obj as obj
 import volatility.addrspace as addrspace
+import volatility.plugins.addrspaces.standard as standard
+import logging
+import pyaff4
 from pyaff4 import data_store
 from pyaff4 import lexicon
 from pyaff4.container import Container
-import volatility.plugins.addrspaces.standard as standard
-import logging
-
 
 LOGGER = logging.getLogger("pyaff4")
 LOGGER.setLevel(logging.ERROR)
 
-#pylint: disable-msg=C0111
+# pylint: disable-msg=C0111
 
 zipFileHeaderMAGIC = "\x50\x4b\x03\x04"
+
 
 class AFF4AddressSpace(standard.FileAddressSpace):
     """ This AS supports AFF4 Containers """
@@ -122,7 +123,6 @@ class AFF4AddressSpace(standard.FileAddressSpace):
                     lastLength = length
                     yield res
         yield (lastOffset, lastLength)
-
 
     def is_valid_address(self, addr):
         if addr == None:
