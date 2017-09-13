@@ -44,7 +44,9 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         
         config.remove_option("LIST_SBS")
         config.add_option('LISTFILES', short_option = 'L', default = None, help = 'list all files cached in memory', action = 'count')
-        
+    
+        self.ptr_size = -1
+
     def _walk_sb(self, dentry_param, parent):
         ret = []
             
@@ -60,16 +62,22 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
             if not dentry.d_name.name.is_valid():
                 continue
-
+            
+            inode = dentry.d_inode
+            
+            ivalid = False
+            if inode and inode.is_valid():
+                if inode.i_ino == 0 or inode.i_ino > 100000000000:
+                    continue
+                ivalid = True
+            
             # do not use os.path.join
             # this allows us to have consistent paths from the user
             name  = dentry.d_name.name.dereference_as("String", length = 255)
             new_file = parent + "/" + name
             ret.append((new_file, dentry))
  
-            inode = dentry.d_inode
-
-            if inode and inode.is_valid() and inode.is_dir():
+            if ivalid and inode.is_dir():
                 ret = ret + self._walk_sb(dentry, new_file)
 
         return ret
@@ -82,10 +90,10 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
         return ret
 
-    def walk_sbs(self):
-        linux_common.set_plugin_members(self)
-        
-        sbs = self._get_sbs()
+    def walk_sbs(self, sbs = []):
+        if sbs == []:
+            linux_common.set_plugin_members(self)
+            sbs = self._get_sbs()
 
         for (sb, sb_path) in sbs:
             if sb_path != "/":
@@ -147,11 +155,76 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
                 self.table_row(outfd, inode_num, inode, file_path)
                 
     # from here down is code to walk the page cache and mem_map / mem_section page structs#
+    def radix_tree_is_internal_node(self, ptr):
+        if hasattr(ptr, "v"):
+            ptr = ptr.v()
+
+        return ptr & 3 == 1
+
     def radix_tree_is_indirect_ptr(self, ptr):
         return ptr & 1
 
     def radix_tree_indirect_to_ptr(self, ptr):
         return obj.Object("radix_tree_node", offset = ptr & ~1, vm = self.addr_space)
+
+    def index_is_valid(self, root, index):
+        node = root.rnode
+        if self.radix_tree_is_internal_node(node):
+            maxindex = (self.RADIX_TREE_MAP_SIZE << node.shift) - 1 
+        else:
+            maxindex = 0
+       
+        if index > maxindex:
+            node = None
+
+        return node
+
+    def is_sibling_entry(self, parent, node):
+        parent_ptr = parent.slots.obj_offset
+        node_ptr   = node
+
+        return (parent_ptr <= node_ptr) and \
+                (node_ptr < parent_ptr + (self.ptr_size * self.RADIX_TREE_MAP_SIZE))
+
+    def get_slot_offset(self, parent, slot):
+        return (slot.v() - parent.slots.obj_offset) / self.ptr_size
+
+    def radix_tree_descend(self, parent, node, index):
+        offset  = (index >> parent.shift) & self.RADIX_TREE_MAP_MASK
+        ent_ptr = parent.slots.obj_offset + (self.ptr_size * offset)
+        entry   = obj.Object(theType="Pointer", targetType="unsigned long", offset = ent_ptr, vm = self.addr_space)
+
+        if 1: # TODO - multi order 
+            if self.radix_tree_is_internal_node(entry):
+                print "multi internal"
+                if self.is_sibling_entry(parent, entry):
+                    print "sibling ptr"
+                    sibentry = self.radix_tree_indirect_to_ptr(entry)
+                    offset = self.get_slot_offset(parent, sibentry)
+                    entry   = sibentry.v()
+
+        node = entry
+
+        return offset, node
+
+    def find_slot_post_4_11(self, root, index):
+        node = self.index_is_valid(root, index)
+        if node == None:
+            return None
+        
+        slot = root.rnode.v()
+
+        while self.radix_tree_is_internal_node(node):
+            if node == 1:
+                return None
+            else:
+                parent    = self.radix_tree_indirect_to_ptr(node)
+                offset, node = self.radix_tree_descend(parent, node, index) 
+                slot_addr = parent.slots.obj_offset + (offset * self.ptr_size)
+                slot      = obj.Object(theType="Pointer", targetType="unsigned long", offset = slot_addr, vm = self.addr_space)
+                slot      = slot.v()
+
+        return slot
 
     def radix_tree_lookup_slot(self, root, index):
         self.RADIX_TREE_MAP_SHIFT = 6
@@ -160,40 +233,46 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
         node = root.rnode
 
-        if self.radix_tree_is_indirect_ptr(node) == 0:
+        post_4_11 = False
 
-            if index > 0:
-                return None
-
-            off = root.obj_offset + self.profile.get_obj_offset("radix_tree_root", "rnode")
-            page = obj.Object("Pointer", offset = off, vm = self.addr_space)
-            return page
-
-        node = self.radix_tree_indirect_to_ptr(node)
-       
         if hasattr(node, "height"):
             height = node.height
-        else:
+        elif hasattr(node, "path"):
             height = node.path
-            
-        if hasattr(node, "shift"):
-            shift = node.shift
         else:
-            shift = (height - 1) * self.RADIX_TREE_MAP_SHIFT
+            post_4_11 = True
+        
+        if post_4_11:
+            slot = self.find_slot_post_4_11(root, index)
+        else:
+            if self.radix_tree_is_indirect_ptr(node) == 0:
+                if index > 0:
+                    return None
 
-        slot = -1
+                off = root.obj_offset + self.profile.get_obj_offset("radix_tree_root", "rnode")
+                page = obj.Object("Pointer", offset = off, vm = self.addr_space)
+                return page
 
-        while 1:
-            idx = (index >> shift) & self.RADIX_TREE_MAP_MASK
-            slot = node.slots[idx]
-            node = self.radix_tree_indirect_to_ptr(slot)
-            shift = shift - self.RADIX_TREE_MAP_SHIFT
-            height = height - 1
-            if height <= 0:
-                break
+            node = self.radix_tree_indirect_to_ptr(node)
+            
+            if hasattr(node, "shift"):
+                shift = node.shift
+            else:
+                shift = (height - 1) * self.RADIX_TREE_MAP_SHIFT
 
-        if slot == -1:
-            return None
+            slot = -1
+
+            while 1:
+                idx = (index >> shift) & self.RADIX_TREE_MAP_MASK
+                slot = node.slots[idx]
+                node = self.radix_tree_indirect_to_ptr(slot)
+                shift = shift - self.RADIX_TREE_MAP_SHIFT
+                height = height - 1
+                if height <= 0:
+                    break
+
+            if slot == -1:
+                return None
 
         return slot
 
@@ -216,6 +295,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         if page_addr:
             page = obj.Object("page", offset = page_addr, vm = self.addr_space)
             phys_offset = page.to_paddr()
+
             if phys_offset > 0:
                 phys_as = utils.load_as(self._config, astype = 'physical')
                 data = phys_as.zread(phys_offset, 4096)
@@ -230,6 +310,11 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
     # and handles the last page not being page_size aligned 
     def get_file_contents(self, inode):
         linux_common.set_plugin_members(self)
+        if self.addr_space.profile.metadata.get('memory_model', '32bit') == "32bit":
+            self.ptr_size = 4
+        else:
+            self.ptr_size = 8
+
         data = ""
         file_size = inode.i_size
 
@@ -245,7 +330,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
         if idxs > 1000000000:
             raise StopIteration
-
+            
         for idx in range(0, idxs):
             data = self.get_page_contents(inode, idx)
                 

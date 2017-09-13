@@ -50,7 +50,7 @@ class linux_check_modules(linux_common.AbstractLinuxCommand):
             mod = mod_kobj.mod
 
             name = kobj.name.dereference_as("String", length = 32)
-            if name.is_valid() and kobj.kref.refcount.counter > 2:
+            if name.is_valid() and kobj.reference_count() > 2:
                 ret[str(name)] = mod
     
         return ret

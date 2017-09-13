@@ -132,12 +132,13 @@ mig_vtypes_32 = {
 
 mig_vtypes_64 = {
     'mig_hash_entry' : [24, {
-         'num'       : [0, ['long long']],
+         'num'       : [0, ['int']],
          'routine'   : [8, ['pointer', ['void']]],
          'size'      : [16, ['int']],  
          'callcount' : [20, ['unsigned int']],  
          }],
 }
+
 
 class MigTypes(obj.ProfileModification):
     conditions = {"os" : lambda x : x in ["mac"]}
@@ -228,20 +229,27 @@ class VolatilityDTB(obj.VolatilityMagic):
     def _get_dtb_m_lion(self):
         tbl = self.obj_vm.profile.sys_map["kernel"]
         config = self.obj_vm.get_config()
-
+        
         if config.SHIFT:
             shift_address = config.SHIFT
         else:
+            ver_addr = tbl["_version"][0][0] - 0xffffff8000000000
+
             scanner = catfishScan(needles = ["Catfish \x00\x00"])
             for catfish_offset in scanner.scan(self.obj_vm):
-                shift_address = catfish_offset - (tbl["_lowGlo"][0][0] % 0xFFFFFF80)
-                break
+                tmp_shift_address = catfish_offset - (tbl["_lowGlo"][0][0] % 0xFFFFFF80)
+                tmp_ver_addr  = ver_addr + tmp_shift_address 
+                
+                test_buf = self.obj_vm.zread(tmp_ver_addr, 16)
+                if test_buf and test_buf.startswith("Darwin"):
+                    shift_address = tmp_shift_address
+                    break
 
         self.obj_vm.profile.shift_address = shift_address
 
         bootpml4 = (tbl["_BootPML4"][0][0] % 0xFFFFFF80) + shift_address
         boot_pml4_dtb = amd64.AMD64PagedMemory(self.obj_vm, config, dtb = bootpml4)
-      
+     
         idlepml4_addr = (tbl['_IdlePML4'][0][0]) + shift_address
         idlepml4_ptr = obj.Object("unsigned int", offset = idlepml4_addr, vm = boot_pml4_dtb)
 
@@ -250,12 +258,12 @@ class VolatilityDTB(obj.VolatilityMagic):
     def generate_suggestions(self):
         profile = self.obj_vm.profile
         bootpml = profile.get_symbol("_BootPML4")
-        
-        if bootpml:        
+
+        if bootpml:
             ret = self._get_dtb_m_lion()
         else:
             ret = self._get_dtb_pre_m_lion()                  
-        
+
         yield ret
 
 class VolatilityMacIntelValidAS(obj.VolatilityMagic):
@@ -352,7 +360,7 @@ class vnode(obj.CType):
             if p & 0x80000000 != 0:
                 vm_pages_ptr = self.obj_vm.profile.get_symbol("_vm_pages")
                 vm_pages_addr = obj.Object("unsigned long long", offset = vm_pages_ptr, vm = self.obj_vm)
-                ret_addr = vm_pages_addr + ((p & ~0x80000000) * 8)
+                ret_addr = vm_pages_addr + ((p & ~0x80000000) * self.obj_vm.profile.get_obj_size("vm_page"))
             else:
                 ret_addr = (p << 6) + 0xffffff7f80000000  
 
@@ -1322,6 +1330,9 @@ class queue_entry(obj.CType):
             p = p.tasks.prev.dereference_as("task")
 
 class zone(obj.CType):
+    def is_valid(self):
+        return self.elem_size > 0
+    
     def _get_from_active_zones(self):
         ret = []
         first_elem = self.active_zones
@@ -1454,13 +1465,18 @@ class vm_map_entry(obj.CType):
                 perms = perms + "-"
 
         return perms
+    
+    def range_alias(self):
+        if hasattr(self, "alias"):
+            ret = self.alias.v()
+        else:
+            ret = self.vme_offset.v() & 0xfff
+
+        return ret
 
     # used to find heap, stack, etc.
     def get_special_path(self):
-        if hasattr(self, "alias"):
-            check = self.alias.v()
-        else:
-            check = self.vme_offset.v() & 0xfff
+        check = self.range_alias()
 
         if 0 < check < 10:
             ret = "[heap]"

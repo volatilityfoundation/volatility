@@ -339,24 +339,24 @@ class WindowsAMD64PagedMemory(AMD64PagedMemory):
         # Thus, we will treat it as present.
         return present or ((entry & (1 << 11)) and not (entry & (1 << 10)))
 
-class Win10AMD64PagedMemory(WindowsAMD64PagedMemory):
-    """Windows 10-specific AMD 64-bit address space.
+class SkipDuplicatesAMD64PagedMemory(WindowsAMD64PagedMemory):
+    """Windows 8/10-specific AMD 64-bit address space.
 
     This class is used to filter out large sections of kernel mappings that are
-    duplicates in recent versions of Windows 10.
+    duplicates in recent versions of Windows 8/10.
     """
     order = 53
     skip_duplicate_entries = True
 
     def is_valid_profile(self, profile):
         '''
-        This address space should only be used with recent Windows 10 profiles
+        This address space should only be used with recent Windows 8/10 profiles
         '''
 
         valid = WindowsAMD64PagedMemory.is_valid_profile(self, profile)
         major = profile.metadata.get('major', 0)
         minor = profile.metadata.get('minor', 0)
-        return valid and major >= 6 and minor >= 4
+        return valid and major >= 6 and minor >= 2
 
 
 class LinuxAMD64PagedMemory(AMD64PagedMemory):

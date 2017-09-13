@@ -314,9 +314,9 @@ class elf_hdr(elf):
         arr_start = self.obj_offset + self.e_phoff
 
         if self.e_phnum > 128:
-            phnum = self.e_phnum
-        else:
             phnum = 128
+        else:
+            phnum = self.e_phnum
 
         for i in range(phnum):
             # use the real size
@@ -565,7 +565,7 @@ class elf_phdr(elf):
         elf.__init__(self, 0, "elf32_phdr", "elf64_phdr", theType, offset, vm, name, **kwargs)    
 
     def is_valid(self):
-        return self.p_vaddr > 0x1000 and self.p_filesz > 0 and self.p_memsz > 0
+        return self.p_filesz > 0 and self.p_memsz > 0
 
     @property
     def p_vaddr(self):

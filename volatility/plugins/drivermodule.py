@@ -33,7 +33,7 @@ class drivermodule(common.AbstractWindowsCommand):
     def __init__(self, config, *args, **kwargs):
         common.AbstractWindowsCommand.__init__(self, config, *args, **kwargs)
         config.add_option('ADDR', short_option = 'a', default = None,
-                          help = 'Show info on module at or containing this address',
+                          help = 'Show info on module at or containing this (base) address',
                           action = 'store', type = 'int')
  
     def calculate(self):
@@ -44,24 +44,28 @@ class drivermodule(common.AbstractWindowsCommand):
         mod_addrs = sorted(mods.keys())
             
         drivers = dtree.DriverIrp(self._config).calculate()    
-        found_driver = "UNKNOWN"
+        driver_name = "UNKNOWN"
+        service_key = "UNKNOWN"
+        driver_name3 = "UNKNOWN"
+        module_name = "UNKNOWN"
 
         if self._config.ADDR:
             find_address = self._config.ADDR
             
-            found_module = tasks.find_module(mods, mod_addrs, mods.values()[0].obj_vm.address_mask(find_address))
-            if found_module:
-                found_module = found_module.BaseDllName or found_module.FullDllName
-            else:
-                found_module = "UNKNOWN"
+            module_name = tasks.find_module(mods, mod_addrs, mods.values()[0].obj_vm.address_mask(find_address))
+            if module_name:
+                module_name = module_name.BaseDllName or module_name.FullDllName
 
             for driver in drivers:
                 if driver.DriverStart <= find_address < driver.DriverStart + driver.DriverSize:
                     header = driver.get_object_header()
-                    found_driver = header.NameInfo.Name
+                    driver_name = header.NameInfo.Name
+                    driver_name  = str(driver.get_object_header().NameInfo.Name or '') 
+                    service_key = str(driver.DriverExtension.ServiceKeyName or '') 
+                    driver_name3 = str(driver.DriverName or '') 
                     break
             
-            yield (found_module, found_driver)
+            yield (module_name, driver_name, service_key, driver_name3)
 
         else:                
             for driver in drivers:
@@ -70,10 +74,9 @@ class drivermodule(common.AbstractWindowsCommand):
                 driver_name3 = str(driver.DriverName or '')
                 
                 owning_module = tasks.find_module(mods, mod_addrs, mods.values()[0].obj_vm.address_mask(driver.DriverStart))
+                module_name = "UNKNOWN"
                 if owning_module:
                     module_name = owning_module.BaseDllName or owning_module.FullDllName
-                else:
-                    module_name = "UNKNOWN"
 
                 yield (module_name, driver_name, service_key, driver_name3)
 

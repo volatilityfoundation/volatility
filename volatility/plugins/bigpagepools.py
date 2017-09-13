@@ -78,7 +78,7 @@ class BigPageTableMagic(obj.ProfileModification):
         if distance == None:
             if version == (6, 3, '64bit'):
                 if m.get('build', 0) == 9601:
-                    distance = [[-5192, -5200], [-5224, -5232]]
+                    distance = [[-5192, -5200], [-5224, -5232], [-5192, -5216]]
                 else:
                     distance = [[-5200, -5176], [-5224, -5232], [-5192, -5200]]
 
@@ -116,8 +116,10 @@ class BigPageTable(obj.VolatilityMagic):
             table_size = obj.Object("address", 
                 offset = track_table - pair[1], 
                 vm = self.obj_vm)
-
-            if table_size != 0 and self.obj_vm.is_valid_address(table_base):
+                
+            if (table_base % 0x1000 == 0 and
+                    self.obj_vm.is_valid_address(table_base) and
+                    table_size != 0 and table_size % 0x1000 == 0):
                 break
 
         debug.debug("Distance Map: {0}".format(repr(self.distance)))

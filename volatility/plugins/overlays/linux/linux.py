@@ -219,8 +219,9 @@ def LinuxProfileFactory(profpkg):
         def clear(self):
             """Clear out the system map, and everything else"""
             self.sys_map = {}
-            self.virutal_shift = 0
+            self.sym_addr_cache = {}
             self.physical_shift = 0
+            self.virtual_shift = 0
             obj.Profile.clear(self)
 
         def reset(self):
@@ -857,6 +858,24 @@ class module_struct(obj.CType):
 
         return ret
  
+    @property
+    def init_text_size(self):
+        if hasattr(self, "init_layout"):
+            ret = self.m("init_layout").m("text_size")
+        else:
+            ret = self.m("init_text_size")
+
+        return ret
+ 
+    @property 
+    def core_text_size(self):
+        if hasattr(self, "core_layout"):
+            ret = self.m("core_layout").m("text_size")
+        else:
+            ret = self.m("core_text_size")
+
+        return ret
+    
     @property 
     def core_size(self):
         if hasattr(self, "core_layout"):
@@ -865,7 +884,8 @@ class module_struct(obj.CType):
             ret = self.m("core_size")
 
         return ret
-        
+   
+
     def _get_sect_count(self, grp):
         arr = obj.Object(theType = 'Array', offset = grp.attrs, vm = self.obj_vm, targetType = 'Pointer', count = 25)
 
@@ -925,14 +945,14 @@ class module_struct(obj.CType):
                 val = val + str(mret or '')
 
         elif getfn == self.obj_vm.profile.get_symbol("param_get_string"):
-            val = param.str.dereference_as("String", length = param.str.maxlen)
+            val = str(param.str.dereference_as("String", length = param.str.maxlen))
 
         elif getfn == self.obj_vm.profile.get_symbol("param_get_charp"):
             addr = obj.Object("Pointer", offset = param.arg, vm = self.obj_vm)
             if addr == 0:
                 val = "(null)"
             else:
-                val = addr.dereference_as("String", length = 256)
+                val = str(addr.dereference_as("String", length = 256))
 
         elif getfn.v() in ints:
             val = obj.Object(ints[getfn.v()], offset = param.arg, vm = self.obj_vm)
@@ -943,11 +963,13 @@ class module_struct(obj.CType):
                 else:
                     val = 'N'
 
-            if getfn == self.obj_vm.profile.get_symbol("param_get_invbool"):
+            elif getfn == self.obj_vm.profile.get_symbol("param_get_invbool"):
                 if val:
                     val = 'N'
                 else:
                     val = 'Y'
+            else:
+                val = int(val)
 
         else:
             return None
@@ -1155,6 +1177,16 @@ class vm_area_struct(obj.CType):
             fname = ""
 
         return fname, major, minor, ino, pgoff 
+
+class kobject(obj.CType):
+    def reference_count(self):
+        refcnt = self.kref.refcount
+        if hasattr(refcnt, "counter"):
+            ret = refcnt.counter
+        else:
+            ret = refcnt.refs.counter
+
+        return ret
 
 class task_struct(obj.CType):
     def is_valid_task(self):
@@ -2237,6 +2269,8 @@ class VolatilityDTB(obj.VolatilityMagic):
     def generate_suggestions(self):
         """Tries to locate the DTB."""
         profile = self.obj_vm.profile
+        config = self.obj_vm.get_config()
+        tbl    = self.obj_vm.profile.sys_map["kernel"]
         
         if profile.metadata.get('memory_model', '32bit') == "32bit":
             sym     = "swapper_pg_dir"
@@ -2245,13 +2279,14 @@ class VolatilityDTB(obj.VolatilityMagic):
             fmt     = "<I"
         else:
             sym     = "init_level4_pgt"
+            # >= 4.13 
+            if not sym in tbl:
+                sym = "init_top_pgt"
+                
             shifts  = [0xffffffff80000000, 0xffffffff80000000 - 0x1000000, 0xffffffff7fe00000]       
             read_sz = 8
             fmt     = "<Q"
-
-        config = self.obj_vm.get_config()
-        tbl    = self.obj_vm.profile.sys_map["kernel"]
-        
+       
         if config.PHYSICAL_SHIFT and not config.VIRTUAL_SHIFT:
             debug.error("You must specifiy both the virtual and physical shift.") 
         elif not config.PHYSICAL_SHIFT and config.VIRTUAL_SHIFT:
@@ -2265,9 +2300,9 @@ class VolatilityDTB(obj.VolatilityMagic):
 
         good_dtb = -1
             
-        init_task_addr = tbl["init_task"][0][0] + physical_shift_address
-        dtb_sym_addr   = tbl[sym][0][0] + physical_shift_address
-        files_sym_addr = tbl["init_files"][0][0] + physical_shift_address
+        init_task_addr = tbl["init_task"][0][0] + virtual_shift_address
+        dtb_sym_addr   = tbl[sym][0][0] + virtual_shift_address
+        files_sym_addr = tbl["init_files"][0][0] + virtual_shift_address
        
         comm_offset   = profile.get_obj_offset("task_struct", "comm")
         pid_offset    = profile.get_obj_offset("task_struct", "pid")
@@ -2276,7 +2311,7 @@ class VolatilityDTB(obj.VolatilityMagic):
         pas           = self.obj_vm
         
         if physical_shift_address != 0 and virtual_shift_address != 0:
-            good_dtb  = dtb_sym_addr - shifts[0]
+            good_dtb = (dtb_sym_addr - shifts[0] - virtual_shift_address) + physical_shift_address
             self.obj_vm.profile.physical_shift = physical_shift_address 
             self.obj_vm.profile.virtual_shift  = virtual_shift_address
 
@@ -2306,25 +2341,23 @@ class VolatilityDTB(obj.VolatilityMagic):
                 if pas.read(swapper_address + pid_offset, 4) != "\x00\x00\x00\x00":
                     continue
 
-                mm_buf = pas.read(swapper_address + mm_offset, read_sz)
-                mm_addr = struct.unpack(fmt, mm_buf)[0]
-                if mm_addr == 0:
+                tmp_physical_shift = swapper_address - (init_task_addr - shifts[0]) 
+                if tmp_physical_shift & 0xfff != 0x000:
                     continue
 
-                tmp_shift_address = swapper_address - (init_task_addr - shifts[0])
-                if tmp_shift_address & 0xfff != 0x000:
+                good_dtb = (dtb_sym_addr - shifts[0] + 0) + tmp_physical_shift 
+
+                if pas.zread(good_dtb, 8) != "\x00\x00\x00\x00\x00\x00\x00\x00":
                     continue
 
-                physical_shift_address = tmp_shift_address
-                
-                self.obj_vm.profile.physical_shift = physical_shift_address
-                good_dtb = dtb_sym_addr - shifts[0] + physical_shift_address
-                
                 files_buf  = pas.read(swapper_address + files_offset, read_sz)
                 files_addr = struct.unpack(fmt, files_buf)[0]
 
-                # will be 0 for kernels that don't randomize the physical load address
-                self.obj_vm.profile.virtual_shift = files_addr - files_sym_addr
+                tmp_virtual_shift = files_addr - files_sym_addr
+
+                self.obj_vm.profile.physical_shift = tmp_physical_shift
+                self.obj_vm.profile.virtual_shift  = tmp_virtual_shift
+ 
                 break
         
         yield good_dtb
@@ -2397,6 +2430,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'hlist_node': hlist_node,
             'files_struct': files_struct,
             'task_struct': task_struct,
+            'kobject'    : kobject,
             'vm_area_struct': vm_area_struct,
             'module' : module_struct,
             'hlist_bl_node' : hlist_bl_node,
@@ -2452,14 +2486,18 @@ class page(obj.CType):
             mem_map_ptr = obj.Object("Pointer", offset = mem_map_addr, vm = self.obj_vm, parent = self.obj_parent)
 
         elif mem_section_addr:
-            # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
-            mem_map_ptr = 0xffffea0000000000
-
+            mem_map_ptr_addr = self.obj_vm.profile.get_symbol("vmemmap_base")
+            if mem_map_ptr_addr:
+                # (later) ASLR kernels
+                mem_map_ptr = obj.Object("unsigned long", offset = mem_map_ptr_addr, vm = self.obj_vm)
+            else:
+                # this is hardcoded in the kernel - VMEMMAPSTART, usually 64 bit kernels
+                mem_map_ptr = 0xffffea0000000000
         else:
             debug.error("phys_addr_of_page: Unable to determine physical address of page. NUMA is not supported at this time.\n")
-
+        
         phys_offset = (self.obj_offset - mem_map_ptr) / self.obj_vm.profile.get_obj_size("page")
-
+        
         phys_offset = phys_offset << 12
 
         return phys_offset
