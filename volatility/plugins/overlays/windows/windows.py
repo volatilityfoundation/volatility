@@ -231,6 +231,7 @@ class _LIST_ENTRY(obj.CType):
             seen.add(self.obj_offset)
 
         while nxt.is_valid() and nxt.obj_offset not in seen:
+
             ## Instantiate the object
             item = obj.Object(type, offset = nxt.obj_offset - offset,
                                     vm = self.obj_vm,
@@ -1185,6 +1186,14 @@ import kdbg_vtypes
 import tcpip_vtypes
 import ssdt_vtypes
 
+unicode32_vtypes = {
+  '_UNICODE32_STRING' : [ 12, {
+    'Length' : [ 0x0, ['unsigned short']],
+    'MaximumLength' : [ 0x2, ['unsigned short']],
+    'Buffer' : [ 0x4, ['pointer32', ['unsigned short']]],
+  }],
+}
+
 class WindowsOverlay(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows'}
     before = ['BasicObjectClasses', 'WindowsVTypes']
@@ -1202,6 +1211,7 @@ class WindowsVTypes(obj.ProfileModification):
         profile.vtypes.update(kdbg_vtypes.kdbg_vtypes)
         profile.vtypes.update(tcpip_vtypes.tcpip_vtypes)
         profile.vtypes.update(ssdt_vtypes.ssdt_vtypes)
+        profile.vtypes.update(unicode32_vtypes)
 
 class WindowsObjectClasses(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows'}
