@@ -377,6 +377,16 @@ class DosDate(obj.NativeType):
 class _EPROCESS(obj.CType, ExecutiveObjectMixin):
     """ An extensive _EPROCESS with bells and whistles """
     @property
+    def ImageFileName(self):
+        if hasattr(self, "PicoContext") and self.PicoContext != 0x00:
+            str_ptr = obj.Object("Pointer", offset = self.PicoContext.v() + 0x188, vm = self.obj_vm)
+            ret = obj.Object("RawUnicodeString", length = 255, offset = str_ptr, vm = self.obj_vm)
+        else:
+            ret = self.m("ImageFileName")
+
+        return ret
+    
+    @property
     def Peb(self):
         """ Returns a _PEB object which is using the process address space.
 

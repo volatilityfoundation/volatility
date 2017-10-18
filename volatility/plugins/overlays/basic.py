@@ -107,6 +107,14 @@ class String(obj.BaseObject):
         """Set up mappings for reverse concat"""
         return other + str(self)
 
+class RawUnicodeString(String):
+    def __unicode__(self):
+        """ This function returns the unicode encoding of the data retrieved by .v()
+            Any unusual characters in the input are replaced with \ufffd.
+        """
+        ret = self.v().decode(self.encoding, 'replace').split("\x00\x00", 1)[0] or u''
+        return ret.replace("\x00", "")
+
 class Flags(obj.NativeType):
     """ This object decodes each flag into a string """
     ## This dictionary maps each bit to a String
@@ -288,6 +296,7 @@ class BasicObjectClasses(obj.ProfileModification):
             'VolatilityDTB': VolatilityDTB,
             'UnixTimeStamp': UnixTimeStamp,
             'VolatilityMaxAddress': VolatilityMaxAddress,
+            'RawUnicodeString' : RawUnicodeString,
             })
 
         profile.merge_overlay({'VOLATILITY_MAGIC': [None, {
