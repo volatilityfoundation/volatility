@@ -33,6 +33,7 @@ import pyaff4
 from pyaff4 import data_store
 from pyaff4 import lexicon
 from pyaff4.container import Container
+from pyaff4 import rdfvalue
 
 LOGGER = logging.getLogger("pyaff4")
 LOGGER.setLevel(logging.ERROR)
@@ -57,7 +58,8 @@ class AFF4AddressSpace(standard.FileAddressSpace):
 
         # Cant stack an AFF4 image on another AFF4 images
         self.as_assert(type(base) != AFF4AddressSpace, "Cant stack AFF4 addressspace on same")
-        self.fhandle = Container.open(self.name)
+        self.urn = rdfvalue.URN.FromFileName(self.name)
+        self.fhandle = Container.open(self.urn)
         self.fsize = self.fhandle.Size()
         self.fhandle.seek(0)
         dtb = self.fhandle.parent.getDTB()
