@@ -473,9 +473,21 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         return obj.NoneObject("Cannot get process Token")
 
     @property
+    def Wow64Process(self):
+        if hasattr(self, "Wow64Process"):
+            ret = self.m("Wow64Process")
+        elif hasattr(self, "WoW64Process"):
+            ret = self.m("WoW64Process")
+        else:
+            ret = None
+
+        return ret
+
+    @property
     def IsWow64(self):
         """Returns True if this is a wow64 process"""
-        return hasattr(self, 'Wow64Process') and self.Wow64Process.v() != 0
+        val = self.Wow64Process
+        return val and val.v() != None
 
     @property
     def SessionId(self):
