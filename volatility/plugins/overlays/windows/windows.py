@@ -18,7 +18,7 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import datetime, struct, calendar
+import datetime, struct, calendar, re
 import volatility.plugins.overlays.basic as basic
 import volatility.plugins.kpcrscan as kpcr
 import volatility.plugins.kdbgscan as kdbg
@@ -376,6 +376,12 @@ class DosDate(obj.NativeType):
 
 class _EPROCESS(obj.CType, ExecutiveObjectMixin):
     """ An extensive _EPROCESS with bells and whistles """
+    def __init__(self, *args, **kwargs):
+        self.is_svchost_sec = -1
+        
+        obj.CType.__init__(self, *args, **kwargs)
+        ExecutiveObjectMixin.__init__(self) 
+
     @property
     def Peb(self):
         """ Returns a _PEB object which is using the process address space.
@@ -537,6 +543,70 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
                         yield offset + hit
                 offset += min(to_read, constants.SCAN_BLOCKSIZE)
 
+    def _write_exec_checks(self, vad, protect):
+        ret = False
+
+        # This is a typical VirtualAlloc'd injection 
+        if vad.VadFlags.PrivateMemory == 1 and vad.Tag == "VadS":
+            ret = True
+
+        # This is a stuxnet-style injection 
+        elif (vad.VadFlags.PrivateMemory == 0 and
+                protect != "PAGE_EXECUTE_WRITECOPY"):
+            ret = True
+
+        return ret
+
+    def _check_svchost_sec(self):
+        self.is_svchost_sec = 0
+
+        regex = re.compile(r"\\Device\\HarddiskVolume\d\\Windows\\System32\\svchost.exe")
+
+        exe_address = self.SectionBaseAddress.v()
+
+        for vad in self.VadRoot.traverse():
+            if vad.Start == exe_address:
+                control_area = vad.ControlArea
+                if control_area:
+                    file_object = vad.FileObject
+                    if file_object:
+                        file_name = str(file_object.file_name_with_device())
+                        
+                        # check for real service host process
+                        if regex.match(file_name):
+                            token = self.get_token()
+
+                            # check for the 'WinDefend' sid
+                            for sid_string in token.get_sids():
+                                if sid_string == "S-1-5-80-1913148863-3492339771-4165695881-2087618961-4109116736":
+                                    self.is_svchost_sec = 1
+                                    break
+
+                break
+
+    def _mz_checks(self, vad, pas, write, exe):
+        ret = False
+
+        if pas.zread(vad.Start, 2) == "MZ":
+            # R/W/-X - looking for DLLs being read into memory from another source, 
+            # such as an encrypted DLL in a EXE's resource section
+            # This also finds .net executables that are loaded through memory-only APIs
+            if not exe and vad.VadFlags.PrivateMemory == 1:
+                # we skip the security svchost (Windows Defender)
+                # as it will map MANY dlls into its address space and cause false positives
+                # the check looks for the full path (from the kernel) as well as the associated SID
+                if self.is_svchost_sec == -1:
+                    self._check_svchost_sec()
+
+                if self.is_svchost_sec == 0:
+                    ret = True 
+
+            # +X - find PE files in executable regions that are not file backed
+            elif exe and not self._mapped_file_filter(vad):
+                ret = True
+                    
+        return ret
+
     def _injection_filter(self, vad):
         """
         This is a callback that's executed by get_vads()
@@ -557,22 +627,19 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         contain injected code. 
         """
         protect = vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), "")
-        write_exec = "EXECUTE" in protect and "WRITE" in protect
+        exe   = "EXECUTE" in protect 
+        write = "WRITE" in protect
+       
+        ret = False
 
-        # The Write/Execute check applies to everything 
-        if not write_exec:
-            return False
+        if write and exe:
+            ret = self._write_exec_checks(vad, protect)
 
-        # This is a typical VirtualAlloc'd injection 
-        if vad.VadFlags.PrivateMemory == 1 and vad.Tag == "VadS":
-            return True
+        if ret == False:
+            pas = self.get_process_address_space()
+            ret = self._mz_checks(vad, pas, write, exe) 
 
-        # This is a stuxnet-style injection 
-        if (vad.VadFlags.PrivateMemory == 0 and
-                protect != "PAGE_EXECUTE_WRITECOPY"):
-            return True
-
-        return False
+        return ret
 
     def _mapped_file_filter(self, vad):
         """
