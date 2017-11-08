@@ -566,7 +566,11 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
 
         for vad in self.VadRoot.traverse():
             if vad.Start == exe_address:
-                control_area = vad.ControlArea
+                try:
+                    control_area = vad.ControlArea
+                except AttributeError:
+                    break
+
                 if control_area:
                     file_object = vad.FileObject
                     if file_object:
