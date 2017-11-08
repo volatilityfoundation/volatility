@@ -479,7 +479,7 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         elif hasattr(self, "WoW64Process"):
             ret = self.m("WoW64Process")
         else:
-            ret = None
+            ret = 0
 
         return ret
 
@@ -487,7 +487,7 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
     def IsWow64(self):
         """Returns True if this is a wow64 process"""
         val = self.Wow64Process
-        return val and val.v() != None
+        return val != 0 and val.v() != None
 
     @property
     def SessionId(self):
