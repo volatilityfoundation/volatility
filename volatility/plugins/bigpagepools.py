@@ -68,7 +68,7 @@ class BigPageTableMagic(obj.ProfileModification):
             (6, 2, '32bit') : [[92, 88]],
             (6, 2, '64bit') : [[-5200, -5224]], 
             (6, 3, '32bit') : [[116, 120]],
-            (6, 4, '64bit') : [[208, 184], [168, 192], [176, 168], [48, 40], [32, 24], [24, 48], [56, 32]],
+            (6, 4, '64bit') : [[208, 184], [168, 192], [176, 168], [48, 40], [32, 24], [24, 48], [56, 32], [-56, -10328]],
             (6, 4, '32bit') : [[-168, -164]],
         }
 
@@ -119,7 +119,9 @@ class BigPageTable(obj.VolatilityMagic):
                 
             if (table_base % 0x1000 == 0 and
                     self.obj_vm.is_valid_address(table_base) and
-                    table_size != 0 and table_size % 0x1000 == 0):
+                    table_size != 0 and 
+                    table_size % 0x1000 == 0 and 
+                    table_size < 0x1000000):
                 break
 
         debug.debug("Distance Map: {0}".format(repr(self.distance)))
