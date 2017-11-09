@@ -578,6 +578,35 @@ class Win10ObjectHeader(obj.ProfileModification):
 
         profile.object_classes.update({"_OBJECT_HEADER": header})
 
+class WSLPicoModifcation(obj.ProfileModification): 
+    """Profile modification for Windows Subsystem for Linux, 
+    in particular the Pico process contexts"""
+
+    before = ['WindowsOverlay']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 4, 
+                  'memory_model': lambda x: x == '64bit'}
+                  
+    def modification(self, profile):
+        
+        build = profile.metadata.get("build", 0)
+        
+        if build <= 14393:
+            # offsets for anniversary update
+            pico_context = {'_PICO_CONTEXT' : [ None, {
+                "Name": [ 0x178, ["_UNICODE_STRING"]]}]}
+        else:
+            # offsets for creators & fall creators  
+            pico_context = {'_PICO_CONTEXT' : [ None, {
+                "Name": [ 0x180, ["_UNICODE_STRING"]]}]}
+        
+        profile.vtypes.update(pico_context)
+        
+        profile.merge_overlay({'_EPROCESS': [ None, {
+            'PicoContext' : [ None, ['pointer', ['_PICO_CONTEXT']]],
+            }]})
+
 class Win10PoolHeader(obj.ProfileModification):
     before = ['WindowsOverlay']
     conditions = {'os': lambda x: x == 'windows',

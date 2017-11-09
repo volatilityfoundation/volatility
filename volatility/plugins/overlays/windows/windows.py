@@ -443,6 +443,25 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         return hasattr(self, 'Wow64Process') and self.Wow64Process.v() != 0
 
     @property
+    def ImageFileName(self):
+        """Return the image's file name if its a normal 
+        Windows process. If its a Pico process (WSL) 
+        then derive the name from the PicoContext."""
+         
+        # more often than not, its a normal windows process
+        # so give this priority before we even check WSL 
+        name = self.m("ImageFileName")
+        
+        # WSL requires x64 but strangely the x86 types still
+        # contain PicoContext, but in those cases it always
+        # seems to be zeroed out
+        if (len(name) == 0 and 
+                hasattr(self, "PicoContext") and self.PicoContext != 0):
+            name = self.PicoContext.Name
+        
+        return name
+
+    @property
     def SessionId(self):
         """Returns the Session ID of the process"""
 
