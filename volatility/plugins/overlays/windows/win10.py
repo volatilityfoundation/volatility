@@ -533,6 +533,75 @@ class _OBJECT_HEADER_10_15063(_OBJECT_HEADER_10):
         61: 'VRegConfigurationContext'
     	}
     
+class _OBJECT_HEADER_10_16299(_OBJECT_HEADER_10):
+
+    type_map = {
+		2: 'Type',
+        3: 'Directory',
+        4: 'SymbolicLink',
+        5: 'Token',
+        6: 'Job',
+        7: 'Process',
+        8: 'Thread',
+        9: 'Partition',
+        10: 'UserApcReserve',
+        11: 'IoCompletionReserve',
+        12: 'ActivityReference',
+        13: 'PsSiloContextPaged',
+        14: 'PsSiloContextNonPaged',
+        15: 'DebugObject',
+        16: 'Event',
+        17: 'Mutant',
+        18: 'Callback',
+        19: 'Semaphore',
+        20: 'Timer',
+        21: 'IRTimer',
+        22: 'Profile',
+        23: 'KeyedEvent',
+        24: 'WindowStation',
+        25: 'Desktop',
+        26: 'Composition',
+        27: 'RawInputManager',
+        28: 'CoreMessaging',
+        29: 'TpWorkerFactory',
+        30: 'Adapter',
+        31: 'Controller',
+        32: 'Device',
+        33: 'Driver',
+        34: 'IoCompletion',
+        35: 'WaitCompletionPacket',
+        36: 'File',
+        37: 'TmTm',
+        38: 'TmTx',
+        39: 'TmRm',
+        40: 'TmEn',
+        41: 'Section',
+        42: 'Session',
+        43: 'Key',
+        44: 'RegistryTransaction',
+        45: 'ALPC Port',
+        46: 'EnergyTracker',
+        47: 'PowerRequest',
+        48: 'WmiGuid',
+        49: 'EtwRegistration',
+        50: 'EtwSessionDemuxEntry',
+        51: 'EtwConsumer',
+        52: 'DmaAdapter',
+        53: 'DmaDomain',
+        54: 'PcwObject',
+        55: 'FilterConnectionPort',
+        56: 'FilterCommunicationPort',
+        57: 'NdisCmState',
+        58: 'DxgkSharedResource',
+        59: 'DxgkSharedSyncObject',
+        60: 'DxgkSharedSwapChainObject',
+        61: 'DxgkDisplayManagerObject',
+        62: 'DxgkCurrentDxgProcessObject',
+        63: 'DxgkSharedProtectedSessionObject',
+        64: 'DxgkSharedBundleObject',
+        65: 'VRegConfigurationContext',
+    	}
+    
 class _HANDLE_TABLE_10_DD08DD42(win8._HANDLE_TABLE_81R264):
     
     def decode_pointer(self, value):
@@ -555,7 +624,15 @@ class Win10ObjectHeader(obj.ProfileModification):
         metadata = profile.metadata
         build = metadata.get("build", 0)
 
-        if build >= 15063:
+        if build >= 16299:
+            header = _OBJECT_HEADER_10_16299
+
+            ## update the handle table here as well
+            if metadata.get("memory_model") == "64bit":
+                profile.object_classes.update({
+                    "_HANDLE_TABLE": _HANDLE_TABLE_10_DD08DD42})
+
+        elif build >= 15063:
             header = _OBJECT_HEADER_10_15063
 
             ## update the handle table here as well
@@ -725,6 +802,16 @@ class Win10x86_15063(obj.Profile):
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_15063_vtypes'
     _md_product = ["NtProductWinNt"]
 
+class Win10x86_16299(obj.Profile):
+    """ A Profile for Windows 10 x86 (10.0.16299.15 / 2017-09-29) """
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 16299
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_16299_vtypes'
+    _md_product = ["NtProductWinNt"]
+
 class Win10x64_15063(obj.Profile):
     """ A Profile for Windows 10 x64 (10.0.15063.0 / 2017-04-04) """
     _md_memory_model = '64bit'
@@ -733,4 +820,14 @@ class Win10x64_15063(obj.Profile):
     _md_minor = 4
     _md_build = 15063
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_15063_vtypes'
+    _md_product = ["NtProductWinNt"]
+    
+class Win10x64_16299(obj.Profile):
+    """ A Profile for Windows 10 x64 (10.0.16299.0 / 2017-09-22) """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 16299
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_16299_vtypes'
     _md_product = ["NtProductWinNt"]
