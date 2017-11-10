@@ -442,10 +442,18 @@ class Win10Tcpip(obj.ProfileModification):
             }],
         })
 
-        if profile.metadata.get("build") >= 14393:
+        build = profile.metadata.get("build")
+
+        if build == 14393:
             profile.merge_overlay({
                 '_TCP_ENDPOINT': [ None, {
                 'Owner' : [ 0x1b4, ['pointer', ['_EPROCESS']]],
+                }],
+            })
+        elif build >= 15063:
+            profile.merge_overlay({
+                '_TCP_ENDPOINT': [ None, {
+                'Owner' : [ 0x1cc, ['pointer', ['_EPROCESS']]],
                 }],
             })
 
@@ -491,3 +499,19 @@ class Win10x64Tcpip(obj.ProfileModification):
                   'minor': lambda x : x == 4}
     def modification(self, profile):
         profile.vtypes.update(tcpip_vtypes_win_10_x64)
+        
+class Win10x64_15063_Tcpip(obj.ProfileModification):
+    """TCP Endpoint for Creators and Fall Creators"""
+    
+    before = ['Win10x64Tcpip']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x >= 15063}
+    def modification(self, profile):
+        profile.merge_overlay({
+            '_TCP_ENDPOINT': [ None, {
+                'Owner' : [ 0x270, ['pointer', ['_EPROCESS']]],
+                }],
+            })
