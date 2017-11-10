@@ -120,7 +120,7 @@ class volshell(common.AbstractWindowsCommand):
         elif name is not None:
             offsets = []
             for p in self.getpidlist():
-                if p.ImageFileName.find(name) >= 0:
+                if str(p.ImageFileName).find(name) >= 0:
                     offsets.append(p)
             if not offsets:
                 print "Unable to find process matching name {0}".format(name)
