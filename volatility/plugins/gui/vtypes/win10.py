@@ -34,6 +34,25 @@ class Win10x86_Gui(obj.ProfileModification):
     
         if build >= 15063:    
             profile.merge_overlay({
+                'tagDESKTOP': [None, {
+                    'rpdeskNext': [0x10, ['pointer', ['tagDESKTOP']]],
+                    'rpwinstaParent': [0x14, ['pointer', ['tagWINDOWSTATION']]],
+                    'pheapDesktop': [0x40, ['pointer', ['tagWIN32HEAP']]],
+                    'PtiList': [0x5c, ['_LIST_ENTRY']],
+                }],
+                'tagTHREADINFO': [None, {
+                    'ppi': [0xe0, ['pointer', ['tagPROCESSINFO']]],
+                    'PtiLink': [0x188, ['_LIST_ENTRY']],
+                }],
+                'tagWND': [None, {
+                    'spwndNext': [0x34, ['pointer', ['tagWND']]],
+                    'spwndPrev': [0x38, ['pointer', ['tagWND']]],
+                    'spwndParent': [0x3c, ['pointer', ['tagWND']]],
+                    'spwndChild': [0x40, ['pointer', ['tagWND']]],
+                    'lpfnWndProc': [0x68, ['pointer', ['void']]], #?
+                    'pcls': [0x6c, ['pointer', ['tagCLS']]], #?
+                    'strName': [0x8c, ['_LARGE_UNICODE_STRING']], #?
+                }],
             })
 
 class Win10x64_Gui(obj.ProfileModification):
@@ -53,5 +72,24 @@ class Win10x64_Gui(obj.ProfileModification):
                 'tagDESKTOP': [None, {
                     'rpdeskNext': [0x20, ['pointer64', ['tagDESKTOP']]],
                     'rpwinstaParent': [0x28, ['pointer64', ['tagWINDOWSTATION']]],
+                    'pheapDesktop': [0x80, ['pointer', ['tagWIN32HEAP']]],
+                    'PtiList': [0xA8, ['_LIST_ENTRY']],
+                }],
+                'tagTHREADINFO': [None, {
+                    'ppi': [0x190, ['pointer', ['tagPROCESSINFO']]],
+                     # zzzSetDesktop 
+                     # mov [rbx+1B8h], rax
+                     # lea rax, [rbx+2C8h]
+                     # lea rcx, [rdi+0A8h] => int 29h 
+                    'PtiLink': [0x2c8, ['_LIST_ENTRY']],
+                }],
+                'tagWND': [None, {
+                    'spwndNext': [0x58, ['pointer64', ['tagWND']]],
+                    'spwndPrev': [0x60, ['pointer64', ['tagWND']]],
+                    'spwndParent': [0x68, ['pointer64', ['tagWND']]],
+                    'spwndChild': [0x70, ['pointer64', ['tagWND']]],
+                    'lpfnWndProc': [0xa0, ['pointer64', ['void']]],
+                    'pcls': [0xa8, ['pointer64', ['tagCLS']]],
+                    'strName': [0xe8, ['_LARGE_UNICODE_STRING']],
                 }],
             })
