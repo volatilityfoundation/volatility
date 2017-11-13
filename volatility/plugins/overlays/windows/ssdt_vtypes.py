@@ -196,3 +196,67 @@ class Win8SP1x64Syscalls(AbstractSyscalls):
                   'memory_model': lambda x: x == '64bit',
                   'major': lambda x : x == 6,
                   'minor': lambda x : x == 3}
+
+class Win10x64_10586_Syscalls(AbstractSyscalls):
+    syscall_module = 'volatility.plugins.overlays.windows.win10_x64_10586_syscalls'
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x == 10586}
+
+class Win10x86_10586_Syscalls(AbstractSyscalls):
+    syscall_module = 'volatility.plugins.overlays.windows.win10_x86_10586_syscalls'
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x == 10586}
+
+class Win10x64_14393_Syscalls(AbstractSyscalls):
+    syscall_module = 'volatility.plugins.overlays.windows.win10_x64_14393_syscalls'
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x == 14393}
+
+class Win10x86_14393_Syscalls(AbstractSyscalls):
+    syscall_module = 'volatility.plugins.overlays.windows.win10_x86_14393_syscalls'
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x == 14393}
+
+class Win10x64_15063_Syscalls(AbstractSyscalls):
+    syscall_module = 'volatility.plugins.overlays.windows.win10_x64_15063_syscalls'
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x == 15063}
+
+class Win10x86_15063_Syscalls(AbstractSyscalls):
+    syscall_module = 'volatility.plugins.overlays.windows.win10_x86_15063_syscalls'
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x == 15063}
+
+class Win10x64_16299_Syscalls(AbstractSyscalls):
+    syscall_module = 'volatility.plugins.overlays.windows.win10_x64_16299_syscalls'
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x == 16299}
+
+class Win10x86_16299_Syscalls(AbstractSyscalls):
+    syscall_module = 'volatility.plugins.overlays.windows.win10_x86_16299_syscalls'
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '32bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x == 16299}
