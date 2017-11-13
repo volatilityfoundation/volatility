@@ -39,7 +39,7 @@ from volatility.renderers.basic import Address
 
 #pylint: disable-msg=C0111
 
-def find_tables(start_addr, vm):
+def find_tables(nt_base, start_addr, vm):
     """
     This function finds the RVAs to KeServiceDescriptorTable
     and KeServiceDescriptorTableShadow in the NT module. 
@@ -81,12 +81,15 @@ def find_tables(start_addr, vm):
             if op.flowControl == 'FC_RET':
                 break
             # Looking for a 9-byte CMP instruction whose first operand
-            # has a 32-bit displacement and second operand is zero 
-            if op.mnemonic == 'CMP' and op.size == 9 and op.operands[0].dispSize == 32 and op.operands[0].value == 0:
-                # The displacement is the RVA we want 
-                service_tables.append(op.operands[0].disp)
+            # has a 32-bit displacement and second operand is zero or
+            # a 7-byte CMP instruction with RIP relative addressing
+            if op.mnemonic == 'CMP' and op.operands[0].dispSize == 32 and op.operands[0].value == 0:
+                if op.size == 9:
+                    service_tables.append(nt_base + op.operands[0].disp)
+                elif op.size == 7:
+                    service_tables.append(op.address + op.size + op.operands[0].disp)
             elif op.mnemonic == 'LEA' and op.size == 7 and op.operands[1].dispSize == 32 and op.operands[1].disp > 0:
-                service_tables.append(op.operands[1].disp)
+                service_tables.append(nt_base + op.operands[1].disp)
     else:
         vm.profile.add_types({
             '_INSTRUCTION' : [ 9, {
@@ -109,7 +112,7 @@ def find_tables(start_addr, vm):
             if op.value == 0:
                 for s in ops_list:
                     if op.opcode.v().startswith(s):
-                        service_tables.append(op.disp)
+                        service_tables.append(nt_base + op.disp)
 
     return service_tables
 
@@ -150,8 +153,8 @@ class SSDT(common.AbstractWindowsCommand):
             if func_rva == None:
                 raise StopIteration("Cannot locate KeAddSystemServiceTable")
             KeAddSystemServiceTable = ntos.DllBase + func_rva
-            for table_rva in find_tables(KeAddSystemServiceTable, addr_space):
-                ssdt_obj = obj.Object("_SERVICE_DESCRIPTOR_TABLE", ntos.DllBase + table_rva, addr_space)
+            for table_addr in find_tables(ntos.DllBase, KeAddSystemServiceTable, addr_space):
+                ssdt_obj = obj.Object("_SERVICE_DESCRIPTOR_TABLE", table_addr, addr_space)
                 ssdts.add(ssdt_obj)
 
         # Get a list of *unique* SSDT entries. Typically we see only two.

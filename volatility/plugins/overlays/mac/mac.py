@@ -1513,6 +1513,15 @@ class vm_map_entry(obj.CType):
 
         return ret
 
+    @property
+    def offset(self): 
+        if hasattr(self, "vme_offset"):
+            ret = self.vme_offset
+        else:
+            ret = self.m("offset")
+
+        return ret
+
     def get_vnode(self):
         map_obj = self
 
