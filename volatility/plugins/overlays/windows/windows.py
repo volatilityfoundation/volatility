@@ -496,7 +496,8 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
     @property
     def IsWow64(self):
         """Returns True if this is a wow64 process"""
-        return bool(self.Wow64Process.is_valid())
+        value = self.Wow64Process
+        return value != 0 and value != None
 
     @property
     def SessionId(self):
