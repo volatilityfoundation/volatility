@@ -1029,18 +1029,12 @@ class WinPEObjectClasses(obj.ProfileModification):
             })
 
 peb32_vtypes = {
-   '_PEB32_LDR_DATA': [48, {
-        "Length": [0, ['unsigned long']],
-        "Initialized": [4, ['unsigned char']],
-        "SsHandle": [8, ['pointer32', ['void']]],
+   '_PEB32_LDR_DATA': [None, {
         "InLoadOrderModuleList": [12, ['LIST_ENTRY32']],
         "InMemoryOrderModuleList": [20, ['LIST_ENTRY32']],
         "InInitializationOrderModuleList": [28, ['LIST_ENTRY32']],
-        "EntryInProgress": [36, ['pointer32', ['void']]],
-        "ShutdownInProgress": [40, ['unsigned char']],
-        "ShutdownThreadId": [44, ['pointer32', ['void']]],
     }],
-    '_LDR32_DATA_TABLE_ENTRY': [76, {
+    '_LDR32_DATA_TABLE_ENTRY': [None, {
         "InLoadOrderLinks": [0, ['LIST_ENTRY32']],
         "InMemoryOrderLinks": [8, ['LIST_ENTRY32']],
         "InInitializationOrderLinks": [16, ['LIST_ENTRY32']],
@@ -1049,24 +1043,9 @@ peb32_vtypes = {
         "SizeOfImage": [32, ['unsigned long']],
         "FullDllName": [36, ['_UNICODE32_STRING']],
         "BaseDllName": [44, ['_UNICODE32_STRING']],
-        "Flags": [52, ['unsigned long']],
         "LoadCount": [56, ['unsigned short']],
-        "TlsIndex": [58, ['unsigned short']],
-        "HashLinks": [60, ['LIST_ENTRY32']],
         "TimeDateStamp": [68, ['unsigned long']],
-        "EntryPointActivationContext": [72, ['pointer32', ['void']]],
-    }],
-}
-
-peb32_overlay = {
-    '_PEB32' : [None, {
-        'Ldr' : [ None, ['pointer32', ['_PEB32_LDR_DATA']]],       
-    }],
-}
-
-ldr_loadtime_overlay = {
-   '_LDR32_DATA_TABLE_ENTRY' : [None, {
-        "LoadTime": [0x70, ['WinTimeStamp']],
+        "LoadTime": [0x70, ['WinTimeStamp', dict(is_utc = True)]],
     }],
 }
 
@@ -1079,12 +1058,20 @@ class WinPeb32(obj.ProfileModification):
 
     def modification(self, profile):       
         profile.vtypes.update(peb32_vtypes)
-        profile.merge_overlay(peb32_overlay)
-        profile.object_classes.update({"_LDR32_DATA_TABLE_ENTRY" : _LDR_DATA_TABLE_ENTRY})
-       
-        if 'LoadTime' in profile.vtypes['_LDR_DATA_TABLE_ENTRY'][1]:
-            profile.merge_overlay(ldr_loadtime_overlay)
-        
+        profile.merge_overlay({
+            '_PEB32' : [None, {
+                'Ldr' : [ None, ['pointer32', ['_PEB32_LDR_DATA']]],
+            }]})
+        profile.object_classes.update({
+            "_LDR32_DATA_TABLE_ENTRY" : _LDR_DATA_TABLE_ENTRY,
+            })
 
+        meta = profile.metadata
+        vers = (meta.get("major", 0), meta.get("minor", 0))
 
-
+        # the offset changed starting in windows 8
+        if vers >= (6, 3):
+            profile.merge_overlay({
+                '_LDR32_DATA_TABLE_ENTRY' : [None, {
+                    "LoadTime": [0x88, ['WinTimeStamp', dict(is_utc = True)]],
+                }]})

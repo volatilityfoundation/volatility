@@ -391,7 +391,7 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
 
         The PEB structure is referencing back into the process address
         space so we need to switch address spaces when we look at
-        it. This method ensure this happens automatically.
+        it. This method ensures this happens automatically.
         """
         process_ad = self.get_process_address_space()
         if process_ad:
@@ -404,20 +404,31 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
 
         return obj.NoneObject("Peb not found")
 
+    @property
     def Peb32(self):
         """ Returns a _PEB object which is using the process address space.
 
         The PEB structure is referencing back into the process address
         space so we need to switch address spaces when we look at
-        it. This method ensure this happens automatically.
+        it. This method ensures this happens automatically.
         """
-        process_ad = self.get_process_address_space()
-        if process_ad:
-            offset = self.Wow64Process.v()
-            peb32 = obj.Object("_PEB32", offset = offset, vm = process_ad, name = "Peb32", parent = self)
+        wow64process = self.Wow64Process
 
-            if peb32.is_valid():
-                return peb32
+        if wow64process.is_valid():
+            process_ad = self.get_process_address_space()
+            if process_ad:
+
+                # starting with windows 10 the Wow64Process member
+                # points to an _EWOW64PROCESS with a Peb
+                try:
+                    offset = wow64process.Peb
+                except AttributeError:
+                    offset = wow64process
+
+                peb32 = obj.Object("_PEB32", offset = offset, vm = process_ad, name = "Peb32", parent = self)
+
+                if peb32.is_valid():
+                    return peb32
         
         return obj.NoneObject("Peb32 not found")
 
@@ -442,11 +453,12 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
                 yield l
 
     def _prep_get_modules(self, list_member, link_member):
-        for module in self._get_modules(self.Peb.Ldr.m(list_member), "_LDR_DATA_TABLE_ENTRY", link_member):
-            yield module
 
-        if self.IsWow64:
-            for module in self._get_modules(self.Peb32().Ldr.m(list_member), "_LDR32_DATA_TABLE_ENTRY", link_member):
+        pebs = [[self.Peb, "_LDR_DATA_TABLE_ENTRY"],
+            [self.Peb32, "_LDR32_DATA_TABLE_ENTRY"]]
+
+        for peb, table_name in pebs:
+            for module in self._get_modules(peb.Ldr.m(list_member), table_name, link_member):
                 yield module
 
     def get_init_modules(self):
@@ -474,20 +486,22 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
 
     @property
     def Wow64Process(self):
-        if hasattr(self, "Wow64Process"):
-            ret = self.m("Wow64Process")
-        elif hasattr(self, "WoW64Process"):
-            ret = self.m("WoW64Process")
-        else:
-            ret = 0
+        try:
+            return self.m("Wow64Process")
+        except AttributeError:
+            pass
 
-        return ret
+        try:
+            return self.m("WoW64Process")
+        except AttributeError:
+            pass
+
+        return obj.NoneObject("Cannot determine the WoW64 status")
 
     @property
     def IsWow64(self):
         """Returns True if this is a wow64 process"""
-        val = self.Wow64Process
-        return val != 0 and val.v() != None
+        return self.Wow64Process.is_valid()
 
     @property
     def SessionId(self):
