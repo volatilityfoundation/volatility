@@ -18,11 +18,12 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import struct
+import struct, copy
 import volatility.exceptions as exceptions
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.addrspace as addrspace
+import volatility.registry as registry
 
 pe_vtypes = {
     '_IMAGE_EXPORT_DIRECTORY': [ 0x28, {
@@ -447,6 +448,22 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
             return str(self.LoadTime)
         else:
             return ""
+
+    @property
+    def LoadCount(self):
+        # prior to windows 8 / server 2012
+        try:
+            return self.m("LoadCount")
+        except AttributeError:
+            pass
+
+        # windows 8 / server 2012 and later
+        try:
+            return self.ObsoleteLoadCount
+        except AttributeError:
+            pass
+
+        return obj.NoneObject("No load count")
 
     def _nt_header(self):
         """Return the _IMAGE_NT_HEADERS object"""
@@ -1028,50 +1045,63 @@ class WinPEObjectClasses(obj.ProfileModification):
             'VerStruct': VerStruct,
             })
 
-peb32_vtypes = {
-   '_PEB32_LDR_DATA': [None, {
-        "InLoadOrderModuleList": [12, ['LIST_ENTRY32']],
-        "InMemoryOrderModuleList": [20, ['LIST_ENTRY32']],
-        "InInitializationOrderModuleList": [28, ['LIST_ENTRY32']],
-    }],
-    '_LDR32_DATA_TABLE_ENTRY': [None, {
-        "InLoadOrderLinks": [0, ['LIST_ENTRY32']],
-        "InMemoryOrderLinks": [8, ['LIST_ENTRY32']],
-        "InInitializationOrderLinks": [16, ['LIST_ENTRY32']],
-        "DllBase": [24, ['pointer32', ['void']]],
-        "EntryPoint": [28, ['pointer32', ['void']]],
-        "SizeOfImage": [32, ['unsigned long']],
-        "FullDllName": [36, ['_UNICODE32_STRING']],
-        "BaseDllName": [44, ['_UNICODE32_STRING']],
-        "LoadCount": [56, ['unsigned short']],
-        "TimeDateStamp": [68, ['unsigned long']],
-        "LoadTime": [0x70, ['WinTimeStamp', dict(is_utc = True)]],
-    }],
-}
-
 # apply to any 64bit version of Windows
 class WinPeb32(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows',
                   'memory_model': lambda x: x == '64bit'}
 
-    before = ['WinPEVTypes', 'WinPEx64VTypes', 'WinPEObjectClasses']
+    before = ['WinPEVTypes', 'WinPEx64VTypes', 'WinPEObjectClasses', 'WindowsObjectClasses']
 
-    def modification(self, profile):       
-        profile.vtypes.update(peb32_vtypes)
-        profile.merge_overlay({
-            '_PEB32' : [None, {
-                'Ldr' : [ None, ['pointer32', ['_PEB32_LDR_DATA']]],
-            }]})
-        profile.object_classes.update({
-            "_LDR32_DATA_TABLE_ENTRY" : _LDR_DATA_TABLE_ENTRY,
-            })
+    def cast_as_32bit(self, source_vtype):
+        vtype = copy.copy(source_vtype)
+        # the members of the structure
+        members = vtype[1]
 
+        mapping = {
+            "pointer": "pointer32",
+            "_UNICODE_STRING": "_UNICODE32_STRING",
+            "_LIST_ENTRY": "LIST_ENTRY32",
+        }
+
+        for name, member in members.items():
+            datatype = member[1][0]
+
+            if datatype in mapping:
+                member[1][0] = mapping[datatype]
+
+        return vtype
+
+    def modification(self, profile):
+        profiles = registry.get_plugin_classes(obj.Profile)
         meta = profile.metadata
-        vers = (meta.get("major", 0), meta.get("minor", 0))
 
-        # the offset changed starting in windows 8
-        if vers >= (6, 3):
-            profile.merge_overlay({
-                '_LDR32_DATA_TABLE_ENTRY' : [None, {
-                    "LoadTime": [0x88, ['WinTimeStamp', dict(is_utc = True)]],
-                }]})
+        # find the equivalent 32-bit profile to this 64-bit profile
+        profile_32bit = None
+        for prof in profiles.values():
+            if (prof._md_major == meta.get("major") and
+                            prof._md_minor == meta.get("minor") and
+                            prof._md_build == meta.get("build") and
+                            prof._md_memory_model == "32bit"):
+
+                profile_32bit = prof()
+                break
+
+        if profile_32bit == None:
+            debug.warning("Cannot find a 32-bit equivalent profile. The "\
+                "WoW64 plugins (dlllist, ldrmodules, etc) may not work.")
+            return
+
+        profile.vtypes.update({
+            "_PEB32_LDR_DATA": self.cast_as_32bit(profile_32bit.vtypes["_PEB_LDR_DATA"]),
+            "_LDR32_DATA_TABLE_ENTRY": self.cast_as_32bit(profile_32bit.vtypes["_LDR_DATA_TABLE_ENTRY"]),
+            '_UNICODE32_STRING': self.cast_as_32bit(profile_32bit.vtypes["_UNICODE_STRING"]),
+        })
+
+        profile.object_classes.update({
+            "_LDR32_DATA_TABLE_ENTRY": _LDR_DATA_TABLE_ENTRY
+        })
+
+        profile.merge_overlay({
+            '_PEB32': [None, {
+                'Ldr': [None, ['pointer32', ['_PEB32_LDR_DATA']]],
+        }]})
