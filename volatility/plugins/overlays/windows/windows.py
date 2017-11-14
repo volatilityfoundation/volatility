@@ -456,7 +456,7 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         # contain PicoContext, but in those cases it always
         # seems to be zeroed out
         if (len(name) == 0 and 
-                hasattr(self, "PicoContext") and self.PicoContext != 0):
+                hasattr(self, "PicoContext") and self.PicoContext.is_valid()):
             name = self.PicoContext.Name
         
         return name
