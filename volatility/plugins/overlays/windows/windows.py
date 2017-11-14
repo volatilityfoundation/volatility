@@ -255,11 +255,6 @@ class _LIST_ENTRY(obj.CType):
     def __iter__(self):
         return self.list_of_type(self.obj_parent.obj_name, self.obj_name)
 
-# for LIST_ENTRY32, the LDR member is an unsigned long not a Pointer as regular LIST_ENTRY
-class LIST_ENTRY32(_LIST_ENTRY):
-    def get_next_entry(self, member):
-        return obj.Object("LIST_ENTRY32", offset = self.m(member).v(), vm = self.obj_vm)
-
 class WinTimeStamp(obj.NativeType):
     """Class for handling Windows Time Stamps"""
 
@@ -1212,14 +1207,6 @@ import kdbg_vtypes
 import tcpip_vtypes
 import ssdt_vtypes
 
-unicode32_vtypes = {
-  '_UNICODE32_STRING' : [ 12, {
-    'Length' : [ 0x0, ['unsigned short']],
-    'MaximumLength' : [ 0x2, ['unsigned short']],
-    'Buffer' : [ 0x4, ['pointer32', ['unsigned short']]],
-  }],
-}
-
 class WindowsOverlay(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows'}
     before = ['BasicObjectClasses', 'WindowsVTypes']
@@ -1237,7 +1224,6 @@ class WindowsVTypes(obj.ProfileModification):
         profile.vtypes.update(kdbg_vtypes.kdbg_vtypes)
         profile.vtypes.update(tcpip_vtypes.tcpip_vtypes)
         profile.vtypes.update(ssdt_vtypes.ssdt_vtypes)
-        profile.vtypes.update(unicode32_vtypes)
 
 class WindowsObjectClasses(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows'}
@@ -1246,9 +1232,7 @@ class WindowsObjectClasses(obj.ProfileModification):
     def modification(self, profile):
         profile.object_classes.update({
             '_UNICODE_STRING': _UNICODE_STRING,
-            '_UNICODE32_STRING': _UNICODE_STRING,
             '_LIST_ENTRY': _LIST_ENTRY,
-            'LIST_ENTRY32': LIST_ENTRY32,
             'WinTimeStamp': WinTimeStamp,
             'DosDate':DosDate,
             '_EPROCESS': _EPROCESS,

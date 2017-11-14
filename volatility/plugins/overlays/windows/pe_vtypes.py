@@ -18,12 +18,11 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import struct, copy
+import struct
 import volatility.exceptions as exceptions
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.addrspace as addrspace
-import volatility.registry as registry
 
 pe_vtypes = {
     '_IMAGE_EXPORT_DIRECTORY': [ 0x28, {
@@ -1044,64 +1043,3 @@ class WinPEObjectClasses(obj.ProfileModification):
             '_VS_VERSION_INFO': _VS_VERSION_INFO,
             'VerStruct': VerStruct,
             })
-
-# apply to any 64bit version of Windows
-class WinPeb32(obj.ProfileModification):
-    conditions = {'os': lambda x: x == 'windows',
-                  'memory_model': lambda x: x == '64bit'}
-
-    before = ['WinPEVTypes', 'WinPEx64VTypes', 'WinPEObjectClasses', 'WindowsObjectClasses']
-
-    def cast_as_32bit(self, source_vtype):
-        vtype = copy.copy(source_vtype)
-        # the members of the structure
-        members = vtype[1]
-
-        mapping = {
-            "pointer": "pointer32",
-            "_UNICODE_STRING": "_UNICODE32_STRING",
-            "_LIST_ENTRY": "LIST_ENTRY32",
-        }
-
-        for name, member in members.items():
-            datatype = member[1][0]
-
-            if datatype in mapping:
-                member[1][0] = mapping[datatype]
-
-        return vtype
-
-    def modification(self, profile):
-        profiles = registry.get_plugin_classes(obj.Profile)
-        meta = profile.metadata
-
-        # find the equivalent 32-bit profile to this 64-bit profile
-        profile_32bit = None
-        for prof in profiles.values():
-            if (prof._md_major == meta.get("major") and
-                            prof._md_minor == meta.get("minor") and
-                            prof._md_build == meta.get("build") and
-                            prof._md_memory_model == "32bit"):
-
-                profile_32bit = prof()
-                break
-
-        if profile_32bit == None:
-            debug.warning("Cannot find a 32-bit equivalent profile. The "\
-                "WoW64 plugins (dlllist, ldrmodules, etc) may not work.")
-            return
-
-        profile.vtypes.update({
-            "_PEB32_LDR_DATA": self.cast_as_32bit(profile_32bit.vtypes["_PEB_LDR_DATA"]),
-            "_LDR32_DATA_TABLE_ENTRY": self.cast_as_32bit(profile_32bit.vtypes["_LDR_DATA_TABLE_ENTRY"]),
-            '_UNICODE32_STRING': self.cast_as_32bit(profile_32bit.vtypes["_UNICODE_STRING"]),
-        })
-
-        profile.object_classes.update({
-            "_LDR32_DATA_TABLE_ENTRY": _LDR_DATA_TABLE_ENTRY
-        })
-
-        profile.merge_overlay({
-            '_PEB32': [None, {
-                'Ldr': [None, ['pointer32', ['_PEB32_LDR_DATA']]],
-        }]})
