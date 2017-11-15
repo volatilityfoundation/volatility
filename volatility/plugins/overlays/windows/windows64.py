@@ -21,6 +21,9 @@
 import copy
 import volatility.obj as obj
 import volatility.plugins.overlays.windows.windows as windows
+import volatility.plugins.overlays.windows.pe_vtypes as pe_vtypes
+import volatility.registry as registry
+import volatility.debug as debug
 
 # File-wide pylint message disable because we have a few situations where we access structs starting _
 #pylint: disable-msg=W0212
@@ -37,6 +40,11 @@ class Pointer64Decorator(object):
 
 class _EX_FAST_REF(windows._EX_FAST_REF):
     MAX_FAST_REF = 15
+
+class LIST_ENTRY32(windows._LIST_ENTRY):
+    """the LDR member is an unsigned long not a Pointer as regular LIST_ENTRY"""
+    def get_next_entry(self, member):
+        return obj.Object("LIST_ENTRY32", offset = self.m(member).v(), vm = self.obj_vm)
 
 class ExFastRefx64(obj.ProfileModification):
     before = ['WindowsOverlay', 'WindowsObjectClasses']
@@ -78,3 +86,65 @@ class Windows64Overlay(obj.ProfileModification):
         # and therefore can't just be instantiated in object_classes
         # using profile.object_classes.update({'pointer64': obj.Pointer})
         profile._list_to_type = Pointer64Decorator(profile._list_to_type)
+
+class WinPeb32(obj.ProfileModification):
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit'}
+
+    before = ['WinPEVTypes', 'WinPEx64VTypes', 'WinPEObjectClasses', 'WindowsObjectClasses']
+
+    def cast_as_32bit(self, source_vtype):
+        vtype = copy.copy(source_vtype)
+        # the members of the structure
+        members = vtype[1]
+
+        mapping = {
+            "pointer": "pointer32",
+            "_UNICODE_STRING": "_UNICODE32_STRING",
+            "_LIST_ENTRY": "LIST_ENTRY32",
+        }
+
+        for name, member in members.items():
+            datatype = member[1][0]
+
+            if datatype in mapping:
+                member[1][0] = mapping[datatype]
+
+        return vtype
+
+    def modification(self, profile):
+        profiles = registry.get_plugin_classes(obj.Profile)
+        meta = profile.metadata
+
+        # find the equivalent 32-bit profile to this 64-bit profile
+        profile_32bit = None
+        for prof in profiles.values():
+            if (prof._md_major == meta.get("major") and
+                            prof._md_minor == meta.get("minor") and
+                            prof._md_build == meta.get("build") and
+                            prof._md_memory_model == "32bit"):
+
+                profile_32bit = prof()
+                break
+
+        if profile_32bit == None:
+            debug.warning("Cannot find a 32-bit equivalent profile. The "\
+                "WoW64 plugins (dlllist, ldrmodules, etc) may not work.")
+            return
+
+        profile.vtypes.update({
+            "_PEB32_LDR_DATA": self.cast_as_32bit(profile_32bit.vtypes["_PEB_LDR_DATA"]),
+            "_LDR32_DATA_TABLE_ENTRY": self.cast_as_32bit(profile_32bit.vtypes["_LDR_DATA_TABLE_ENTRY"]),
+            '_UNICODE32_STRING': self.cast_as_32bit(profile_32bit.vtypes["_UNICODE_STRING"]),
+        })
+
+        profile.object_classes.update({
+            "_LDR32_DATA_TABLE_ENTRY": pe_vtypes._LDR_DATA_TABLE_ENTRY,
+            "_UNICODE32_STRING": windows._UNICODE_STRING,
+            "LIST_ENTRY32": LIST_ENTRY32,
+        })
+
+        profile.merge_overlay({
+            '_PEB32': [None, {
+                'Ldr': [None, ['pointer32', ['_PEB32_LDR_DATA']]],
+        }]})

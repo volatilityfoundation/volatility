@@ -210,15 +210,18 @@ class _UNICODE_STRING(obj.CType):
 
 class _LIST_ENTRY(obj.CType):
     """ Adds iterators for _LIST_ENTRY types """
+    def get_next_entry(self, member):
+        return self.m(member).dereference()
+    
     def list_of_type(self, type, member, forward = True, head_sentinel = True):
         if not self.is_valid():
             return
 
         ## Get the first element
         if forward:
-            nxt = self.Flink.dereference()
+            nxt = self.get_next_entry("Flink")
         else:
-            nxt = self.Blink.dereference()
+            nxt = self.get_next_entry("Blink")
 
         offset = self.obj_vm.profile.get_obj_offset(type, member)
 
@@ -228,6 +231,7 @@ class _LIST_ENTRY(obj.CType):
             seen.add(self.obj_offset)
 
         while nxt.is_valid() and nxt.obj_offset not in seen:
+
             ## Instantiate the object
             item = obj.Object(type, offset = nxt.obj_offset - offset,
                                     vm = self.obj_vm,
@@ -240,9 +244,9 @@ class _LIST_ENTRY(obj.CType):
             yield item
 
             if forward:
-                nxt = item.m(member).Flink.dereference()
+                nxt =  item.m(member).get_next_entry("Flink")
             else:
-                nxt = item.m(member).Blink.dereference()
+                nxt = item.m(member).get_next_entry("Blink")
 
     def __nonzero__(self):
         ## List entries are valid when both Flinks and Blink are valid
@@ -382,7 +386,7 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
 
         The PEB structure is referencing back into the process address
         space so we need to switch address spaces when we look at
-        it. This method ensure this happens automatically.
+        it. This method ensures this happens automatically.
         """
         process_ad = self.get_process_address_space()
         if process_ad:
@@ -394,6 +398,34 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
                 return peb
 
         return obj.NoneObject("Peb not found")
+
+    @property
+    def Peb32(self):
+        """ Returns a _PEB object which is using the process address space.
+
+        The PEB structure is referencing back into the process address
+        space so we need to switch address spaces when we look at
+        it. This method ensures this happens automatically.
+        """
+        wow64process = self.Wow64Process
+
+        if wow64process.is_valid():
+            process_ad = self.get_process_address_space()
+            if process_ad:
+
+                # starting with windows 10 the Wow64Process member
+                # points to an _EWOW64PROCESS with a Peb
+                try:
+                    offset = wow64process.Peb
+                except AttributeError:
+                    offset = wow64process
+
+                peb32 = obj.Object("_PEB32", offset = offset, vm = process_ad, name = "Peb32", parent = self)
+
+                if peb32.is_valid():
+                    return peb32
+        
+        return obj.NoneObject("Peb32 not found")
 
     def get_process_address_space(self):
         """ Gets a process address space for a task given in _EPROCESS """
@@ -408,20 +440,30 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
 
         return process_as
 
-    def _get_modules(self, the_list, the_type):
+    def _get_modules(self, the_list, entry_type, link_member):
         """Generator for DLLs in one of the 3 PEB lists"""
+
         if self.UniqueProcessId and the_list:
-            for l in the_list.list_of_type("_LDR_DATA_TABLE_ENTRY", the_type):
+            for l in the_list.list_of_type(entry_type, link_member):
                 yield l
 
+    def _prep_get_modules(self, list_member, link_member):
+
+        pebs = [[self.Peb, "_LDR_DATA_TABLE_ENTRY"],
+            [self.Peb32, "_LDR32_DATA_TABLE_ENTRY"]]
+
+        for peb, table_name in pebs:
+            for module in self._get_modules(peb.Ldr.m(list_member), table_name, link_member):
+                yield module
+
     def get_init_modules(self):
-        return self._get_modules(self.Peb.Ldr.InInitializationOrderModuleList, "InInitializationOrderLinks")
+        return self._prep_get_modules("InInitializationOrderModuleList", "InInitializationOrderLinks")
 
     def get_mem_modules(self):
-        return self._get_modules(self.Peb.Ldr.InMemoryOrderModuleList, "InMemoryOrderLinks")
+        return self._prep_get_modules("InMemoryOrderModuleList", "InMemoryOrderLinks")
 
     def get_load_modules(self):
-        return self._get_modules(self.Peb.Ldr.InLoadOrderModuleList, "InLoadOrderLinks")
+        return self._prep_get_modules("InLoadOrderModuleList", "InLoadOrderLinks")
 
     def get_token(self):
         """Return the process's TOKEN object if its valid"""
@@ -438,9 +480,24 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         return obj.NoneObject("Cannot get process Token")
 
     @property
+    def Wow64Process(self):
+        try:
+            return self.m("Wow64Process")
+        except AttributeError:
+            pass
+
+        try:
+            return self.m("WoW64Process")
+        except AttributeError:
+            pass
+
+        return obj.NoneObject("Cannot determine the WoW64 status")
+
+    @property
     def IsWow64(self):
         """Returns True if this is a wow64 process"""
-        return hasattr(self, 'Wow64Process') and self.Wow64Process.v() != 0
+        value = self.Wow64Process
+        return value != 0 and value != None
 
     @property
     def ImageFileName(self):

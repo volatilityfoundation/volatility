@@ -139,17 +139,6 @@ class _PSP_CID_TABLE_81R264(_PSP_CID_TABLE64):
     """PspCidTable for 64-bit Windows 8.1 and Server 2012 R2"""
     DECODE_MAGIC = 0x10
 
-class _LDR_DATA_TABLE_ENTRY(pe_vtypes._LDR_DATA_TABLE_ENTRY):
-    """A class for DLL modules"""
-    
-    @property
-    def LoadCount(self):
-        """The Windows 8 / 2012 module does not have a 
-        LoadCount member, so we fake it.
-        """
-
-        return self.ObsoleteLoadCount
-
 class _OBJECT_HEADER(win7._OBJECT_HEADER):
     """A class for object headers on Win 8 / Server 2012"""
 
@@ -398,7 +387,6 @@ class Win8ObjectClasses(obj.ProfileModification):
             objheader = _OBJECT_HEADER
 
         profile.object_classes.update({
-                "_LDR_DATA_TABLE_ENTRY": _LDR_DATA_TABLE_ENTRY, 
                 "_HANDLE_TABLE": handletable,
                 "_OBJECT_HEADER": objheader,
                 "_PSP_CID_TABLE": pspcidtable,

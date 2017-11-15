@@ -448,13 +448,29 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
         else:
             return ""
 
+    @property
+    def LoadCount(self):
+        # prior to windows 8 / server 2012
+        try:
+            return self.m("LoadCount")
+        except AttributeError:
+            pass
+
+        # windows 8 / server 2012 and later
+        try:
+            return self.ObsoleteLoadCount
+        except AttributeError:
+            pass
+
+        return obj.NoneObject("No load count")
+
     def _nt_header(self):
         """Return the _IMAGE_NT_HEADERS object"""
 
         try:
             dos_header = obj.Object("_IMAGE_DOS_HEADER", offset = self.DllBase,
                                     vm = self.obj_native_vm)
-
+            
             return dos_header.get_nt_header()
         except ValueError:
             return obj.NoneObject("Failed initial sanity checks")
@@ -571,6 +587,7 @@ class _LDR_DATA_TABLE_ENTRY(obj.CType):
 
         if expdir.valid(self._nt_header()):
             # Ordinal, Function RVA, and Name Object 
+
             for o, f, n in expdir._exported_functions():
                 yield o, f, n
 
@@ -751,8 +768,26 @@ class _IMAGE_DOS_HEADER(obj.CType):
         else:
             return self._get_image_exe(unsafe, fix)
 
+class _IMAGE_NT_HEADERS64(obj.CType):
+    @property
+    def OptionalHeader(self):
+        ret = self.m("OptionalHeader")
+
+        if self.obj_vm.profile.get_obj_size("address") == 8 and self.FileHeader.Machine == 0x014c: # 32bit exe
+            ret = ret.cast("_IMAGE_OPTIONAL_HEADER32") 
+
+        return ret
+
 class _IMAGE_NT_HEADERS(obj.CType):
     """PE header"""
+
+    @property
+    def OptionalHeader(self):
+        ret = self.m("OptionalHeader")
+        if self.obj_vm.profile.get_obj_size("address") == 8 and self.FileHeader.Machine == 0x014c: # 32bit exe
+            ret = ret.cast("_IMAGE_OPTIONAL_HEADER32") 
+        
+        return ret
 
     def get_sections(self, unsafe = False):
         """Get the PE sections"""
@@ -1000,6 +1035,7 @@ class WinPEObjectClasses(obj.ProfileModification):
             '_LDR_DATA_TABLE_ENTRY': _LDR_DATA_TABLE_ENTRY,
             '_IMAGE_DOS_HEADER': _IMAGE_DOS_HEADER,
             '_IMAGE_NT_HEADERS': _IMAGE_NT_HEADERS,
+            '_IMAGE_NT_HEADERS64': _IMAGE_NT_HEADERS64,
             '_IMAGE_SECTION_HEADER': _IMAGE_SECTION_HEADER,
             '_IMAGE_RESOURCE_DIRECTORY': _IMAGE_RESOURCE_DIRECTORY,
             '_IMAGE_RESOURCE_DIR_STRING_U': _IMAGE_RESOURCE_DIR_STRING_U,
