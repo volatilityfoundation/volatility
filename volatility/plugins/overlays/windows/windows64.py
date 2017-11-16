@@ -119,7 +119,8 @@ class WinPeb32(obj.ProfileModification):
         # find the equivalent 32-bit profile to this 64-bit profile
         profile_32bit = None
         for prof in profiles.values():
-            if (prof._md_major == meta.get("major") and
+            if (prof._md_os == "windows" and
+                            prof._md_major == meta.get("major") and
                             prof._md_minor == meta.get("minor") and
                             prof._md_build == meta.get("build") and
                             prof._md_memory_model == "32bit"):
