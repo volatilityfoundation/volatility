@@ -116,13 +116,17 @@ class WinPeb32(obj.ProfileModification):
         profiles = registry.get_plugin_classes(obj.Profile)
         meta = profile.metadata
 
-        # find the equivalent 32-bit profile to this 64-bit profile
+        # find the equivalent 32-bit profile to this 64-bit profile.
+        # the prof._md_build + 1 accounts for a poor decision we made
+        # a while back where we added + 1 to the build number for 
+        # server-based profiles as a method to distinguish between 
+        # client vs server in a plugin. 
         profile_32bit = None
         for prof in profiles.values():
             if (prof._md_os == "windows" and
                             prof._md_major == meta.get("major") and
                             prof._md_minor == meta.get("minor") and
-                            prof._md_build == meta.get("build") and
+                            ((prof._md_build == meta.get("build")) or (prof._md_build + 1 == meta.get("build"))) and
                             prof._md_memory_model == "32bit"):
 
                 profile_32bit = prof()
