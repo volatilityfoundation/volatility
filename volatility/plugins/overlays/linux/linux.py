@@ -1164,10 +1164,14 @@ class vm_area_struct(obj.CType):
 
     def info(self, task):
         if self.vm_file:
-            inode = self.vm_file.dentry.d_inode
-            major, minor = inode.i_sb.major, inode.i_sb.minor
-            ino = inode.i_ino
             pgoff = self.vm_pgoff << 12
+            
+            inode = self.vm_file.dentry.d_inode
+            if inode and inode.is_valid():
+                major, minor = inode.i_sb.major, inode.i_sb.minor
+                ino = inode.i_ino
+            else:
+                major, minor, ino = [0] * 3
         else:
             (major, minor, ino, pgoff) = [0] * 4
 
