@@ -142,7 +142,12 @@ collisions_10_12_2 = {
     "MacSierra_10_12_2_16C67x64"  : "Thu Nov 17 20:23:58",
 }
 
-collision_sets = [collisions_10_8_5, collisions_10_12_2]
+collisions_10_13_1 = {
+    "MacHighSierra_10_13_1_17B35ax64" : "1 00:46:50 PDT",
+    "MacHighSierra_10_13_1_17B48x64"  : "Sep 29 18:27:05 PDT",
+}
+
+collision_sets = [collisions_10_8_5, collisions_10_12_2, collisions_10_13_1]
 
 class catfishScan(scan.BaseScanner):
     """ Scanner for Catfish string for Mountain Lion """
