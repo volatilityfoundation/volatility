@@ -219,6 +219,16 @@ class Win7SP1x86_23418(obj.Profile):
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x86_BBA98F40_vtypes'
     _md_product = ["NtProductWinNt"]
 
+class Win7SP1x86_24000(obj.Profile):
+    """ A Profile for Windows 7 SP1 x86 (6.1.7601.24000 / 2018-01-09) """
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 1
+    _md_build = 7601
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x86_24000_vtypes'
+    _md_product = ["NtProductWinNt"]
+
 class Win7SP0x64(obj.Profile):
     """ A Profile for Windows 7 SP0 x64 """
     _md_memory_model = '64bit'
@@ -247,6 +257,16 @@ class Win7SP1x64_23418(obj.Profile):
     _md_minor = 1
     _md_build = 7601
     _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x64_632B36E0_vtypes'
+    _md_product = ["NtProductWinNt"]
+
+class Win7SP1x64_24000(obj.Profile):
+    """ A Profile for Windows 7 SP1 x64 (6.1.7601.24000 / 2018-01-09) """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 1
+    _md_build = 7601
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win7_sp1_x64_24000_vtypes'
     _md_product = ["NtProductWinNt"]
 
 class Win2008R2SP0x64(Win7SP0x64):
