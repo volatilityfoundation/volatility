@@ -648,7 +648,7 @@ class Win10ObjectHeader(obj.ProfileModification):
                 profile.object_classes.update({
                     "_HANDLE_TABLE": _HANDLE_TABLE_10_DD08DD42})
             
-        elif build >= 10240:
+        elif build >= 10586:
             header = _OBJECT_HEADER_10_1AC738FB
         else:
             header = _OBJECT_HEADER_10
@@ -689,7 +689,7 @@ class Win10PoolHeader(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
                   'minor': lambda x: x == 4,
-                  'build': lambda x: x == 10240}
+                  'build': lambda x: x == 10586}
 
     def modification(self, profile):
 
@@ -738,7 +738,7 @@ class Win10x64_10586(obj.Profile):
     _md_os = 'windows'
     _md_major = 6
     _md_minor = 4
-    _md_build = 10240
+    _md_build = 10586
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_1AC738FB_vtypes'
     _md_product = ["NtProductWinNt"]
 
@@ -768,7 +768,7 @@ class Win10x86_10586(obj.Profile):
     _md_os = 'windows'
     _md_major = 6
     _md_minor = 4
-    _md_build = 10240
+    _md_build = 10586
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_44B89EEA_vtypes'
     _md_product = ["NtProductWinNt"]
 
