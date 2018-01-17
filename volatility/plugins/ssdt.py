@@ -224,6 +224,9 @@ class SSDT(common.AbstractWindowsCommand):
                     # These must be signed long for x64 because they are RVAs relative
                     # to the base of the table and can be negative. 
                     offset = obj.Object('long', table + (i * 4), vm).v()
+                    if offset == None:
+                        continue
+
                     # The offset is the top 20 bits of the 32 bit number. 
                     syscall_addr = table + (offset >> 4)
                 try:
@@ -293,6 +296,9 @@ class SSDT(common.AbstractWindowsCommand):
                     # These must be signed long for x64 because they are RVAs relative
                     # to the base of the table and can be negative. 
                     offset = obj.Object('long', table + (i * 4), vm).v()
+                    if offset == None:
+                        continue
+
                     # The offset is the top 20 bits of the 32 bit number. 
                     syscall_addr = table + (offset >> 4)
                 try:
