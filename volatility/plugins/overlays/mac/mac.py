@@ -536,7 +536,7 @@ class proc(obj.CType):
                                 continue
 
                             if bucket.key != None and bucket.data != None and pdata.is_valid() and (0 <= pdata.flags <= 2):
-                                if len(str(bucket.key)) > 0 or len(str(bucket.data.path)) > 0:
+                                if (len(str(bucket.key)) > 0 or len(str(bucket.data.path)) > 0) and (0 < bucket.times_found <= 1024):
                                     yield bucket
 
                             bucket = bucket.next_bucket()
