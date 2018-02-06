@@ -698,12 +698,33 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         if not obj.CType.is_valid(self):
             return False
 
+        name = str(self.ImageFileName)
+        if not name or len(name) == 0 or name[0] == "\x00":
+            return False
+
+        # The System/PID 4 process has no create time
+        if not (str(name) == "System" and self.UniqueProcessId == 4):
+            if self.CreateTime.v() == 0:
+                return False
+                
+            ctime = self.CreateTime.as_datetime()
+            if ctime == None:
+                return False
+
+            if not (1998 < ctime.year < 2030):
+                return False
+                
+        # NT pids are divisible by 4
+        if self.UniqueProcessId % 4 != 0:
+            return False
+
         if (self.Pcb.DirectoryTableBase == 0):
             return False
 
-        if (self.Pcb.DirectoryTableBase % 0x20 != 0):
+        # check for all 0s besides the PCID entries
+        if self.Pcb.DirectoryTableBase & ~0xfff == 0:
             return False
-
+    
         list_head = self.ThreadListHead
         kernel = 0x80000000
 
