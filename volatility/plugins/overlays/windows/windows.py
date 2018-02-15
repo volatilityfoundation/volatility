@@ -407,25 +407,28 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         space so we need to switch address spaces when we look at
         it. This method ensures this happens automatically.
         """
-        wow64process = self.Wow64Process
+        process_as = self.get_process_address_space()
+        if process_as == None:
+            return obj.NoneObject("Unable to create process AS")
 
-        if wow64process.is_valid():
-            process_ad = self.get_process_address_space()
-            if process_ad:
+        # get the address but don't dereference 
+        ptr = obj.Object("address", offset = self.Wow64Process.v(), vm = process_as)
 
-                # starting with windows 10 the Wow64Process member
-                # points to an _EWOW64PROCESS with a Peb
-                try:
-                    offset = wow64process.Peb
-                except AttributeError:
-                    offset = wow64process
+        # make sure the validity check happens with a process AS 
+        if not ptr.is_valid():
+            return obj.NoneObject("The Wow64Process pointer is not valid in process AS")
 
-                peb32 = obj.Object("_PEB32", offset = offset, vm = process_ad, name = "Peb32", parent = self)
+        # windows 10 
+        if process_as.profile.has_type("_EWOW64PROCESS"):
+            return ptr.cast("_EWOW64PROCESS").Peb.dereference_as("_PEB32")
 
-                if peb32.is_valid():
-                    return peb32
-        
-        return obj.NoneObject("Peb32 not found")
+        # vista sp0-sp1 and 2003 sp1-sp2
+        elif process_as.profile.has_type("_WOW64_PROCESS"):
+            return ptr.cast("_WOW64_PROCESS").Wow64.dereference_as("_PEB32")
+
+        # everything else 
+        else:
+            return ptr.cast("_PEB32") 
 
     def get_process_address_space(self):
         """ Gets a process address space for a task given in _EPROCESS """
