@@ -61,32 +61,21 @@ class linux_psscan(pslist.linux_pslist):
                 needles.append(struct.pack(fmt, addr)) 
 
         if len(needles) == 0:
-            debug.error("Unable to scan for processes. Please file a bug report.")
+            debug.warning("Unable to scan for processes. Please file a bug report.")
+        else:
+            back_offset = phys_addr_space.profile.get_obj_offset("task_struct", "sched_class")
 
-        back_offset = phys_addr_space.profile.get_obj_offset("task_struct", "sched_class")
+            scanner = poolscan.MultiPoolScanner(needles)    
 
-        scanner = poolscan.MultiPoolScanner(needles)    
+            for _, offset in scanner.scan(phys_addr_space):
+                ptask = obj.Object("task_struct", offset = offset - back_offset, vm = phys_addr_space)
 
-        for _, offset in scanner.scan(phys_addr_space):
-            ptask = obj.Object("task_struct", offset = offset - back_offset, vm = phys_addr_space)
+                if not ptask.exit_state.v() in [0, 16, 32, 16|32]:
+                    continue
 
-            if not ptask.exit_state.v() in [0, 16, 32, 16|32]:
-                continue
+                if not (0 < ptask.pid < 66000):
+                    continue
 
-            if not (0 < ptask.pid < 66000):
-                continue
+                yield ptask
 
-            yield ptask
-
-        
-
-
-
-
-
-
-
-
-
-
-
+            
