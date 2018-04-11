@@ -156,8 +156,6 @@ class IEHistory(taskmods.DllList):
             tags.append("LEAK")
         if self._config.REDR:
             tags.append("REDR")
-            
-        tags = ["DEST"]
 
         ## Define the record type based on the tag
         tag_records = {
