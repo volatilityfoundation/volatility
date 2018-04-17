@@ -239,6 +239,9 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             height = node.height
         elif hasattr(node, "path"):
             height = node.path
+
+            if height > 4096:
+                height = 4096
         else:
             post_4_11 = True
         
@@ -254,7 +257,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
                 return page
 
             node = self.radix_tree_indirect_to_ptr(node)
-            
+
             if hasattr(node, "shift"):
                 shift = node.shift
             else:
