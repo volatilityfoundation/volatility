@@ -732,6 +732,16 @@ class Win10x64(obj.Profile):
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_vtypes'
     _md_product = ["NtProductWinNt"]
 
+class Win10x64_10240_17770(obj.Profile):
+    """ A Profile for Windows 10 x64 (10.0.10240.17770 / 2018-02-10) """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 10240
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_10240_17770_vtypes'
+    _md_product = ["NtProductWinNt"]
+
 class Win10x64_10586(obj.Profile):
     """ A Profile for Windows 10 x64 (10.0.10586.306 / 2016-04-23) """
     _md_memory_model = '64bit'
@@ -760,6 +770,16 @@ class Win10x86(obj.Profile):
     _md_minor = 4
     _md_build = 9841
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_vtypes'
+    _md_product = ["NtProductWinNt"]
+
+class Win10x86_10240_17770(obj.Profile):
+    """ A Profile for Windows 10 x86 (10.0.10240.17770 / 2018-02-10) """
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 10240
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_10240_17770_vtypes'
     _md_product = ["NtProductWinNt"]
 
 class Win10x86_10586(obj.Profile):
