@@ -233,6 +233,9 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
         node = root.rnode
 
+        if not node.is_valid():
+            return None
+
         post_4_11 = False
 
         if hasattr(node, "height"):
@@ -240,11 +243,16 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         elif hasattr(node, "path"):
             height = node.path
 
-            if height > 4096:
-                height = 4096
+            height = height & 0xfff
+            # this check is needed as gcc seems to produce a 0 value when a shift value is negative
+            # Python throws a backtrace in this situation though
+            # setting to 0 will cause the later -1 to equal 0, and match the runtime behaviour of the kernel
+            if height == 0:
+                height = 1
+
         else:
             post_4_11 = True
-        
+
         if post_4_11:
             slot = self.find_slot_post_4_11(root, index)
         else:
