@@ -750,6 +750,12 @@ class _TOKEN(obj.CType):
         if self.UserAndGroupCount < 0xFFFF:
             for sa in self.UserAndGroups.dereference():
                 sid = sa.Sid.dereference_as('_SID')
+                # catch invalid pointers (UserAndGroupCount is too high)
+                if sid == None:
+                    raise StopIteration
+                # this mimics the windows API IsValidSid
+                if sid.Revision & 0xF != 1 or sid.SubAuthorityCount > 15:
+                    raise StopIteration
                 id_auth = ""
                 for i in sid.IdentifierAuthority.Value:
                     id_auth = i
