@@ -289,6 +289,9 @@ def get_user_name(user_key):
     name_offset = unpack("<L", V[0x0c:0x10])[0] + 0xCC
     name_length = unpack("<L", V[0x10:0x14])[0]
 
+    if name_length > len(V):
+        return None
+
     username = V[name_offset:name_offset + name_length].decode('utf-16-le')
     return username
 
@@ -328,7 +331,11 @@ def dump_hashes(sysaddr, samaddr):
                     nthash = empty_nt
                 ## temporary fix to prevent UnicodeDecodeError backtraces 
                 ## however this can cause truncated user names as a result
-                name = get_user_name(user).encode('ascii', 'ignore')
+                name = get_user_name(user)
+                if name is not None:
+                    name = name.encode('ascii', 'ignore')
+                else:
+                    name = "(unavailable)"
                 yield "{0}:{1}:{2}:{3}:::".format(name, int(str(user.Name), 16),
                                                   lmhash.encode('hex'), nthash.encode('hex'))
     else:
