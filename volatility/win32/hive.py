@@ -28,6 +28,7 @@
 
 import volatility.obj as obj
 import volatility.addrspace as addrspace
+import volatility.win32 as win32
 import struct
 import sys
 
@@ -47,8 +48,25 @@ BLOCK_SIZE = 0x1000
 class HiveAddressSpace(addrspace.BaseAddressSpace):
     def __init__(self, base, config, hive_addr, **kwargs):
         addrspace.BaseAddressSpace.__init__(self, base, config)
-        self.base = base
         self.hive = obj.Object("_HHIVE", hive_addr, base)
+
+        # Win10_17063 introduced the Registry process, change base to its address space
+        meta = self.profile.metadata
+        version = (meta.get("major", 0), meta.get("minor", 0), meta.get("build", 0))
+        if version >= (6, 4, 17063):
+            for t in win32.tasks.pslist(self.base):
+                if str(t.ImageFileName) == "Registry" and int(t.InheritedFromUniqueProcessId) == 4:
+                    reg_proc = t
+                    break
+            if reg_proc:
+                self.base = reg_proc.get_process_address_space()
+            else:
+                ## If we get here we couldn't find the Registry process so address translation
+                ## probably won't work
+                debug.warning("Couldn't locate Registry process. Registry address translation may fail.")
+        else:
+            self.base = base
+
         self.baseblock = self.hive.BaseBlock.v()
         self.flat = self.hive.Flat.v() > 0
 
