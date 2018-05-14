@@ -33,7 +33,10 @@ class mac_ifconfig(common.AbstractMacCommand):
     def calculate(self):
         common.set_plugin_members(self)    
 
-        list_head_addr = self.addr_space.profile.get_symbol("_dlil_ifnet_head")
+        list_head_addr = self.addr_space.profile.get_symbol("_ifnet_head")
+        if list_head_addr == None:
+             list_head_addr = self.addr_space.profile.get_symbol("_dlil_ifnet_head")
+
         list_head_ptr = obj.Object("Pointer", offset = list_head_addr, vm = self.addr_space)
         ifnet = list_head_ptr.dereference_as("ifnet")
 

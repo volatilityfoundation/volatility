@@ -491,6 +491,8 @@ class proc(obj.CType):
             htable_type     = "mac64_bash_hash_table"
             nbuckets_offset = self.obj_vm.profile.get_obj_offset(htable_type, "nbuckets") 
 
+        range_end = 4096 - nbuckets_offset - 8
+
         for map in self.get_proc_maps():
             if shared_start <= map.start <= shared_end:
                 continue
@@ -506,42 +508,52 @@ class proc(obj.CType):
             if map.end - map.start > 0x40000000:
                 continue
 
-            off = map.start
+            chunk_off = int(map.start)
+            end       = int(map.end)
 
-            while off < map.end:
-                # test the number of buckets
-                dr = proc_as.read(off + nbuckets_offset, 4)
-                if dr == None:
-                    new_off = (off & ~0xfff) + 0xfff + 1
-                    off = new_off
+            while chunk_off < end: 
+                data = proc_as.read(chunk_off, 4096)
+
+                prev_off = chunk_off
+ 
+                chunk_off = chunk_off + 4096
+
+                if data == None:
                     continue
 
-                test = struct.unpack("<I", dr)[0]
-                if test != 64:
-                    off = off + 1
-                    continue
-
-                htable = obj.Object(htable_type, offset = off, vm = proc_as)
+                off = 0
                 
-                if htable.is_valid():
-                    bucket_array = obj.Object(theType="Array", targetType=addr_type, offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
+                while off < range_end:
+                    read_off = prev_off + off 
 
-                    for bucket_ptr in bucket_array:
-                        bucket = obj.Object(bucket_contents_type, offset = bucket_ptr, vm = htable.nbuckets.obj_vm)
-                        while bucket != None and bucket.times_found > 0:  
-                            pdata = bucket.data 
+                    # test the number of buckets
+                    dr = data[off + nbuckets_offset : off + nbuckets_offset + 4]
+                    test = struct.unpack("<I", dr)[0]
+                    if test != 64:
+                        off = off + 4
+                        continue
 
-                            if pdata == None:
+                    htable = obj.Object(htable_type, offset = read_off, vm = proc_as)
+                    
+                    if htable.is_valid():
+                        bucket_array = obj.Object(theType="Array", targetType=addr_type, offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
+
+                        for bucket_ptr in bucket_array:
+                            bucket = obj.Object(bucket_contents_type, offset = bucket_ptr, vm = htable.nbuckets.obj_vm)
+                            while bucket != None and bucket.times_found > 0:  
+                                pdata = bucket.data 
+
+                                if pdata == None:
+                                    bucket = bucket.next_bucket()
+                                    continue
+
+                                if bucket.key != None and bucket.data != None and pdata.is_valid() and (0 <= pdata.flags <= 2):
+                                    if (len(str(bucket.key)) > 0 or len(str(bucket.data.path)) > 0) and (0 < bucket.times_found <= 1024):
+                                        yield bucket
+
                                 bucket = bucket.next_bucket()
-                                continue
-
-                            if bucket.key != None and bucket.data != None and pdata.is_valid() and (0 <= pdata.flags <= 2):
-                                if (len(str(bucket.key)) > 0 or len(str(bucket.data.path)) > 0) and (0 < bucket.times_found <= 1024):
-                                    yield bucket
-
-                            bucket = bucket.next_bucket()
-                
-                off = off + 1
+                    
+                    off = off + 4
 
     def bash_history_entries(self):
         proc_as = self.get_process_address_space()
@@ -627,54 +639,60 @@ class proc(obj.CType):
             if env_start:
                 break
 
-            off = start
-          
             if length >= 0x1000000:
                 continue
+            
+            chunk_offset = start
           
-            while off < end:
+            while chunk_offset < end:
                 if env_start:
                     break
 
-                # check the first index
-                addrstr = proc_as.read(off, self.pack_size)
-                if not addrstr:
-                    off = (off & ~0xfff) + 0xfff + 1
+                data = proc_as.read(chunk_offset, 4096)
+                
+                chunk_offset = chunk_offset + 4096
+                
+                if data == None:
                     continue
-               
-                off = off + 4
  
-                addr = struct.unpack(self.pack_fmt, addrstr)[0]
-                if addr in seen_ptrs:
-                    continue
+                off = 0
+                # read from the buffer
+                while off < 4096 - 4:
+                    addrstr = data[off:off+self.pack_size]
+               
+                    off = off + 4
 
-                seen_ptrs[addr] = 1
-    
-                # check first idx...
-                if addr:
-                    firstaddrstr = proc_as.read(addr, self.pack_size)
-                    if not firstaddrstr or len(firstaddrstr) != self.pack_size:
+                    addr = struct.unpack(self.pack_fmt, addrstr)[0]
+                    if addr in seen_ptrs:
                         continue
-                    firstaddr = struct.unpack(self.pack_fmt, firstaddrstr)[0]
-                    if firstaddr in seen_firsts:
-                        continue
-                    
-                    seen_firsts[firstaddr] = 1
 
-                    buf = proc_as.read(firstaddr, 64)
-                    if not buf:
-                        continue
-                    eqidx = buf.find("=")
-                    if eqidx > 0:
-                        nullidx = buf.find("\x00")
-                        # single char name, =
-                        if nullidx >= eqidx:
-                            env_start = addr
+                    seen_ptrs[addr] = 1
+        
+                    # check first idx...
+                    if addr:
+                        firstaddrstr = proc_as.read(addr, self.pack_size)
+                        if not firstaddrstr or len(firstaddrstr) != self.pack_size:
+                            continue
+                        firstaddr = struct.unpack(self.pack_fmt, firstaddrstr)[0]
+                        if firstaddr in seen_firsts:
+                            continue
+                        
+                        seen_firsts[firstaddr] = 1
 
-                            if not dynamic_env_hint:
-                                dynamic_env_hint = [start, end, length]
+                        buf = proc_as.read(firstaddr, 64)
+                        if not buf:
+                            continue
+                        eqidx = buf.find("=")
+                        if eqidx > 0:
+                            nullidx = buf.find("\x00")
+                            # single char name, =
+                            if nullidx >= eqidx:
+                                env_start = addr
 
-                            break
+                                if not dynamic_env_hint:
+                                    dynamic_env_hint = [start, end, length]
+
+                                break
 
         return env_start         
 
