@@ -280,3 +280,8 @@ class Win2008R2SP1x64(Win7SP1x64):
 class Win2008R2SP1x64_23418(Win7SP1x64_23418):
     """ A Profile for Windows 2008 R2 SP1 x64 (6.1.7601.23418 / 2016-04-09) """
     _md_product = ["NtProductLanManNt", "NtProductServer"]
+
+class Win2008R2SP1x64_24000(Win7SP1x64_24000):
+    """ A Profile for Windows 2008 R2 SP1 x64 (6.1.7601.24000 / 2016-04-09) """
+    _md_product = ["NtProductLanManNt", "NtProductServer"]
+
