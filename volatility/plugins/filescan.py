@@ -273,11 +273,14 @@ class MutantScan(common.AbstractScanCommand):
     def generator(self, data):
         for mutant in data:
             header = mutant.get_object_header()
+            name = str(header.NameInfo.Name or '')
+            CID = ""
             if mutant.OwnerThread.is_valid():
                 thread = mutant.OwnerThread.dereference_as('_ETHREAD')
                 CID = "{0}:{1}".format(thread.Cid.UniqueProcess, thread.Cid.UniqueThread)
-            else:
-                CID = ""
+
+            if self._config.SILENT and not CID and not name:
+                continue
 
             yield (0, [Address(mutant.obj_offset),
                        int(header.PointerCount),
@@ -285,7 +288,7 @@ class MutantScan(common.AbstractScanCommand):
                        str(mutant.Header.SignalState),
                        Address(mutant.OwnerThread),
                        str(CID),
-                       str(header.NameInfo.Name or '')])
+                       name])
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [(self.offset_column(), '#018x'),
@@ -299,12 +302,14 @@ class MutantScan(common.AbstractScanCommand):
 
         for mutant in data:
             header = mutant.get_object_header()
-
+            name = str(header.NameInfo.Name or '')
+            CID = ""
             if mutant.OwnerThread.is_valid():
                 thread = mutant.OwnerThread.dereference_as('_ETHREAD')
                 CID = "{0}:{1}".format(thread.Cid.UniqueProcess, thread.Cid.UniqueThread)
-            else:
-                CID = ""
+
+            if self._config.SILENT and not CID and not name:
+                continue
 
             self.table_row(outfd,
                          mutant.obj_offset,
@@ -312,7 +317,7 @@ class MutantScan(common.AbstractScanCommand):
                          header.HandleCount,
                          mutant.Header.SignalState,
                          mutant.OwnerThread, CID,
-                         str(header.NameInfo.Name or ''))
+                         name)
 
 
 class PoolScanProcess(poolscan.PoolScanner):
