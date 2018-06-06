@@ -212,7 +212,9 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         func = self.determine_func()
 
         for task in func():
-            yield task
+            if 0 < task.pid < 66000:
+                if task.parent.is_valid():
+                    yield task
 
 
 
