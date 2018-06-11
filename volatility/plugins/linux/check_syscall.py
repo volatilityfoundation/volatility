@@ -187,7 +187,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
         else:
             visible_mods = []
 
-        if not index_info:
+        if index_info == None:
             index_info = self._find_and_parse_index_file()
 
         table_name = self.addr_space.profile.metadata.get('memory_model', '32bit')
