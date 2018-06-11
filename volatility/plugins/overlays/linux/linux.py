@@ -1627,22 +1627,35 @@ class task_struct(obj.CType):
             yield hist              
 
     def _dynamic_env(self, proc_as, pack_format, addr_sz):
+        # preload address 0
+        addr_cache = {0 : 1}
+
         for vma in self.get_proc_maps():
             if not (vma.vm_file and str(vma.vm_flags) == "rw-"):
                 continue
             
             fname = vma.info(self)[0]
 
-            if fname.find("ld") == -1 and fname != "/bin/bash":
+            if fname.find("ld") == -1 and (not fname.endswith(("/bin/bash", "/bin/dash", "/bin/sh"))):
                 continue
 
             env_start = 0
-            for off in range(vma.vm_start, vma.vm_end):
+       
+            vma_start = int(vma.vm_start)
+            vma_end = int(vma.vm_end)
+            vma_len = vma_end - vma_start
+            vma_data = proc_as.zread(vma_start, vma_len)
+
+            for off in range(0, vma_len - addr_sz, 4):
                 # check the first index
-                addrstr = proc_as.read(off, addr_sz)
-                if not addrstr or len(addrstr) != addr_sz:
-                    continue
+                addrstr = vma_data[off:off+addr_sz]
                 addr = struct.unpack(pack_format, addrstr)[0]
+
+                if addr in addr_cache:
+                    continue
+
+                addr_cache[addr] = 1
+
                 # check first idx...
                 if addr:
                     firstaddrstr = proc_as.read(addr, addr_sz)
@@ -1693,12 +1706,17 @@ class task_struct(obj.CType):
                         break
 
     def _shell_variables(self, proc_as, pack_format, addr_sz):
+        # preload cache with address 0
+        ptr_cache = {0 : 1}
+            
+        nbuckets_offset = self.obj_vm.profile.get_obj_offset("_bash_hash_table", "nbuckets") 
+
         bash_was_last = False
         for vma in self.get_proc_maps():
             if vma.vm_file:
                 fname = vma.info(self)[0]
        
-                if fname.endswith("/bin/bash"):
+                if fname.endswith(("/bin/bash", "/bin/dash", "/bin/sh")):
                     bash_was_last = True
                 else:
                     bash_was_last = False
@@ -1711,15 +1729,20 @@ class task_struct(obj.CType):
             if bash_was_last == False:
                 continue
         
-            nbuckets_offset = self.obj_vm.profile.get_obj_offset("_bash_hash_table", "nbuckets") 
+            vma_start = int(vma.vm_start)
+            vma_end = int(vma.vm_end)
+            vma_len = vma_end - vma_start
+            vma_data = proc_as.zread(vma_start, vma_len)
 
-            for off in range(vma.vm_start, vma.vm_end, 4):
-                ptr_test = proc_as.read(off, addr_sz)
-                if not ptr_test:
+            for off in range(0, vma_len - addr_sz, 4):
+                ptr_test = vma_data[off:off+addr_sz]
+                
+                ptr = struct.unpack(pack_format, ptr_test)[0]
+                if ptr in ptr_cache:
                     continue
 
-                ptr = struct.unpack(pack_format, ptr_test)[0]
-                
+                ptr_cache[ptr] = 1
+
                 ptr_test2 = proc_as.read(ptr + 20, addr_sz)
                 if not ptr_test2:
                     continue
@@ -1744,6 +1767,9 @@ class task_struct(obj.CType):
         proc_as = self.get_process_address_space()
         # In cases when mm is an invalid pointer 
         if not proc_as:
+            return
+        
+        if str(self.comm) not in ["sh", "dash", "bash"]:
             return
 
         # Are we dealing with 32 or 64-bit pointers
