@@ -186,8 +186,13 @@ def _get_path_file(task, filp):
     rmnt    = task.fs.get_root_mnt()
     dentry  = filp.dentry
     vfsmnt  = filp.vfsmnt
-    
-    return do_get_path(rdentry, rmnt, dentry, vfsmnt)
+   
+    key = "%x|%x|%x|%x" % (rdentry.v(), rmnt.v(), dentry.v(), vfsmnt.v())
+
+    if not key in task.obj_vm.profile.dentry_cache:
+        task.obj_vm.profile.dentry_cache[key] = do_get_path(rdentry, rmnt, dentry, vfsmnt)
+
+    return task.obj_vm.profile.dentry_cache[key]
 
 def get_new_sock_pipe_path(task, filp):
     dentry = filp.dentry

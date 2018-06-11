@@ -212,6 +212,7 @@ def LinuxProfileFactory(profpkg):
             # change the name to catch any code referencing the old hash table
             self.sys_map = {}
             self.sym_addr_cache = {}
+            self.dentry_cache = {}
             self.physical_shift = 0
             self.virtual_shift = 0
             obj.Profile.__init__(self, *args, **kwargs)
@@ -220,6 +221,7 @@ def LinuxProfileFactory(profpkg):
             """Clear out the system map, and everything else"""
             self.sys_map = {}
             self.sym_addr_cache = {}
+            self.dentry_cache = {}
             self.physical_shift = 0
             self.virtual_shift = 0
             obj.Profile.clear(self)
