@@ -1285,6 +1285,9 @@ class task_struct(obj.CType):
         if type(ret) in [obj.CType, obj.NativeType]:
             ret = ret.v()
 
+        if ret > 1000000:
+            ret = -1
+
         return ret
 
     @property
@@ -1303,6 +1306,9 @@ class task_struct(obj.CType):
 
         if type(ret) == obj.CType:
             ret = ret.v()
+
+        if ret > 1000000:
+            ret = -1
 
         return ret
 
