@@ -240,6 +240,14 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
 
         if hasattr(node, "height"):
             height = node.height
+
+            height = height & 0xfff
+            # this check is needed as gcc seems to produce a 0 value when a shift value is negative
+            # Python throws a backtrace in this situation though
+            # setting to 0 will cause the later -1 to equal 0, and match the runtime behaviour of the kernel
+            if height == 0:
+                height = 1
+
         elif hasattr(node, "path"):
             height = node.path
 
