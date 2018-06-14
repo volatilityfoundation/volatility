@@ -85,7 +85,8 @@ class mac_route(common.AbstractMacCommand):
         rts = self._get_table(ipv4table)
 
         for rt in rts:
-            yield rt
+            if rt.is_valid():
+                yield rt
 
     def unified_output(self, data):
 
