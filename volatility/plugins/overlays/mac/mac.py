@@ -1272,6 +1272,11 @@ class proc(obj.CType):
                 yield f, path, i
 
 class rtentry(obj.CType):
+    def is_valid(self):
+        return str(self.source_ip) != "" and \
+                str(self.dest_ip) != "" and \
+                (0 <= int(self.sent) < 50000000000) and \
+                (0 <= int(self.rx) < 50000000000)
 
     def get_time(self):
         if not hasattr(self, "base_calendartime"):
