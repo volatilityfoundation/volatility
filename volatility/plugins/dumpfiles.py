@@ -1076,7 +1076,7 @@ class DumpFiles(common.AbstractWindowsCommand):
                     summaryfo.write("\n")
                 yield(0, ["DataSectionObject",
                     Address(summaryinfo['fobj']),
-                    int(summaryinfo['pid']),
+                    int(summaryinfo['pid']) if summaryinfo['pid'] else -1,
                     str(summaryinfo['name']),
                     str(summaryinfo['ofpath']),
                     Bytes(of.getvalue())])
@@ -1143,7 +1143,7 @@ class DumpFiles(common.AbstractWindowsCommand):
                     summaryfo.write("\n")
                 yield(0, ["SharedCacheMap",
                     Address(summaryinfo['fobj']),
-                    int(summaryinfo['pid']),
+                    int(summaryinfo['pid']) if summaryinfo['pid'] else -1,
                     str(summaryinfo['name']),
                     str(summaryinfo['ofpath']),
                     Bytes(of.getvalue())])
