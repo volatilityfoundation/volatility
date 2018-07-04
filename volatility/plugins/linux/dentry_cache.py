@@ -47,7 +47,7 @@ class linux_dentry_cache(linux_common.AbstractLinuxCommand):
         i = dentry.d_inode
         
         if i:
-            ret = [0, path, i.i_ino, 0, i.i_uid, i.i_gid, i.i_size, i.i_atime, i.i_mtime, 0, i.i_ctime]
+            ret = [0, path, i.i_ino, 0, i.uid, i.gid, i.i_size, i.i_atime, i.i_mtime, 0, i.i_ctime]
         else:
             ret = [0, path] + [0] * 8
             
