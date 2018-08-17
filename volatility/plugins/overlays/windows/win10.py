@@ -31,6 +31,7 @@ import volatility.obj as obj
 import volatility.win32.tasks as tasks 
 import volatility.debug as debug
 import volatility.plugins.overlays.windows.win8 as win8
+from volatility.win32.rawreg import KEY_FLAGS
 
 try:
     import distorm3
@@ -43,6 +44,32 @@ class _HMAP_ENTRY(obj.CType):
     @property
     def BlockAddress(self):
         return self.PermanentBinAddress & 0xFFFFFFFFFFF0
+
+class _CM_KEY_BODY(windows._CM_KEY_BODY):
+    """Registry key"""
+
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 4,
+                  'build': lambda x: x >= 14393,
+                  }
+
+    def full_key_name(self):
+        output = []
+        kcb = self.KeyControlBlock
+        seen = []
+        while kcb.ParentKcb and kcb.ParentKcb.obj_offset not in seen:
+            if kcb.NameBlock.Name == None:
+                break
+            # Win10/Win2016 14393 and later skip KCB's with KEY_HIVE_ENTRY flag set
+            if (kcb.Flags & KEY_FLAGS["KEY_HIVE_ENTRY"] == KEY_FLAGS["KEY_HIVE_ENTRY"]):
+                kcb = kcb.ParentKcb
+                if not kcb:
+                    break
+            output.append(str(kcb.NameBlock.Name))
+            kcb = kcb.ParentKcb
+            seen.append(kcb.obj_offset)
+        return "\\".join(reversed(output))
 
 class Win10Registry(obj.ProfileModification):
     """The Windows 10 registry HMAP"""
@@ -92,6 +119,12 @@ class Win10x86DTB(obj.ProfileModification):
             'VOLATILITY_MAGIC': [ None, {
             'DTBSignature' : [ None, ['VolatilityMagic', dict(value = signature)]],
             }]})
+
+class Win10ObjectClasses(obj.ProfileModification):
+    before = ['WindowsOverlay', 'WindowsObjectClasses']
+
+    def modification(self, profile):
+        profile.object_classes.update({'_CM_KEY_BODY' : _CM_KEY_BODY,})
 
 class Win10KDBG(windows.AbstractKDBGMod):
     """The Windows 10 KDBG signatures"""
