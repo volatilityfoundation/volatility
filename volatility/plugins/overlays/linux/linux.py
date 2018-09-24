@@ -2362,6 +2362,7 @@ class VolatilityDTB(obj.VolatilityMagic):
        
         comm_offset   = profile.get_obj_offset("task_struct", "comm")
         pid_offset    = profile.get_obj_offset("task_struct", "pid")
+        state_offset  = profile.get_obj_offset("task_struct", "state")
         files_offset  = profile.get_obj_offset("task_struct", "files") 
         mm_offset     = profile.get_obj_offset("task_struct", "active_mm")
         pas           = self.obj_vm
@@ -2391,7 +2392,7 @@ class VolatilityDTB(obj.VolatilityMagic):
             for swapper_offset in scanner.scan(self.obj_vm):
                 swapper_address = swapper_offset - comm_offset
 
-                if pas.read(swapper_address, 4) != "\x00\x00\x00\x00":
+                if pas.read(swapper_address + state_offset, 4) != "\x00\x00\x00\x00":
                     continue
 
                 if pas.read(swapper_address + pid_offset, 4) != "\x00\x00\x00\x00":
