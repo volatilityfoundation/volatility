@@ -1419,7 +1419,8 @@ class task_struct(obj.CType):
 
     def plt_hook_info(self):
         elfs = dict()
-
+        task_proc_maps = list(self.get_proc_maps())
+        
         for elf, elf_start, elf_end, soname, needed in self.elfs():
             elfs[(self, soname)] = (elf, elf_start, elf_end, needed)
 
@@ -1473,7 +1474,7 @@ class task_struct(obj.CType):
 
                 hookdesc = ''
                 vma = None
-                for i in task.get_proc_maps():
+                for i in task_proc_maps:
                     if addr >= i.vm_start and addr < i.vm_end:
                         vma = i
                         break                    
