@@ -2347,8 +2347,17 @@ class VolatilityDTB(obj.VolatilityMagic):
         state_offset  = profile.get_obj_offset("task_struct", "state")
         files_offset  = profile.get_obj_offset("task_struct", "files") 
         mm_offset     = profile.get_obj_offset("task_struct", "active_mm")
-        pas           = self.obj_vm
         
+        # this appeared around 2.6.24, which we only need it for samples with KASLR, which came much later
+        try:
+            sched_class_offset = profile.get_obj_offset("task_struct", "sched_class")
+            idle_class_addr    = tbl["idle_sched_class"][0][0] + virtual_shift_address
+        except KeyError:
+            sched_class_offset = -1
+            idle_class_addr    = -1
+
+        pas           = self.obj_vm
+
         if physical_shift_address != 0 and virtual_shift_address != 0:
             good_dtb = (dtb_sym_addr - shifts[0] - virtual_shift_address) + physical_shift_address
             self.obj_vm.profile.physical_shift = physical_shift_address 
@@ -2389,6 +2398,13 @@ class VolatilityDTB(obj.VolatilityMagic):
                 if pas.zread(good_dtb, 8) != "\x00\x00\x00\x00\x00\x00\x00\x00":
                     continue
 
+                if sched_class_offset != -1:
+                    sched_class_val = pas.read(swapper_address + sched_class_offset, read_sz)
+                    sched_class_addr = struct.unpack(fmt, sched_class_val)[0]
+ 
+                    if (sched_class_addr & 0xfff) != (idle_class_addr & 0xfff):
+                        continue
+
                 files_buf  = pas.read(swapper_address + files_offset, read_sz)
                 files_addr = struct.unpack(fmt, files_buf)[0]
 
@@ -2398,7 +2414,7 @@ class VolatilityDTB(obj.VolatilityMagic):
                 self.obj_vm.profile.virtual_shift  = tmp_virtual_shift
  
                 break
-        
+
         yield good_dtb
 
 # the intel check, simply checks for the static paging of init_task
