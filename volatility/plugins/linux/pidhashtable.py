@@ -191,10 +191,102 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
 
         return func
 
+    def radix_tree_is_internal_node(self, ptr):
+        if hasattr(ptr, "v"):
+            ptr = ptr.v()
+
+        return ptr & 3 == 1
+
+    def radix_tree_is_indirect_ptr(self, ptr):
+        return ptr & 1
+
+    def radix_tree_indirect_to_ptr(self, ptr):
+        return obj.Object("radix_tree_node", offset = ptr & ~1, vm = self.addr_space)
+
+
+    def _walk_idr_node(self, node, height, idx):
+        for i in range(self.RADIX_TREE_MAP_SIZE):
+            shift = (height - 1) * self.RADIX_TREE_MAP_SHIFT  
+
+            slot = node.slots[i]
+
+            if slot == 0:
+                continue
+
+            slot = self.radix_tree_indirect_to_ptr(slot)
+
+            if height == 1:
+                yield slot
+            else:
+                child_index = idx | (i << shift)
+                for child_slot in self._walk_idr_node(slot, height - 1, child_index):
+                    yield child_slot
+
+    # adapted from tools.c of crash
+    def _walk_pid_ns_idr(self):
+        self.RADIX_TREE_MAP_SHIFT = 6
+        self.RADIX_TREE_MAP_SIZE = 1 << self.RADIX_TREE_MAP_SHIFT
+        self.RADIX_TREE_MAP_MASK = self.RADIX_TREE_MAP_SIZE - 1
+
+        ns_addr = self.addr_space.profile.get_symbol("init_pid_ns")
+        ns = obj.Object("pid_namespace", offset = ns_addr, vm = self.addr_space)
+        
+        root = ns.idr.idr_rt
+
+        node = root.rnode
+        if not node.is_valid():
+            return 
+
+        height = 0
+
+        if hasattr(node, "height"):
+            height = node.height
+
+            if height == 0:
+                height = 1
+
+        is_indirect = self.radix_tree_is_indirect_ptr(node)
+        node = self.radix_tree_indirect_to_ptr(node)
+        
+        if is_indirect and hasattr(node, "shift"):
+            height = (node.shift / self.RADIX_TREE_MAP_SHIFT) + 1
+
+        if height == 0:
+            yield node  
+        else:
+            for child_node in self._walk_idr_node(node, height, 0):
+                yield child_node
+
+    def _task_for_radix_pid_node(self, node):
+        pid = obj.Object("pid", offset = node.v(), vm = self.addr_space)
+
+        pid_tasks_0 = pid.tasks[0].first
+
+        if pid_tasks_0 == 0:
+            task = None
+        else:
+            if self.addr_space.profile.obj_has_member("task_struct", "pids"):
+                offset = self.addr_space.profile.get_obj_offset("task_struct", "pids")
+            elif self.addr_space.profile.obj_has_member("task_struct", "pid_links"):
+                offset = self.addr_space.profile.get_obj_offset("task_struct", "pid_links")
+            else:
+                debug.error("Unable to determine task_struct pids member")
+            
+            task = obj.Object("task_struct", offset = pid_tasks_0 - offset, vm = self.addr_space)
+        
+        return task 
+        
+    def pid_namespace_idr(self):
+        for node in self._walk_pid_ns_idr():
+            task = self._task_for_radix_pid_node(node)
+            if task != None:
+                yield task    
+
     def determine_func(self):
         pidhash = self.addr_space.profile.get_symbol("pidhash")
         pid_hash = self.addr_space.profile.get_symbol("pid_hash")
         pidhash_shift = self.addr_space.profile.get_symbol("pidhash_shift")
+        pid_idr  = self.profile.obj_has_member("pid_namespace", "idr")
 
         if pid_hash and pidhash_shift:
             func = self.get_both()
@@ -205,12 +297,18 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         elif pidhash:
             func = self.refresh_pid_hash_task_table
 
+        elif pid_idr:
+            func = self.pid_namespace_idr            
+
+        else:
+            self.profile_unsupported("determine_func")             
+
         return func
 
     def calculate(self):
         linux_common.set_plugin_members(self)
         func = self.determine_func()
-
+        
         for task in func():
             if 0 < task.pid < 66000:
                 if task.parent.is_valid():
