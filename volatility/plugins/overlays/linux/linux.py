@@ -1915,7 +1915,7 @@ class task_struct(obj.CType):
         return threads
 
     def get_proc_maps(self):
-        if not self.mm:
+        if not self.mm or self.get_process_address_space() == None:
             return
         seen = {}
         for vma in linux_common.walk_internal_list("vm_area_struct", "vm_next", self.mm.mmap):
