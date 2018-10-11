@@ -102,6 +102,10 @@ class AbstractLinuxCommand(commands.Command):
             return
 
         for check in op_members:
+            # redhat-specific garbage
+            if check.startswith("__UNIQUE_ID_rh_kabi_hide"):
+                continue
+
             addr = int(ops.m(check))
 
             if addr and addr != 0 and addr != -1:
