@@ -1080,6 +1080,23 @@ class module_struct(obj.CType):
         return valid
 
 class vm_area_struct(obj.CType):
+    def is_valid(self):
+        start = self.vm_start.v()
+        end   = self.vm_end.v()
+        pgoff = self.vm_pgoff.v()
+
+        valid = True
+
+        if  (start > end) or \
+            (end - start > 100000000000) or \
+            (start > 0xff00000000000000) or \
+            (end > 0xff00000000000000) or \
+            (pgoff > 100000000000):
+
+            valid = False
+
+        return valid           
+
     def vm_name(self, task):
         if self.vm_file:
             fname = linux_common.get_path(task, self.vm_file)
@@ -1922,7 +1939,10 @@ class task_struct(obj.CType):
             val = vma.v()
             if val in seen:
                 break
-
+           
+            if not vma.is_valid():
+                break
+ 
             yield vma
 
             seen[val] = 1
