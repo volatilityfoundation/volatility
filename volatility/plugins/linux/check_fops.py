@@ -121,6 +121,8 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
                 if cur.obj_offset == last_cur:
                     break
 
+                if cur == cur.next:
+                    break
                 cur = cur.next
                 continue
 
@@ -139,6 +141,8 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
                 subdir = subdir.next
 
             last_cur = cur.obj_offset
+            if cur == cur.next:
+                break
             cur = cur.next
 
     def _walk_rb(self, rb):
