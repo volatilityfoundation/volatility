@@ -1103,7 +1103,7 @@ class vm_area_struct(obj.CType):
             if fname == []:
                 fname = ""
 
-        elif self.vm_start <= task.mm.start_brk and self.vm_end >= task.mm.brk:
+        elif self.vm_start <= task.mm.brk and self.vm_end >= task.mm.start_brk:
             fname = "[heap]"
         elif self.vm_start <= task.mm.start_stack and self.vm_end >= task.mm.start_stack:
             fname = "[stack]"
@@ -1342,26 +1342,9 @@ class task_struct(obj.CType):
 
         return ret
 
-    def find_heap_vma(self):
-        ret = None
-
-        for vma in self.get_proc_maps():
-            # find the data section of bash
-            if vma.vm_start <= self.mm.start_brk and vma.vm_end >= self.mm.brk:
-                ret = vma
-                break
-
-        return ret
-
     def bash_hash_entries(self):
         nbuckets_offset = self.obj_vm.profile.get_obj_offset("_bash_hash_table", "nbuckets") 
         
-        heap_vma = self.find_heap_vma()
-
-        if heap_vma == None:
-            debug.debug("Unable to find heap for pid %d" % self.pid)
-            return
-
         proc_as = self.get_process_address_space()
         if proc_as == None:
             return
@@ -1372,8 +1355,6 @@ class task_struct(obj.CType):
             
             for ent in htable:
                 yield ent            
-
-            off = off + 1
 
     def ldrmodules(self):
         proc_maps = {}
@@ -1994,7 +1975,7 @@ class task_struct(obj.CType):
 
         for vma in self.get_proc_maps():
             if heap_only:
-                if not (vma.vm_start <= self.mm.start_brk and vma.vm_end >= self.mm.brk):
+                if not (vma.vm_start <= self.mm.brk and vma.vm_end >= self.mm.start_brk):
                     continue
 
             offset = vma.vm_start
