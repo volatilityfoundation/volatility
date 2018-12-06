@@ -16,4 +16,4 @@ datas = []
 
 for path in sys.path:
     if os.path.exists(os.path.join(path, "openpyxl", ".constants.json")):
-        datas.append((os.path.join(path, "openpyxl", ".constants.json"), ""))
+        datas.append((os.path.join(path, "openpyxl", ".constants.json"), "."))
