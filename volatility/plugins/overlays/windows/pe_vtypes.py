@@ -979,7 +979,7 @@ class _IMAGE_RESOURCE_DIR_STRING_U(obj.CType):
             length = self.Length.v()
             if length > 1024:
                 length = 0
-            data = self.obj_vm.read(self.Value.obj_offset, length)
+            data = self.obj_vm.read(self.Value.obj_offset, length * 2)
             return data.decode("utf16", "ignore").encode("ascii", 'backslashreplace')
         except Exception, _e:
             return ''
