@@ -39,12 +39,9 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
         linux_common.set_plugin_members(self)
 
         hook_names = ["PRE_ROUTING", "LOCAL_IN", "FORWARD", "LOCAL_OUT", "POST_ROUTING"]
-        proto_names = ["", "", "IPV4", "", "", "", "", "", "", "", "" , "", "", ""]
 
-        # struct list_head nf_hooks[NFPROTO_NUMPROTO][NF_MAX_HOOKS]
-        # NFPROTO_NUMPROTO = 12
-        # NF_MAX_HOOKS = 7
-     
+        proto_names = ["UNSPEC", "INET", "IPV4", "ARP", "", "NETDEV", "", "BRIDGE", "", "", "IPV6" , "", "DECNET"]
+
         nf_hooks_addr = self.addr_space.profile.get_symbol("nf_hooks")
 
         if nf_hooks_addr == None:
@@ -54,34 +51,33 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
          
         list_head_size = self.addr_space.profile.get_obj_size("list_head")
         
-        for outer in range(13):
-            arr = nf_hooks_addr + (outer * (list_head_size * 8))
+        for proto_idx, proto_name in enumerate(proto_names):
+            arr = nf_hooks_addr + (proto_idx * (list_head_size * 8))
            
-            for inner in range(7):
-                list_head = obj.Object("list_head", offset = arr + (inner * list_head_size), vm = self.addr_space)
+            for hook_idx, hook_name in enumerate(hook_names):
+                list_head = obj.Object("list_head", offset = arr + (hook_idx * list_head_size), vm = self.addr_space)
         
                 for hook_ops in list_head.list_of_type("nf_hook_ops", "list"):
-                    if self.is_known_address(hook_ops.hook.v(), modules):
-                        hooked = "False"
-                    else:
-                        hooked = "True"
+                    found, module = self.is_known_address_name(hook_ops.hook.v(), modules) or ""
+                    hooked = "False" if found else "True"
 
-                    yield proto_names[outer], hook_names[inner], hook_ops.hook.v(), hooked
+                    yield proto_name, hook_name, hook_ops.hook.v(), hooked, module
 
     def unified_output(self, data):
         return TreeGrid([("Proto", str),
                        ("Hook", str),
                        ("Handler", Address),
-                       ("IsHooked", str)],
+                       ("IsHooked", str),
+                       ("Module", str)],
                         self.generator(data))
 
     def generator(self, data):
-        for outer, inner, hook_addr, hooked in data:
-            yield (0, [str(outer), str(inner), Address(hook_addr), str(hooked)])
+        for proto_name, hook_name, hook_addr, hooked, module in data:
+            yield (0, [str(proto_name), str(hook_name), Address(hook_addr), str(hooked), str(module)])
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("Proto", "5"), ("Hook", "16"), ("Handler", "[addrpad]"), ("Is Hooked", "5")])
+        self.table_header(outfd, [("Proto", "10"), ("Hook", "16"), ("Handler", "[addrpad]"), ("Is Hooked", "5"), ("Module", "30")])
 
-        for outer, inner, hook_addr, hooked in data:
-            self.table_row(outfd, outer, inner, hook_addr, hooked)
+        for proto_name, hook_name, hook_addr, hooked, module in data:
+            self.table_row(outfd, proto_name, hook_name, hook_addr, hooked, module)
 

@@ -76,20 +76,33 @@ class AbstractLinuxCommand(commands.Command):
         config.add_option("VIRTUAL_SHIFT", type = 'int', default = 0, help = "Linux kernel virtual shift address")
 
     def is_known_address(self, addr, modules):
+        return self.is_known_address_name(addr, modules)[0]
+
+    def is_known_address_name(self, addr, modules):
         addr = int(addr)
 
         text = self.profile.get_symbol("_text")
         etext = self.profile.get_symbol("_etext")
 
-        return (self.addr_space.address_compare(addr, text) != -1 and self.addr_space.address_compare(addr, etext) == -1) or self.address_in_module(addr, modules)
+        found = True
+
+        if self.address_in_range(addr, text, etext):
+            module = "[%s]" % (self.profile.get_symbol_by_address("kernel", addr) or "kernel")
+        else:
+            module = self.address_in_module(addr, modules)
+            if not module:
+                found = False
+                module = ""
+
+        return (found, module)
 
     def address_in_module(self, addr, modules):
-    
-        for (_, start, end) in modules:
-            if self.addr_space.address_compare(addr, start) != -1 and self.addr_space.address_compare(addr, end) == -1:
-                return True
-    
-        return False
+        for (module, start, end) in modules:
+            if self.address_in_range(addr, start, end):
+                return module
+
+    def address_in_range(self, addr, start, end):
+        return self.addr_space.address_compare(addr, start) != -1 and self.addr_space.address_compare(addr, end) == -1
 
     def verify_ops(self, ops, op_members, modules):
         ops_addr = ops.v()        
