@@ -50,7 +50,7 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
         chained = 0
 
         pid_tasks_0 = pid.tasks[0].first
-
+        
         if pid_tasks_0 == 0:
             chained = 1
             pnext_addr = upid.obj_offset + self.profile.get_obj_offset("upid", "pid_chain") + self.profile.get_obj_offset("hlist_node", "next")
@@ -65,8 +65,9 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
                 yield task
 
     def _walk_upid(self, upid):
-
-        while upid:
+        seen = set()
+        while upid and upid.is_valid() and upid.v() not in seen:
+            seen.add(upid.v())
 
             pid = self.get_obj(upid.obj_offset, "pid", "numbers")
 
@@ -100,12 +101,18 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
 
         pidhash = self._get_pidhash_array()
 
+        seen_upid = set()
+
         for hlist in pidhash:
             # each entry in the hlist is a upid which is wrapped in a pid
             ent = hlist.first
 
             while ent.v():
                 upid = self.get_obj(ent.obj_offset, "upid", "pid_chain")
+
+                if upid.v() in seen_upid:
+                    break
+                seen_upid.add(upid.v())
 
                 for task in self._walk_upid(upid):
                     if not task.obj_offset in self.seen_tasks:
