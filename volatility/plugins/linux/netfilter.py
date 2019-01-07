@@ -39,20 +39,19 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
         linux_common.set_plugin_members(self)
 
         hook_names = ["PRE_ROUTING", "LOCAL_IN", "FORWARD", "LOCAL_OUT", "POST_ROUTING"]
-
         proto_names = ["UNSPEC", "INET", "IPV4", "ARP", "", "NETDEV", "", "BRIDGE", "", "", "IPV6" , "", "DECNET"]
+        NF_MAX_HOOKS = 8
 
         nf_hooks_addr = self.addr_space.profile.get_symbol("nf_hooks")
-
         if nf_hooks_addr == None:
             debug.error("Unable to analyze NetFilter. It is either disabled or compiled as a module.")
 
-        modules  = linux_lsmod.linux_lsmod(self._config).get_modules()
+        modules = linux_lsmod.linux_lsmod(self._config).get_modules()
          
         list_head_size = self.addr_space.profile.get_obj_size("list_head")
         
         for proto_idx, proto_name in enumerate(proto_names):
-            arr = nf_hooks_addr + (proto_idx * (list_head_size * 8))
+            arr = nf_hooks_addr + (proto_idx * (list_head_size * NF_MAX_HOOKS))
            
             for hook_idx, hook_name in enumerate(hook_names):
                 list_head = obj.Object("list_head", offset = arr + (hook_idx * list_head_size), vm = self.addr_space)
