@@ -57,7 +57,7 @@ class linux_netfilter(linux_common.AbstractLinuxCommand):
                 list_head = obj.Object("list_head", offset = arr + (hook_idx * list_head_size), vm = self.addr_space)
         
                 for hook_ops in list_head.list_of_type("nf_hook_ops", "list"):
-                    found, module = self.is_known_address_name(hook_ops.hook.v(), modules) or ""
+                    found, module = self.is_known_address_name(hook_ops.hook.v(), modules) 
                     hooked = "False" if found else "True"
 
                     yield proto_name, hook_name, hook_ops.hook.v(), hooked, module
