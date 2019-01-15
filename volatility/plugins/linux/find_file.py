@@ -298,13 +298,54 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
     def SHMEM_I(self, inode):
         offset = self.profile.get_obj_offset("shmem_inode_info", "vfs_inode")
         return obj.Object("shmem_inode_info", offset = inode.obj_offset - offset, vm = self.addr_space)
+    
+    def xa_is_internal(self, entry):
+        return (int(entry) & 3) == 2
+
+    def xa_is_node(self, entry):
+        return entry and self.xa_is_internal(entry) and int(entry) > 4096
+
+    def xa_get_offset(self, index, node):
+        return (index >> node.shift) & 63
+
+    def xa_get_entry_from_offset(self, offset, node):
+        ent_ptr = node.slots.obj_offset + (8 * offset) 
+        return obj.Object(theType="Pointer", targetType="unsigned long", offset = ent_ptr, vm = self.addr_space)
+
+    def xas_descend(self, offset, node):
+        offset = self.xa_get_offset(offset, node)
+        
+        entry = self.xa_get_entry_from_offset(offset, node)
+        if entry == None:
+            return entry
+
+        p = entry.v()
+        if p & 3 == 2 and p < 250:
+            offset = p >> 2
+            entry = self.xa_get_entry_from_offset(offset, node)
+            if entry == None:
+                return entry
+        
+        return entry
+
+    def walk_xarray(self, inode, offset):
+        entry = inode.i_mapping.i_pages.xa_head #.obj_offset
+
+        while self.xa_is_node(entry):
+            node = obj.Object("xa_node", offset = entry - 2, vm = self.addr_space)
+
+            if node.shift < 0:
+                break
+    
+            entry = self.xas_descend(offset, node)
+
+        return entry
 
     def find_get_page(self, inode, offset):
-        page = self.radix_tree_lookup_slot(inode.i_mapping.page_tree, offset)
-
-        #if not page:
-            # FUTURE swapper_space support
-            # print "no page"
+        if hasattr(inode.i_mapping, "page_tree"):
+            page = self.radix_tree_lookup_slot(inode.i_mapping.page_tree, offset)
+        else:
+            page = self.walk_xarray(inode, offset)
 
         return page
 
@@ -315,7 +356,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             page = obj.Object("page", offset = page_addr, vm = self.addr_space)
             phys_offset = page.to_paddr()
 
-            if phys_offset > 0:
+            if page and phys_offset > 0:
                 phys_as = utils.load_as(self._config, astype = 'physical')
                 data = phys_as.zread(phys_offset, 4096)
             else:
