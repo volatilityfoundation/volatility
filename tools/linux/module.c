@@ -17,6 +17,10 @@ symbols and then read the DWARF symbols from it.
 #include <linux/inetdevice.h>
 #include <net/protocol.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,20,0)
+struct xa_node xa;
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 #include <linux/lockref.h>
 struct lockref lockref;

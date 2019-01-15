@@ -219,6 +219,8 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
             
         f_op_members = self.profile.types['file_operations'].keywords["members"].keys()
         f_op_members.remove('owner')
+        if 'mmap_supported_flags' in f_op_members:
+            f_op_members.remove('mmap_supported_flags')
 
         if self._config.INODE:
             inode = obj.Object("inode", offset=self._config.INODE, vm=self.addr_space)
