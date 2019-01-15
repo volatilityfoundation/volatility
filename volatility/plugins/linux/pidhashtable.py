@@ -29,6 +29,7 @@ import volatility.debug as debug
 
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
+import volatility.plugins.linux.find_file as find_file
 
 PIDTYPE_PID = 0
 
@@ -280,11 +281,70 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
                 debug.error("Unable to determine task_struct pids member")
             
             task = obj.Object("task_struct", offset = pid_tasks_0 - offset, vm = self.addr_space)
-        
+      
         return task 
+    
+    def _do_walk_xarray(self, ff, node, height, index):
+        shift = (height - 1) * self.XA_CHUNK_SHIFT
         
+        for i in range(self.XA_CHUNK_SIZE):
+            slot = ff.xa_get_entry_from_offset(i, node)
+            if slot == None:
+                continue
+
+            if (slot.v() & self.XARRAY_TAG_MASK) == self.XARRAY_TAG_INTERNAL:
+                slot = obj.Object("xa_node", offset = slot.v() & ~self.XARRAY_TAG_INTERNAL, vm = self.addr_space)
+
+            if height == 1:
+                yield slot   
+            else:
+                new_index = index | (i << shift)
+                for new_slot in self._do_walk_xarray(ff, slot, height - 1, new_index):
+                    yield new_slot 
+
+    def _walk_xarray_pids(self):
+        ff = find_file.linux_find_file(self._config)
+        linux_common.set_plugin_members(ff)
+
+        self.XARRAY_TAG_MASK     = 3
+        self.XARRAY_TAG_INTERNAL = 2
+
+        self.XA_CHUNK_SHIFT = 6
+        self.XA_CHUNK_SIZE  = 1 << self.XA_CHUNK_SHIFT
+        self.XA_CHUNK_MASK  = self.XA_CHUNK_SIZE - 1
+
+        ns_addr = self.addr_space.profile.get_symbol("init_pid_ns")
+        ns = obj.Object("pid_namespace", offset = ns_addr, vm = self.addr_space)
+ 
+        xarray = ns.idr.idr_rt
+
+        if not xarray.is_valid():
+            return
+
+        root = xarray.xa_head.v()
+
+        is_internal = ff.xa_is_internal(root)
+
+        if root & self.XARRAY_TAG_MASK != 0:
+            root = root & ~self.XARRAY_TAG_MASK
+
+        height = 0
+        node   = obj.Object("xa_node", offset = root, vm = self.addr_space)
+        
+        if is_internal and hasattr(node, "shift"):
+            height = (node.shift / self.XA_CHUNK_SHIFT) + 1
+
+        for node in self._do_walk_xarray(ff, node, height, 0):
+            if node and node.is_valid():
+                yield node
+
     def pid_namespace_idr(self):
-        for node in self._walk_pid_ns_idr():
+        if hasattr("radix_tree_root", "rnode"):
+            func = self._walk_pid_ns_idr
+        else:
+            func = self._walk_xarray_pids
+
+        for node in func():
             task = self._task_for_radix_pid_node(node)
             if task != None:
                 yield task    
