@@ -90,23 +90,25 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
 
         if memory_model == '32bit':
             mode = distorm3.Decode32Bits
-            func = "sysenter_do_call"
+            funcs = ["sysenter_do_call"]
         else:
             mode = distorm3.Decode64Bits
-            func = "system_call_fastpath"
+            funcs = ["system_call_fastpath", "do_int80_syscall_32"]
 
-        func_addr = self.addr_space.profile.get_symbol(func)
+        for func in funcs:
+            func_addr = self.addr_space.profile.get_symbol(func)
+            if func_addr:
+                data = self.addr_space.read(func_addr, 64)
 
-        if func_addr:
-            data = self.addr_space.read(func_addr, 6)
-            
-            for op in distorm3.Decompose(func_addr, data, mode):
-                if not op.valid:
-                    continue
+                for op in distorm3.Decompose(func_addr, data, mode):
+                    if not op.valid:
+                        continue
 
-                if op.mnemonic == 'CMP':
-                    table_size = (op.operands[1].value) & 0xffffffff
-                    break
+                    if op.mnemonic == 'CMP':
+                        table_size = (op.operands[1].value) & 0xffffffff
+                        break
+
+                break
 
         return table_size
 
@@ -202,7 +204,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
             addrs.append(("32bit", ia32_info))
 
         for (table_name, (tableaddr, tblsz)) in addrs:
-            table = obj.Object(theType = 'Array', offset = tableaddr, vm = self.addr_space, targetType = 'unsigned long', count = tblsz)
+            table = obj.Object(theType = 'Array', offset = tableaddr, vm = self.addr_space, targetType = 'unsigned long', count = tblsz + 1)
 
             for (i, call_addr) in enumerate(table):
                 if not call_addr:
