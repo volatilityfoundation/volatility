@@ -441,13 +441,10 @@ class NetfilterImp_4_16_to_latest(NetfilterImp_4_14_to_4_15_18):
         yield net_nf_hooks.obj_offset
 
     def get_nf_hook_entries_ptr(self, nf_hooks_addr, proto_idx, hook_idx):
-        hooks_count = len(self.PROTO_HOOKS[proto_idx].hooks)
-        nf_hook_entries_ptr_arr = obj.Object("Array",
-                                             targetType="Pointer",
-                                             offset=nf_hooks_addr,
-                                             count=hooks_count,
-                                             vm=self.volinst.addr_space)
-        nf_hook_entries_ptr = nf_hook_entries_ptr_arr[hook_idx]
+        nf_hook_entries_addr = nf_hooks_addr + (hook_idx * self.ptr_size)
+        nf_hook_entries_ptr = obj.Object("Pointer",
+                                         offset=nf_hook_entries_addr,
+                                         vm=self.volinst.addr_space)
         return nf_hook_entries_ptr
 
 
