@@ -181,19 +181,23 @@ class AbstractNetfilter(object):
 
     # Helpers
     def build_nf_hook_ops_array(self, nf_hook_entries):
-        """Function helper to build the array of arrays of nf_hook_ops give a nf_hook_entries"""
-        # nf_hook_ops array is not part of the struct nf_hook_entries definition, so we need to
-        # craft it.
+        """Function helper to build the nf_hook_ops array when it is not part of the struct
+        nf_hook_entries definition.
+
+        nf_hook_ops was stored adjacent in memory to the nf_hook_entry array, in the new struct 
+        'nf_hook_entries'. However, this nf_hooks_ops array 'orig_ops' is not part of the
+        nf_hook_entries struct. So, we need to calculate the offset.
+
+            struct nf_hook_entries {
+                u16                         num_hook_entries; /* plus padding */
+                struct nf_hook_entry        hooks[];
+                //const struct nf_hook_ops *orig_ops[];
+            }
+        """
+        nf_hook_entry_size = self.volinst.addr_space.profile.get_obj_size("nf_hook_entry")
         nf_hook_entry_count = nf_hook_entries.num_hook_entries
-
-        nf_hook_entries_hook_addr = nf_hook_entries.hooks.obj_offset
-        nf_hook_entry_arr = obj.Object("Array",
-                                       targetType="nf_hook_entry",
-                                       offset=nf_hook_entries_hook_addr,
-                                       count=nf_hook_entry_count,
-                                       vm=self.volinst.addr_space)
-
-        nf_hook_ops_addr = nf_hook_entries_hook_addr + nf_hook_entry_arr.size()
+        nf_hook_entry_arr_size = nf_hook_entry_count * nf_hook_entry_size
+        nf_hook_ops_addr = nf_hook_entries.hooks.obj_offset + nf_hook_entry_arr_size
         nf_hook_ops_ptr_arr = obj.Object("Array",
                                          targetType="Pointer",
                                          offset=nf_hook_ops_addr,
