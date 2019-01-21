@@ -139,7 +139,7 @@ class AbstractNetfilter(object):
                 # This protocol is not managed in this object
                 continue
             for hook_idx, hook_name in enumerate(proto.hooks):
-                yield proto_idx, proto.name, len(proto.hooks), hook_idx, hook_name
+                yield proto_idx, proto.name, hook_idx, hook_name
 
     def _execute(self):
         """It does all the iteration over the namespaces and protocols, executing the different
@@ -157,12 +157,12 @@ class AbstractNetfilter(object):
                         >= 4.3
                             network_namespace[] -> nf.hooks[]
 
-            get_hook_ops(hook_container, proto_idx, hooks_count, hook_idx)
+            get_hook_ops(hook_container, proto_idx, hook_idx)
                 Give the hook_container got in get_hooks_container_by_protocol(), it returns an
                 iterable of nf_hook_ops elements for a respective protocol and hook type.
         """
         for netns, net in self.get_net_namespaces():
-            for proto_idx, proto_name, hooks_count, hook_idx, hook_name in self._proto_hook_loop():
+            for proto_idx, proto_name, hook_idx, hook_name in self._proto_hook_loop():
                 try:
                     hooks_container = self.get_hooks_container_by_protocol(net, proto_name)
                 except KernelProtocolDisabledException:
@@ -170,7 +170,7 @@ class AbstractNetfilter(object):
                 if not hooks_container:
                     continue
                 for hook_container in hooks_container:
-                    for hook_ops in self.get_hook_ops(hook_container, proto_idx, hooks_count, hook_idx):
+                    for hook_ops in self.get_hook_ops(hook_container, proto_idx, hook_idx):
                         if not hook_ops:
                             continue
                         hook_ops_addr = hook_ops.hook.v()
@@ -232,10 +232,9 @@ class AbstractNetfilter(object):
         yield net.nf.hooks.obj_offset
 
     # Interface
-    def get_hook_ops(self, nf_hooks_addr, proto_idx, hooks_count, hook_idx):
+    def get_hook_ops(self, hook_container, proto_idx, hook_idx):
         """Give the hook_container got in get_hooks_container_by_protocol(), it returns an
         iterable of nf_hook_ops elements for a respective protocol and hook type.
-
 
         This is the most variable/unstable part of all Netfilter hook designs, it changes almost
         in every single implementation.
@@ -263,9 +262,10 @@ class NetfilterImp_to_4_2_8(AbstractNetfilter):
             debug.error("Unable to analyze NetFilter. It is either disabled or compiled as a module.")
         yield nf_hooks_addr
 
-    def get_hook_ops(self, nf_hooks_addr, proto_idx, hooks_count, hook_idx):
+    def get_hook_ops(self, hook_container, proto_idx, hook_idx):
         # It seems the API doesn't deal with array of arrays very well.
         # So, doing it the old-school way
+        nf_hooks_addr = hook_container
         arr = nf_hooks_addr + (proto_idx * (self.list_head_size * AbstractNetfilter.NF_MAX_HOOKS))
         list_head_addr = arr + (hook_idx * self.list_head_size)
         list_head = obj.Object("list_head", offset=list_head_addr, vm=self.volinst.addr_space)
@@ -285,9 +285,10 @@ class NetfilterImp_4_3_to_4_8_17(AbstractNetfilter):
     KERNEL_MIN = "4.3"
     KERNEL_MAX = "4.8.17"
 
-    def get_hook_ops(self, nf_hooks_addr, proto_idx, hooks_count, hook_idx):
+    def get_hook_ops(self, hook_container, proto_idx, hook_idx):
         # It seems the API doesn't deal with array of arrays very well.
         # So, doing it the old-school way
+        nf_hooks_addr = hook_container
         arr = nf_hooks_addr + (proto_idx * (self.list_head_size * AbstractNetfilter.NF_MAX_HOOKS))
         list_head_addr = arr + (hook_idx * self.list_head_size)
         list_head = obj.Object("list_head", offset=list_head_addr, vm=self.volinst.addr_space)
@@ -323,9 +324,10 @@ class NetfilterImp_4_9_to_4_13_16(AbstractNetfilter):
     KERNEL_MIN = "4.9"
     KERNEL_MAX = "4.13.16"
 
-    def get_hook_ops(self, nf_hooks_addr, proto_idx, hooks_count, hook_idx):
+    def get_hook_ops(self, hook_container, proto_idx, hook_idx):
         # It seems the API doesn't deal with array of arrays very well.
         # So doing it the old-school way
+        nf_hooks_addr = hook_container
         arr = nf_hooks_addr + (proto_idx * (self.ptr_size * AbstractNetfilter.NF_MAX_HOOKS))
         nf_hook_entry_addr = arr + (hook_idx * self.ptr_size)
         if not nf_hook_entry_addr:
@@ -365,7 +367,7 @@ class NetfilterImp_4_14_to_4_15_18(AbstractNetfilter):
     KERNEL_MIN = "4.14"
     KERNEL_MAX = "4.15.18"
 
-    def get_nf_hook_entries_ptr(self, nf_hooks_addr, proto_idx, hook_idx, hooks_count):
+    def get_nf_hook_entries_ptr(self, nf_hooks_addr, proto_idx, hook_idx):
         """This allows to support different hook array implementations from this version on.
         For instance, in kernels >= 4.16 this multi-dimensional array is split in one-dimensional
         array of pointers to nf_hooks_entries per each protocol."""
@@ -376,8 +378,9 @@ class NetfilterImp_4_14_to_4_15_18(AbstractNetfilter):
                                          vm=self.volinst.addr_space)
         return nf_hook_entries_ptr
 
-    def get_hook_ops(self, nf_hooks_addr, proto_idx, hooks_count, hook_idx):
-        nf_hook_entries_ptr = self.get_nf_hook_entries_ptr(nf_hooks_addr, proto_idx, hook_idx, hooks_count)
+    def get_hook_ops(self, hook_container, proto_idx, hook_idx):
+        nf_hooks_addr = hook_container
+        nf_hook_entries_ptr = self.get_nf_hook_entries_ptr(nf_hooks_addr, proto_idx, hook_idx)
         if not nf_hook_entries_ptr:
             yield None
 
@@ -437,7 +440,8 @@ class NetfilterImp_4_16_to_latest(NetfilterImp_4_14_to_4_15_18):
             raise KernelProtocolDisabledException()
         yield net_nf_hooks.obj_offset
 
-    def get_nf_hook_entries_ptr(self, nf_hooks_addr, proto_idx, hook_idx, hooks_count):
+    def get_nf_hook_entries_ptr(self, nf_hooks_addr, proto_idx, hook_idx):
+        hooks_count = len(self.PROTO_HOOKS[proto_idx].hooks)
         nf_hook_entries_ptr_arr = obj.Object("Array",
                                              targetType="Pointer",
                                              offset=nf_hooks_addr,
@@ -481,7 +485,8 @@ class NetfilterIngressImp_4_2_to_4_8_17(AbstractNetfilterIngress):
     KERNEL_MIN = "4.2"
     KERNEL_MAX = "4.8.17"
 
-    def get_hook_ops(self, nf_hooks_ingress, proto_idx, hooks_count, hook_idx):
+    def get_hook_ops(self, hook_container, proto_idx, hook_idx):
+        nf_hooks_ingress = hook_container
         return nf_hooks_ingress.list_of_type("nf_hook_ops", "list")
 
 
@@ -492,7 +497,8 @@ class NetfilterIngressImp_4_9_to_4_13_16(AbstractNetfilterIngress):
     KERNEL_MIN = "4.9"
     KERNEL_MAX = "4.13.16"
 
-    def get_hook_ops(self, nf_hooks_ingress, proto_idx, hooks_count, hook_idx):
+    def get_hook_ops(self, hook_container, proto_idx, hook_idx):
+        nf_hooks_ingress = hook_container
         if not nf_hooks_ingress:
             yield None
 
@@ -514,7 +520,8 @@ class NetfilterIngressImp_4_14_to_latest(AbstractNetfilterIngress):
     KERNEL_MIN = "4.14"
     KERNEL_MAX = KERNEL_LATEST
 
-    def get_hook_ops(self, nf_hook_entries_ptr, proto_idx, hooks_count, hook_idx):
+    def get_hook_ops(self, hook_container, proto_idx, hook_idx):
+        nf_hook_entries_ptr = hook_container
         if not nf_hook_entries_ptr:
             yield None
 
