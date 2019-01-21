@@ -130,36 +130,51 @@ class AbstractNetfilter(object):
         if subclass is None:
             debug.error("Unsupported netfilter kernel implementation for %s"%(kernel_version))
 
-    @classmethod
-    def _proto_hook_loop(cls, nfimp_inst):
+    def _proto_hook_loop(self):
         """It flattens the protocol families and hooks"""
         for proto_idx, proto in enumerate(AbstractNetfilter.PROTO_HOOKS):
-            if proto.name in (PROTO_NOT_IMPLEMENTED.name, "INET"):
-                # There is no such Netfilter hook implementation for INET protocol in the kernel
-                # AFAIU this is used like NFPROTO_INET = NFPROTO_IPV4 || NFPROTO_IPV6
+            if proto == PROTO_NOT_IMPLEMENTED:
                 continue
-            if proto.name not in nfimp_inst.subscribed_protocols():
+            if proto.name not in self.subscribed_protocols():
                 # This protocol is not managed in this object
                 continue
             for hook_idx, hook_name in enumerate(proto.hooks):
                 yield proto_idx, proto.name, len(proto.hooks), hook_idx, hook_name
 
-    @classmethod
-    def _execute(cls, nfimp_inst):
-        for netns, net in nfimp_inst.get_net_namespaces():
-            for proto_idx, proto_name, hooks_count, hook_idx, hook_name in cls._proto_hook_loop(nfimp_inst):
+    def _execute(self):
+        """It does all the iteration over the namespaces and protocols, executing the different
+        callbacks allowing to customize the code to the specific data structure used in a
+        specific kernel version.
+
+            get_hooks_container_by_protocol(net, proto_name)
+                It returns the data structure used in a specific kernel implementation to store
+                the hooks for a respective namespace and protocol, basically:
+                    For Ingress hooks:
+                        network_namespace[] -> net_device[] -> nf_hooks_ingress[]
+                    For all the other Netfilter hooks:
+                        <= 4.2.8
+                            nf_hooks[]
+                        >= 4.3
+                            network_namespace[] -> nf.hooks[]
+
+            get_hook_ops(hook_container, proto_idx, hooks_count, hook_idx)
+                Give the hook_container got in get_hooks_container_by_protocol(), it returns an
+                iterable of nf_hook_ops elements for a respective protocol and hook type.
+        """
+        for netns, net in self.get_net_namespaces():
+            for proto_idx, proto_name, hooks_count, hook_idx, hook_name in self._proto_hook_loop():
                 try:
-                    hooks_container = nfimp_inst.get_hooks_container_by_protocol(net, proto_name)
+                    hooks_container = self.get_hooks_container_by_protocol(net, proto_name)
                 except KernelProtocolDisabledException:
                     continue
                 if not hooks_container:
                     continue
                 for hook_container in hooks_container:
-                    for hook_ops in nfimp_inst.get_hook_ops(hook_container, proto_idx, hooks_count, hook_idx):
+                    for hook_ops in self.get_hook_ops(hook_container, proto_idx, hooks_count, hook_idx):
                         if not hook_ops:
                             continue
                         hook_ops_addr = hook_ops.hook.v()
-                        found, module = nfimp_inst.volinst.is_known_address_name(hook_ops_addr, nfimp_inst.modules)
+                        found, module = self.volinst.is_known_address_name(hook_ops_addr, self.modules)
                         hooked = "False" if found else "True"
 
                         yield netns, proto_name, hook_name, hook_ops_addr, hooked, module
@@ -191,6 +206,9 @@ class AbstractNetfilter(object):
     def subscribed_protocols(self):
         """Most of the implementation handlers respond to these protocols, except the ingress hook
         implemention which handles an specific protocol called "NETDEV".
+        On the other hand, there is no such Netfilter hook implementation for INET protocol in the
+        kernel. AFAIU, this is used like "NFPROTO_INET = NFPROTO_IPV4 || NFPROTO_IPV6" in other
+        parts of the kernel source code.
         """
         return ("IPV4", "ARP", "BRIDGE", "IPV6", "DECNET")
 
@@ -204,7 +222,10 @@ class AbstractNetfilter(object):
             yield net_idx, net
 
     def get_hooks_container_by_protocol(self, net, proto_name):
-        """Except for kernels < 4.3, all the implementations use network namespaces.
+        """It returns the data structure used in a specific kernel implementation to store
+        the hooks for a respective namespace and protocol.
+
+        Except for kernels < 4.3, all the implementations use network namespaces.
         Also the data structure which contains the hooks, even though it changes its implementation
         and/or data type, it is always in this location.
         """
@@ -212,7 +233,11 @@ class AbstractNetfilter(object):
 
     # Interface
     def get_hook_ops(self, nf_hooks_addr, proto_idx, hooks_count, hook_idx):
-        """This is the most variable/unstable part of all Netfilter hook designs, it changes almost
+        """Give the hook_container got in get_hooks_container_by_protocol(), it returns an
+        iterable of nf_hook_ops elements for a respective protocol and hook type.
+
+
+        This is the most variable/unstable part of all Netfilter hook designs, it changes almost
         in every single implementation.
         """
         raise NotImplementedError("You must implement this method")
