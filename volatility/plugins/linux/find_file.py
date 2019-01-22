@@ -46,6 +46,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         config.add_option('LISTFILES', short_option = 'L', default = None, help = 'list all files cached in memory', action = 'count')
     
         self.ptr_size = -1
+        self.seen_dents = set()
 
     def _walk_sb(self, dentry_param, parent):
         ret = []
@@ -56,13 +57,20 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             walk_member = "d_u"
 
         for dentry in dentry_param.d_subdirs.list_of_type("dentry", walk_member):
+            dentry_addr = dentry.v()
+            
             # corruption
-            if dentry.v() == dentry_param.v():
+            if dentry_addr == dentry_param.v():
                 continue
+
+            if dentry_addr in self.seen_dents:
+                break
+ 
+            self.seen_dents.add(dentry_addr) 
 
             if not dentry.d_name.name.is_valid():
                 continue
-            
+
             inode = dentry.d_inode
             
             ivalid = False
@@ -70,7 +78,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
                 if inode.i_ino == 0 or inode.i_ino > 100000000000:
                     continue
                 ivalid = True
-            
+
             # do not use os.path.join
             # this allows us to have consistent paths from the user
             name  = dentry.d_name.name.dereference_as("String", length = 255)
@@ -104,7 +112,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             rname  = sb.s_root.d_name.name.dereference_as("String", length = 255)
             if rname and len(rname) > 0:
                 yield (sb, sb_path, sb_path, sb.s_root)
-            
+
             for (file_path, file_dentry) in self._walk_sb(sb.s_root, parent):
                 yield (sb, sb_path, file_path, file_dentry)
 
