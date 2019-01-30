@@ -45,14 +45,18 @@ class _HMAP_ENTRY(obj.CType):
     def BlockAddress(self):
         return self.PermanentBinAddress & 0xFFFFFFFFFFF0
 
-class _CM_KEY_BODY(windows._CM_KEY_BODY):
-    """Registry key"""
+class Win10Registry(obj.ProfileModification):
+    """The Windows 10 registry HMAP"""
 
     conditions = {'os': lambda x: x == 'windows',
                   'major': lambda x: x == 6,
-                  'minor': lambda x: x == 4,
-                  'build': lambda x: x >= 14393,
-                  }
+                  'minor': lambda x: x == 4}
+
+    def modification(self, profile):
+        profile.object_classes.update({"_HMAP_ENTRY": _HMAP_ENTRY})
+
+class _CM_KEY_BODY(windows._CM_KEY_BODY):
+    """Registry key"""
 
     def full_key_name(self):
         output = []
@@ -70,16 +74,6 @@ class _CM_KEY_BODY(windows._CM_KEY_BODY):
             kcb = kcb.ParentKcb
             seen.append(kcb.obj_offset)
         return "\\".join(reversed(output))
-
-class Win10Registry(obj.ProfileModification):
-    """The Windows 10 registry HMAP"""
-
-    conditions = {'os': lambda x: x == 'windows',
-                  'major': lambda x: x == 6,
-                  'minor': lambda x: x == 4}
-
-    def modification(self, profile):
-        profile.object_classes.update({"_HMAP_ENTRY": _HMAP_ENTRY})
 
 class Win10x64DTB(obj.ProfileModification):
     """The Windows 10 64-bit DTB signature"""
@@ -123,6 +117,12 @@ class Win10x86DTB(obj.ProfileModification):
 class Win10ObjectClasses(obj.ProfileModification):
     before = ['WindowsOverlay', 'WindowsObjectClasses']
 
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 4,
+                  'build': lambda x: x >= 14393,
+                  }
+
     def modification(self, profile):
         profile.object_classes.update({'_CM_KEY_BODY' : _CM_KEY_BODY,})
 
@@ -136,6 +136,17 @@ class Win10KDBG(windows.AbstractKDBGMod):
                   'build': lambda x: x >= 14393}
 
     kdbgsize = 0x368
+
+class Win10_17763KDBG(windows.AbstractKDBGMod):
+    """The Windows 10 17763 KDBG signatures"""
+
+    before = ['Win8KDBG', 'Win10KDBG']
+    conditions = {'os': lambda x: x == 'windows',
+                  'major': lambda x: x == 6,
+                  'minor': lambda x: x == 4,
+                  'build': lambda x: x >= 17763}
+
+    kdbgsize = 0x380
 
 class ObHeaderCookieStore(object):
     """A class for finding and storing the nt!ObHeaderCookie value"""
@@ -954,6 +965,16 @@ class Win10x86_17134(obj.Profile):
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_17134_vtypes'
     _md_product = ["NtProductWinNt"]
 
+class Win10x86_17763(obj.Profile):
+    """ A Profile for Windows 10 x86 (10.0.17763.0 / 2018-10-12) """
+    _md_memory_model = '32bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 17763
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x86_17763_vtypes'
+    _md_product = ["NtProductWinNt"]
+
 class Win10x64_15063(obj.Profile):
     """ A Profile for Windows 10 x64 (10.0.15063.0 / 2017-04-04) """
     _md_memory_model = '64bit'
@@ -982,4 +1003,14 @@ class Win10x64_17134(obj.Profile):
     _md_minor = 4
     _md_build = 17134
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_17134_vtypes'
+    _md_product = ["NtProductWinNt"]
+
+class Win10x64_17763(obj.Profile):
+    """ A Profile for Windows 10 x64 (10.0.17763.0 / 2018-10-12) """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 17763
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_17763_vtypes'
     _md_product = ["NtProductWinNt"]
