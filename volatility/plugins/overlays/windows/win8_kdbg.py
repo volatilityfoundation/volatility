@@ -179,7 +179,8 @@ class VolatilityKDBG(obj.VolatilityMagic):
 
         for op in before_ret:
             # cmp cs:KdpDataBlockEncoded, 0
-            if (not block_encoded and op.mnemonic == "CMP" and 
+            if (not (block_encoded or kdbg_block or wait_never or wait_always) and 
+                        op.mnemonic == "CMP" and
                         op.operands[0].type == "AbsoluteMemory" and 
                         op.operands[1].type == "Immediate" and 
                         op.operands[1].value == 0):
@@ -189,14 +190,16 @@ class VolatilityKDBG(obj.VolatilityMagic):
                                         offset = offset,
                                         vm = addr_space)
             # lea rdx, KdDebuggerDataBlock
-            elif (not kdbg_block and op.mnemonic == "LEA" and 
+            elif (not (kdbg_block or wait_never or wait_always) and 
+                        op.mnemonic == "LEA" and
                         op.operands[0].type == "Register" and 
                         op.operands[0].size == 64 and 
                         op.operands[1].type == "AbsoluteMemory" and 
                         op.operands[1].dispSize == 32):
                 kdbg_block = op.address + op.size + op.operands[1].disp 
             # mov r10, cs:KiWaitNever
-            elif (not wait_never and op.mnemonic == "MOV" and 
+            elif (not (wait_never or wait_always) and 
+                        op.mnemonic == "MOV" and
                         op.operands[0].type == "Register" and 
                         op.operands[0].size == 64 and 
                         op.operands[1].type == "AbsoluteMemory" and 
@@ -207,7 +210,8 @@ class VolatilityKDBG(obj.VolatilityMagic):
                                         vm = addr_space)
             # mov r11, cs:KiWaitAlways (Win 8 x64)
             # xor rdx, cs:KiWaitAlways (Win 8.1 x64)
-            elif (not wait_always and op.mnemonic in ["MOV", "XOR"] and 
+            elif (not wait_always and 
+                        op.mnemonic in ["MOV", "XOR"] and 
                         op.operands[0].type == "Register" and 
                         op.operands[0].size == 64 and 
                         op.operands[1].type == "AbsoluteMemory" and 
