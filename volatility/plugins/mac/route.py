@@ -53,13 +53,14 @@ class mac_route(common.AbstractMacCommand):
 
             rn = rn.rn_parent.rn_u.rn_node.rn_R
 
-            while rn.is_valid() and rn.rn_bit >= 0:
+            i = 0
+            while i < 1024 and rn.is_valid() and rn.rn_bit >= 0:
                 rn = rn.rn_u.rn_node.rn_L
+                i = i + 1
 
             nextptr = rn
 
             while base.v() != 0:
-    
                 rn = base
                 base = rn.rn_u.rn_leaf.rn_Dupedkey
 
