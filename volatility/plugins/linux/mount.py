@@ -93,6 +93,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                 continue
 
             seen = {}
+            mseen = {}
             for mnt in outerlist.list_of_type(mnttype, "mnt_hash"):
                 if mnt.v() in seen:
                     break
@@ -103,26 +104,39 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                     break
 
                 if mnt.is_valid():
-                    hash_mnts[mnt]            = 1
+                    mkey = mnt.v()
+                    if not mkey in mseen:
+                        hash_mnts[mnt] = 1
+                        mseen[mkey] = 1 
                 else:
                     break
 
                 if mnt.mnt_parent.is_valid():
-                    hash_mnts[mnt.mnt_parent] = 1
-    
-                if mnt.mnt_parent.mnt_parent.is_valid():    
-                    hash_mnts[mnt.mnt_parent.mnt_parent] = 1
+                    mkey = mnt.mnt_parent.v()
+                    if not mkey in mseen:        
+                        hash_mnts[mnt.mnt_parent] = 1
+                        mseen[mkey] = 1
+
+                if mnt.mnt_parent.mnt_parent.is_valid(): 
+                    mkey = mnt.mnt_parent.mnt_parent.v()
+                    if not mkey in mseen:   
+                        hash_mnts[mnt.mnt_parent.mnt_parent] = 1
+                        mseen[mkey] = 1
 
         child_mnts = {}
         for mnt in hash_mnts:
             cseen = {}
             for child_mnt in mnt.mnt_child.list_of_type(mnttype, "mnt_child"):
+                
                 if not child_mnt.is_valid():
                     break
                 
                 child_mnts[child_mnt]            = 1
   
                 if child_mnt.v() in cseen:
+                    break
+
+                if len(child_mnts.keys()) > 1024:
                     break
 
                 cseen[child_mnt.v()] = 1
