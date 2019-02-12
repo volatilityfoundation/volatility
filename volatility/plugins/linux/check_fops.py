@@ -122,7 +122,10 @@ class linux_check_fop(linux_common.AbstractLinuxCommand):
                     break
 
                 cur = cur.next
-                continue
+                if cur.obj_offset in self.seen_proc:
+                    break
+                else:
+                    continue
 
             self.seen_proc[cur.obj_offset] = 1
                 
