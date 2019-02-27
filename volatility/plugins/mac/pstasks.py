@@ -37,12 +37,18 @@ class mac_tasks(pslist.mac_pslist):
         tasksaddr = self.addr_space.profile.get_symbol("_tasks")
         queue_entry = obj.Object("queue_entry", offset = tasksaddr, vm = self.addr_space)
 
-        seen = [tasksaddr]
+        seen = { tasksaddr : 1 }
 
         for task in queue_entry.walk_list(list_head = tasksaddr):
-            if (task.bsd_info and task.obj_offset not in seen):
-                proc = task.bsd_info.dereference_as("proc") 
-                yield proc
-            
-            seen.append(task.obj_offset)
+            if task.obj_offset not in seen:
+                seen[task.obj_offset] = 0
+
+                if task.bsd_info:
+                    proc = task.bsd_info.dereference_as("proc") 
+                    yield proc
+            else:
+                if seen[task.obj_offset] > 3:
+                    break
+
+                seen[task.obj_offset] = seen[task.obj_offset] + 1
 

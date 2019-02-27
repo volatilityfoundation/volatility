@@ -1099,7 +1099,13 @@ class proc(obj.CType):
     def get_proc_maps(self):
         map = self.task.map.hdr.links.next
 
+        seen = set()
+
         for i in xrange(self.task.map.hdr.nentries):
+            if map.v() in seen:
+                break
+            seen.add(map.v())
+
             if not map:
                 break
             yield map
@@ -1517,9 +1523,12 @@ class vm_map_entry(obj.CType):
             ret = vnode  
         elif vnode:
             path = []
-            while vnode:
+            seen = set()
+            while vnode and vnode.v() not in seen:
+                seen.add(vnode.v())
                 path.append(str(vnode.v_name.dereference() or ''))
                 vnode = vnode.v_parent
+
             path.reverse()
             ret = "/".join(path)
         else:
