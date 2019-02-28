@@ -305,18 +305,23 @@ class vnode(obj.CType):
     def is_reg(self):
         return self.v_type == 1
 
-    def _do_calc_path(self, ret, vnodeobj, vname):
+    def _do_calc_path(self, ret, vnodeobj, vname, vnode_offsets):
         if vnodeobj == None:
             return 
+
+        if vnodeobj.v() in vnode_offsets:
+            return
+
+        vnode_offsets.append(vnodeobj.v())
 
         if vname:
             ret.append(vname)
 
         if vnodeobj.v_flag.v() & 0x000001 != 0 and vnodeobj.v_mount.v() != 0: 
             if vnodeobj.v_mount.mnt_vnodecovered.v() != 0:
-                self._do_calc_path(ret, vnodeobj.v_mount.mnt_vnodecovered, vnodeobj.v_mount.mnt_vnodecovered.v_name)
+                self._do_calc_path(ret, vnodeobj.v_mount.mnt_vnodecovered, vnodeobj.v_mount.mnt_vnodecovered.v_name, vnode_offsets)
         else:  
-            self._do_calc_path(ret, vnodeobj.v_parent, vnodeobj.v_parent.v_name)
+            self._do_calc_path(ret, vnodeobj.v_parent, vnodeobj.v_parent.v_name, vnode_offsets)
                 
     def full_path(self):
         if self.v_flag.v() & 0x000001 != 0 and self.v_mount.v() != 0 and self.v_mount.mnt_flag.v() & 0x00004000 != 0:
@@ -325,7 +330,7 @@ class vnode(obj.CType):
             elements = []
             files = []
 
-            self._do_calc_path(elements, self, self.v_name)
+            self._do_calc_path(elements, self, self.v_name, [])
             elements.reverse()
 
             for e in elements:
