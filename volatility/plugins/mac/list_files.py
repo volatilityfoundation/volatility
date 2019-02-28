@@ -112,7 +112,7 @@ class mac_list_files(common.AbstractMacCommand):
         
                 entry = [str(name), par_offset, parent]
                 vnodes[parent.obj_offset] = entry
-                
+               
                 parent = next_parent  
 
         ## build the full paths for all directories
@@ -132,7 +132,11 @@ class mac_list_files(common.AbstractMacCommand):
                 full_path = parent_vnodes[parent] + "/" + name
             else:
                 paths = [name]
-                while parent:
+                seen_subs = set()
+
+                while parent and parent not in seen_subs:
+                    seen_subs.add(parent)
+
                     entry = vnodes.get(parent)
                 
                     ## a vnode's parent wasn't found or 
