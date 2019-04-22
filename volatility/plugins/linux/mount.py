@@ -42,6 +42,26 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         if not dev_name.is_valid():
             return ret
 
+        if len(dev_name) < 3:
+            return ret
+
+        new_name = False
+
+        for nn in str(dev_name)[:3]:
+            n = ord(nn)
+            if n < 32 or n > 126 or n == 63: # 63 = ?
+                new_name = True
+                break
+ 
+        if new_name == True:
+            s = obj.Object("Pointer", offset = mnt.mnt_devname.obj_offset + 16, vm = self.addr_space)
+            if not s.is_valid():
+                return ret
+
+            dev_name = s.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
+            if not dev_name.is_valid() or len(dev_name) < 3:
+                return ret
+
         fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
 
         if not fstype.is_valid():
@@ -153,8 +173,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         for t in tmp_mnts:
             tt = t.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
             if tt:
-                tmp = str(tt)
-                if len(str(tmp)) > 2 and (str(tmp)[0] == '/' or tmp in ['devtmpfs', 'proc', 'sysfs', 'nfsd', 'tmpfs', 'sunrpc', 'devpts', 'none']):
+                if len(str(tt)) > 2:
                     all_mnts.append(t)
 
         list_mnts    = {} 
