@@ -67,12 +67,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         if not fstype.is_valid():
             return ret
 
-        #print fs_types
-        #if str(fstype) not in fs_types:
-        #    return ret
-
         path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
-
         if path == []:
             return ret
 
@@ -173,7 +168,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         for t in tmp_mnts:
             tt = t.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
             if tt:
-                if len(str(tt)) > 2:
+                if len(str(tt)) > 2 or str(tt)[0] == '/':
                     all_mnts.append(t)
 
         list_mnts    = {} 
