@@ -131,6 +131,9 @@ class SSDT(common.AbstractWindowsCommand):
     @CacheDecorator("tests/ssdt")
     def calculate(self):
         addr_space = utils.load_as(self._config)
+        
+        meta = addr_space.profile.metadata
+        vers = (meta.get("major", 0), meta.get("minor", 0))
 
         ## Get a sorted list of module addresses
         mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in modules.lsmod(addr_space))
@@ -154,6 +157,8 @@ class SSDT(common.AbstractWindowsCommand):
                 raise StopIteration("Cannot locate KeAddSystemServiceTable")
             KeAddSystemServiceTable = ntos.DllBase + func_rva
             for table_addr in find_tables(ntos.DllBase, KeAddSystemServiceTable, addr_space):
+                if vers >= (6, 4):
+                    table_addr -= addr_space.profile.get_obj_size("_SERVICE_DESCRIPTOR_ENTRY")
                 ssdt_obj = obj.Object("_SERVICE_DESCRIPTOR_TABLE", table_addr, addr_space)
                 ssdts.add(ssdt_obj)
 
