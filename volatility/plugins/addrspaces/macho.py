@@ -86,5 +86,10 @@ class MachOAddressSpace(addrspace.AbstractRunBasedMemory):
             self.segs.append(seg)
             # Since these values will be used a lot, make sure they aren't reread (ie, no objects in the runs list)
             run = (int(seg.vmaddr), int(seg.fileoff), int(seg.vmsize))
+
+            self.as_assert(seg.vmaddr > 4096, "Invalid run address")
+            self.as_assert(self.vmsize >= 4096, "Invalid run size")
+
             self.runs.append(run)
+
             offset = offset + seg.cmdsize
