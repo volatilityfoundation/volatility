@@ -50,7 +50,10 @@ class mac_list_files(common.AbstractMacCommand):
             if vnode in seen:
                 break
 
+            seen.add(vnode)
+
             loop_vnodes.add(vnode)
+
             vnode = vnode.v_mntvnodes.tqe_next.dereference()
         
         return loop_vnodes
