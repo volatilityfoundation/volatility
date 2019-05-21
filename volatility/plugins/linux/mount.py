@@ -62,10 +62,20 @@ class linux_mount(linux_common.AbstractLinuxCommand):
             if not dev_name.is_valid() or len(dev_name) < 3:
                 return ret
 
+            for nn in str(dev_name)[:3]:
+                n = ord(nn)
+                if n < 32 or n > 126 or n == 63: # 63 = ?
+                    return ret
+ 
         fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
 
-        if not fstype.is_valid():
+        if not fstype.is_valid() or len(fstype) < 3:
             return ret
+
+        for nn in str(fstype)[:3]:
+            n = ord(nn)
+            if n < 32 or n > 126 or n == 63: # 63 = ?
+                return ret
 
         path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
         if path == []:
@@ -168,7 +178,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         for t in tmp_mnts:
             tt = t.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
             if tt:
-                if len(str(tt)) > 2 or str(tt)[0] == '/':
+                if len(str(tt)) > 2 or (len(str(tt)) > 1 and str(tt)[0] == '/'):
                     all_mnts.append(t)
 
         list_mnts    = {} 
