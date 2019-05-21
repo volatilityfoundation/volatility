@@ -34,10 +34,15 @@ class mac_route(common.AbstractMacCommand):
     def _get_table(self, tbl):
         rnh = tbl #obj.Object("radix_node", offset=tbl.v(), vm=self.addr_space)
         rn = rnh.rnh_treetop
-        
+       
+        seen = set() 
         while rn.is_valid() and rn.rn_bit >= 0:
-            rn = rn.rn_u.rn_node.rn_L
+            if rn.v() in seen:
+                break
+            seen.add(rn.v())
 
+            rn = rn.rn_u.rn_node.rn_L
+            
         rnhash = {}
 
         while rn.is_valid():
@@ -48,7 +53,12 @@ class mac_route(common.AbstractMacCommand):
 
             rnhash[rn] = 1
 
+            seen = set() 
             while rn.is_valid() and rn.rn_parent.rn_u.rn_node.rn_R == rn and rn.rn_flags & 2 == 0:
+                if rn.v() in seen:
+                    break
+                seen.add(rn.v())
+
                 rn = rn.rn_parent
 
             rn = rn.rn_parent.rn_u.rn_node.rn_R
@@ -60,7 +70,12 @@ class mac_route(common.AbstractMacCommand):
 
             nextptr = rn
 
+            seen = set()
             while base.v() != 0:
+                if base.v() in seen:
+                    break
+                seen.add(base.v())
+
                 rn = base
                 base = rn.rn_u.rn_leaf.rn_Dupedkey
 
