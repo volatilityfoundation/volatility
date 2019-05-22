@@ -352,6 +352,8 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
     def find_get_page(self, inode, offset):
         if hasattr(inode.i_mapping, "page_tree"):
             page = self.radix_tree_lookup_slot(inode.i_mapping.page_tree, offset)
+        elif hasattr(inode.i_mapping.i_pages, "rnode"):
+            page = self.radix_tree_lookup_slot(inode.i_mapping.i_pages, offset)
         else:
             page = self.walk_xarray(inode, offset)
 
