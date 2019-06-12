@@ -1113,7 +1113,12 @@ class proc(obj.CType):
 
             if not map:
                 break
-            yield map
+
+            map_size = int(map.links.end - map.links.start)
+
+            if 4095 < map_size < 0x800000000000 and map_size % 4096 == 0:
+                yield map
+
             map = map.links.next
 
     def find_heap_map(self):
