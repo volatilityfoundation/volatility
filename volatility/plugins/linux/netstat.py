@@ -29,6 +29,7 @@ import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsof as linux_lsof
 import volatility.plugins.linux.pslist as linux_pslist
+from volatility.renderers import TreeGrid
 
 class linux_netstat(linux_pslist.linux_pslist):
     """Lists open sockets"""
@@ -36,8 +37,52 @@ class linux_netstat(linux_pslist.linux_pslist):
     def __init__(self, config, *args, **kwargs):
         linux_pslist.linux_pslist.__init__(self, config, *args, **kwargs)
         self._config.add_option('IGNORE_UNIX', short_option = 'U', default = None, help = 'ignore unix sockets', action = 'store_true')
-    
+
+    def unified_output(self,data):
+        return TreeGrid([("Proto", str),
+                         ("Local IP", str),
+                         ("Local Port", int),
+                         ("Remote IP", str),
+                         ("Remote Port", int),
+                         ("State", str),
+                         ("Process", str),
+                         ("PID", str),
+                         ("Name", str),
+                         ],
+                         self.generator(data))
+
+    def generator(self, data):
+        for task in data:
+            for ents in task.netstat():
+                if ents[0] == socket.AF_INET:
+                    (_, proto, saddr, sport, daddr, dport, state) = ents[1]
+                    yield(0, [
+                              str(proto),
+                              str(saddr),
+                              int(sport),
+                              str(daddr),
+                              int(dport),
+                              str(state),
+                              str(task.comm),
+                              str(task.pid),
+                              str(name),
+                              ])
+
+                elif ents[0] == 1 and not self._config.IGNORE_UNIX:
+                    (name, inum) = ents[1]
+                    yield(0, [
+                              str("UNIX "+str(inum)),
+                              "-",
+                              0,
+                              "-",
+                              0,
+                              "-",
+                              str(task.comm),
+                              str(task.pid),
+                              str(name),
+                              ])
             # its a socket!
+            
     def render_text(self, outfd, data):
         linux_common.set_plugin_members(self)
 

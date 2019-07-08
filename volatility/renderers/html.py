@@ -48,4 +48,4 @@ class JSONRenderer(Renderer):
             raise NotImplementedError("JSON output for trees has not yet been implemented")
         # TODO: Output (basic) type information in JSON
         json_input = {"columns": [column.name for column in data.columns], "rows": data.visit(None, self.render_row, [])}
-        return outfd.write(json.dumps(json_input))
+        return outfd.write(json.dumps(json_input,ensure_ascii=False))

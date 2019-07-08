@@ -46,6 +46,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
         config.add_option('LISTFILES', short_option = 'L', default = None, help = 'list all files cached in memory', action = 'count')
     
         self.ptr_size = -1
+        self.seen_dents = set()
 
     def _walk_sb(self, dentry_param, parent):
         ret = []
@@ -56,13 +57,20 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             walk_member = "d_u"
 
         for dentry in dentry_param.d_subdirs.list_of_type("dentry", walk_member):
+            dentry_addr = dentry.v()
+            
             # corruption
-            if dentry.v() == dentry_param.v():
+            if dentry_addr == dentry_param.v():
                 continue
+
+            if dentry_addr in self.seen_dents:
+                break
+ 
+            self.seen_dents.add(dentry_addr) 
 
             if not dentry.d_name.name.is_valid():
                 continue
-            
+
             inode = dentry.d_inode
             
             ivalid = False
@@ -70,7 +78,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
                 if inode.i_ino == 0 or inode.i_ino > 100000000000:
                     continue
                 ivalid = True
-            
+
             # do not use os.path.join
             # this allows us to have consistent paths from the user
             name  = dentry.d_name.name.dereference_as("String", length = 255)
@@ -104,7 +112,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             rname  = sb.s_root.d_name.name.dereference_as("String", length = 255)
             if rname and len(rname) > 0:
                 yield (sb, sb_path, sb_path, sb.s_root)
-            
+
             for (file_path, file_dentry) in self._walk_sb(sb.s_root, parent):
                 yield (sb, sb_path, file_path, file_dentry)
 
@@ -298,13 +306,56 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
     def SHMEM_I(self, inode):
         offset = self.profile.get_obj_offset("shmem_inode_info", "vfs_inode")
         return obj.Object("shmem_inode_info", offset = inode.obj_offset - offset, vm = self.addr_space)
+    
+    def xa_is_internal(self, entry):
+        return (int(entry) & 3) == 2
+
+    def xa_is_node(self, entry):
+        return entry and self.xa_is_internal(entry) and int(entry) > 4096
+
+    def xa_get_offset(self, index, node):
+        return (index >> node.shift) & 63
+
+    def xa_get_entry_from_offset(self, offset, node):
+        ent_ptr = node.slots.obj_offset + (8 * offset) 
+        return obj.Object(theType="Pointer", targetType="unsigned long", offset = ent_ptr, vm = self.addr_space)
+
+    def xas_descend(self, offset, node):
+        offset = self.xa_get_offset(offset, node)
+        
+        entry = self.xa_get_entry_from_offset(offset, node)
+        if entry == None:
+            return entry
+
+        p = entry.v()
+        if p & 3 == 2 and p < 250:
+            offset = p >> 2
+            entry = self.xa_get_entry_from_offset(offset, node)
+            if entry == None:
+                return entry
+        
+        return entry
+
+    def walk_xarray(self, inode, offset):
+        entry = inode.i_mapping.i_pages.xa_head #.obj_offset
+
+        while self.xa_is_node(entry):
+            node = obj.Object("xa_node", offset = entry - 2, vm = self.addr_space)
+
+            if node.shift < 0:
+                break
+    
+            entry = self.xas_descend(offset, node)
+
+        return entry
 
     def find_get_page(self, inode, offset):
-        page = self.radix_tree_lookup_slot(inode.i_mapping.page_tree, offset)
-
-        #if not page:
-            # FUTURE swapper_space support
-            # print "no page"
+        if hasattr(inode.i_mapping, "page_tree"):
+            page = self.radix_tree_lookup_slot(inode.i_mapping.page_tree, offset)
+        elif hasattr(inode.i_mapping.i_pages, "rnode"):
+            page = self.radix_tree_lookup_slot(inode.i_mapping.i_pages, offset)
+        else:
+            page = self.walk_xarray(inode, offset)
 
         return page
 
@@ -315,7 +366,7 @@ class linux_find_file(linux_common.AbstractLinuxCommand):
             page = obj.Object("page", offset = page_addr, vm = self.addr_space)
             phys_offset = page.to_paddr()
 
-            if phys_offset > 0:
+            if page and phys_offset > 0:
                 phys_as = utils.load_as(self._config, astype = 'physical')
                 data = phys_as.zread(phys_offset, 4096)
             else:

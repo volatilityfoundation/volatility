@@ -266,7 +266,8 @@ class MBRParser(commands.Command):
             file = open(self._config.DISK, "rb")
             self.disk_mbr = file.read(440)
             file.close()
-
+        
+        all_zeros = None
         if self._config.OFFSET:
             PARTITION_TABLE = obj.Object('PARTITION_TABLE', vm = address_space,
                                offset = self._config.OFFSET)

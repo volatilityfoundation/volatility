@@ -39,6 +39,7 @@ import volatility.utils as utils
 import volatility.plugins.common as common
 import volatility.plugins.gui.messagehooks as messagehooks
 import volatility.win32 as win32
+from volatility.renderers import TreeGrid
 
 supported_controls = {
     'edit'   : 'COMCTL_EDIT',
@@ -443,6 +444,45 @@ class Editbox(common.AbstractWindowsCommand):
         for context, atom_class, pid, proc_name, is_wow64, ctrl in data:
             # context, atom_class and is_wow64 are ignored
             self.table_row(outfd, pid, proc_name, str(ctrl))
+
+    def unified_output(self, data):
+        #output as volatility json format
+        return TreeGrid([("Wnd Context", str),
+                         ("Process ID", int),
+                         ("ImageFileName", str),
+                         ("IsWow64", str),
+                         ("atom_class", str),
+                         ("value-of WndExtra", str),
+                         ("nChars", int),
+                         ("selStart", int),
+                         ("selEnd", int),
+                         ("isPwdControl", int),
+                         ("undoPos", int),
+                         ("undoLen", int),
+                         ("address-of undoBuf", str),
+                         ("undoBuf", str),
+                         ("Data", str),
+                        ], self.generator(data))
+
+    def generator(self, data):
+        for context, atom_class, pid, proc_name, is_wow64, ctrl in data:
+            yield (0, [
+                str(context),
+                int(pid),
+                str(proc_name),
+                str('Yes' if is_wow64 else 'No'),
+                str(atom_class),
+                str(hex(int(ctrl.v()))),
+                int(ctrl.nChars),
+                int(ctrl.selStart),
+                int(ctrl.is_pwd()),
+                int(ctrl.undoPos),
+                int(ctrl.undoLen),
+                int(ctrl.selEnd),
+                str(ctrl.undoBuf),
+                str(ctrl.get_undo(no_crlf=True)),
+                str(ctrl.get_text()),
+                ])
 
     def render_text(self, outfd, data):
         """Output the results as a text report

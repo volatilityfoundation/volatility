@@ -848,6 +848,12 @@ class _HANDLE_TABLE(obj.CType):
             count = 0x1000 / self.obj_vm.profile.get_obj_size("_HANDLE_TABLE_ENTRY")
             targetType = "_HANDLE_TABLE_ENTRY"
 
+        # as seen on an XP 32-bit system with no PAT, the kernel address 0 can
+        # be valid, leading to successful instantiation of a handle array at
+        # address zero, and lots of wasted resources from then on. stop it here.
+        if offset == 0:
+            raise StopIteration
+
         table = obj.Object("Array", offset = offset, vm = self.obj_vm, count = count,
                            targetType = targetType, parent = self, native_vm = self.obj_native_vm)
 

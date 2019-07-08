@@ -1080,13 +1080,30 @@ class module_struct(obj.CType):
         return valid
 
 class vm_area_struct(obj.CType):
+    def is_valid(self):
+        start = self.vm_start.v()
+        end   = self.vm_end.v()
+        pgoff = self.vm_pgoff.v()
+
+        valid = True
+
+        if  (start > end) or \
+            (end - start > 100000000000) or \
+            (start > 0xff00000000000000) or \
+            (end > 0xff00000000000000) or \
+            (pgoff > 100000000000):
+
+            valid = False
+
+        return valid           
+
     def vm_name(self, task):
         if self.vm_file:
             fname = linux_common.get_path(task, self.vm_file)
             if fname == []:
                 fname = ""
 
-        elif self.vm_start <= task.mm.start_brk and self.vm_end >= task.mm.brk:
+        elif self.vm_start <= task.mm.brk and self.vm_end >= task.mm.start_brk:
             fname = "[heap]"
         elif self.vm_start <= task.mm.start_stack and self.vm_end >= task.mm.start_stack:
             fname = "[stack]"
@@ -1325,26 +1342,9 @@ class task_struct(obj.CType):
 
         return ret
 
-    def find_heap_vma(self):
-        ret = None
-
-        for vma in self.get_proc_maps():
-            # find the data section of bash
-            if vma.vm_start <= self.mm.start_brk and vma.vm_end >= self.mm.brk:
-                ret = vma
-                break
-
-        return ret
-
     def bash_hash_entries(self):
         nbuckets_offset = self.obj_vm.profile.get_obj_offset("_bash_hash_table", "nbuckets") 
         
-        heap_vma = self.find_heap_vma()
-
-        if heap_vma == None:
-            debug.debug("Unable to find heap for pid %d" % self.pid)
-            return
-
         proc_as = self.get_process_address_space()
         if proc_as == None:
             return
@@ -1355,8 +1355,6 @@ class task_struct(obj.CType):
             
             for ent in htable:
                 yield ent            
-
-            off = off + 1
 
     def ldrmodules(self):
         proc_maps = {}
@@ -1916,14 +1914,17 @@ class task_struct(obj.CType):
         return threads
 
     def get_proc_maps(self):
-        if not self.mm:
+        if not self.mm or self.get_process_address_space() == None:
             return
         seen = {}
         for vma in linux_common.walk_internal_list("vm_area_struct", "vm_next", self.mm.mmap):
             val = vma.v()
             if val in seen:
                 break
-
+           
+            if not vma.is_valid():
+                break
+ 
             yield vma
 
             seen[val] = 1
@@ -1975,7 +1976,7 @@ class task_struct(obj.CType):
 
         for vma in self.get_proc_maps():
             if heap_only:
-                if not (vma.vm_start <= self.mm.start_brk and vma.vm_end >= self.mm.brk):
+                if not (vma.vm_start <= self.mm.brk and vma.vm_end >= self.mm.start_brk):
                     continue
 
             offset = vma.vm_start
@@ -2366,8 +2367,17 @@ class VolatilityDTB(obj.VolatilityMagic):
         state_offset  = profile.get_obj_offset("task_struct", "state")
         files_offset  = profile.get_obj_offset("task_struct", "files") 
         mm_offset     = profile.get_obj_offset("task_struct", "active_mm")
-        pas           = self.obj_vm
         
+        # this appeared around 2.6.24, which we only need it for samples with KASLR, which came much later
+        try:
+            sched_class_offset = profile.get_obj_offset("task_struct", "sched_class")
+            idle_class_addr    = tbl["idle_sched_class"][0][0] + virtual_shift_address
+        except KeyError:
+            sched_class_offset = -1
+            idle_class_addr    = -1
+
+        pas           = self.obj_vm
+
         if physical_shift_address != 0 and virtual_shift_address != 0:
             good_dtb = (dtb_sym_addr - shifts[0] - virtual_shift_address) + physical_shift_address
             self.obj_vm.profile.physical_shift = physical_shift_address 
@@ -2408,6 +2418,13 @@ class VolatilityDTB(obj.VolatilityMagic):
                 if pas.zread(good_dtb, 8) != "\x00\x00\x00\x00\x00\x00\x00\x00":
                     continue
 
+                if sched_class_offset != -1:
+                    sched_class_val = pas.read(swapper_address + sched_class_offset, read_sz)
+                    sched_class_addr = struct.unpack(fmt, sched_class_val)[0]
+ 
+                    if (sched_class_addr & 0xfff) != (idle_class_addr & 0xfff):
+                        continue
+
                 files_buf  = pas.read(swapper_address + files_offset, read_sz)
                 files_addr = struct.unpack(fmt, files_buf)[0]
 
@@ -2417,7 +2434,7 @@ class VolatilityDTB(obj.VolatilityMagic):
                 self.obj_vm.profile.virtual_shift  = tmp_virtual_shift
  
                 break
-        
+
         yield good_dtb
 
 # the intel check, simply checks for the static paging of init_task

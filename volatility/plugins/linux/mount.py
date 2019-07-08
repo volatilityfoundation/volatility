@@ -42,17 +42,42 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         if not dev_name.is_valid():
             return ret
 
-        fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
-
-        if not fstype.is_valid():
+        if len(dev_name) < 3:
             return ret
 
-        #print fs_types
-        #if str(fstype) not in fs_types:
-        #    return ret
+        new_name = False
+
+        for nn in str(dev_name)[:3]:
+            n = ord(nn)
+            if n < 32 or n > 126 or n == 63: # 63 = ?
+                new_name = True
+                break
+ 
+        if new_name == True:
+            s = obj.Object("Pointer", offset = mnt.mnt_devname.obj_offset + 16, vm = self.addr_space)
+            if not s.is_valid():
+                return ret
+
+            dev_name = s.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
+            if not dev_name.is_valid() or len(dev_name) < 3:
+                return ret
+
+            for nn in str(dev_name)[:3]:
+                n = ord(nn)
+                if n < 32 or n > 126 or n == 63: # 63 = ?
+                    return ret
+ 
+        fstype = mnt.mnt_sb.s_type.name.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
+
+        if not fstype.is_valid() or len(fstype) < 3:
+            return ret
+
+        for nn in str(fstype)[:3]:
+            n = ord(nn)
+            if n < 32 or n > 126 or n == 63: # 63 = ?
+                return ret
 
         path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
-
         if path == []:
             return ret
 
@@ -93,6 +118,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                 continue
 
             seen = {}
+            mseen = {}
             for mnt in outerlist.list_of_type(mnttype, "mnt_hash"):
                 if mnt.v() in seen:
                     break
@@ -103,26 +129,39 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                     break
 
                 if mnt.is_valid():
-                    hash_mnts[mnt]            = 1
+                    mkey = mnt.v()
+                    if not mkey in mseen:
+                        hash_mnts[mnt] = 1
+                        mseen[mkey] = 1 
                 else:
                     break
 
                 if mnt.mnt_parent.is_valid():
-                    hash_mnts[mnt.mnt_parent] = 1
-    
-                if mnt.mnt_parent.mnt_parent.is_valid():    
-                    hash_mnts[mnt.mnt_parent.mnt_parent] = 1
+                    mkey = mnt.mnt_parent.v()
+                    if not mkey in mseen:        
+                        hash_mnts[mnt.mnt_parent] = 1
+                        mseen[mkey] = 1
+
+                if mnt.mnt_parent.mnt_parent.is_valid(): 
+                    mkey = mnt.mnt_parent.mnt_parent.v()
+                    if not mkey in mseen:   
+                        hash_mnts[mnt.mnt_parent.mnt_parent] = 1
+                        mseen[mkey] = 1
 
         child_mnts = {}
         for mnt in hash_mnts:
             cseen = {}
             for child_mnt in mnt.mnt_child.list_of_type(mnttype, "mnt_child"):
+                
                 if not child_mnt.is_valid():
                     break
                 
                 child_mnts[child_mnt]            = 1
   
                 if child_mnt.v() in cseen:
+                    break
+
+                if len(child_mnts.keys()) > 1024:
                     break
 
                 cseen[child_mnt.v()] = 1
@@ -139,8 +178,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
         for t in tmp_mnts:
             tt = t.mnt_devname.dereference_as("String", length = linux_common.MAX_STRING_LENGTH)
             if tt:
-                tmp = str(tt)
-                if len(str(tmp)) > 2 and (str(tmp)[0] == '/' or tmp in ['devtmpfs', 'proc', 'sysfs', 'nfsd', 'tmpfs', 'sunrpc', 'devpts', 'none']):
+                if len(str(tt)) > 2 or (len(str(tt)) > 1 and str(tt)[0] == '/'):
                     all_mnts.append(t)
 
         list_mnts    = {} 

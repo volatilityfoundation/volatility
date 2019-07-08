@@ -42,17 +42,47 @@ class mac_list_files(common.AbstractMacCommand):
             action = 'store_true')
 
     @staticmethod
+    def walk_vnodelist(listhead, loop_vnodes):
+        seen = set()
+
+        vnode = listhead.tqh_first.dereference()
+        while vnode:
+            if vnode in seen:
+                break
+
+            seen.add(vnode)
+
+            loop_vnodes.add(vnode)
+
+            vnode = vnode.v_mntvnodes.tqe_next.dereference()
+        
+        return loop_vnodes
+
+    @staticmethod
     def list_files(config):
     
         plugin = mac_mount.mac_mount(config)
         mounts = plugin.calculate()
         vnodes = {}
         parent_vnodes = {}
+        loop_vnodes = set()
 
+        seen = set()
         ## build an initial table of all vnodes 
         for mount in mounts:
-            vnode = mount.mnt_vnodelist.tqh_first.dereference()
+            loop_vnodes = mac_list_files.walk_vnodelist(mount.mnt_vnodelist, loop_vnodes)
 
+            loop_vnodes = mac_list_files.walk_vnodelist(mount.mnt_workerqueue, loop_vnodes)
+
+            loop_vnodes = mac_list_files.walk_vnodelist(mount.mnt_newvnodes, loop_vnodes)
+
+            loop_vnodes.add(mount.mnt_vnodecovered)
+
+            loop_vnodes.add(mount.mnt_realrootvp)
+
+            loop_vnodes.add(mount.mnt_devvp)
+
+        for vnode in loop_vnodes:
             while vnode:
                 ## abort here to prevent going in a loop 
                 if vnode.obj_offset in vnodes:
@@ -66,6 +96,7 @@ class mac_list_files(common.AbstractMacCommand):
                 
                     entry = [name, None, vnode]
                     vnodes[vnode.obj_offset] = entry
+                
  
                 else:
                     name = vnode.v_name.dereference()
@@ -82,7 +113,7 @@ class mac_list_files(common.AbstractMacCommand):
             
                     entry = [name, par_offset, vnode]
                     vnodes[vnode.obj_offset] = entry
-                
+                    
                 vnode = vnode.v_mntvnodes.tqe_next.dereference() 
 
         ## account for vnodes that aren't in the list but are 
@@ -112,9 +143,9 @@ class mac_list_files(common.AbstractMacCommand):
         
                 entry = [str(name), par_offset, parent]
                 vnodes[parent.obj_offset] = entry
-                
+               
                 parent = next_parent  
-
+        
         ## build the full paths for all directories
         for key, val in vnodes.items():
             name, parent, vnode = val
@@ -132,7 +163,11 @@ class mac_list_files(common.AbstractMacCommand):
                 full_path = parent_vnodes[parent] + "/" + name
             else:
                 paths = [name]
-                while parent:
+                seen_subs = set()
+
+                while parent and parent not in seen_subs:
+                    seen_subs.add(parent)
+
                     entry = vnodes.get(parent)
                 
                     ## a vnode's parent wasn't found or 

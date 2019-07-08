@@ -53,6 +53,9 @@ class mac_notifiers(lsmod.mac_lsmod):
         p = obj.Object("Pointer", offset = gnotify_addr, vm = self.addr_space)
         gnotifications = p.dereference_as(self._struct_or_class("OSDictionary"))
 
+        if gnotifications.count > 1024:
+            return
+
         ents = obj.Object('Array', offset = gnotifications.dictionary, 
                           vm = self.addr_space, 
                           targetType = self._struct_or_class("dictEntry"), 
@@ -60,7 +63,6 @@ class mac_notifiers(lsmod.mac_lsmod):
 
         # walk the current set of notifications
         for ent in ents:
-
             if ent == None or not ent.is_valid():
                 continue
 
@@ -68,12 +70,17 @@ class mac_notifiers(lsmod.mac_lsmod):
 
             # get the value
             valset = ent.value.dereference_as(self._struct_or_class("OSOrderedSet"))
+            if valset == None or valset.count > 1024:
+                continue
 
             notifiers_ptrs = obj.Object('Array', offset = valset.array, 
                                         vm = self.addr_space, 
                                         targetType = 'Pointer', 
                                         count = valset.count)
-            
+ 
+            if notifiers_ptrs == None:
+                continue
+ 
             for ptr in notifiers_ptrs:
                 notifier = ptr.dereference_as(self._struct_or_class("_IOServiceNotifier"))
 
@@ -81,6 +88,8 @@ class mac_notifiers(lsmod.mac_lsmod):
                     continue
 
                 matches = self.get_matching(notifier)
+                if matches == []:
+                    continue
 
                 # this is the function that handles whatever the notification is for
                 # this should be only in the kernel or in one of the known IOKit 
@@ -98,18 +107,22 @@ class mac_notifiers(lsmod.mac_lsmod):
     # returns the list of matching notifiers (serviceMatch) for a notifier as a string
     def get_matching(self, notifier):
         matches = []
-   
+
+        if notifier.matching.count > 1024:
+            return matches  
+ 
         ents = obj.Object('Array', offset = notifier.matching.dictionary, 
                           vm = self.addr_space, 
                           targetType = self._struct_or_class("dictEntry"), 
                           count = notifier.matching.count)
 
         for ent in ents:
-            if ent == None:
+            if ent == None or ent.value == None:
                 continue
-
+ 
             match = ent.value.dereference_as(self._struct_or_class("OSString"))        
-            matches.append(str(match))
+            if len(str(match)) > 0:
+                matches.append(str(match))
 
         return ",".join(matches)
 

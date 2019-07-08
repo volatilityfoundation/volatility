@@ -43,7 +43,7 @@ class mac_pslist(common.AbstractMacCommand):
         pspace = utils.load_as(addr_space.get_config(), astype = 'physical')
         proc = obj.Object("proc", vm = pspace,     offset = offset)
         task = obj.Object("task", vm = addr_space, offset = proc.task)
-        
+
         return task.bsd_info.dereference_as("proc")
 
     def allprocs(self):
@@ -99,6 +99,7 @@ class mac_pslist(common.AbstractMacCommand):
                                   ("Bits", str),
                                   ("DTB", Address),
                                   ("Start time", str),
+                                  ("PPID", int),
                                   ], self.generator(data))
     def generator(self, data):
         for proc in data:
@@ -118,6 +119,7 @@ class mac_pslist(common.AbstractMacCommand):
                        str(bit_string),
                        Address(proc.task.dereference_as("task").map.pmap.pm_cr3),
                        str(proc.start_time()),
+                       int(proc.p_ppid),
                        ])
 
     def render_text(self, outfd, data):
@@ -127,9 +129,11 @@ class mac_pslist(common.AbstractMacCommand):
                           ("Uid", "8"),
                           ("Gid", "8"),
                           ("PGID", "8"),
-                          ("Bits", "12"), 
+                          ("Bits", "12"),
                           ("DTB", "#018x"),
-                          ("Start Time", "")])
+                          ("Start Time", ""),
+                          ("Ppid", "8"),
+                          ])
 
         for proc in data:
             if not proc.is_valid() or len(proc.p_comm) == 0:
@@ -146,4 +150,5 @@ class mac_pslist(common.AbstractMacCommand):
                                   str(proc.p_pgrpid),
                                   bit_string,
                                   proc.task.dereference_as("task").map.pmap.pm_cr3,
-                                  proc.start_time())
+                                  proc.start_time(),
+                                  str(proc.p_ppid))

@@ -70,10 +70,15 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
         check_idxs = list(range(0, 20)) + [128]
 
         if self.profile.metadata.get('memory_model', '32bit') == "32bit":
-            idt_type = "desc_struct"
+            if self.profile.has_type("gate_struct"):
+                idt_type = "gate_struct"
+            else:
+                idt_type = "desc_struct"
         else:
             if self.profile.has_type("gate_struct64"):
                 idt_type = "gate_struct64"
+            elif self.profile.has_type("gate_struct"):
+                idt_type = "gate_struct"
             else:
                 idt_type = "idt_desc"
 
@@ -95,7 +100,11 @@ class linux_check_idt(linux_common.AbstractLinuxCommand):
                 else:
                     low    = ent.offset_low
                     middle = ent.offset_middle
-                    high   = ent.offset_high
+                    
+                    if hasattr(ent, "offset_high"):
+                        high   = ent.offset_high
+                    else:
+                        high = 0
 
                     idt_addr = (high << 32) | (middle << 16) | low
 

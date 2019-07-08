@@ -103,14 +103,14 @@ class linux_yarascan(malfind.YaraScan):
                                                    address_space = self.addr_space)
                                                    
             for hit, address in scanner.scan(start_offset = kernel_start):
-                yield (None, address, hit, 
+                yield (None, address - self._config.REVERSE, hit,
                         scanner.address_space.zread(address - self._config.REVERSE, self._config.SIZE))
         else:
             tasks = self.filter_tasks()
             for task in tasks: 
                 scanner = VmaYaraScanner(task = task, rules = rules)
                 for hit, address in scanner.scan():
-                    yield (task, address, hit, 
+                    yield (task, address - self._config.REVERSE, hit,
                                 scanner.address_space.zread(address - self._config.REVERSE, self._config.SIZE))
     
     def render_text(self, outfd, data):
