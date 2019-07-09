@@ -1951,6 +1951,9 @@ class task_struct(obj.CType):
         rb = self.mm.mm_rb.rb_node
 
         for vma in self._walk_rb(rb):
+            if vma.vm_start in vmas:
+                debug.warning("Detected corruption in the memory mappings red-black tree")
+                break
             vmas[vma.vm_start] = vma
  
         for key in sorted(vmas.iterkeys()):
