@@ -339,7 +339,9 @@ class linux_pidhashtable(linux_pslist.linux_pslist):
                 yield node
 
     def pid_namespace_idr(self):
-        if self.addr_space.profile.obj_has_member("radix_tree_root", "rnode"):
+        if not self.addr_space.profile.has_type("radix_tree_root"):
+            func = self._walk_xarray_pids
+        elif self.addr_space.profile.obj_has_member("radix_tree_root", "rnode"):
             func = self._walk_pid_ns_idr
         else:
             func = self._walk_xarray_pids
