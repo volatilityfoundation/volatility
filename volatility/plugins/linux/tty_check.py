@@ -27,6 +27,8 @@ import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.lsmod as linux_lsmod
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_check_tty(linux_common.AbstractLinuxCommand):
     """Checks tty devices for hooks"""
@@ -69,6 +71,16 @@ class linux_check_tty(linux_common.AbstractLinuxCommand):
                 sym_cache[recv_buf] = sym_name
                 
                 yield (name, recv_buf, sym_name, hooked)
+
+    def unified_output(self, data):
+        return TreeGrid([("Name", str),
+                         ("Address", Address),
+                         ("Symbol", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for name, call_addr, sym_name, _hooked in data:
+            yield (0, [str(name), Address(call_addr), str(sym_name)])
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Name", "<16"), ("Address", "[addrpad]"), ("Symbol", "<30")])
