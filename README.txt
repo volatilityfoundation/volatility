@@ -1,4 +1,135 @@
 ============================================================================
+Volatility Framework with Windows 10 Memory Compression
+============================================================================
+
+This repository contains Volatility with additions made to support Windows 10
+memory compression. If a supported Windows 10 profile is used, it will attempt
+to apply the corresponding address space that enables memory decompression.
+This allows plugins to read previously unreadable, compressed data. If a
+compressed page is unable to be read, it has likely been paged-out and cannot
+be recovered.
+
+Requirements
+============
+- Python 2.6 or later, but not 3.0. http://www.python.org
+- Yara (https://github.com/VirusTotal/yara/releases)
+- Distorm3 (https://github.com/gdabah/distorm/releases)
+- Download/clone this repository (https://github.com/fireeye/win10_volatility)
+
+Follow any installation instructions available at:
+
+    https://github.com/volatilityfoundation/volatility/wiki/Installation
+
+Supported Windows 10 Versions
+=============================
+
+OS     | Build  | Arch | Profile
+------ | ------ | ---- | -------
+Win 10 | 1607   | x86  | Win10_x86_14393
+Win 10 | 1607   | x64  | Win10_x64_14393
+Win 10 | 1703   | x86  | Win10_x86_15063
+Win 10 | 1703   | x64  | Win10_x64_15063
+Win 10 | 1709   | x86  | Win10_x86_16299
+Win 10 | 1709   | x64  | Win10_x64_16299
+Win 10 | 1803   | x86  | Win10_x86_17134
+Win 10 | 1803   | x64  | Win10_x64_17134
+Win 10 | 1809   | x86  | Win10_x86_17763
+Win 10 | 1809   | x64  | Win10_x64_17763
+
+Address Space Details
+=====================
+
+Below are the new address spaces that support Windows 10 memory compression:
+* Win10CompressedIA32PagedMemoryPae
+* Win10CompressedIA32PagedMemory
+* Win10CompressedAMD64PagedMemory
+
+To verify one of the new Windows 10 memory compression address spaces loads,
+run the 'imageinfo' plugin against a supported Windows 10 memory capture.
+
+"AS Layer 1" should report one of the following values:
+* Win10CompressedIA32PagedMemoryPae
+* Win10CompressedIA32PagedMemory
+* Win10CompressedAMD64PagedMemory
+
+If not reported, rerun imageinfo and specify a profile using the command line
+option “--profile=<profile>”. If the profile is not known ahead of time, you
+may need to iterate through the suggested profiles until the correct Windows 10
+memory compression address space is reported.
+
+Windows 10 memory decompression relies on the address of nt!SmGlobals. Before
+applying the new address space, we utilize Yara to scan the memory image using
+a byte-sequence regular expression to find nt!SmGlobals. If not found, the
+address space aborts loading. Users can manually supply this address, if known,
+via the command line option:
+
+    --smglobals=<SmGlobals_address>
+
+The decompression algorithms also rely on the value of the Virtual Store page
+file number. On default Windows 10 configurations this value is two. This is
+also the default value used in our address spaces. To override this value, users
+may supply a different value via the command line option:
+
+    --vspagefilenumber=<virtual_store_page_file_number>
+
+New Files
+=========
+
+Below are the files added to support Windows 10 memory compression:
+* volatility/plugins/addrspaces/win10_memcompression.py
+* volatility/plugins/overlays/windows/win10_memcompression.py
+* volatility/plugins/win10deflate.py
+* volatility/plugins/win10smglobals.py
+
+If you already have Volatility 2.6.1 (at least commit 8769579), you can copy
+these files into their respective locations and begin using our new address
+spaces.
+
+New Plugins
+===========
+
+We added two new plugins.
+
+Plugins
+-------
+win10deflate    - Takes a virtual address of a known compressed page and a process id, and returns the decompressed data
+win10smglobals  - Prints the address of nt!SmGlobals if found via Yara
+
+
+Side Note
+=========
+
+With the addition of the new address spaces, scanning plugins such as 'psscan'
+may take longer than expected due to the decompression of many pages.
+However, without the new address spaces that support Windows 10 memory
+compression, most scanning plugins will fail due to not finding the
+nt!ObHeaderCookie (the value found via the plugin 'win10cookie'). To aid in the
+need for speed, we added an additional command line flag:
+
+    --disablewin10memcompress
+
+This flag prevents the loading of our new address spaces.
+
+To demonstrate how this can be useful, let's say you have a Windows 10 memory
+image with a high load of compressed pages and want to run the plugin 'psscan'.
+To speed up scanning, the user disables our new address space via the flag
+above. However, now the user faces an error message:
+
+    "Cannot find nt!ObGetObjectType"
+
+This error indicates that the address where nt!ObHeaderCookie is found is likely
+within a compressed page and cannot be read. To get around this, users can first
+enable a new Windows 10 memory compression address space and find the address
+of nt!ObHeaderCookie by running the plugin 'win10cookie'. Then the user can
+supply this value via the command line while disabling our new address space to
+get the speed up for the 'psscan' plugin. Below is the command line option to
+provide a custom nt!ObHeaderCookie value:
+
+    --cookie=<ObHeaderCookie_address>
+
+
+(Original REDADME below)
+============================================================================
 Volatility Framework - Volatile memory extraction utility framework
 ============================================================================
 
