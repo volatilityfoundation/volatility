@@ -78,7 +78,7 @@ class linux_mount(linux_common.AbstractLinuxCommand):
                 return ret
 
         path = linux_common.do_get_path(mnt.mnt_sb.s_root, mnt.mnt_parent, mnt.mnt_root, mnt)
-        if path == []:
+        if path == [] or len(path) > 4096:
             return ret
 
         mnt_string = self._calc_mnt_string(mnt)
