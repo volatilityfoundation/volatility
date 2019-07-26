@@ -28,6 +28,7 @@ import volatility.obj as obj
 import volatility.plugins.linux.flags as linux_flags
 import volatility.plugins.linux.common as linux_common
 import volatility.plugins.linux.pslist as linux_pslist
+from volatility.renderers import TreeGrid
 
 class linux_mount(linux_common.AbstractLinuxCommand):
     """Gather mounted fs/devices"""
@@ -244,6 +245,18 @@ class linux_mount(linux_common.AbstractLinuxCommand):
             fs = fs.next
 
         return all_fs
+
+    def unified_output(self, data):
+        return TreeGrid([("Name", str),
+                         ("Path", str),
+                         ("Fstype", str),
+                         ("RR", str),
+                         ("MntString", str)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for (_sb, dev_name, path, fstype, rr, mnt_string) in data:
+            yield(0, [str(dev_name), str(path), str(fstype), str(rr), str(mnt_string)])
 
     def render_text(self, outfd, data):
         for (_sb, dev_name, path, fstype, rr, mnt_string) in data:
