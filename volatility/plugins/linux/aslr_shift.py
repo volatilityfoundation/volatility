@@ -25,19 +25,29 @@
 
 import volatility.utils as utils
 import volatility.plugins.linux.common as common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
+
 
 class linux_aslr_shift(common.AbstractLinuxCommand):
     """Automatically detect the Linux ASLR shift"""
 
     def calculate(self):
         aspace = utils.load_as(self._config)
-        
+
         yield aspace.profile.virtual_shift, aspace.profile.physical_shift
+
+    def unified_output(self, data):
+        return TreeGrid([("vsaddress", Address),
+                         ("psaddress", Address)],
+                        self.generator(data))
+
+    def generator(self, data):
+        for v, p in data:
+            yield (0, [Address(v), Address(p)])
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Virtual Shift Address", "[addrpad]"), ("Physical Shift Address", "[addrpad]")])
 
         for v, p in data:
             self.table_row(outfd, v, p)
-
-
