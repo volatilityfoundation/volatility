@@ -43,7 +43,7 @@ class _HMAP_ENTRY(obj.CType):
 
     @property
     def BlockAddress(self):
-        return self.PermanentBinAddress & 0xFFFFFFFFFFF0
+        return (self.PermanentBinAddress & 0xFFFFFFFFFFF0) + self.BlockOffset
 
 class Win10Registry(obj.ProfileModification):
     """The Windows 10 registry HMAP"""
