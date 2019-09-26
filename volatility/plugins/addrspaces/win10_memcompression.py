@@ -16,6 +16,8 @@
 #
 # Authors:
 # Blaine Stancill <blaine.stancill@FireEye.com>
+#
+# Donated under Volatility Foundation, Inc. Individual Contributor Licensing Agreement
 
 import volatility.debug as debug
 import volatility.obj as obj
