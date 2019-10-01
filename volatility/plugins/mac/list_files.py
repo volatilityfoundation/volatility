@@ -96,8 +96,6 @@ class mac_list_files(common.AbstractMacCommand):
                 
                     entry = [name, None, vnode]
                     vnodes[vnode.obj_offset] = entry
-                
- 
                 else:
                     name = vnode.v_name.dereference()
                     parent = vnode.v_parent.dereference()
@@ -108,7 +106,8 @@ class mac_list_files(common.AbstractMacCommand):
                         if config.SHOW_ORPHANS:
                             par_offset = None
                         else:
-                            vnode = vnode.v_mntvnodes.tqe_next.dereference() 
+                            vnode = vnode.v_mntvnodes.tqe_next.dereference()
+                            vnodes[vnode.obj_offset] = [None, None, vnode]
                             continue
             
                     entry = [name, par_offset, vnode]
@@ -129,7 +128,6 @@ class mac_list_files(common.AbstractMacCommand):
                 vm = vnode.obj_vm)
                 
             while parent:
-            
                 if parent.obj_offset in vnodes:
                     break
 
