@@ -393,15 +393,26 @@ class TimeLiner(common.AbstractWindowsCommand):
             if "Socket" in self._config.TYPE:
                 nets = netscan.Netscan(self._config).calculate()
             for net_object, proto, laddr, lport, raddr, rport, state in nets:
-                conn = "{0}:{1} -> {2}:{3}".format(laddr, lport, raddr, rport)
-                line = "[{6}NETWORK CONNECTION]{0} {2}{0} {1}/{3}/{4}/{5:<#10x}".format(
+
+                if net_object.CreateTime.v() == 0:
+                    continue
+
+                if raddr == "*" and rport == "*":
+                    conn = "{0}:{1}".format(laddr, lport)
+                    socket_type = "SOCKET"
+                else:
+                    conn = "{0}:{1} -> {2}:{3}".format(laddr, lport, raddr, rport)
+                    socket_TYPE = "CONNECTION"
+
+                line = "[{6}NETWORK {7}]{0} {2}{0} {1}/{3}/{4}/{5:<#10x}".format(
                         "" if body else "|",
                         net_object.Owner.UniqueProcessId,
                         conn,
                         proto,
                         state,
                         net_object.obj_offset,
-                        self._config.MACHINE)
+                        self._config.MACHINE,
+                        socket_type)
 
                 yield self.getoutput(line, net_object.CreateTime, body = body)
 
