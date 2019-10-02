@@ -36,8 +36,8 @@ Windows:
 * 64-bit Windows 7 Service Pack 0 and 1
 * 64-bit Windows 8, 8.1, and 8.1 Update 1
 * 64-bit Windows Server 2012 and 2012 R2 
-* 64-bit Windows 10 (including at least 10.0.14393)
-* 64-bit Windows Server 2016 (including at least 10.0.14393.0)
+* 64-bit Windows 10 (including at least 10.0.18362)
+* 64-bit Windows Server 2016 (including at least 10.0.18362)
 
 Note: Please see the guidelines at the following link for notes on 
 compatibility with recently patched Windows 7 (or later) memory samples:
