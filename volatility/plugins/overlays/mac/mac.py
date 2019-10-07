@@ -385,25 +385,47 @@ class vnode(obj.CType):
         idx = 0
         written = 0
 
-        while cur and cur.is_valid() and cur.offset < file_size:
+        while cur and cur.is_valid() and cur.get_offset() < file_size:
             # the last element of the queue seems to track the size of the queue
-            if cur.offset != 0 and cur.offset == idx:
+            if cur.get_offset() != 0 and cur.get_offset() == idx:
                 break
             
-            if cur.phys_page != 0 and cur.offset >= 0:
+            if cur.get_phys_page() != 0 and cur.get_offset() >= 0:
                 sz = 4096
 
                 if file_size - written < 4096:
                     sz = file_size - written
                 
-                buf = phys_as.zread(cur.phys_page * 4096, sz)
+                buf = phys_as.zread(cur.get_phys_page() * 4096, sz)
 
-                yield (cur.offset.v(), buf)
+                yield (cur.get_offset().v(), buf)
 
             idx     = idx + 1
             written = written + 4096
 
-            cur = self._get_next_page(cur.listq)
+            cur = self._get_next_page(cur.get_listq())
+
+class vm_page(obj.CType):
+    def _get_vmp_member(self, memb):
+        ret = self.members.get(memb)
+
+        if ret:
+            ret = self.m(memb)
+
+        # 10.14+
+        else:
+            ret = self.m("vmp_" + memb)
+
+        return ret
+
+    def get_offset(self):
+        return self._get_vmp_member("offset")
+
+    def get_phys_page(self):
+        return self._get_vmp_member("phys_page")
+
+    def get_listq(self):
+        return self._get_vmp_member("listq")
 
 class fileglob(obj.CType):
     
@@ -2280,6 +2302,7 @@ class MacObjectClasses(obj.ProfileModification):
             'vm_map_object' : vm_map_object,
             'rtentry' : rtentry,
             'queue_entry' : queue_entry,
+            'vm_page' : vm_page,
         })
 
 mac_overlay = {
