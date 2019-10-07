@@ -663,8 +663,10 @@ class _EPROCESS(obj.CType, ExecutiveObjectMixin):
         @returns: True if the MMVAD looks like it might
         contain a mapped file. 
         """
-
-        return vad.VadFlags.PrivateMemory == 0 and vad.ControlArea
+        try:
+            return vad.VadFlags.PrivateMemory == 0 and vad.ControlArea
+        except AttributeError:
+            return False
 
     def environment_variables(self):
         """Generator for environment variables. 
