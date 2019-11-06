@@ -28,33 +28,37 @@ import volatility.plugins.addrspaces.crash as crash
 
 class BitmapDmpVTypes(obj.ProfileModification):
 
-    conditions = {'os': lambda x: x == 'windows',
-                  'memory_model': lambda x: x == "64bit"}
+    conditions = {'os': lambda x: x == 'windows'}
 
     def modification(self, profile):
         profile.vtypes.update({
-              '_FULL_DUMP64' : [ 0x38, {
+              '_SUMMARY_DUMP' : [ 0x38, {
                 'Signature' : [ 0x0, ['array', 4, ['unsigned char']]],
                 'ValidDump' : [ 0x4, ['array', 4, ['unsigned char']]],
                 'DumpOptions' : [ 0x8, ['unsigned long long']],
                 'HeaderSize' : [ 0x20, ['unsigned long long']],  
-                'BitmapSize' : [ 0x28, ['unsigned long long']],  
-                'Pages' : [ 0x30, ['unsigned long long']], 
+                'Pages' : [ 0x28, ['unsigned long long']],
+                'BitmapSize': [0x30, ['unsigned long long']],
                 'Buffer' : [ 0x38, ['array', lambda x: (x.BitmapSize+7) / 0x8, ['unsigned char']]],
                 'Buffer2' : [ 0x38, ['array', lambda x: (x.BitmapSize + 31) / 32, ['unsigned long']]],
             } ],
             })
 
 
-class WindowsCrashDumpSpace64BitMap(crash.WindowsCrashDumpSpace32):
-    """ This AS supports Windows BitMap Crash Dump format """
-    order = 29
-    dumpsig = 'PAGEDU64'
-    headertype = "_DMP_HEADER64"
-    headerpages = 0x13
-    bitmaphdroffset = 0x2000 
+class WindowsCrashDumpBitmap(crash.WindowsCrashDumpSpace32):
+    """ This is a base AS for bitmap crash dumps """
+
+    # these must be defined by a child class
+    dumpsig = None
+    headertype = None
+    bitmaphdroffset = None
 
     def __init__(self, base, config, **kwargs):
+
+        self.as_assert(self.dumpsig is not None, "No dumpsig defined")
+        self.as_assert(self.headertype is not None, "No headertype defined")
+        self.as_assert(self.bitmaphdroffset is not None, "No bitmaphdroffset defined")
+
         ## We must have an AS below us
         self.as_assert(base, "No base Address Space")
 
@@ -71,12 +75,12 @@ class WindowsCrashDumpSpace64BitMap(crash.WindowsCrashDumpSpace32):
         self.as_assert((self.header.DumpType == 5), "Unsupported dump format")
 
         # Instantiate the Summary/Full Bitmap header
-        self.bitmaphdr = obj.Object("_FULL_DUMP64", self.bitmaphdroffset, base)
+        self.bitmaphdr = obj.Object("_SUMMARY_DUMP", self.bitmaphdroffset, base)
 
         # Create a cached version of the Header/Bitmap to reduce I/O
         fdmp_buff = base.read(self.bitmaphdroffset, self.bitmaphdr.HeaderSize-self.bitmaphdroffset)
         bufferas = addrspace.BufferAddressSpace(self._config, data = fdmp_buff)
-        self.bitmaphdr2 = obj.Object('_FULL_DUMP64', vm = bufferas, offset = 0)
+        self.bitmaphdr2 = obj.Object('_SUMMARY_DUMP', vm = bufferas, offset = 0)
 
         firstbit = None                         # First bit in a run
         firstoffset = 0                         # File offset of first bit 
@@ -118,3 +122,17 @@ class WindowsCrashDumpSpace64BitMap(crash.WindowsCrashDumpSpace32):
             self.runs.append((firstbit * 0x1000, firstoffset, (lastbitseen - firstbit + 1) * 0x1000))
 
         self.dtb = self.header.DirectoryTableBase.v()
+
+class WindowsCrashDumpSpace32BitMap(WindowsCrashDumpBitmap):
+    """ This AS supports Windows 32bit BitMap Crash Dump format """
+    order = 29
+    dumpsig = 'PAGEDUMP'
+    headertype = "_DMP_HEADER"
+    bitmaphdroffset = 0x1000
+
+class WindowsCrashDumpSpace64BitMap(WindowsCrashDumpBitmap):
+    """ This AS supports Windows 64bit BitMap Crash Dump format """
+    order = 29
+    dumpsig = 'PAGEDU64'
+    headertype = "_DMP_HEADER64"
+    bitmaphdroffset = 0x2000

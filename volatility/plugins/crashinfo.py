@@ -71,7 +71,8 @@ class CrashInfoModification(obj.ProfileModification):
 class CrashInfo(common.AbstractWindowsCommand):
     """Dump crash-dump information"""
 
-    target_as = ['WindowsCrashDumpSpace32', 'WindowsCrashDumpSpace64', 'WindowsCrashDumpSpace64BitMap']
+    target_as = ['WindowsCrashDumpSpace32', 'WindowsCrashDumpSpace64',
+                 'WindowsCrashDumpSpace64BitMap', 'WindowsCrashDumpSpace32BitMap']
 
     @cache.CacheDecorator("tests/crashinfo")
     def calculate(self):
