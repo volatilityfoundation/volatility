@@ -43,13 +43,16 @@ class DWARFParser(object):
         'long long int': 'long long',
         'long long unsigned int': 'unsigned long long',
         'long unsigned int': 'unsigned long',
+        'short': 'short',
         'short int': 'short',
         'short unsigned int': 'unsigned short',
-        'signed char': 'signed char',
+        'signed char': 'char',
         'unsigned char': 'unsigned char',
         'unsigned int': 'unsigned int',
+        'unsigned short': 'unsigned short',
         'sizetype' : 'unsigned long',
         'ssizetype' : 'long',
+        '__ARRAY_SIZE_TYPE__': 'unsigned long',
     }
 
 
