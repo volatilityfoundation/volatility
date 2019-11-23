@@ -796,6 +796,78 @@ class _OBJECT_HEADER_10_18362(_OBJECT_HEADER_10):
         68: "VRegConfigurationContext",
     }
 
+class _OBJECT_HEADER_10_19028(_OBJECT_HEADER_10):
+
+    type_map = {
+        2: "Type",
+        3: "Directory",
+        4: "SymbolicLink",
+        5: "Token",
+        6: "Job",
+        7: "Process",
+        8: "Thread",
+        9: "Partition",
+        10: "UserApcReserve",
+        11: "IoCompletionReserve",
+        12: "ActivityReference",
+        13: "PsSiloContextPaged",
+        14: "PsSiloContextNonPaged",
+        15: "DebugObject",
+        16: "Event",
+        17: "Mutant",
+        18: "Callback",
+        19: "Semaphore",
+        20: "Timer",
+        21: "IRTimer",
+        22: "Profile",
+        23: "KeyedEvent",
+        24: "WindowStation",
+        25: "Desktop",
+        26: "Composition",
+        27: "RawInputManager",
+        28: "CoreMessaging",
+        29: "ActivationObject",
+        30: "TpWorkerFactory",
+        31: "Adapter",
+        32: "Controller",
+        33: "Device",
+        34: "Driver",
+        35: "IoCompletion",
+        36: "WaitCompletionPacket",
+        37: "File",
+        38: "TmTm",
+        39: "TmTx",
+        40: "TmRm",
+        41: "TmEn",
+        42: "Section",
+        43: "Session",
+        44: "Key",
+        45: "RegistryTransaction",
+        46: "ALPC",
+        47: "EnergyTracker",
+        48: "PowerRequest",
+        49: "WmiGuid",
+        50: "EtwRegistration",
+        51: "EtwSessionDemuxEntry",
+        52: "EtwConsumer",
+        53: "CoverageSampler",
+        54: "DmaAdapter",
+        55: "PcwObject",
+        56: "FilterConnectionPort",
+        57: "FilterCommunicationPort",
+        58: "NdisCmState",
+        59: "DxgkSharedResource",
+        60: "DxgkSharedKeyedMutexObject",
+        61: "DxgkSharedSyncObject",
+        62: "DxgkSharedSwapChainObject",
+        63: "DxgkDisplayManagerObject",
+        64: "DxgkCurrentDxgProcessObject",
+        65: "DxgkSharedProtectedSessionObject",
+        66: "DxgkSharedBundleObject",
+        67: "DxgkCompositionObject",
+        68: "VRegConfigurationContext",
+    }
+
 class _HANDLE_TABLE_10_DD08DD42(win8._HANDLE_TABLE_81R264):
     
     def decode_pointer(self, value):
@@ -817,6 +889,14 @@ class Win10ObjectHeader(obj.ProfileModification):
 
         metadata = profile.metadata
         build = metadata.get("build", 0)
+
+        if build >= 19028:
+            header = _OBJECT_HEADER_10_19028
+
+            ## update the handle table here as well
+            if metadata.get("memory_model") == "64bit":
+                profile.object_classes.update({
+                    "_HANDLE_TABLE": _HANDLE_TABLE_10_DD08DD42})
 
         if build >= 18362:
             header = _OBJECT_HEADER_10_18362
@@ -1119,5 +1199,15 @@ class Win10x64_18362(obj.Profile):
     _md_major = 6
     _md_minor = 4
     _md_build = 18362
+    _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_18362_vtypes'
+    _md_product = ["NtProductWinNt"]
+	
+class Win10x64_19028(obj.Profile):
+    """ A Profile for Windows 10 x64 Insider Preview Fast Build 19028 (20H1) (10.0.19028.0 / 2019-11-19) """
+    _md_memory_model = '64bit'
+    _md_os = 'windows'
+    _md_major = 6
+    _md_minor = 4
+    _md_build = 19028
     _md_vtype_module = 'volatility.plugins.overlays.windows.win10_x64_18362_vtypes'
     _md_product = ["NtProductWinNt"]
