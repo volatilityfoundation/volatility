@@ -383,7 +383,7 @@ class proc(obj.CType):
             # This is the most recent version with a separate table struct for filedescent structs
             if hasattr(self.p_fd, "fd_files"):
                 filedescents = obj.Object('Array', offset = self.p_fd.fd_files.fdt_ofiles.obj_offset, vm = self.obj_vm, targetType = 'filedescent', count = self.p_fd.fd_lastfile + 1)
-                files = (i.fde_file.v() for f in filedescends)
+                files = (i.fde_file for i in filedescents)
             # In 8.4.0, type of fd_ofiles is `struct file **`
             elif hasattr(self.p_fd, "fd_ofiles") \
                     and isinstance(self.p_fd.fd_ofiles, obj.Pointer) \

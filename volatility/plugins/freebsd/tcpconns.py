@@ -35,6 +35,9 @@ class freebsd_tcpconns(freebsd_common.AbstractFreebsdCommand):
 
 
         tcbinfo_addr = self.addr_space.profile.get_symbol('tcbinfo')
+        if not tcbinfo_addr:
+            raise RuntimeError("Unsupported version: don't know where to find the list of connections")
+
         info = obj.Object('inpcbinfo', offset = tcbinfo_addr, vm = self.addr_space)
         c = info.ipi_listhead.dereference().lh_first.dereference().cast("inpcb")
         while c.v():
