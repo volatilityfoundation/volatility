@@ -501,7 +501,7 @@ class Win10x64Tcpip(obj.ProfileModification):
         profile.vtypes.update(tcpip_vtypes_win_10_x64)
         
 class Win10x64_15063_Tcpip(obj.ProfileModification):
-    """TCP Endpoint for Creators and Fall Creators"""
+    """TCP Endpoint for Redstone 2"""
     
     before = ['Win10x64Tcpip']
     conditions = {'os': lambda x: x == 'windows',
@@ -513,5 +513,23 @@ class Win10x64_15063_Tcpip(obj.ProfileModification):
         profile.merge_overlay({
             '_TCP_ENDPOINT': [ None, {
                 'Owner' : [ 0x270, ['pointer', ['_EPROCESS']]],
+                'CreateTime' : [ 0x280, ['WinTimeStamp', dict(is_utc = True)]],
+                }],
+            })
+
+class Win10x64_16299_Tcpip(obj.ProfileModification):
+    """TCP Endpoint for Redstone 3 and above"""
+    
+    before = ['Win10x64_15063_Tcpip']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x >= 16299}
+    def modification(self, profile):
+        profile.merge_overlay({
+            '_TCP_ENDPOINT': [ None, {
+                'Owner' : [ 0x278, ['pointer', ['_EPROCESS']]],
+                'CreateTime' : [ 0x288, ['WinTimeStamp', dict(is_utc = True)]],
                 }],
             })
