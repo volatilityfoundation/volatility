@@ -58,9 +58,13 @@ struct ps_strings vol_ps_strings;
 struct freebsd32_ps_strings vol_freebsd32_ps_strings;
 #endif
 
+#if defined __freeBSD_kernel__ && __FreeBSD_version >= 1100040
 struct fdescenttbl vol_fdescenttbl;
+#endif
 struct filedesc vol_filedesc;
+#if defined __freeBSD_kernel__ && __FreeBSD_version >= 1000028
 struct filedescent vol_filedescent;
+#endif
 
 struct file vol_file;
 
