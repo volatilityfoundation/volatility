@@ -26,6 +26,7 @@ import struct
 import zipfile
 
 import volatility.debug as debug
+import volatility.exceptions as exceptions
 import volatility.dwarf as dwarf
 import volatility.obj as obj
 import volatility.plugins as plugins
@@ -42,9 +43,6 @@ freebsd_overlay = {
         'DTB'            : [ 0x0, ['VolatilityDTB', dict(configname = 'DTB')]],
         'IA32ValidAS'    : [ 0x0, ['VolatilityFreebsdValidAS']],
         'AMD64ValidAS'   : [ 0x0, ['VolatilityFreebsdValidAS']],
-        }],
-    'cdev' : [ None, {
-        'si_name' : [ None, ['String', dict(length = 256)]],
         }],
     'domain' : [ None, {
         'dom_family' : [ None, ['Enumeration', dict(target = 'int', choices = {
@@ -317,11 +315,16 @@ class proc(obj.CType):
             process_as = self.obj_vm.__class__(self.obj_vm.base, self.obj_vm.get_config(), dtb = self.obj_vm.vtop(self.p_vmspace.vm_pmap.pm_pdpt), skip_as_check = True)
         elif self.obj_vm.profile.metadata.get('arch', 'x86') == 'x86':
             process_as = self.obj_vm.__class__(self.obj_vm.base, self.obj_vm.get_config(), dtb = self.obj_vm.vtop(self.p_vmspace.vm_pmap.pm_pdir), skip_as_check = True)
-        elif self.obj_vm.profile.metadata.get('arch', 'x86') == 'x64':
+        # Around 9.3 precomputed cr3 became part of the structure
+        elif self.obj_vm.profile.metadata.get('arch', 'x86') == 'x64' and hasattr(self.p_vmspace.vm_pmap, "pm_cr3"):
             if self.p_vmspace.vm_pmap.pm_ucr3 != 0xffffffffffffffffL:
                 process_as = self.obj_vm.__class__(self.obj_vm.base, self.obj_vm.get_config(), dtb = self.p_vmspace.vm_pmap.pm_ucr3, skip_as_check = True)
             else:
                 process_as = self.obj_vm.__class__(self.obj_vm.base, self.obj_vm.get_config(), dtb = self.p_vmspace.vm_pmap.pm_cr3, skip_as_check = True)
+        elif self.obj_vm.profile.metadata.get('arch', 'x86') == 'x64' and hasattr(self.p_vmspace.vm_pmap, "pm_pml4"):
+            process_as = self.obj_vm.__class__(self.obj_vm.base, self.obj_vm.get_config(), dtb = self.obj_vm.vtop(self.p_vmspace.vm_pmap.pm_pml4), skip_as_check = True)
+        else:
+            raise RuntimeError('Unknown pmap structure')
 
         process_as.name = 'Process {0}'.format(self.p_pid)
 
@@ -377,11 +380,23 @@ class proc(obj.CType):
 
     def lsof(self):
         if self.p_fd.fd_lastfile != -1:
-            files = obj.Object('Array', offset = self.p_fd.fd_files.fdt_ofiles.obj_offset, vm = self.obj_vm, targetType = 'filedescent', count = self.p_fd.fd_lastfile + 1)
-            for n, f in enumerate(files):
-                if f.fde_file.v():
-                    yield f.fde_file, n
+            # This is the most recent version with a separate table struct for filedescent structs
+            if hasattr(self.p_fd, "fd_files"):
+                filedescents = obj.Object('Array', offset = self.p_fd.fd_files.fdt_ofiles.obj_offset, vm = self.obj_vm, targetType = 'filedescent', count = self.p_fd.fd_lastfile + 1)
+                files = (i.fde_file for i in filedescents)
+            # In 8.4.0, type of fd_ofiles is `struct file **`
+            elif hasattr(self.p_fd, "fd_ofiles") \
+                    and isinstance(self.p_fd.fd_ofiles, obj.Pointer) \
+                    and isinstance(self.p_fd.fd_ofiles.dereference(), obj.Pointer) \
+                    and self.p_fd.fd_ofiles.dereference().dereference().obj_type == "file":
+                fileptrs = obj.Object('Array', offset = self.p_fd.fd_ofiles, vm = self.obj_vm, targetType = 'Pointer', count = self.p_fd.fd_lastfile + 1)
+                files = (i.dereference_as("file") for i in fileptrs)
+            else:
+                raise RuntimeError("Unknown filedesc structure")
 
+            for n, f in enumerate(files):
+                if f:
+                    yield f, n
 
 class vm_map_entry(obj.CType):
     def get_perms(self):
@@ -530,6 +545,19 @@ class FreebsdOverlay(obj.ProfileModification):
     def modification(self, profile):
         profile.merge_overlay(freebsd_overlay)
 
+class cdev(obj.CType):
+
+    @property
+    def si_name(self):
+        orig = self.m("si_name")
+        # in versions before 9.1.0, this member is a char pointer
+        if isinstance(orig, obj.Pointer):
+            return obj.Object("String", offset=orig.v(), vm=self.obj_vm, length=64)
+        # after that the indirection was removed and the statically allocated
+        # array is used directly
+        else:
+            return obj.Object("String", offset=orig.obj_offset, vm=self.obj_vm, length=64)
+
 
 class FreebsdObjectClasses(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'freebsd'}
@@ -544,4 +572,5 @@ class FreebsdObjectClasses(obj.ProfileModification):
             'proc': proc,
             'vm_map_entry': vm_map_entry,
             'vnode': vnode,
+            'cdev': cdev,
             })
