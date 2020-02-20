@@ -45,8 +45,8 @@ compatibility with recently patched Windows 7 (or later) memory samples:
     https://github.com/volatilityfoundation/volatility/wiki/2.6-Win-Profiles
 
 Linux: 
-* 32-bit Linux kernels 2.6.11 to 4.2.3
-* 64-bit Linux kernels 2.6.11 to 4.2.3
+* 32-bit Linux kernels 2.6.11 to 5.5
+* 64-bit Linux kernels 2.6.11 to 5.5
 * OpenSuSE, Ubuntu, Debian, CentOS, Fedora, Mandriva, etc
 
 Mac OSX:
@@ -60,6 +60,9 @@ Mac OSX:
 * 64-bit 10.10.x Yosemite (there is no 32-bit version)
 * 64-bit 10.11.x El Capitan (there is no 32-bit version)
 * 64-bit 10.12.x Sierra (there is no 32-bit version)
+* 64-bit 10.13.x High Sierra (there is no 32-bit version))
+* 64-bit 10.14.x Mojave (there is no 32-bit version)
+* 64-bit 10.15.x Catalina (there is no 32-bit version)
 
 Volatility does not provide memory sample acquisition
 capabilities. For acquisition, there are both free and commercial
