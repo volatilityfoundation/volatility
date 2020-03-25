@@ -508,10 +508,26 @@ class Win10x64_15063_Tcpip(obj.ProfileModification):
                   'memory_model': lambda x: x == '64bit',
                   'major': lambda x : x == 6,
                   'minor': lambda x : x == 4,
-                  'build': lambda x : x >= 15063}
+                  'build': lambda x : x == 15063}
     def modification(self, profile):
         profile.merge_overlay({
             '_TCP_ENDPOINT': [ None, {
                 'Owner' : [ 0x270, ['pointer', ['_EPROCESS']]],
+                }],
+            })
+
+class Win10x64_18362_Tcpip(obj.ProfileModification):
+    """TCP Endpoint for Creators and Fall Creators"""
+    
+    before = ['Win10x64Tcpip']
+    conditions = {'os': lambda x: x == 'windows',
+                  'memory_model': lambda x: x == '64bit',
+                  'major': lambda x : x == 6,
+                  'minor': lambda x : x == 4,
+                  'build': lambda x : x == 18362}
+    def modification(self, profile):
+        profile.merge_overlay({
+            '_TCP_ENDPOINT': [ None, {
+                'Owner' : [ 0x298, ['pointer', ['_EPROCESS']]],
                 }],
             })
