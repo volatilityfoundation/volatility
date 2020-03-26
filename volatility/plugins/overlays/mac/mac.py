@@ -1595,8 +1595,11 @@ class vm_map_entry(obj.CType):
         # find_vnode_object
         vnode_object = map_obj.object.object() 
 
-        while vnode_object.shadow.dereference() != None:
+        seen = set()
+
+        while vnode_object.shadow.dereference() != None and vnode_object.v() not in seen:
             vnode_object = vnode_object.shadow.dereference()
+            seen.add(vnode_object.v())
 
         ops = vnode_object.pager.mo_pager_ops.v()
 
