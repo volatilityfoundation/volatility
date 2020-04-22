@@ -1041,7 +1041,7 @@ class proc(obj.CType):
             for map in self.get_proc_maps():
                 vnode = map.get_vnode()
 
-                if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode:
+                if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode and map.get_perms() == "r-x":
                     text_start = map.start.v()
                     break
 
