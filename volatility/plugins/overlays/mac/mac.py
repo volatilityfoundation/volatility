@@ -564,10 +564,15 @@ class proc(obj.CType):
                     
                     if htable.is_valid():
                         bucket_array = obj.Object(theType="Array", targetType=addr_type, offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
+                        seen = set()
 
                         for bucket_ptr in bucket_array:
                             bucket = obj.Object(bucket_contents_type, offset = bucket_ptr, vm = htable.nbuckets.obj_vm)
                             while bucket != None and bucket.times_found > 0:  
+                                if bucket.v() in seen:
+                                    break
+                                seen.add(bucket.v())
+
                                 pdata = bucket.data 
 
                                 if pdata == None:
