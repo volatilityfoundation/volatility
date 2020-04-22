@@ -281,16 +281,24 @@ class macho_header(macho):
         self.cached_dysymtab = None
         self.cached_syms     = None
         self.load_diff       = 0
+        self.link_edit_bias    = 0
 
         macho.__init__(self, 1, "macho32_header", "macho64_header", theType, offset, vm, name, **kwargs)    
       
         if self.macho_obj:
-            self._build_symbol_caches()
             self.calc_load_diff()
+            self._calc_linkedit_bias()
+            self._build_symbol_caches()
 
     def is_valid(self):
         return self.macho_obj != None
 
+    def _calc_linkedit_bias(self):
+        for s in self.segments():
+            if str(s.segname) == "__LINKEDIT":
+                self.link_edit_bias = s.vmaddr - s.fileoff
+                break
+            
     def calc_load_diff(self):
         seg = None
 
@@ -314,7 +322,6 @@ class macho_header(macho):
 
         # the load commands start after the header
         hdr_size = self.macho_obj.size()
-        
         if hdr_size == 0 or hdr_size > 100000000:
             return
 
@@ -358,16 +365,24 @@ class macho_header(macho):
         tname = self._get_typename("nlist")
         obj_size = self.obj_vm.profile.get_obj_size(tname)  
 
+        indirect_table_addr = self.link_edit_bias + self.cached_dysymtab.indirectsymoff
+
+        if not self.obj_vm.is_valid_address(indirect_table_addr):
+            return syms
+
         cnt = self.cached_dysymtab.nindirectsyms 
         if cnt > 100000:
             cnt = 1024
- 
-        symtab_idxs = obj.Object(theType="Array", targetType="unsigned int", count=cnt, offset = self.obj_offset + self.cached_dysymtab.indirectsymoff, vm = self.obj_vm, parent = self)
+
+        symtab_idxs = obj.Object(theType="Array", targetType="unsigned int", count=cnt, 
+                                 offset = indirect_table_addr,
+                                 vm = self.obj_vm, parent = self)
 
         for idx in symtab_idxs:
             sym_addr = self.cached_symtab + (idx * obj_size)
             sym = obj.Object("macho_nlist", offset = sym_addr, vm = self.obj_vm, parent = self)
-            syms.append(sym)
+            if sym.is_valid():
+                syms.append(sym)
 
         return syms
 
@@ -376,10 +391,18 @@ class macho_header(macho):
         tname = self._get_typename("nlist")
         obj_size = self.obj_vm.profile.get_obj_size(tname)
 
-        for i in range(sym_command.nsyms):
+        if not self.obj_vm.is_valid_address(symtab_addr):
+            return syms
+
+        num_syms = sym_command.nsyms
+        if num_syms > 2000:
+            return syms
+
+        for i in range(num_syms):
             sym_addr = symtab_addr + (i * obj_size)            
             sym = obj.Object("macho_nlist", offset = sym_addr, vm = self.obj_vm, parent = self)
-            syms.append(sym)
+            if sym.is_valid():
+                syms.append(sym)
     
         return syms
 
@@ -391,16 +414,16 @@ class macho_header(macho):
             return
 
         symtab_command     = symtab_cmd.cast(symtab_struct_name)
-        str_strtab         = self.obj_offset + symtab_command.stroff
-        symtab_addr        = self.obj_offset + symtab_command.symoff
-      
+        str_strtab         = self.link_edit_bias + symtab_command.stroff
+        symtab_addr        = self.link_edit_bias + symtab_command.symoff
+     
         self.cached_syms = self._get_symtab_syms(symtab_command, symtab_addr)
-    
+   
         dysymtab_cmd     = self.load_command_of_type(0xb) # LC_DYSYMTAB
-        dystruct_name    = self._get_typename("dysymtab_command")
-        
         if dysymtab_cmd == None:
             return
+        
+        dystruct_name    = self._get_typename("dysymtab_command")
         dysymtab_command = dysymtab_cmd.cast(dystruct_name)
 
         self.cached_strtab   = str_strtab    
