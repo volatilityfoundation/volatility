@@ -1061,6 +1061,8 @@ class proc(obj.CType):
         proc_as = self.get_process_address_space()
 
         m = obj.Object("macho_header", offset = exe_address, vm = proc_as)
+        if not m.is_valid():
+            return
 
         buffer = ""
 
@@ -1117,6 +1119,8 @@ class proc(obj.CType):
             return
 
         info_addr = struct.unpack(self.pack_fmt, info_buf)[0] 
+        if not proc_as.is_valid_address(info_addr):
+            return
 
         cnt = infos.infoArrayCount
         if cnt > 4096:
