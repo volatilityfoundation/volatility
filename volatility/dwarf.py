@@ -195,14 +195,14 @@ class DWARFParser(object):
 
             # If it's just a forward declaration, we want the name around,
             # but there won't be a size
-            if 'DW_AT_declaration' not in data:
+            if 'DW_AT_declaration' not in data and 'DW_AT_byte_size' in data:
                 self.vtypes[name] = [ int(data['DW_AT_byte_size'], self.base), {} ]
 
         elif kind == 'DW_TAG_union_type':
             name = data.get('DW_AT_name', "__unnamed_%s" % statement_id).strip('"')
             self.name_stack[-1][1] = name
             self.id_to_name[statement_id] = [name]
-            if 'DW_AT_declaration' not in data:
+            if 'DW_AT_declaration' not in data and 'DW_AT_byte_size' in data:
                 self.vtypes[name] = [ int(data['DW_AT_byte_size'], self.base), {} ]
 
         elif kind == 'DW_TAG_array_type':
@@ -216,7 +216,7 @@ class DWARFParser(object):
 
             # If it's just a forward declaration, we want the name around,
             # but there won't be a size
-            if 'DW_AT_declaration' not in data:
+            if 'DW_AT_declaration' not in data and 'DW_AT_byte_size' in data:
                 sz = int(data['DW_AT_byte_size'], self.base)
                 self.enums[name] = [sz, {}]
 
