@@ -2331,7 +2331,12 @@ class VolatilityDTB(obj.VolatilityMagic):
         config = self.obj_vm.get_config()
         tbl    = self.obj_vm.profile.sys_map["kernel"]
         
-        if profile.metadata.get('memory_model', '32bit') == "32bit":
+        if profile.metadata.get('arch') == 'arm64':
+            sym = "swapper_pg_dir"
+            shifts  = [0xffff000000000000, 0xffff800000000000]
+            read_sz = 8
+            fmt     = "<Q"
+        elif profile.metadata.get('memory_model', '32bit') == "32bit":
             sym     = "swapper_pg_dir"
             shifts  = [0xc0000000]
             read_sz = 4
@@ -2416,8 +2421,9 @@ class VolatilityDTB(obj.VolatilityMagic):
 
                 good_dtb = (dtb_sym_addr - shifts[0] + 0) + tmp_physical_shift 
 
-                if pas.zread(good_dtb, 8) != "\x00\x00\x00\x00\x00\x00\x00\x00":
-                    continue
+                if profile.metadata.get('arch') != 'arm64':
+                    if pas.zread(good_dtb, 8) != "\x00\x00\x00\x00\x00\x00\x00\x00":
+                        continue
 
                 if sched_class_offset != -1:
                     sched_class_val = pas.read(swapper_address + sched_class_offset, read_sz)
