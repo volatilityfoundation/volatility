@@ -32,6 +32,7 @@ class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
     minimum_size = 0x1000
     alignment_gcd = 0x1000
     _longlong_struct = struct.Struct('<Q')
+    _valid_dtb_base = None
 
     def read_longlong_phys(self, addr):
         '''
@@ -81,7 +82,17 @@ class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
     def vtop(self, vaddr):
         debug.debug("\n--vtop start: {0:x}".format(vaddr), 4)
 
-        return self.ptbl_walk(vaddr, self.dtb)
+        # if we already had a valid dtb - it was the single TTBR1, and should
+        # be used to translate all kernel-space
+        if type(self)._valid_dtb_base and (vaddr >> 63):
+            return self.ptbl_walk(vaddr, type(self)._valid_dtb_base)
+        else:
+            return self.ptbl_walk(vaddr, self.dtb)
+
+    def set_curr_base_valid(self):
+        cls = type(self)
+        if not cls._valid_dtb_base:
+            cls._valid_dtb_base = self.dtb
 
     # FIXME
     # this is supposed to return all valid physical addresses based on the current dtb

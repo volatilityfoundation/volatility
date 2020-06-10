@@ -2516,7 +2516,12 @@ class VolatilityLinuxARM64ValidAS(obj.VolatilityMagic):
         if not do_fork_paddr or not task_paddr:
             return
 
-        yield do_fork_paddr - task_paddr == do_fork_addr - init_task_addr
+        res = (do_fork_paddr - task_paddr == do_fork_addr - init_task_addr)
+
+        if res:
+            self.obj_vm.set_curr_base_valid()
+
+        yield res
 
 class LinuxObjectClasses(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'linux'}
