@@ -50,6 +50,7 @@ class DWARFParser(object):
         'unsigned int': 'unsigned int',
         'sizetype' : 'unsigned long',
         'ssizetype' : 'long',
+        '__int128 unsigned': 'unsigned long long',
     }
 
 
