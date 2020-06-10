@@ -120,6 +120,7 @@ linux_overlay = {
         'ArmValidAS'   :  [ 0x0, ['VolatilityLinuxARMValidAS']],
         'IA32ValidAS'  :  [ 0x0, ['VolatilityLinuxIntelValidAS']],
         'AMD64ValidAS'  :  [ 0x0, ['VolatilityLinuxIntelValidAS']],
+        'Arm64ValidAS'   :  [ 0x0, ['VolatilityLinuxARM64ValidAS']],
         }],
     'vm_area_struct' : [ None, { 
         'vm_flags' : [ None, ['LinuxPermissionFlags', {'bitmap': {'r': 0, 'w': 1, 'x': 2}}]],
@@ -2493,6 +2494,24 @@ class VolatilityLinuxARMValidAS(obj.VolatilityMagic):
 
             yield fork_off - task_off == sym_addr_diff
 
+class VolatilityLinuxARM64ValidAS(obj.VolatilityMagic):
+    """An object to check that an address space is a valid Arm64 Paged space"""
+    def generate_suggestions(self):
+
+        init_task_addr = self.obj_vm.profile.get_symbol("init_task")
+        do_fork_addr   = self.obj_vm.profile.get_symbol("_do_fork")
+
+        if not do_fork_addr or not init_task_addr:
+            return
+
+        task_paddr = self.obj_vm.vtop(init_task_addr)
+        do_fork_paddr = self.obj_vm.vtop(do_fork_addr)
+
+        if not do_fork_paddr or not task_paddr:
+            return
+
+        yield do_fork_paddr - task_paddr == do_fork_addr - init_task_addr
+
 class LinuxObjectClasses(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'linux'}
     before = ['BasicObjectClasses']
@@ -2518,6 +2537,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'Ipv6Address': basic.Ipv6Address,
             'VolatilityLinuxIntelValidAS' : VolatilityLinuxIntelValidAS,
             'VolatilityLinuxARMValidAS' : VolatilityLinuxARMValidAS,
+            'VolatilityLinuxARM64ValidAS' : VolatilityLinuxARM64ValidAS,
             'kernel_param' : kernel_param,
             'kparam_array' : kparam_array,
             'desc_struct' : desc_struct,
