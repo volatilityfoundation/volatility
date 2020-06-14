@@ -31,10 +31,13 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
         slob_medium = obj.Object("list_head", offset = free_slob_medium, vm = self.addr_space)
         slob_large = obj.Object("list_head", offset = free_slob_large, vm = self.addr_space)
 
-        # Gather the pages on the free_slob_small list
+        # Gather the pages on the lists
         small_pages = [slob for slob in slob_small.list_of_type("page", "slab_list")]
+        medium_pages = [slob for slob in slob_medium.list_of_type("page", "slab_list")]
+        large_pages = [slob for slob in slob_large.list_of_type("page", "slab_list")]
         
-        # First free object size/offset
+        # Enumerate the content of free_slob_small
+        range_counters = [0] * 4
         for page in small_pages:
             free_block_addr = page.freelist
             computed_size = 0
@@ -48,11 +51,65 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                     off = -size_or_off
                 computed_size += size
                 free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
-        print len(small_pages)
-        yield(1)
+                if size >= 256/slob_unit_size:
+                    continue
+                range_counters[size/(64/slob_unit_size)] += 1
+        yield("free_slob_small", "0-63", range_counters[0])
+        yield("free_slob_small", "64-127", range_counters[1])
+        yield("free_slob_small", "128-191", range_counters[2])
+        yield("free_slob_small", "192-255", range_counters[3])
+
+        # Enumerate the content of free_slob_medium
+        range_counters = [0] * 4
+        for page in medium_pages:
+            free_block_addr = page.freelist
+            computed_size = 0
+            while free_block_addr != 0x0 and computed_size < page.units:
+                size_or_off = obj.Object('short', offset = free_block_addr, vm = self.addr_space)
+                if size_or_off > 0:
+                    size = size_or_off
+                    off = obj.Object('short', offset = free_block_addr + slob_unit_size, vm = self.addr_space)
+                else:
+                    size = 1
+                    off = -size_or_off
+                computed_size += size
+                free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
+                if size >= 1024/slob_unit_size: 
+                    continue
+                range_counters[size/(256/slob_unit_size)] += 1
+        yield("free_slob_medium", "0-255", range_counters[0])
+        yield("free_slob_medium", "256-511", range_counters[1])
+        yield("free_slob_medium", "512-767", range_counters[2])
+        yield("free_slob_medium", "768-1023", range_counters[3])
+
+        # Enumerate the content of free_slob_large
+        range_counters = [0] * 4
+        for page in large_pages:
+            free_block_addr = page.freelist
+            computed_size = 0
+            while free_block_addr != 0x0 and computed_size < page.units:
+                size_or_off = obj.Object('short', offset = free_block_addr, vm = self.addr_space)
+                if size_or_off > 0:
+                    size = size_or_off
+                    off = obj.Object('short', offset = free_block_addr + slob_unit_size, vm = self.addr_space)
+                else:
+                    size = 1
+                    off = -size_or_off
+                computed_size += size
+                free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
+                range_counters[size/(1024/slob_unit_size)] += 1
+        yield("free_slob_large", "0-1023", range_counters[0])
+        yield("free_slob_large", "1024-2047", range_counters[1])
+        yield("free_slob_large", "2048-3071", range_counters[2])
+        yield("free_slob_large", "3072-4095", range_counters[3])
+
+
 
     def render_text(self, outfd, data):
-        self.table_header(outfd, [("<name>", "<30")])
+        self.table_header(outfd, [("<list_name>", "<20"),
+                                  ("<range (bytes)>", "<10"),
+                                  ("<# free>", "<10")
+                                 ])
 
         for info in data:
-            self.table_row(outfd, info)
+            self.table_row(outfd, info[0], info[1], info[2])
