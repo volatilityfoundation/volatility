@@ -7,7 +7,7 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
 
     def __init__(self, config, *args, **kwargs):
         linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
-        config.add_option('PAGE_SIZE', short_option = 'p', default = 0x1000,
+        self._config.add_option('PAGE_SIZE', short_option = 'p', default = 0x1000,
                           help = 'The page size of the analyzed system',
                           action = 'store', type = 'int')
 
@@ -21,7 +21,7 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
         else:
             slob_unit_size = 4
 
-        # Find offsets of the 3 list_head objects for the SLOB page lists
+	# Find offsets of the 3 list_head objects for the SLOB page lists
         free_slob_small = self.addr_space.profile.get_symbol("free_slob_small")
         free_slob_medium = self.addr_space.profile.get_symbol("free_slob_medium")
         free_slob_large = self.addr_space.profile.get_symbol("free_slob_large")
@@ -38,6 +38,8 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
         
         # Enumerate the content of free_slob_small
         range_counters = [0] * 4
+        free_space = 0
+        space_counter = 0
         for page in small_pages:
             free_block_addr = page.freelist
             computed_size = 0
@@ -51,16 +53,23 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                     off = -size_or_off
                 computed_size += size
                 free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
-                if size >= 256/slob_unit_size:
+		if size >= 256/slob_unit_size:
                     continue
+                free_space += size*slob_unit_size
+                space_counter += 1
                 range_counters[size/(64/slob_unit_size)] += 1
         yield("free_slob_small", "0-63", range_counters[0])
         yield("free_slob_small", "64-127", range_counters[1])
         yield("free_slob_small", "128-191", range_counters[2])
         yield("free_slob_small", "192-255", range_counters[3])
-
+        print "------------ slob small stats -----------------"
+        print "free space "+str(free_space)+" | free_mean_size "+str(free_space/space_counter)+" | PAGES "+str(len(small_pages))
+        print "-------------------- --------------- ----------"
+        
         # Enumerate the content of free_slob_medium
         range_counters = [0] * 4
+        free_space = 0
+        space_counter = 0
         for page in medium_pages:
             free_block_addr = page.freelist
             computed_size = 0
@@ -76,15 +85,23 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                 free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
                 if size >= 1024/slob_unit_size: 
                     continue
+                free_space += size*slob_unit_size
+                space_counter += 1
                 range_counters[size/(256/slob_unit_size)] += 1
         yield("free_slob_medium", "0-255", range_counters[0])
         yield("free_slob_medium", "256-511", range_counters[1])
         yield("free_slob_medium", "512-767", range_counters[2])
         yield("free_slob_medium", "768-1023", range_counters[3])
+        print "------------ slob medium stats ----------------"
+        print "free space "+str(free_space)+" | free_mean_size "+str(free_space/space_counter)+" | PAGES "+str(len(medium_pages))
+        print "-------------------- --------------- ----------"
 
         # Enumerate the content of free_slob_large
-        range_counters = [0] * 4
-        for page in large_pages:
+        range_counters = [0] * 5
+        free_space = 0
+        space_counter = 0
+        base = self._config.PAGE_SIZE / 4
+	for page in large_pages:
             free_block_addr = page.freelist
             computed_size = 0
             while free_block_addr != 0x0 and computed_size < page.units:
@@ -95,15 +112,22 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                 else:
                     size = 1
                     off = -size_or_off
-                computed_size += size
+		computed_size += size
                 free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
-                range_counters[size/(1024/slob_unit_size)] += 1
-        yield("free_slob_large", "0-1023", range_counters[0])
-        yield("free_slob_large", "1024-2047", range_counters[1])
-        yield("free_slob_large", "2048-3071", range_counters[2])
-        yield("free_slob_large", "3072-4095", range_counters[3])
-
-
+                if size >= page_size:
+                    range_counters[4] += 1
+                    continue
+                free_space += size*slob_unit_size
+                space_counter += 1
+		range_counters[size/(base/slob_unit_size)] += 1
+        yield("free_slob_large", "0-"+str(base-1), range_counters[0])
+        yield("free_slob_large", str(base)+"-"+str(base*2-1), range_counters[1])
+        yield("free_slob_large", str(base*2)+"-"+str(base*3-1), range_counters[2])
+        yield("free_slob_large", str(base*3)+"-"+str(base*4-1), range_counters[3])
+        if(range_counters[4]>0):
+            print "free_slob_large      "+str(range_counters[4])+" greater than a page(!?) <maybe wrong PAGE_SIZE>"
+        print "------------ slob large stats ----------------"
+        print "free space "+str(free_space)+" | free_mean_size "+str(free_space/space_counter)+" | PAGES "+str(len(large_pages))
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("<list_name>", "<20"),
