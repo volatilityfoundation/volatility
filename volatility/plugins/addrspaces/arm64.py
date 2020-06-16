@@ -33,6 +33,7 @@ class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
     alignment_gcd = 0x1000
     _longlong_struct = struct.Struct('<Q')
     _valid_dtb_base = None
+    _entry_addressmask = ((1 << 47) - 1) & (~0xfff)
 
     def read_longlong_phys(self, addr):
         '''
@@ -62,10 +63,7 @@ class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
             entry = self.read_longlong_phys(base + (index << 3))
             if not entry:
                 return None
-            # clear high bits
-            entry_addressbits = entry & ((1 << 47) - 1)
-            # clear low bits
-            entry_addressbits = entry_addressbits & (~0xfff)
+            entry_addressbits = entry & self._entry_addressmask
             # entry not valid
             if not (entry & 0x1):
                 return None
@@ -94,10 +92,34 @@ class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
         if not cls._valid_dtb_base:
             cls._valid_dtb_base = self.dtb
 
-    # FIXME
-    # this is supposed to return all valid physical addresses based on the current dtb
-    # this (may?) be painful to write due to ARM's different page table types and having small & large pages inside of those
     def get_available_pages(self):
+        level = 0
+        ptbl_descs = [self.dtb, 0, 0, 0]
+        ptbl_indexes = [0, 0, 0, 0]
+        while True:
+            if ptbl_indexes[level] == 512:
+                if level == 0:
+                    break
+                level -= 1
+                ptbl_indexes[level] += 1
+                continue
 
-        for i in xrange(0, (2 ** 32) - 1, 4096):
-            yield (i, 0x1000)
+            entry = self.read_longlong_phys(ptbl_descs[level] + (ptbl_indexes[level] << 3))
+
+            # entry points to next table
+            if ((level < 3) and (entry & 0x3 == 0x3)):
+                level += 1
+                entry_addressbits = entry & self._entry_addressmask
+                ptbl_descs[level] = entry_addressbits
+                ptbl_indexes[level] = 0
+                continue
+
+            # entry points to physical address
+            if (level == 3 and (entry & 0x3 == 0x3)) or (entry & 0x3 == 0x1):
+                vaddr = 0
+                for ilvl in xrange(level+1):
+                    vaddr += ptbl_indexes[ilvl] << self.ptbl_lowbits(ilvl)
+                yield vaddr, (1 << self.ptbl_lowbits(level))
+
+            ptbl_indexes[level] += 1
+
