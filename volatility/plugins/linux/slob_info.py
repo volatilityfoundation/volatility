@@ -11,8 +11,10 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                           help = 'The page size of the analyzed system',
                           action = 'store', type = 'int')
         self._config.add_option('DUMP_FREE_LIST', short_option = 'L', default = None,
-                          help = 'Select the free list to dump (s,m,l)',
+                          help = 'Select the free list to dump: (s)mall, (m)edium or (l)arge',
                           action = 'store', type = 'str')
+        self._config.add_option('DUMP_FILE', short_option = 'D', default = None, 
+                          help = 'When using -L specify the name of the dump file')
 
     def calculate(self):
         linux_common.set_plugin_members(self)
@@ -20,11 +22,15 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
         # Set the size of a slob unit in bytes depending on the page size
         page_size = self._config.PAGE_SIZE
         dump_list = self._config.DUMP_FREE_LIST
-        page_list = None
+        dump_file = self._config.DUMP_FILE
+        #page_list = None
         if page_size <= 32767 * 2:
             slob_unit_size = 2
+            size_type = "short"
         else:
             slob_unit_size = 4
+        # Assuming that sizeof(int) = 4...
+            size_type = "int"
 
 	# Find offsets of the 3 list_head objects for the SLOB page lists
         free_slob_small = self.addr_space.profile.get_symbol("free_slob_small")
@@ -41,35 +47,38 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
         medium_pages = [slob for slob in slob_medium.list_of_type("page", "slab_list")]
         large_pages = [slob for slob in slob_large.list_of_type("page", "slab_list")]
 
-        if(dump_list == 's'):
-            page_list = small_pages
-        elif(dump_list == 'm'):
-            page_list = medium_pages
-        elif(dump_list == 'l'):
-            page_list = large_pages
-        if(page_list != None):
-            for page in page_list:
-                free_block_addr = page.freelist
-                computed_size = 0
-                while free_block_addr != 0x0 and computed_size < page.units:
-                    size_or_off = obj.Object('short', offset = free_block_addr, vm = self.addr_space)
-                    if size_or_off > 0:
-                        size = size_or_off
-                        off = obj.Object('short', offset = free_block_addr + slob_unit_size, vm = self.addr_space)
+        #if(dump_list == 's'):
+        #    page_list = small_pages
+        #elif(dump_list == 'm'):
+        #    page_list = medium_pages
+        #elif(dump_list == 'l'):
+        #    page_list = large_pages
+        #if(page_list != None):
+        #    for page in page_list:
+        #        free_block_addr = page.freelist
+        #        computed_size = 0
+        #        while free_block_addr != 0x0 and computed_size < page.units:
+        #            size_or_off = obj.Object(size_type, offset = free_block_addr, vm = self.addr_space)
+        #            if size_or_off > 0:
+        #                size = size_or_off
+        #                off = obj.Object(size_type, offset = free_block_addr + slob_unit_size, vm = self.addr_space)
                         # print(off)
-
-                        for i in range(size * slob_unit_size / 4):
-                            o = obj.Object('int', offset = free_block_addr + slob_unit_size + i * 4, vm = self.addr_space)
+        #                block = self.addr_space.read(free_block_addr, size * slob_unit_size)
+                        #for i in range(size * slob_unit_size / 4):
+                        #    o = obj.Object('int', offset = free_block_addr + slob_unit_size + i * 4, vm = self.addr_space)
                             # print(self.addr_space)
                             # print(size)
                             # print(free_block_addr + slob_unit_size + i)
-                            print(o)
-                    else:
-                        size = 1
-                        off = -size_or_off
-                    computed_size += size
-                    free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
+                        #print(block)
+        #            else:
+        #                size = 1
+        #                off = -size_or_off
+        #            computed_size += size
+        #            free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
 
+        if dump_list != None:
+            if dump_file != None:
+                dump = open(dump_file, "wb")
         
         # Enumerate the content of free_slob_small
         range_counters = [0] * 4
@@ -79,10 +88,17 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
             free_block_addr = page.freelist
             computed_size = 0
             while free_block_addr != 0x0 and computed_size < page.units:
-                size_or_off = obj.Object('short', offset = free_block_addr, vm = self.addr_space)
+                size_or_off = obj.Object(size_type, offset = free_block_addr, vm = self.addr_space)
                 if size_or_off > 0:
                     size = size_or_off
-                    off = obj.Object('short', offset = free_block_addr + slob_unit_size, vm = self.addr_space)
+                    off = obj.Object(size_type, offset = free_block_addr + slob_unit_size, vm = self.addr_space)
+                    if dump_list == "s" and dump_file != None:
+                        block = self.addr_space.read(free_block_addr, size * slob_unit_size)
+                        header = 'Address: ' + hex(free_block_addr) + ', Size: ' + str(size * slob_unit_size) + '\n'
+                        header = header.encode('ascii')
+                        dump.write(header)
+                        dump.write(block)
+                        dump.write(b'\n')
                 else:
                     size = 1
                     off = -size_or_off
@@ -109,10 +125,17 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
             free_block_addr = page.freelist
             computed_size = 0
             while free_block_addr != 0x0 and computed_size < page.units:
-                size_or_off = obj.Object('short', offset = free_block_addr, vm = self.addr_space)
+                size_or_off = obj.Object(size_type, offset = free_block_addr, vm = self.addr_space)
                 if size_or_off > 0:
                     size = size_or_off
-                    off = obj.Object('short', offset = free_block_addr + slob_unit_size, vm = self.addr_space)
+                    off = obj.Object(size_type, offset = free_block_addr + slob_unit_size, vm = self.addr_space)
+                    if dump_list == "m" and dump_file != None:
+                        block = self.addr_space.read(free_block_addr, size * slob_unit_size)
+                        header = 'Address: ' + hex(free_block_addr) + ', Size: ' + str(size * slob_unit_size) + '\n'
+                        header = header.encode('ascii')
+                        dump.write(header)
+                        dump.write(block)
+                        dump.write(b'\n')
                 else:
                     size = 1
                     off = -size_or_off
@@ -140,10 +163,17 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
             free_block_addr = page.freelist
             computed_size = 0
             while free_block_addr != 0x0 and computed_size < page.units:
-                size_or_off = obj.Object('short', offset = free_block_addr, vm = self.addr_space)
+                size_or_off = obj.Object(size_type, offset = free_block_addr, vm = self.addr_space)
                 if size_or_off > 0:
                     size = size_or_off
-                    off = obj.Object('short', offset = free_block_addr + slob_unit_size, vm = self.addr_space)
+                    off = obj.Object(size_type, offset = free_block_addr + slob_unit_size, vm = self.addr_space)
+                    if dump_list == 'l' and dump_file != None:
+                        block = self.addr_space.read(free_block_addr, size * slob_unit_size)
+                        header = 'Address: ' + hex(free_block_addr) + ', Size: ' + str(size * slob_unit_size) + '\n'
+                        header = header.encode('ascii')
+                        dump.write(header)
+                        dump.write(block)
+                        dump.write(b'\n')
                 else:
                     size = 1
                     off = -size_or_off
@@ -163,6 +193,9 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
             print "free_slob_large      "+str(range_counters[4])+" greater than a page(!?) <maybe wrong PAGE_SIZE>"
         print("------------ slob large stats ----------------")
         print("free space "+str(free_space)+" | free_mean_size "+str(free_space/space_counter)+" | PAGES "+str(len(large_pages)))
+
+        if dump_file != None:
+            dump.close()
 
 
 
