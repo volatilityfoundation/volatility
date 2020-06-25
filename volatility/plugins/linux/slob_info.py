@@ -11,13 +11,16 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                           help = 'The page size of the analyzed system',
                           action = 'store', type = 'int')
         self._config.add_option('DUMP_FREE_LIST', short_option = 'L', default = None,
-                          help = 'Select the free list to dump: (s)mall, (m)edium or (l)arge',
+                          help = 'Select the free list to dump: (s)mall, (m)edium, (l)arge or (a)ll',
                           action = 'store', type = 'str')
         self._config.add_option('DUMP_FILE', short_option = 'D', default = None, 
                           help = 'When using -L specify the name of the dump file')
 
     def calculate(self):
         linux_common.set_plugin_members(self)
+
+        SLOB_BREAK1 = 256
+        SLOB_BREAK2 = 1024
 
         # Set the size of a slob unit in bytes depending on the page size
         page_size = self._config.PAGE_SIZE
@@ -92,7 +95,7 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                 if size_or_off > 0:
                     size = size_or_off
                     off = obj.Object(size_type, offset = free_block_addr + slob_unit_size, vm = self.addr_space)
-                    if dump_list == "s" and dump_file != None:
+                    if (dump_list == "s" or dump_list == "a") and dump_file != None and size * slob_unit_size < SLOB_BREAK1:
                         block = self.addr_space.read(free_block_addr, size * slob_unit_size)
                         header = 'Address: ' + hex(free_block_addr) + ', Size: ' + str(size * slob_unit_size) + '\n'
                         header = header.encode('ascii')
@@ -129,7 +132,7 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                 if size_or_off > 0:
                     size = size_or_off
                     off = obj.Object(size_type, offset = free_block_addr + slob_unit_size, vm = self.addr_space)
-                    if dump_list == "m" and dump_file != None:
+                    if (dump_list == "m" or dump_list == "a") and dump_file != None and size * slob_unit_size >= SLOB_BREAK1 and size * slob_unit_size < SLOB_BREAK2:
                         block = self.addr_space.read(free_block_addr, size * slob_unit_size)
                         header = 'Address: ' + hex(free_block_addr) + ', Size: ' + str(size * slob_unit_size) + '\n'
                         header = header.encode('ascii')
@@ -167,7 +170,7 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                 if size_or_off > 0:
                     size = size_or_off
                     off = obj.Object(size_type, offset = free_block_addr + slob_unit_size, vm = self.addr_space)
-                    if dump_list == 'l' and dump_file != None:
+                    if (dump_list == "l" or dump_list == "a") and dump_file != None and size * slob_unit_size >= SLOB_BREAK2:
                         block = self.addr_space.read(free_block_addr, size * slob_unit_size)
                         header = 'Address: ' + hex(free_block_addr) + ', Size: ' + str(size * slob_unit_size) + '\n'
                         header = header.encode('ascii')
