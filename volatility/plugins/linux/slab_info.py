@@ -114,6 +114,27 @@ class kmem_cache_slab(kmem_cache):
                 for i in range(self.num):
                     yield self._get_object(slab.s_mem.v() + i * self.buffer_size)
 
+class kmem_cache_slub(kmem_cache):
+    def get_type(self):
+        return "slub"
+
+    def get_size(self):
+        return int(self.size)
+    
+    def get_nodes(self):
+        print("getting nodes")
+        nodes = obj.Array("kmem_cache_node", offset=self.node, vm = self.obj_vm, parent=self.obj_parent)
+        return nodes
+
+    def _get_partial_list(self):
+        nodes = self.get_nodes()
+        print("getting partials")
+        for node in nodes:
+            slabs = obj.Object("list_head", offset= node.partial, vm = self.obj_vm)
+            listm = "next"
+            ret = [slab for slab in slabs.list_of_type("page", listm)]
+
+
 class LinuxKmemCacheOverlay(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'linux'}
     before = ['BasicObjectClasses'] # , 'LinuxVTypes']
@@ -122,6 +143,8 @@ class LinuxKmemCacheOverlay(obj.ProfileModification):
 
         if profile.get_symbol("cache_chain"):
             profile.object_classes.update({'kmem_cache': kmem_cache_slab})
+        elif profile.get_symbol("slab_caches"):
+            profile.object_classes.update({'kmem_cache': kmem_cache_slub})
 
 class linux_slabinfo(linux_common.AbstractLinuxCommand):
     """Mimics /proc/slabinfo on a running machine"""
@@ -136,8 +159,11 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
             listm = "next"
             ret = [cache for cache in caches.list_of_type("kmem_cache", listm)]
         elif slab_caches: #slub
-            debug.info("SLUB is currently unsupported.")
-            ret = []
+            # debug.info("SLUB is currently unsupported.")
+            caches = obj.Object("list_head", offset = slab_caches, vm = self.addr_space)
+            listm = "list"
+            print("testing")
+            ret = [cache for cache in caches.list_of_type("kmem_cache", listm)]
         else:
             debug.error("Unknown or unimplemented slab type.")
 
@@ -150,7 +176,7 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
 
         for cache in self.get_all_kmem_caches():
             if cache.get_name() == cache_name:
-                cache.newattr("unalloc", unalloc)
+	        cache.newattr("unalloc", unalloc)
                 cache.newattr("struct_type", struct_name)
                 return cache
 
@@ -161,34 +187,59 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
         linux_common.set_plugin_members(self)
 
         for cache in self.get_all_kmem_caches():
-            if cache.get_type() == "slab":
-                active_objs = 0
-                active_slabs = 0
-                num_slabs = 0
-                # shared_avail = 0
+                if cache.get_type() == "slab":
+                    active_objs = 0
+                    active_slabs = 0
+                    num_slabs = 0
+                    # shared_avail = 0
 
-                for slab in cache._get_full_list():
-                    active_objs += cache.num
-                    active_slabs += 1
+                    for slab in cache._get_full_list():
+                        active_objs += cache.num
+                        active_slabs += 1
 
-                for slab in cache._get_partial_list():
-                    active_objs += slab.inuse
-                    active_slabs += 1
+                    for slab in cache._get_partial_list():
+                        active_objs += slab.inuse
+                        active_slabs += 1
 
-                for slab in cache._get_free_list():
-                    num_slabs += 1
+                    for slab in cache._get_free_list():
+                        num_slabs += 1
 
-                num_slabs += active_slabs
-                num_objs = num_slabs * cache.num
+                    num_slabs += active_slabs
+                    num_objs = num_slabs * cache.num
 
-                yield [cache.get_name(),
-                        active_objs,
-                        num_objs,
-                        cache.buffer_size,
-                        cache.num,
-                        1 << cache.gfporder,
-                        active_slabs,
-                        num_slabs]
+                    yield [cache.get_name(),
+                            active_objs,
+                            num_objs,
+                            cache.buffer_size,
+                            cache.num,
+                            1 << cache.gfporder,
+                            active_slabs,
+                            num_slabs]
+
+                elif cache.get_type() == "slub":
+                    active_objs = 0
+                    active_slabs = 0
+                    num_slabs = 0
+                    num_objs = 0
+                    objperslabs = 0
+
+                    for slab in cache._get_partial_list():
+                        active_objs += slab.objects
+                        active_slabs += 1
+
+                    # for slab in cache._get_free_list():
+                    #     num_slabs += 1
+
+                    yield [cache.get_name(),
+                            active_objs,
+                            num_objs,
+                            cache.size,
+                            cache.objsize,
+                            objperslabs,
+                            active_slabs,
+                            num_slabs]
+
+
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("<name>", "<30"),
