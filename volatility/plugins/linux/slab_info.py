@@ -115,24 +115,40 @@ class kmem_cache_slab(kmem_cache):
                     yield self._get_object(slab.s_mem.v() + i * self.buffer_size)
 
 class kmem_cache_slub(kmem_cache):
+    MAX_SLABS = 500
+    MAX_ALIASES = 500
+    MAX_NODES = 1024
     def get_type(self):
         return "slub"
 
     def get_size(self):
-        return int(self.size)
+        return int(self.size())
     
     def get_nodes(self):
-        print("getting nodes")
-        nodes = obj.Array("kmem_cache_node", offset=self.node, vm = self.obj_vm, parent=self.obj_parent)
+        off = self.cpu_slab
+        inuse = self.size
+        print("nodes offset"+str(off))
+        print("size "+str(inuse))
+        nodes = obj.Array("kmem_cache_node", offset=self.node.dereference(), vm = self.obj_vm)
         return nodes
 
-    def _get_partial_list(self):
-        nodes = self.get_nodes()
-        print("getting partials")
+    def _get_partial_list(self, offset):
+        pNodes = obj.Object(theType = "Pointer", taregtType = "kmem_cache_node", offset = offset + self.obj_offset , vm = self.obj_vm, count = 1, name = "node")
+        print(type(pNodes))
+        nodes = pNodes.dereference_as("kmem_cache_node", length = self.MAX_NODES)
+        print(type(nodes))
+        
         for node in nodes:
-            slabs = obj.Object("list_head", offset= node.partial, vm = self.obj_vm)
-            listm = "next"
-            ret = [slab for slab in slabs.list_of_type("page", listm)]
+            print(type(node))
+
+        # for node in nodes:
+        #     print("ciao")
+        #     print(type(node))
+
+
+        #     slabs = obj.Object("int", offset = node.size, vm = self.obj_vm)
+        #     listm = "next"
+        #     ret = [slab for slab in slabs.list_of_type("page", listm)]
 
 
 class LinuxKmemCacheOverlay(obj.ProfileModification):
@@ -221,11 +237,15 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                     active_slabs = 0
                     num_slabs = 0
                     num_objs = 0
+                    # size = obj.Object('int', vm = cache.obj_vm, name = "size")
                     objperslabs = 0
+                    node_off = self.profile.get_obj_offset("kmem_cache", "node")
+                    # print("nodeoff "+str(node_off))
+                    # for slab in cache._get_partial_list(node_off):
+                    #     active_objs += slab.objects
+                    #     active_slabs += 1
 
-                    for slab in cache._get_partial_list():
-                        active_objs += slab.objects
-                        active_slabs += 1
+                    cache._get_partial_list(node_off)
 
                     # for slab in cache._get_free_list():
                     #     num_slabs += 1
@@ -233,8 +253,8 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                     yield [cache.get_name(),
                             active_objs,
                             num_objs,
-                            cache.size,
-                            cache.objsize,
+                            cache.m("size"),
+                            "ciao",
                             objperslabs,
                             active_slabs,
                             num_slabs]
