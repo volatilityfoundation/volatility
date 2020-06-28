@@ -239,13 +239,53 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                     num_objs = 0
                     # size = obj.Object('int', vm = cache.obj_vm, name = "size")
                     objperslabs = 0
-                    node_off = self.profile.get_obj_offset("kmem_cache", "node")
+                    pagesperslab = 0
+                    node = cache.m('node')
+                    #print node.d()
+                    cache_node = obj.Object('kmem_cache_node', offset = node[0], vm = self.addr_space)
+                    #print cache_node.nr_partial
+                    #print hex(cache_node.partial.next)
+                    page = obj.Object('page', offset = cache_node.partial.next, vm = self.addr_space)
+                    #print page.objects - page.inuse
+                    #for i in node:
+                    #    cache_node = obj.Object('kmem_cache_node', offset = i, vm = self.addr_space)
+                    #    if cache_node.is_valid():
+                    #        page = obj.Object('page', offset = cache_node.partial.next, vm = self.addr_space)
+                    #        print page.freelist
+                    #print hex(page.freelist)
+                    #while page.next > 0x1000000000000000:
+                    #    print page.freelist
+                        #print page.members
+                    #    page = obj.Object('page', offset = page.next, vm = self.addr_space)
+                    #print list(self.addr_space.read(0xffff88007d008e00L, 192))
+                    #print page.freelist
+                    #print page.inuse
+                    #print page.objects
+                    #print page.counters
+                    #if page.index == 0:
+                    #    print 0
+                    #else: 
+                    #    print page.counters / page.index
+                    #print page.pages
+                    #print page.pobjects
+                    #page2 = obj.Object('page', offset = page.next, vm = self.addr_space)
+                    #print page2.counters
+                    #print page2.inuse
+                    #print page2.freelist
+                    #print list(self.addr_space.read(0xffff88007d002900, 10))
+                    #print hex(page.freelist)
+                    #print cache.m('node').d()
+                    #for i in cache.members:
+                    #    print i
+                    #print cache.members['node'][0]
+                    #print cache.m("name")
+                    #node_off = self.profile.get_obj_offset("kmem_cache", "node")
                     # print("nodeoff "+str(node_off))
                     # for slab in cache._get_partial_list(node_off):
                     #     active_objs += slab.objects
                     #     active_slabs += 1
 
-                    cache._get_partial_list(node_off)
+                    #cache._get_partial_list(node_off)
 
                     # for slab in cache._get_free_list():
                     #     num_slabs += 1
@@ -254,8 +294,8 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                             active_objs,
                             num_objs,
                             cache.m("size"),
-                            "ciao",
                             objperslabs,
+                            pagesperslab,
                             active_slabs,
                             num_slabs]
 
