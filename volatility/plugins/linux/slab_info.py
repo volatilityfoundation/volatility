@@ -246,6 +246,7 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                     #print cache_node.nr_partial
                     #print hex(cache_node.partial.next)
                     page = obj.Object('page', offset = cache_node.partial.next, vm = self.addr_space)
+                    print page.inuse
                     #print page.objects - page.inuse
                     #for i in node:
                     #    cache_node = obj.Object('kmem_cache_node', offset = i, vm = self.addr_space)
@@ -268,7 +269,8 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                     #    print page.counters / page.index
                     #print page.pages
                     #print page.pobjects
-                    #page2 = obj.Object('page', offset = page.next, vm = self.addr_space)
+                    page2 = obj.Object('page', offset = page.next, vm = self.addr_space)
+                    print page2.inuse
                     #print page2.counters
                     #print page2.inuse
                     #print page2.freelist
