@@ -24,8 +24,14 @@
 """
 
 import volatility.obj as obj
+from volatility.obj import Pointer
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
+
+MAX_SLABS = 500
+MAX_ALIASES = 500
+MAX_NODES = 1024
+PAGE_SIZE = 4096
 
 class kmem_cache(obj.CType):
     def get_type(self):
@@ -115,9 +121,7 @@ class kmem_cache_slab(kmem_cache):
                     yield self._get_object(slab.s_mem.v() + i * self.buffer_size)
 
 class kmem_cache_slub(kmem_cache):
-    MAX_SLABS = 500
-    MAX_ALIASES = 500
-    MAX_NODES = 1024
+
     def get_type(self):
         return "slub"
 
@@ -131,24 +135,6 @@ class kmem_cache_slub(kmem_cache):
         print("size "+str(inuse))
         nodes = obj.Array("kmem_cache_node", offset=self.node.dereference(), vm = self.obj_vm)
         return nodes
-
-    def _get_partial_list(self, offset):
-        pNodes = obj.Object(theType = "Pointer", taregtType = "kmem_cache_node", offset = offset + self.obj_offset , vm = self.obj_vm, count = 1, name = "node")
-        print(type(pNodes))
-        nodes = pNodes.dereference_as("kmem_cache_node", length = self.MAX_NODES)
-        print(type(nodes))
-        
-        for node in nodes:
-            print(type(node))
-
-        # for node in nodes:
-        #     print("ciao")
-        #     print(type(node))
-
-
-        #     slabs = obj.Object("int", offset = node.size, vm = self.obj_vm)
-        #     listm = "next"
-        #     ret = [slab for slab in slabs.list_of_type("page", listm)]
 
 
 class LinuxKmemCacheOverlay(obj.ProfileModification):
@@ -175,10 +161,8 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
             listm = "next"
             ret = [cache for cache in caches.list_of_type("kmem_cache", listm)]
         elif slab_caches: #slub
-            # debug.info("SLUB is currently unsupported.")
             caches = obj.Object("list_head", offset = slab_caches, vm = self.addr_space)
             listm = "list"
-            print("testing")
             ret = [cache for cache in caches.list_of_type("kmem_cache", listm)]
         else:
             debug.error("Unknown or unimplemented slab type.")
@@ -237,65 +221,35 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                     active_slabs = 0
                     num_slabs = 0
                     num_objs = 0
-                    # size = obj.Object('int', vm = cache.obj_vm, name = "size")
                     objperslabs = 0
                     pagesperslab = 0
+                    object_size = 0
+                    metadata = 0
                     node = cache.m('node')
-                    #print node.d()
-                    cache_node = obj.Object('kmem_cache_node', offset = node[0], vm = self.addr_space)
-                    #print cache_node.nr_partial
-                    #print hex(cache_node.partial.next)
-                    page = obj.Object('page', offset = cache_node.partial.next, vm = self.addr_space)
-                    print page.inuse
-                    #print page.objects - page.inuse
-                    #for i in node:
-                    #    cache_node = obj.Object('kmem_cache_node', offset = i, vm = self.addr_space)
-                    #    if cache_node.is_valid():
-                    #        page = obj.Object('page', offset = cache_node.partial.next, vm = self.addr_space)
-                    #        print page.freelist
-                    #print hex(page.freelist)
-                    #while page.next > 0x1000000000000000:
-                    #    print page.freelist
-                        #print page.members
-                    #    page = obj.Object('page', offset = page.next, vm = self.addr_space)
-                    #print list(self.addr_space.read(0xffff88007d008e00L, 192))
-                    #print page.freelist
-                    #print page.inuse
-                    #print page.objects
-                    #print page.counters
-                    #if page.index == 0:
-                    #    print 0
-                    #else: 
-                    #    print page.counters / page.index
-                    #print page.pages
-                    #print page.pobjects
-                    page2 = obj.Object('page', offset = page.next, vm = self.addr_space)
-                    print page2.inuse
-                    #print page2.counters
-                    #print page2.inuse
-                    #print page2.freelist
-                    #print list(self.addr_space.read(0xffff88007d002900, 10))
-                    #print hex(page.freelist)
-                    #print cache.m('node').d()
-                    #for i in cache.members:
-                    #    print i
-                    #print cache.members['node'][0]
-                    #print cache.m("name")
-                    #node_off = self.profile.get_obj_offset("kmem_cache", "node")
-                    # print("nodeoff "+str(node_off))
-                    # for slab in cache._get_partial_list(node_off):
-                    #     active_objs += slab.objects
-                    #     active_slabs += 1
+                    object_size = cache.m("size")
+                    cache_node = obj.Object('kmem_cache_node', offset = node[0], vm = self.addr_space)  
+                    page = obj.Object('page', offset = cache_node.partial.m("next"), vm = self.addr_space)
+                    # if page.freelist > 0x100000000000000:
+                    #     ptr = page.freelist.dereference_as("Pointer")
+                    #     print(ptr)
+                    # else:
+                    #     print (page.freelist)
+                    # print (page.counters)
+                    active_objs = page.counters
+                    active_slabs = cache_node.nr_slabs.counter
+                    num_slabs = cache_node.nr_slabs.counter
+                    num_objs = cache_node.total_objects.counter
+                    if num_slabs != 0:
+                        pagesperslab = int(num_objs * object_size / num_slabs / PAGE_SIZE)
+                        if (num_objs * object_size)%(num_slabs * PAGE_SIZE) != 0:
+                            pagesperslab += 1
+                        objperslabs = int(PAGE_SIZE * pagesperslab / object_size)
 
-                    #cache._get_partial_list(node_off)
-
-                    # for slab in cache._get_free_list():
-                    #     num_slabs += 1
 
                     yield [cache.get_name(),
                             active_objs,
                             num_objs,
-                            cache.m("size"),
+                            object_size,
                             objperslabs,
                             pagesperslab,
                             active_slabs,
