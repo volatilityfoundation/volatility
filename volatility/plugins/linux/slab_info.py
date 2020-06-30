@@ -174,8 +174,8 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
             listm = "next"
             ret = [cache for cache in caches.list_of_type("kmem_cache", listm)]
         elif slob_list : #slob
-            obj = kmem_cache_slob()
-            ret = [obj]
+            slob = kmem_cache_slob()
+            ret = [slob]
         else: # slub
             caches = obj.Object("list_head", offset = slab_caches, vm = self.addr_space)
             listm = "list"
@@ -260,7 +260,7 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                             active_objs,
                             num_objs,
                             object_size,
-                            objperslabs,
+                            objperslab,
                             pagesperslab,
                             active_slabs,
                             num_slabs]
