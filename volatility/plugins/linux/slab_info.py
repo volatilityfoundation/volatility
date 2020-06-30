@@ -133,6 +133,10 @@ class kmem_cache_slub(kmem_cache):
         nodes = obj.Array("kmem_cache_node", offset=self.node.dereference(), vm = self.obj_vm)
         return nodes
 
+class kmem_cache_slob():
+
+    def get_type(self):
+        return "slob"
 
 class LinuxKmemCacheOverlay(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'linux'}
@@ -153,32 +157,30 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
         self._config.add_option('PAGE_SIZE', short_option = 'p', default = 0x1000,
                           help = '<SLOB ONLY>The page size of the analyzed system',
                           action = 'store', type = 'int')
-        self._config.add_option('<SLOB ONLY>DUMP_FREE_LIST', short_option = 'L', default = None,
-                          help = 'Select the free list to dump: (s)mall, (m)edium, (l)arge or (a)ll',
+        self._config.add_option('DUMP_FREE_LIST', short_option = 'L', default = None,
+                          help = '<SLOB ONLY>Select the free list to dump: (s)mall, (m)edium, (l)arge or (a)ll',
                           action = 'store', type = 'str')
-        self._config.add_option('<SLOB ONLY>DUMP_FILE', short_option = 'D', default = None, 
-                          help = 'When using -L specify the name of the dump file')
+        self._config.add_option('DUMP_FILE', short_option = 'D', default = None, 
+                          help = '<SLOB ONLY>When using -L specify the name of the dump file')
 
     def get_all_kmem_caches(self):
         linux_common.set_plugin_members(self)
         cache_chain = self.addr_space.profile.get_symbol("cache_chain")
         slab_caches = self.addr_space.profile.get_symbol("slab_caches")
+        slob_list = self.addr_space.profile.get_symbol("free_slob_small")
 
         if cache_chain: #slab
             caches = obj.Object("list_head", offset = cache_chain, vm = self.addr_space)
             listm = "next"
             ret = [cache for cache in caches.list_of_type("kmem_cache", listm)]
-        elif slab_caches: #slub
+        elif slob_list : #slob
+            obj = kmem_cache_slob()
+            ret = [obj]
+        else: # slub
             caches = obj.Object("list_head", offset = slab_caches, vm = self.addr_space)
             listm = "list"
             ret = [cache for cache in caches.list_of_type("kmem_cache", listm)]
-        else: # slob
-            # debug.error("Unknown or unimplemented slab type.")
-            free_slob_small = self.addr_space.profile.get_symbol("free_slob_small")
-            free_slob_medium = self.addr_space.profile.get_symbol("free_slob_medium")
-            free_slob_large = self.addr_space.profile.get_symbol("free_slob_large")
-            ret [free_slob_small, free_slob_medium, free_slob_large]
-
+            
         return ret
 
     def get_kmem_cache(self, cache_name, unalloc, struct_name = ""):
@@ -241,22 +243,18 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                     object_size = cache.m("size")
                     cache_node = obj.Object('kmem_cache_node', offset = node[0], vm = self.addr_space)  
                     page = obj.Object('page', offset = cache_node.partial.m("next"), vm = self.addr_space)
-                    # if page.freelist > 0x100000000000000:
-                    #     ptr = page.freelist.dereference_as("Pointer")
-                    #     print(ptr)
-                    # else:
-                    #     print (page.freelist)
-                    # print (page.counters)
-                    active_objs = page.counters
+                    ptr = page.freelist.dereference_as("Pointer")
+                    if ptr.is_valid() == False:
+                        active_objs = "?"
+                    else:
+                        active_objs = page.counters
                     num_objs = cache_node.total_objects.counter
                     active_slabs = cache_node.nr_slabs.counter
                     num_slabs = cache_node.nr_slabs.counter
-                    if num_slabs != 0:
-                        pagesperslab = int(num_objs * object_size / num_slabs / PAGE_SIZE)
-                        if (num_objs * object_size)%(num_slabs * PAGE_SIZE) != 0:
-                            pagesperslab += 1
-                        objperslabs = int(PAGE_SIZE * pagesperslab / object_size)
 
+                    order = cache.oo.x >> 16
+                    pagesperslab = 2**order
+                    objperslab = cache.oo.x ^ ((cache.oo.x >>16) << 16)
 
                     yield [cache.get_name(),
                             active_objs,
@@ -268,6 +266,10 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                             num_slabs]
                 
                 else: # slob
+
+                    free_slob_small = self.addr_space.profile.get_symbol("free_slob_small")
+                    free_slob_medium = self.addr_space.profile.get_symbol("free_slob_medium")
+                    free_slob_large = self.addr_space.profile.get_symbol("free_slob_large")
                     SLOB_BREAK1 = 256
                     SLOB_BREAK2 = 1024
 
@@ -447,9 +449,10 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
 
 
     def render_text(self, outfd, data):
+        linux_common.set_plugin_members(self)
         cache_chain = self.addr_space.profile.get_symbol("cache_chain")
         slab_caches = self.addr_space.profile.get_symbol("slab_caches")
-        if cache_chain or slab_caches:
+        if (cache_chain or slab_caches) and not self.addr_space.profile.get_symbol("free_slob_small"):
             self.table_header(outfd, [("<name>", "<30"),
                                     ("<active_objs>", "<13"),
                                     ("<num_objs>", "<10"),
