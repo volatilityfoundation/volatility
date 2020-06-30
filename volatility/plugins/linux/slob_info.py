@@ -1,3 +1,27 @@
+# Volatility
+#
+# This file is part of Volatility.
+#
+# Volatility is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# Volatility is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+"""
+@author:       Fulvio Di Girolamo - Angelo Russi
+@license:      GNU General Public License 2.0
+
+"""
+
 import volatility.obj as obj
 import volatility.debug as debug
 import volatility.plugins.linux.common as linux_common
@@ -107,7 +131,7 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                     off = -size_or_off
                 computed_size += size
                 free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
-		if size >= 256/slob_unit_size:
+		        if size >= 256/slob_unit_size:
                     continue
                 free_space += size*slob_unit_size
                 space_counter += 1
