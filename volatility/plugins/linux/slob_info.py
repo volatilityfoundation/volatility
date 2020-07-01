@@ -131,7 +131,7 @@ class linux_slobinfo(linux_common.AbstractLinuxCommand):
                     off = -size_or_off
                 computed_size += size
                 free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
-		        if size >= 256/slob_unit_size:
+                if size >= 256/slob_unit_size:
                     continue
                 free_space += size*slob_unit_size
                 space_counter += 1

@@ -124,14 +124,6 @@ class kmem_cache_slub(kmem_cache):
 
     def get_size(self):
         return int(self.size())
-    
-    def get_nodes(self):
-        off = self.cpu_slab
-        inuse = self.size
-        print("nodes offset"+str(off))
-        print("size "+str(inuse))
-        nodes = obj.Array("kmem_cache_node", offset=self.node.dereference(), vm = self.obj_vm)
-        return nodes
 
 class kmem_cache_slob():
 
