@@ -39,6 +39,13 @@ try:
 except ImportError:
     has_distorm = False
 
+try:
+    import yara
+    import volatility.plugins.malware.malfind as malfind
+    has_yara = True
+except ImportError:
+    has_yara = False
+
 class _HMAP_ENTRY(obj.CType):
 
     @property
@@ -216,10 +223,37 @@ class ObHeaderCookieStore(object):
             debug.warning("Cannot find NT module")
             return False
 
+        model = meta.get("memory_model")
+
         addr = nt_mod.getprocaddress("ObGetObjectType")
         if addr == None:
-            debug.warning("Cannot find nt!ObGetObjectType")
-            return False 
+            if not has_yara:
+                debug.warning("Cannot find nt!ObGetObjectType")
+                return False
+            # Did not find nt!ObGetObjectType, trying with YARA instead.
+            if model == "32bit":
+                # 8bff   mov edi, edi
+                # 55     push ebp
+                # 8bec   mov ebp, esp
+                # 8b4d08 mov ecx, dword ptr [ebp + 8]
+                # 8d41e8 lea eax, dword ptr [ecx - 0x18]
+                nt_ObGetObjectType_signature = "8bff 55 8bec 8b4d08 8d41e8"
+            else:
+                # 488d41d0 lea rax, qword ptr [rcx - 0x30]
+                # 0fb649e8 movzx ecx, byte ptr [rcx - 0x18]
+                nt_ObGetObjectType_signature = "488d41d0 0fb649e8"
+            rule = 'rule r1 {strings: $a = {%s} condition: $a}' \
+                % nt_ObGetObjectType_signature
+            rules = yara.compile(source = rule)
+            scanner = malfind.DiscontigYaraScanner(
+                address_space = kernel_space,
+                rules = rules)
+            first_match = next(scanner.scan(), None)
+            if not first_match:
+                debug.warning("Cannot find nt!ObGetObjectType")
+                return False
+            _, addr = first_match
+            addr -= nt_mod.DllBase
 
         # produce an absolute address by adding the DLL base to the RVA 
         addr += nt_mod.DllBase 
@@ -228,7 +262,6 @@ class ObHeaderCookieStore(object):
             return False 
 
         # in theory...but so far we haven't tested 32-bits 
-        model = meta.get("memory_model")    
         if model == "32bit":
             mode = distorm3.Decode32Bits
         else:
@@ -330,6 +363,9 @@ class _OBJECT_HEADER_10(win8._OBJECT_HEADER):
         cook = obj.VolMagic(self.obj_vm).ObHeaderCookie.v()
         addr = self.obj_offset 
         indx = int(self.m("TypeIndex"))
+
+        if cook is None:
+            debug.error("Cannot obtain nt!ObHeaderCookie value")
 
         return ((addr >> 8) ^ cook ^ indx) & 0xFF
 
