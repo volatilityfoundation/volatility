@@ -144,7 +144,7 @@ def walk_internal_list(struct_name, list_member, list_start, addr_space = None):
         list_start = getattr(list_struct, list_member)
 
 # based on __d_path
-def do_get_path(dentry, rmnt, rdentry, vfsmnt):
+def do_get_path(rdentry, rmnt, dentry, vfsmnt):
     ret_path = []
 
     inode = dentry.d_inode
