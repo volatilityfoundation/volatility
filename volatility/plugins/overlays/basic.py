@@ -221,7 +221,7 @@ class VolatilityDTB(obj.VolatilityMagic):
                                   vm = self.obj_vm)
                 if 'Idle\x00\x00\x00\x00\x00\x00\x00\x00' in proc.ImageFileName.v() and \
                     int(proc.UniqueProcessId) == 0 and \
-                    proc.Peb.v() == 0:
+                    proc.Peb.v() in [None, 0]:
 
                     yield proc.Pcb.DirectoryTableBase.v()
 
