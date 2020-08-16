@@ -79,13 +79,3 @@ class LimeAddressSpace(addrspace.AbstractRunBasedMemory):
 
             header = obj.Object("lime_header", offset = offset, vm = self.base)
 
-    def translate(self, addr):
-        """Find the offset in the file where a memory address can be found.
-        @param addr: a memory address
-        """
-        firstram = self.runs[0][0]
-
-        if addr < firstram:
-            addr = firstram + addr
-
-        return addrspace.AbstractRunBasedMemory.translate(self, addr)
