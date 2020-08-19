@@ -22,7 +22,7 @@ import volatility.debug as debug #pylint: disable-msg=W0611
 import volatility.plugins.addrspaces.paged as paged
 
 
-class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
+class AbstractArm64AddressSpace(paged.AbstractWritablePagedMemory):
     """Address space for ARM64 processors"""
 
     order = 800
@@ -33,7 +33,6 @@ class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
     alignment_gcd = 0x1000
     _longlong_struct = struct.Struct('<Q')
     _valid_dtb_base = None
-    _entry_addressmask = ((1 << 47) - 1) & (~0xfff)
 
     def read_longlong_phys(self, addr):
         '''
@@ -50,17 +49,22 @@ class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
         return longlongval
 
     def ptbl_lowbits(self, level):
-        return 12 + 9 * (3 - level)
+        return 3 + (self.pgtable_level_bits) * (4 - level)
 
     def ptbl_index(self, vaddr, level):
-        return (vaddr >> self.ptbl_lowbits(level)) & 0x1ff
+        return (vaddr >> self.ptbl_lowbits(level)) & ((1 << self.pgtable_level_bits) - 1)
 
     def ptbl_walk(self, vaddr, base):
         if (vaddr == 0):
             return None
-        for level in xrange(4):
+
+        # 4KB pages will further mask only 48 bits using ptbl_index
+        vaddr = vaddr & ((1 << 52) - 1)
+
+        for level in xrange(self.pgtable_level_start, 4):
             index = self.ptbl_index(vaddr, level)
             entry = self.read_longlong_phys(base + (index << 3))
+            debug.debug("level: {0:d} index: {1:3x} base: {2:16x} entry {3:16x}".format(level, index, base, entry), 4)
             if not entry:
                 return None
             entry_addressbits = entry & self._entry_addressmask
@@ -72,7 +76,9 @@ class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
             # entry points to final address
             if (level == 3 or (entry & 0x3 == 0x1)):
                 lowbitmask = (1 << self.ptbl_lowbits(level)) - 1
-                return entry_addressbits & (~lowbitmask) | (vaddr & lowbitmask)
+                result = entry_addressbits & (~lowbitmask) | (vaddr & lowbitmask)
+                debug.debug("-result {0:16x}".format(result), 4)
+                return result
             # entry points to next table
             base = entry_addressbits
         return None
@@ -93,12 +99,12 @@ class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
             cls._valid_dtb_base = self.dtb
 
     def get_available_pages(self):
-        level = 0
+        level = self.pgtable_level_start
         ptbl_descs = [self.dtb, 0, 0, 0]
         ptbl_indexes = [0, 0, 0, 0]
         while True:
-            if ptbl_indexes[level] == 512:
-                if level == 0:
+            if ptbl_indexes[level] == 1 << self.pgtable_level_bits:
+                if level == self.pgtable_level_start:
                     break
                 level -= 1
                 ptbl_indexes[level] += 1
@@ -123,3 +129,15 @@ class Arm64AddressSpace(paged.AbstractWritablePagedMemory):
 
             ptbl_indexes[level] += 1
 
+
+# 4-level , 4KB pagetable
+class Arm64AddressSpace_4KB(AbstractArm64AddressSpace):
+    pgtable_level_bits = 9
+    _entry_addressmask = ((1 << 48) - 1) & (~((1 << 12) - 1))
+    pgtable_level_start = 0
+
+# 3-level 64KB pagetable, for kernel compiled with CONFIG_ARM64_PA_BITS_52
+class Arm64AddressSpace_64KB(AbstractArm64AddressSpace):
+    pgtable_level_bits = 13
+    _entry_addressmask = ((1 << 48) - 1) & (~((1 << 16) - 1))
+    pgtable_level_start = 1
