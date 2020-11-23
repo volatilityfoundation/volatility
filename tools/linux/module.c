@@ -578,7 +578,7 @@ struct mount {
 
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
     struct proc_dir_entry {
         unsigned int low_ino;
