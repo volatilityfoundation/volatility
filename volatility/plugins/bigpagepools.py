@@ -31,6 +31,8 @@ class PoolTrackTypeOverlay(obj.ProfileModification):
 
     # This ensures _POOL_DESCRIPTOR will be available, 
     # so we can copy the PoolType enumeration
+    # Win10 19041 (May 2020) removed _POOL_DESCRIPTOR, so switch to
+    # _OBJECT_TYPE_INITIALIZER instead
     before = ['WindowsVTypes']
 
     # PoolType didn't exist until Vista 
@@ -38,9 +40,18 @@ class PoolTrackTypeOverlay(obj.ProfileModification):
         'major': lambda x : x >= 6}
 
     def modification(self, profile):
+        minor = profile.metadata.get("minor", 0)
+        build = profile.metadata.get("build", 0)
+
+        if minor < 4 or (minor == 4 and build < 19041):
+            pool_type_name = "_POOL_DESCRIPTOR"
+        else:
+            pool_type_name = "_OBJECT_TYPE_INITIALIZER"
+
+
         profile.merge_overlay({
             '_POOL_TRACKER_BIG_PAGES': [ None, {
-            'PoolType': [ None, profile.vtypes['_POOL_DESCRIPTOR'][1]['PoolType'][1]],
+            'PoolType': [ None, profile.vtypes[pool_type_name][1]['PoolType'][1]],
             'Key': [ None, ['String', dict(length = 4)]], 
              }],
         })
@@ -68,7 +79,7 @@ class BigPageTableMagic(obj.ProfileModification):
             (6, 2, '32bit') : [[92, 88]],
             (6, 2, '64bit') : [[-5200, -5224]], 
             (6, 3, '32bit') : [[116, 120]],
-            (6, 4, '64bit') : [[-48, -10328], [208, 184], [168, 192], [176, 168], [48, 40], [32, 24], [24, 48], [56, 32], [-56, -10328], [24, 32], [-10344, -10336], [-10328, -10288], [-48, -10344], [-5208, -5200], [-188, -200], [40, 32], [-5200, -5208], [64, 24], [-10328, -10320], [32, 40], [-56, -64], [-10312, -10320], [24, 64], [-10304, -10344], [-64, -72], [-10328, -10336], [40, 48], [10304, 10296], [10304, 16], [-5192, -5184], [10320, 10312], [-64, -56], [-40, -64], [-10320, -10344], [-48, -72], [-72, -64], [-10304, -10328], [-56, -48], [-5224, -5216], [-10336, -10312], [-5168, -5208], [10304, 24], [10288, 24], [32, 72], [10336, 10328]],
+            (6, 4, '64bit') : [[-72, -64], [-48, -10328], [208, 184], [168, 192], [176, 168], [48, 40], [32, 24], [24, 48], [56, 32], [-56, -10328], [24, 32], [-10344, -10336], [-10328, -10288], [-48, -10344], [-5208, -5200], [-188, -200], [40, 32], [-5200, -5208], [64, 24], [-10328, -10320], [32, 40], [-56, -64], [-10312, -10320], [24, 64], [-10304, -10344], [-64, -72], [-10328, -10336], [40, 48], [10304, 10296], [10304, 16], [-5192, -5184], [10320, 10312], [-64, -56], [-40, -64], [-10320, -10344], [-48, -72], [-72, -64], [-10304, -10328], [-56, -48], [-5224, -5216], [-10336, -10312], [-5168, -5208], [10304, 24], [10288, 24], [32, 72], [10336, 10328], [-56, -10344], [-10352, -10344]],
             (6, 4, '32bit') : [[-168, -164], [-160, -172]],
         }
 
