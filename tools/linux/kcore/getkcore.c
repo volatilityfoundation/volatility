@@ -19,8 +19,6 @@ This file exposes all of physical memory (including hardware devices) as ELF sec
 
 To acquire memory, the script first parses /proc/iomem and determines ranges of "System RAM".
 It then parses the sections of /proc/kcore and matches "System RAM" regions to those found in the kcore file.
-This matching is possible by using the static offset (0xffff880000000000) of the virtual mapping of RAM.
-See the _find_kcore_sections function for this algorithm
 
 Each RAM region found is then written to a LiME formatted file so that it can be immediately analyzed with Volatility.
 
@@ -146,7 +144,7 @@ void _process_header(int kcore_fd, int out_fd, unsigned long long phdr_addr, uns
     if (read(kcore_fd, &p, sizeof(p)) != sizeof(p))
         _die("_process_header: Unable to read program header: %x | %x\n", phdr_addr, phys_start);
 
-    if (phys_start + 0xffff880000000000 == p.p_vaddr)
+    if (phys_start == p.p_paddr)
     {
         _write_lime_header(out_fd, phys_start, p.p_memsz);
         _read_write_region(kcore_fd, out_fd, &p, phys_start, read_buf);
