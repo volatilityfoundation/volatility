@@ -120,6 +120,7 @@ linux_overlay = {
         'ArmValidAS'   :  [ 0x0, ['VolatilityLinuxARMValidAS']],
         'IA32ValidAS'  :  [ 0x0, ['VolatilityLinuxIntelValidAS']],
         'AMD64ValidAS'  :  [ 0x0, ['VolatilityLinuxIntelValidAS']],
+        'Arm64ValidAS'   :  [ 0x0, ['VolatilityLinuxARM64ValidAS']],
         }],
     'vm_area_struct' : [ None, { 
         'vm_flags' : [ None, ['LinuxPermissionFlags', {'bitmap': {'r': 0, 'w': 1, 'x': 2}}]],
@@ -156,6 +157,9 @@ def parse_system_map(data, module):
         if symbol == "arm_syscall":
             arch = "ARM"
 
+        if symbol == "arm64_dma_phys_limit":
+            arch = "arm64"
+
         if not symbol in sys_map[module]:
             sys_map[module][symbol] = []
 
@@ -191,9 +195,6 @@ def LinuxProfileFactory(profpkg):
         elif 'system.map' in f.filename.lower():
             sysmapdata = profpkg.read(f.filename)
             arch, memmodel, sysmap = parse_system_map(profpkg.read(f.filename), "kernel")
-
-    if memmodel == "64bit":
-        arch = "x64"
 
     if not sysmapdata or not dwarfdata:
         # Might be worth throwing an exception here?
@@ -2330,7 +2331,12 @@ class VolatilityDTB(obj.VolatilityMagic):
         config = self.obj_vm.get_config()
         tbl    = self.obj_vm.profile.sys_map["kernel"]
         
-        if profile.metadata.get('memory_model', '32bit') == "32bit":
+        if profile.metadata.get('arch') == 'arm64':
+            sym = "swapper_pg_dir"
+            shifts  = [0xffff000000000000, 0xffff800000000000]
+            read_sz = 8
+            fmt     = "<Q"
+        elif profile.metadata.get('memory_model', '32bit') == "32bit":
             sym     = "swapper_pg_dir"
             shifts  = [0xc0000000]
             read_sz = 4
@@ -2415,8 +2421,9 @@ class VolatilityDTB(obj.VolatilityMagic):
 
                 good_dtb = (dtb_sym_addr - shifts[0] + 0) + tmp_physical_shift 
 
-                if pas.zread(good_dtb, 8) != "\x00\x00\x00\x00\x00\x00\x00\x00":
-                    continue
+                if profile.metadata.get('arch') != 'arm64':
+                    if pas.zread(good_dtb, 8) != "\x00\x00\x00\x00\x00\x00\x00\x00":
+                        continue
 
                 if sched_class_offset != -1:
                     sched_class_val = pas.read(swapper_address + sched_class_offset, read_sz)
@@ -2493,6 +2500,29 @@ class VolatilityLinuxARMValidAS(obj.VolatilityMagic):
 
             yield fork_off - task_off == sym_addr_diff
 
+class VolatilityLinuxARM64ValidAS(obj.VolatilityMagic):
+    """An object to check that an address space is a valid Arm64 Paged space"""
+    def generate_suggestions(self):
+
+        init_task_addr = self.obj_vm.profile.get_symbol("init_task")
+        do_fork_addr   = self.obj_vm.profile.get_symbol("_do_fork")
+
+        if not do_fork_addr or not init_task_addr:
+            return
+
+        task_paddr = self.obj_vm.vtop(init_task_addr)
+        do_fork_paddr = self.obj_vm.vtop(do_fork_addr)
+
+        if not do_fork_paddr or not task_paddr:
+            return
+
+        res = (do_fork_paddr - task_paddr == do_fork_addr - init_task_addr)
+
+        if res:
+            self.obj_vm.set_curr_base_valid()
+
+        yield res
+
 class LinuxObjectClasses(obj.ProfileModification):
     conditions = {'os': lambda x: x == 'linux'}
     before = ['BasicObjectClasses']
@@ -2518,6 +2548,7 @@ class LinuxObjectClasses(obj.ProfileModification):
             'Ipv6Address': basic.Ipv6Address,
             'VolatilityLinuxIntelValidAS' : VolatilityLinuxIntelValidAS,
             'VolatilityLinuxARMValidAS' : VolatilityLinuxARMValidAS,
+            'VolatilityLinuxARM64ValidAS' : VolatilityLinuxARM64ValidAS,
             'kernel_param' : kernel_param,
             'kparam_array' : kparam_array,
             'desc_struct' : desc_struct,
