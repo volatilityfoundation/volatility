@@ -1631,6 +1631,67 @@ class task_struct(obj.CType):
         for hist in sorted(history_entries, key = attrgetter('time_as_integer')):
             yield hist              
 
+
+    def zsh_history_entries(self, t_drift, carving):
+
+        proc_as = self.get_process_address_space()
+
+        if not proc_as:
+            return
+
+        node_offset = proc_as.profile.get_obj_offset("histent", "node")
+        
+        # Determine the pointer size
+        if proc_as.profile.metadata.get('memory_model', '32bit') == "32bit":
+            ptr_size = 4
+        else:
+            ptr_size = 8
+
+        history_entries = {}
+        if carving:
+        # Iterate through the heap beginning with start_brk; with step of ptr_size 
+            for i in range(self.mm.start_brk, self.mm.brk, ptr_size):
+                hist = obj.Object("histent", offset=i, vm=proc_as)
+                node = obj.Object("hashnode", offset=i - node_offset, vm=proc_as)
+                if node.is_valid(self.mm.start_brk, self.mm.brk) and hist.is_valid(self.mm.start_brk, self.mm.brk, t_drift):
+                    history_entries[hist.histnum] = hist
+        else:
+        # Iterate through the heap beginning with start_brk; with step of ptr_size 
+            for i in range(self.mm.start_brk, self.mm.brk, ptr_size):
+                hist = obj.Object("histent", offset=i, vm=proc_as)
+                node = obj.Object("hashnode", offset=i - node_offset, vm=proc_as)
+                if node.is_valid(self.mm.start_brk, self.mm.brk) and hist.is_valid(self.mm.start_brk, self.mm.brk, t_drift):
+                    history_entries[hist.histnum] = hist
+                    break
+            bkcp = hist
+            
+            # 1st we go up the history, because we need to hit the very first entry in order to identify the last entry
+            hist = obj.Object("histent", offset=hist.up, vm=proc_as)
+            try:
+                max_hist_obj = hist
+                while hist.is_valid(self.mm.start_brk, self.mm.brk):
+                    history_entries[hist.histnum] = hist
+                    hist = obj.Object("histent", offset=hist.up, vm=proc_as)
+            except TypeError as e:
+                print 'Error', e
+                pass
+            
+            hist = bkcp
+            # Once the walk-up is done we have the last history entry, and we can walk the history downwards
+            hist = obj.Object("histent", offset=hist.down, vm=proc_as)
+            try:
+                while hist.is_valid(self.mm.start_brk, self.mm.brk, t_drift):
+                    history_entries[hist.histnum] = hist
+                    hist = obj.Object("histent", offset=hist.down, vm=proc_as)
+            except TypeError as e:
+                print 'Error', e
+                pass
+
+        L = list(history_entries.keys())
+        L.sort()
+        for h in L:
+            yield h, history_entries[h]
+
     def _dynamic_env(self, proc_as, pack_format, addr_sz):
         # preload address 0
         addr_cache = {0 : 1}
