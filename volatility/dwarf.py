@@ -122,7 +122,7 @@ class DWARFParser(object):
 
     def base_type_name(self, data):
         """Replace references to base types."""
-        if 'DW_AT_name' in data:
+        if 'DW_AT_name' in data and data['DW_AT_name'] in self.tp2vol:
             return self.tp2vol[data['DW_AT_name'].strip('"')]
         else:
             sz = int(data['DW_AT_byte_size'], self.base)
