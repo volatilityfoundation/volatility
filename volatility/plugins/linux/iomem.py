@@ -27,6 +27,8 @@
 
 import volatility.obj as obj
 import volatility.plugins.linux.common as linux_common
+from volatility.renderers import TreeGrid
+from volatility.renderers.basic import Address
 
 class linux_iomem(linux_common.AbstractLinuxCommand):
     """Provides output similar to /proc/iomem"""
@@ -56,8 +58,18 @@ class linux_iomem(linux_common.AbstractLinuxCommand):
         for r in self.yield_resource(io_res.child):
             yield r
 
-    def render_text(self, outfd, data):
+    def unified_output(self, data):
+        return TreeGrid([("Name", str),
+                         ("Start", Address),
+                         ("End", Address)],
+                        self.generator(data))
 
+    def generator(self, data):
+        for output in data:
+            depth, name, start, end = output
+            yield (0, [str(name), Address(start), Address(end)])
+
+    def render_text(self, outfd, data):
         for output in data:
             depth, name, start, end = output
             outfd.write("{0:35s}\t0x{1:<16X}\t0x{2:<16X}\n".format(("  " * depth) + name, start, end))
