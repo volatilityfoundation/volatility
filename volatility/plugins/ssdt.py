@@ -26,6 +26,7 @@
 
 from operator import itemgetter
 
+import volatility.debug as debug
 import volatility.obj as obj
 import volatility.win32.tasks as tasks
 import volatility.win32.modules as modules
@@ -140,14 +141,14 @@ class SSDT(common.AbstractWindowsCommand):
 
         if addr_space.profile.metadata.get('memory_model', '32bit') == '32bit':
             # Gather up all SSDTs referenced by threads
-            print "[x86] Gathering all referenced SSDTs from KTHREADs..."
+            debug.info("[x86] Gathering all referenced SSDTs from KTHREADs...")
             for proc in tasks.pslist(addr_space):
                 for thread in proc.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
                     ssdt_obj = thread.Tcb.ServiceTable.dereference_as('_SERVICE_DESCRIPTOR_TABLE')
                     ssdts.add(ssdt_obj)
         else:
-            print "[x64] Gathering all referenced SSDTs from KeAddSystemServiceTable..."
-            # The NT module always loads first 
+            debug.info("[x64] Gathering all referenced SSDTs from KeAddSystemServiceTable...")
+            # The NT module always loads first
             ntos = list(modules.lsmod(addr_space))[0]
             func_rva = ntos.getprocaddress("KeAddSystemServiceTable")
             if func_rva == None:
@@ -169,7 +170,7 @@ class SSDT(common.AbstractWindowsCommand):
                 else:
                     tables.add((i, desc.KiServiceTable.v(), desc.ServiceLimit.v()))
 
-        print "Finding appropriate address space for tables..."
+        debug.info("Finding appropriate address space for tables...")
         tables_with_vm = []
         procs = list(tasks.pslist(addr_space))
         for idx, table, n in tables:
