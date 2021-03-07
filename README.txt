@@ -525,7 +525,7 @@ yarascan                   - Scan process or kernel memory with Yara signatures
 Licensing and Copyright
 =======================
 
-Copyright (C) 2007-2016 Volatility Foundation
+Copyright (C) 2007-2021 Volatility Foundation
 
 All Rights Reserved
 
