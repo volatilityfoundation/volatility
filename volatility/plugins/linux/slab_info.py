@@ -288,35 +288,6 @@ class linux_slabinfo(linux_common.AbstractLinuxCommand):
                     medium_pages = [slob for slob in slob_medium.list_of_type("page", "slab_list")]
                     large_pages = [slob for slob in slob_large.list_of_type("page", "slab_list")]
 
-                    #if(dump_list == 's'):
-                    #    page_list = small_pages
-                    #elif(dump_list == 'm'):
-                    #    page_list = medium_pages
-                    #elif(dump_list == 'l'):
-                    #    page_list = large_pages
-                    #if(page_list != None):
-                    #    for page in page_list:
-                    #        free_block_addr = page.freelist
-                    #        computed_size = 0
-                    #        while free_block_addr != 0x0 and computed_size < page.units:
-                    #            size_or_off = obj.Object(size_type, offset = free_block_addr, vm = self.addr_space)
-                    #            if size_or_off > 0:
-                    #                size = size_or_off
-                    #                off = obj.Object(size_type, offset = free_block_addr + slob_unit_size, vm = self.addr_space)
-                                    # print(off)
-                    #                block = self.addr_space.read(free_block_addr, size * slob_unit_size)
-                                    #for i in range(size * slob_unit_size / 4):
-                                    #    o = obj.Object('int', offset = free_block_addr + slob_unit_size + i * 4, vm = self.addr_space)
-                                        # print(self.addr_space)
-                                        # print(size)
-                                        # print(free_block_addr + slob_unit_size + i)
-                                    #print(block)
-                    #            else:
-                    #                size = 1
-                    #                off = -size_or_off
-                    #            computed_size += size
-                    #            free_block_addr = free_block_addr - free_block_addr % page_size + off * 2
-
                     if dump_list != None:
                         if dump_file != None:
                             dump = open(dump_file, "wb")
