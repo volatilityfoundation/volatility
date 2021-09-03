@@ -564,10 +564,15 @@ class proc(obj.CType):
                     
                     if htable.is_valid():
                         bucket_array = obj.Object(theType="Array", targetType=addr_type, offset = htable.bucket_array, vm = htable.nbuckets.obj_vm, count = 64)
+                        seen = set()
 
                         for bucket_ptr in bucket_array:
                             bucket = obj.Object(bucket_contents_type, offset = bucket_ptr, vm = htable.nbuckets.obj_vm)
                             while bucket != None and bucket.times_found > 0:  
+                                if bucket.v() in seen:
+                                    break
+                                seen.add(bucket.v())
+
                                 pdata = bucket.data 
 
                                 if pdata == None:
@@ -1036,7 +1041,7 @@ class proc(obj.CType):
             for map in self.get_proc_maps():
                 vnode = map.get_vnode()
 
-                if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode:
+                if vnode and vnode != "sub_map" and vnode.v() == wanted_vnode and map.get_perms() == "r-x":
                     text_start = map.start.v()
                     break
 
@@ -1056,6 +1061,8 @@ class proc(obj.CType):
         proc_as = self.get_process_address_space()
 
         m = obj.Object("macho_header", offset = exe_address, vm = proc_as)
+        if not m.is_valid():
+            return
 
         buffer = ""
 
@@ -1112,6 +1119,8 @@ class proc(obj.CType):
             return
 
         info_addr = struct.unpack(self.pack_fmt, info_buf)[0] 
+        if not proc_as.is_valid_address(info_addr):
+            return
 
         cnt = infos.infoArrayCount
         if cnt > 4096:
@@ -1595,8 +1604,11 @@ class vm_map_entry(obj.CType):
         # find_vnode_object
         vnode_object = map_obj.object.object() 
 
-        while vnode_object.shadow.dereference() != None:
+        seen = set()
+
+        while vnode_object.shadow.dereference() != None and vnode_object.v() not in seen:
             vnode_object = vnode_object.shadow.dereference()
+            seen.add(vnode_object.v())
 
         ops = vnode_object.pager.mo_pager_ops.v()
 

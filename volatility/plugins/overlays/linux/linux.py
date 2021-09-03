@@ -2244,7 +2244,25 @@ class super_block(obj.CType):
         return self.s_dev & ((1 << 20) - 1)
 
 class inode(obj.CType):
+    @property
+    def uid(self):
+        
+        try:
+            ret = int(self.i_uid)
+        except TypeError:
+            ret = int(self.i_uid.val)
 
+        return ret
+
+    @property
+    def gid(self):
+        
+        try:
+            ret = int(self.i_gid)
+        except TypeError:
+            ret = int(self.i_gid.val)
+        return ret
+    
     def is_dir(self):
         """Mimic the S_ISDIR macro"""
         return self.i_mode & linux_flags.S_IFMT == linux_flags.S_IFDIR
