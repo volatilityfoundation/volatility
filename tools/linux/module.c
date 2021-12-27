@@ -5,6 +5,8 @@ symbols and then read the DWARF symbols from it.
 #include <linux/module.h>
 #include <linux/version.h>
 
+MODULE_LICENSE("GPL");
+
 #include <linux/ioport.h>
 #include <linux/fs_struct.h>
 #include <linux/fs.h>
