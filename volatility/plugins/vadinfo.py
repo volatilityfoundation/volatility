@@ -34,7 +34,7 @@ from volatility.renderers import TreeGrid
 from volatility.renderers.basic import Address
 
 # Vad Protections. Also known as page protections. _MMVAD_FLAGS.Protection,
-# 3-bits, is an index into nt!MmProtectToValue (the following list). 
+# 5-bits, is an index into nt!MmProtectToValue (the following list). 
 PROTECT_FLAGS = dict(enumerate([
     'PAGE_NOACCESS',
     'PAGE_READONLY',
