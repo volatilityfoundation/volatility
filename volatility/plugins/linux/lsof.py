@@ -49,6 +49,7 @@ class linux_lsof(linux_pslist.linux_pslist):
 
     def render_text(self, outfd, data):
         self.table_header(outfd, [("Offset","#018x"),
+                                  ("Inode", "#018x"),
                                   ("Name","30"),
                                   ("Pid", "8"),
                                   ("FD", "8"),
@@ -56,4 +57,4 @@ class linux_lsof(linux_pslist.linux_pslist):
 
         for task in data:
             for filp, fd in task.lsof(): 
-                self.table_row(outfd, Address(task.obj_offset), str(task.comm), task.pid, fd, linux_common.get_path(task, filp))
+                self.table_row(outfd, Address(task.obj_offset), filp.f_inode, str(task.comm), task.pid, fd, linux_common.get_path(task, filp))
