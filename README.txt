@@ -86,7 +86,7 @@ ability to convert between these formats:
   - Firewire 
   - HPAK (FDPro)
 
-For a more detailed list of capabilities, see the following:
+For a more detailed list of capabilities, see the following URL:
 
     https://github.com/volatilityfoundation/volatility/wiki
     
@@ -98,7 +98,7 @@ Example Data
 ============
 
 If you want to give Volatility a try, you can download exemplar
-memory images from the following url:
+memory images from the following URL:
 
     https://github.com/volatilityfoundation/volatility/wiki/Memory-Samples
 
@@ -108,7 +108,7 @@ Mailing Lists
 Mailing lists to support the users and developers of Volatility
 can be found at the following address:
 
-    http://lists.volatilesystems.com/mailman/listinfo
+    https://lists.volatilityfoundation.org/mailman3/postorius/lists/vol-users.lists.volatilityfoundation.org/
 
 Contact
 =======
@@ -555,11 +555,10 @@ If you think you've found a bug, please report it at:
 In order to help us solve your issues as quickly as possible,
 please include the following information when filing a bug:
 
-* The version of volatility you're using
-* The operating system used to run volatility
-* The version of python used to run volatility
+* The operating system used to run Volatility
+* The version of python used to run Volatility
 * The suspected operating system of the memory image
-* The complete command line you used to run volatility
+* The complete command line you used to run Volatility
 
 Depending on the operating system of the memory image, you may need to provide
 additional information, such as:
