@@ -627,4 +627,6 @@ struct mount {
 #endif
 
 struct resource resource;
-
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("GPL");
+#endif
