@@ -2368,7 +2368,7 @@ class VolatilityDTB(obj.VolatilityMagic):
         try:
             # For Linux kernels < v5.14-rc1
             state_offset  = profile.get_obj_offset("task_struct", "state")
-        except:
+        except KeyError:
             # For Linux kernels >= v5.14-rc1, based on commit 2f064a59a11ff9bc22e52e9678bc601404c7cb34
             state_offset  = profile.get_obj_offset("task_struct", "__state")
         
