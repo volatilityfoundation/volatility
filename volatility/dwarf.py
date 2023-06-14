@@ -50,6 +50,7 @@ class DWARFParser(object):
         'unsigned int': 'unsigned int',
         'sizetype' : 'unsigned long',
         'ssizetype' : 'long',
+        '__int128 unsigned': 'unsigned long long',
     }
 
 
@@ -261,9 +262,7 @@ class DWARFParser(object):
 
         elif kind == 'DW_TAG_member' and parent_kind == 'DW_TAG_structure_type':
             name = data.get('DW_AT_name', "__unnamed_%s" % statement_id).strip('"')
-            try:
-                off = int(data['DW_AT_data_member_location'].split()[1])
-            except:
+            if 'DW_AT_data_member_location' in data:
                 d = data['DW_AT_data_member_location']
                 idx = d.find("(")
 
@@ -271,14 +270,38 @@ class DWARFParser(object):
                     d = d[:idx]
 
                 off = int(d)
+            else:
+                if 'DW_AT_data_bit_offset' in data:
+                    d = data['DW_AT_data_bit_offset']
+                    idx = d.find("(")
 
-            if 'DW_AT_bit_size' in data and 'DW_AT_bit_offset' in data:
-                full_size = int(data['DW_AT_byte_size'], self.base) * 8
-                stbit = int(data['DW_AT_bit_offset'], self.base)
+                    if idx != -1:
+                        d = d[:idx]
+
+                    off = int(d)/8
+                else:
+                    raise AttributeError("Missing either DW_AT_data_member_location or DW_AT_data_bit_offset in profile for field {0} of type {1}".format(name, parent_name))
+
+            if 'DW_AT_bit_size' in data and ('DW_AT_bit_offset' in data or 'DW_AT_data_bit_offset' in data):
+                if 'DW_AT_bit_offset' in data:
+                    stbit = int(data['DW_AT_bit_offset'], self.base)
+                else:
+                    d = data['DW_AT_data_bit_offset']
+                    idx = d.find("(")
+
+                    if idx != -1:
+                        d = d[:idx]
+
+                    stbit = int(d)%8
+
                 edbit = stbit + int(data['DW_AT_bit_size'], self.base)
-                stbit = full_size - stbit
-                edbit = full_size - edbit
-                stbit, edbit = edbit, stbit
+
+                if 'DW_AT_byte_size' in data:
+                    full_size = int(data['DW_AT_byte_size'], self.base) * 8
+                    stbit = full_size - stbit
+                    edbit = full_size - edbit
+                    stbit, edbit = edbit, stbit
+
                 assert stbit < edbit
                 memb_tp = ['BitField', dict(start_bit = stbit, end_bit = edbit)]
             else:
@@ -325,9 +348,16 @@ class DWARFParser(object):
         """Process a local variable."""
         if ('DW_AT_name' in data and 'DW_AT_decl_line' in data and
             'DW_AT_type' in data):
-            self.local_vars.append(
-                (data['DW_AT_name'], int(data['DW_AT_decl_line'], self.base),
-                 data['DW_AT_decl_file'].split()[1], data['DW_AT_type']))
+            declfile = data['DW_AT_decl_file'].split()
+            if len(declfile) > 1:
+                self.local_vars.append(
+                    (data['DW_AT_name'], int(data['DW_AT_decl_line'], self.base),
+                     data['DW_AT_decl_file'].split()[1], data['DW_AT_type']))
+            else:
+                self.local_vars.append(
+                    (data['DW_AT_name'], int(data['DW_AT_decl_line'], self.base),
+                        "<unknown>", data['DW_AT_type']))
+
 
     def finalize(self):
         """Finalize the output."""
