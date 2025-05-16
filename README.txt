@@ -1,3 +1,5 @@
+This project is archived. See Volatility 3 for modern investigations: https://github.com/volatilityfoundation/volatility3
+
 ============================================================================
 Volatility Framework - Volatile memory extraction utility framework
 ============================================================================
